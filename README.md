@@ -40,8 +40,17 @@ No fixed release date or polish promises — it's evolving slowly and thoughtful
 ## How to run (right now)
 
 1. Clone the repo
-2. Open `index.html` in a modern browser (Chrome/Firefox/Edge recommended)
-3. No server needed — works offline after first load
+2. Install Bun (if needed):
+	```bash
+	bun --version
+	```
+3. Start a local server from the project root:
+	```bash
+	bun run dev
+	```
+4. Open `http://localhost:8000/index.html` in a modern browser (Chrome/Firefox/Edge recommended)
+
+Alternative (no server): open `index.html` directly in a browser. It still works offline after first load.
 
 (Current prototype is one HTML file — we'll keep it that way as long as possible.)
 
