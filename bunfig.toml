@@ -1,3 +1,0 @@
-[install]
-# Keep lockfile behavior explicit once dependencies are added.
-saveTextLockfile = true

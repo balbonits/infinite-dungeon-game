@@ -1,10 +1,11 @@
 # dungeon-web-game
 
-**Game Title:** A Dungeon in the Middle of Nowhere  
-**Repo name:** dungeon-web-game (short & practical URL)  
-**Current Status:** Early prototype / design & development phase  
-**Tech:** Single-file HTML + Phaser 3 (via CDN) – 100% offline browser game  
-**Target platforms:** Desktop + mobile web (PWA potential)
+**Game Title:** A Dungeon in the Middle of Nowhere
+**Repo name:** dungeon-web-game
+**Current Status:** Documentation & planning phase (Godot 4 migration)
+**Engine:** Godot 4.x with GDScript
+**Perspective:** Isometric 2D (Diablo 1 style, 2:1 diamond tiles)
+**Platform:** Desktop native (macOS primary)
 
 ## What is this?
 
@@ -14,55 +15,85 @@ You control a **single permanent character** (Warrior, Archer, or Mage) that gro
 
 Death hurts (gold buyout to mitigate EXP & loot penalties, scaling with deepest floor achieved), but it's not full permadeath. On death you choose: return to town (reset progress) or respawn at the last safe spot (keep current floor layout). Safe spots exist at every floor entrance/exit.
 
-Key prototype features so far:
-- Class selection + Diablo-style stats (STR/DEX/STA/INT) with bonuses
-- Real-time movement (WASD / virtual joystick / gamepad)
-- Easy auto-targeting combat (nearest enemy in range)
-- Infinite respawning monsters + danger color cues (green/yellow/red)
-- Basic save/export system (localStorage + Base64 copy)
+### Prototype Features (from Phaser version)
 
-Planned highlights:
+These mechanics are documented and will be reimplemented in Godot:
+
+- Isometric movement (WASD / arrow keys)
+- Auto-targeting combat — attacks nearest enemy within range
+- Infinite respawning enemies with 3 danger tiers (green/yellow/red)
+- HUD overlay (HP, XP, level, floor)
+- Basic death/restart screen
+- XP and leveling system
+- Dark fantasy UI theme
+
+### Planned Features
+
+- Death screen with penalty choices, gold buyout, and confirmation dialog
 - Town hub with NPC interaction (Item Shop, Blacksmith, Adventure Guild, Level Teleporter)
-- Depth-scaled death penalties (EXP loss, backpack loot loss) with gold buyout mitigation
-- Sacrificial Idol consumable (shop-bought, negates loot loss on death)
-- Backpack (risky carry) vs Bank (permanent safe storage) with expansion mechanics
-- Blacksmith crafting & risky upgrades (materials-based, can break items)
-- Dungeon seeds for sharing/replaying exact floors (with anti-exploit limits)
+- Depth-scaled death penalties with Sacrificial Idol mitigation
+- Backpack (risky carry, 25 slots) vs Bank (safe storage, 15 slots)
+- Procedural dungeon floors with seed-based generation
+- Blacksmith crafting with risky upgrades
+- Gamepad support
 - Limitless skill leveling
+
+## Documentation
+
+Detailed game design and architecture documentation lives in the [`docs/`](docs/) folder:
+
+- **[Overview](docs/overview.md)** — project vision and design philosophy
+- **[Best Practices](docs/best-practices.md)** — development guidelines
+- **[Architecture](docs/architecture/)** — tech stack, Godot basics, project structure, scene tree
+- **[Objects](docs/objects/)** — player, enemies, tilemap, effects specifications
+- **[Assets](docs/assets/)** — tile, sprite, and UI theme specifications
+- **[Systems](docs/systems/)** — stats, classes, combat, leveling, death, saves, movement, spawning, camera
+- **[World](docs/world/)** — dungeon, town, monsters
+- **[Inventory](docs/inventory/)** — backpack, bank, items
+- **[UI](docs/ui/)** — controls, HUD, death screen
+- **[Testing](docs/testing/)** — test strategy, manual tests, automated tests
+
+For AI coding assistant guidelines, see [AGENTS.md](AGENTS.md).
+
+## How to run
+
+> **Note:** The game is currently in the documentation phase. Code implementation has not started yet.
+
+When implementation begins:
+
+1. Install [Godot 4.x](https://godotengine.org/download) (standard version, not .NET)
+2. Clone the repo
+3. Open the project folder in Godot editor (Project → Import → select the `project.godot` file)
+4. Press F5 to run
+
+### Archived Phaser prototype
+
+The original browser prototype is preserved in `archive/phaser-prototype/`. To run it:
+1. Open `archive/phaser-prototype/index.html` in a browser
+2. Or serve with any static server
 
 ## Why this repo?
 
-I'm a front-end developer (@balbonits) building my first real game.  
-This is a personal learning project: single-file HTML/JS, Phaser 3, responsive controls, PWA basics, procedural generation, state management — all while trying to make something addictive and fun.
+I'm a front-end developer (@balbonits) building my first real game. This is a personal learning project: Godot 4, GDScript, isometric 2D, procedural generation, state management — all while trying to make something addictive and fun.
+
+The approach is docs-first: every system is designed and documented in exhaustive detail before a single line of code is written.
 
 No fixed release date or polish promises — it's evolving slowly and thoughtfully.
 
-## How to run (right now)
+## Roadmap (loose & flexible)
 
-1. Clone the repo
-2. Install Bun (if needed):
-	```bash
-	bun --version
-	```
-3. Start a local server from the project root:
-	```bash
-	bun run dev
-	```
-4. Open `http://localhost:8000/index.html` in a modern browser (Chrome/Firefox/Edge recommended)
-
-Alternative (no server): open `index.html` directly in a browser. It still works offline after first load.
-
-(Current prototype is one HTML file — we'll keep it that way as long as possible.)
-
-## Roadmap / Next steps (loose & flexible)
-
-1. Death screen UI + penalties calculation + confirmation dialog
-2. Safe spots (auto-checkpoint at floor entrance/exit)
-3. Town hub scene + NPC walk-up interaction
-4. Backpack & bank storage UI + expansion mechanics
-5. Dungeon seeds generation/display + seeded mode restrictions
-6. Blacksmith crafting basics
-7. Mobile polish & PWA manifest/service worker
+1. Complete all design documentation (architecture, objects, assets, systems, tests)
+2. Godot project scaffold (project.godot, scenes, autoloads)
+3. Isometric tile floor + player movement
+4. Game state autoloads + HUD
+5. Enemy spawning + chase AI
+6. Combat system (auto-attack, damage, slash effects)
+7. Death & restart flow
+8. Polish + parity check against Phaser prototype
+9. Death screen UI + penalties
+10. Town hub + NPC interaction
+11. Inventory systems (backpack + bank)
+12. Procedural dungeon generation
 
 ## Contributing
 
