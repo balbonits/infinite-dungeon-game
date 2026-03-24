@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-23
+
+### Added
+
+- `project.godot` — Godot 4.6 project config (1920x1080, GL Compatibility, GUT plugin)
+- `Makefile` — 11 automation targets for AI-driven terminal development (`make help`)
+- `.github/workflows/ci.yml` — GitHub Actions CI: lint + test on push/PR to `main`
+- `.githooks/pre-commit` — GDScript linting and formatting check on commit
+- `.gitignore` — Godot, macOS, Python, IDE ignores
+- `.editorconfig` — tabs for GDScript, spaces for YAML/Python
+- `archive/phaser-prototype/.gdignore` — prevents Godot from importing archived Phaser files
+- `addons/gut/` — GUT v9.6.0 test framework (vendored)
+- `tests/test_project_setup.gd` — 4 sanity tests verifying project config
+- `scripts/generate_tiles.py` — tile asset generator (from tile-specs.md)
+- `assets/tiles/floor.png` and `wall.png` — generated isometric tile assets
+
+### Changed
+
+- `AGENTS.md` — added section 10 (Development Automation), updated project structure tree
+- `docs/architecture/ai-workflow.md` — replaced Open Questions with Automation section
+- `docs/systems/stats.md` — closed 4 open questions (hybrid allocation, soft diminishing returns, no caps, fixed backpack)
+- `docs/systems/classes.md` — closed 4 open questions (scaling bonuses, design-now-build-later skills, class-locked skills, class-locked gear)
+- `docs/systems/leveling.md` — closed 2 open questions (linear-polynomial hybrid XP, no level cap)
+- `docs/systems/death.md` — closed 2 open questions (locked-in formulas, MVP scope)
+- `docs/overview.md` — closed 2 open questions (all procedural floors, multiple save slots)
+- `docs/ui/death-screen.md` — closed 2 open questions (no inventory shown, instant death screen)
+- `docs/assets/tile-specs.md` — added Licensing section (CC0/CC-BY 3.0/CC-BY 4.0)
+- `docs/assets/sprite-specs.md` — added Licensing section
+- `assets/ATTRIBUTION.md` — created attribution tracking template
+- `README.md` — updated title formatting
+
 ## [0.2.0] - 2026-03-23
 
 ### Changed

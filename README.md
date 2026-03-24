@@ -1,6 +1,5 @@
-# dungeon-web-game
+# A Dungeon in the Middle of Nowhere
 
-**Game Title:** A Dungeon in the Middle of Nowhere
 **Repo name:** dungeon-web-game
 **Current Status:** Documentation & planning phase (Godot 4 migration)
 **Engine:** Godot 4.x with GDScript

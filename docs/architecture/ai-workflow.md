@@ -129,8 +129,12 @@ Before any code is considered "done":
 4. **Style check** — does the code follow GDScript conventions and project naming rules?
 5. **Boundary check** — are dependencies explicit and one-directional? No hidden coupling?
 
-## Open Questions
+## Automation
 
-- Should we add pre-commit hooks that automatically validate spec compliance?
-- At what project size should we introduce automated linting for GDScript?
-- Should subagent definitions be stored in `.claude/agents/` for reusable task types?
+The following tooling ensures AI assistants can develop, test, and validate code entirely from the terminal:
+
+- **Pre-commit hooks** (`.githooks/pre-commit`) — runs `gdlint` and `gdformat --check` on staged `.gd` files. Configured via `git config core.hooksPath .githooks` (or `make setup`).
+- **GDScript linting** (`gdtoolkit`) — `gdlint` for static analysis, `gdformat` for formatting. Installed via `pip3 install gdtoolkit`. Run with `make lint` / `make format`.
+- **GUT test framework** (`addons/gut/`) — headless test execution via `make test`. Tests live in `tests/` with `test_` prefix.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`) — lint + test on every push and PR to `main`.
+- **Makefile** — `make help` lists all targets: `setup`, `test`, `lint`, `format`, `check`, `run`, `tiles`, `clean`.

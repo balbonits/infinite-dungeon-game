@@ -111,7 +111,11 @@ See [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) for detai
 ```text
 dungeon-web-game/
 ├── project.godot                  — Godot 4 project config
+├── Makefile                       — AI-drivable automation (make help)
 ├── .gitignore / .gdignore         — Git + editor ignores
+├── .editorconfig                  — Editor formatting rules
+├── .githooks/pre-commit           — GDScript lint on commit
+├── .github/workflows/ci.yml      — GitHub Actions CI (lint + test)
 ├── AGENTS.md / CLAUDE.md          — AI assistant guidelines
 ├── README.md / CHANGELOG.md       — Project docs
 ├── archive/phaser-prototype/      — Original Phaser 3 code (preserved)
@@ -128,7 +132,11 @@ dungeon-web-game/
 ├── scenes/                        — Godot scenes + scripts
 │   ├── main.tscn + main.gd
 │   ├── dungeon/ player/ enemies/ ui/
-├── scripts/autoloads/             — GameState, EventBus singletons
+├── scripts/
+│   ├── autoloads/                 — GameState, EventBus singletons
+│   └── generate_tiles.py          — Tile asset generator
+├── tests/                         — GUT automated tests
+├── addons/gut/                    — GUT test framework (v9.x)
 ├── assets/                        — Tiles, sprites, UI (binary assets)
 └── resources/                     — TileSet, Theme (.tres resources)
 ```
@@ -154,6 +162,39 @@ See [docs/architecture/project-structure.md](docs/architecture/project-structure
   - UI panel: `rgba(22, 27, 40, 0.75)` with `rgba(245, 200, 107, 0.3)` border
 - **Tiles:** 64×32 isometric diamonds — floor dark blue, wall outlined
 - See [docs/assets/ui-theme.md](docs/assets/ui-theme.md) for the full color palette
+
+### 10. Development Automation
+
+All development can be driven from the terminal. Run `make help` for available targets.
+
+**Setup (first time):**
+```bash
+make setup          # Configure git hooks + verify tools
+```
+
+**Daily workflow:**
+```bash
+make lint           # Lint GDScript (gdlint)
+make format         # Check formatting (gdformat --check)
+make format-fix     # Auto-format GDScript
+make test           # Run GUT tests headlessly
+make check          # lint + format + test (all three)
+make run            # Launch the game
+make tiles          # Generate tile assets
+```
+
+**Tools required:**
+| Tool | Install | Purpose |
+|------|---------|---------|
+| Godot 4.x | `brew install --cask godot` + symlink to PATH | Engine, headless test runner |
+| gdtoolkit | `pipx install gdtoolkit` | GDScript linting + formatting |
+| GUT | Bundled in `addons/gut/` | Godot unit test framework |
+
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs lint + test on every push/PR to `main`.
+
+**Pre-commit hook:** `.githooks/pre-commit` runs gdlint + gdformat on staged `.gd` files. Activated by `make setup`.
+
+See [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md) for the full automation reference.
 
 ---
 

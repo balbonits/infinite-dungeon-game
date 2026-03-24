@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Pre-commit hook: lint staged GDScript files
+set -e
+
+STAGED_GD=$(git diff --cached --name-only --diff-filter=ACM | grep '\.gd$' | grep -v '^addons/' || true)
+
+if [ -z "$STAGED_GD" ]; then
+    exit 0
+fi
+
+echo "Linting staged GDScript files..."
+
+if command -v gdlint >/dev/null 2>&1; then
+    echo "$STAGED_GD" | xargs gdlint
+    echo "$STAGED_GD" | xargs gdformat --check
+else
+    echo "Warning: gdtoolkit not installed. Skipping lint. Install with: pip3 install gdtoolkit"
+fi

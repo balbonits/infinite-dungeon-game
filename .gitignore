@@ -1,0 +1,16 @@
+# Godot
+.godot/
+export/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
