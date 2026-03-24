@@ -33,9 +33,9 @@ Player HP reaches 0
 
 **Key rule:** No auto-select. The player must actively choose every option. Nothing is pre-checked.
 
-### Penalty Formulas (Proposed)
+### Penalty Formulas
 
-These are proposed starting values, intended to be tuned through playtesting.
+These formulas are the starting values. All numbers are subject to change based on playtesting — fun is the top priority. The full death system (gold buyout, Sacrificial Idol, multi-step flow) is **MVP scope** — not deferred.
 
 #### EXP Loss
 
@@ -96,10 +96,11 @@ backpackProtectionCost = deepestFloor * 25
 - **Gold as insurance** — gold's primary purpose is death mitigation, not shopping
 - **No auto-select** — forcing the player to read and choose prevents accidental confirmations
 
-## Open Questions
+### Tuning Notes
 
-- Should the gold buyout costs scale linearly or with a curve?
-- Is losing 50% of a level's XP progress too harsh or too lenient at the cap?
-- Should there be a "grace period" (e.g., no penalties on floors 1–5)?
-- Can multiple Sacrificial Idols stack, or is one always enough?
-- Should the death screen show a timer or be untimed?
+The following parameters are starting values — all subject to change based on gameplay feedback:
+- Gold buyout cost scaling (currently linear)
+- EXP loss cap percentage (currently 50%)
+- Whether a grace period is needed for early floors
+- Sacrificial Idol stacking behavior
+- The death screen is **untimed** — players take as long as they need (see [death-screen.md](../ui/death-screen.md))

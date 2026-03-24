@@ -29,24 +29,32 @@ All characters start with the same base stats. Class determines which stats get 
 | STA | 5 | +2 | +1 | +0 |
 | INT | 5 | +0 | +0 | +3 |
 
-*These are starting bonuses. Per-level-up bonuses follow a similar but smaller pattern.*
+*These are starting bonuses. Per-level-up bonuses are **scaling** — they grow at level thresholds, rewarding sustained investment in a class. The scaling roadmap must be concrete and documentable so that the community can create build guides, encouraging metagame exploration.*
 
 ### Unique Abilities
 
-Each class will eventually have unique abilities. These are **explicitly deferred** — no ability design is locked in yet.
+Each class has its own unique skill tree. Skills are **designed now, built post-MVP** — the core skill tree structure is established in documentation, with implementation deferred.
 
-Potential directions (brainstorming only):
+Key design decisions:
+- **Infinite skill leveling** — each individual skill has its own level. Leveling a skill improves its stats (e.g., fireball level increases damage, adds mechanics upgrades at thresholds)
+- **Strictly class-locked** — skills are unique to each class. No skill sharing between classes.
+- The core skills tree needs its own dedicated doc (future task)
+
+Planned skill directions per class:
 - **Warrior:** shield block, ground slam, charge
 - **Archer:** multi-shot, dodge roll, trap
 - **Mage:** fireball, teleport, area freeze
+
+### Equipment Restrictions
+
+Equipment has **class-locked gear** — some items can only be equipped by specific classes. When a class-restricted item drops that the player can't use, it can be taken to the **blacksmith for recycling** (harvest materials from unwanted gear).
+
+**No imbued/magical equipment drops from monsters or bosses.** All equipment drops are base items. Magical/enchanted gear comes exclusively from player-driven crafting and enchanting systems.
 
 ### No Rerolls
 
 The character is permanent. Once a class is chosen, it cannot be changed. This makes the choice meaningful and encourages mastering one playstyle.
 
-## Open Questions
+### Three Classes, Emergent Builds
 
-- Should per-level stat bonuses be flat (same every level) or scaling?
-- When should unique abilities be designed and implemented?
-- Should there be a hybrid build path, or strictly class-locked abilities?
-- How does class affect equipment restrictions (if at all)?
+There are exactly 3 classes: Warrior, Archer, and Mage. There are no hybrid classes or shared skill trees. Instead, "sub-classes" are **emergent** — players discover unique builds through their equipment choices and skill progression. The game is a platform for player creativity. Having no shared skills encourages rerolling new characters to try different classes.

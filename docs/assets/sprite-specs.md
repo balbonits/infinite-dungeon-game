@@ -204,10 +204,6 @@ When the project moves past the prototype phase, Polygon2D nodes will be replace
 - Slash effect Polygon2D nodes are added as children of the Entities node (not the player or enemy) so their position is in world space, not relative to a moving entity.
 - The `queue_free()` call at the end of the slash tween ensures no memory leak from accumulated slash nodes.
 
-## Open Questions
+## Licensing
 
-- Should enemy diamonds have a subtle pulsing animation (modulate alpha oscillation) to feel more alive?
-- Should the player diamond have a faint glow or outline to make it easier to spot among enemies?
-- Should defeated enemies have a death animation (shrink + fade) before removal, or just disappear?
-- At what project milestone should we switch from Polygon2D to AnimatedSprite2D?
-- Should different enemy tiers have different sizes (larger = more dangerous) or just different colors?
+All sprite assets must use one of the following licenses: **CC0**, **CC-BY 3.0**, or **CC-BY 4.0**. Any asset requiring attribution must be listed in [`assets/ATTRIBUTION.md`](../../assets/ATTRIBUTION.md).

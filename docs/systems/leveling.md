@@ -16,7 +16,11 @@ Implemented in the prototype:
 
 ### XP Curve
 
-The current formula is linear: each level requires `level * 90` XP. This means:
+The XP curve uses a **linear-polynomial hybrid** — linear enough that players can create predictable build guides, with a polynomial curve element that gives experienced players aspirational "radiant" goals. This is a **single-player power fantasy** game, not an MMO — leveling should feel rewarding, not grindy.
+
+There is **no level cap** — infinite leveling fits the infinite dungeon theme. Power keeps growing forever.
+
+The current prototype formula is linear: each level requires `level * 90` XP. This means:
 
 | Level | XP Required | Cumulative XP |
 |-------|------------|---------------|
@@ -38,14 +42,7 @@ On leveling up:
 
 ### Future Considerations
 
-- **Skill leveling:** separate from character level, skills improve through use
-- **Stat allocation:** players may get points to distribute on level-up
+- **Skill leveling:** separate from character level, each skill has its own infinite progression (see [classes.md](classes.md))
+- **Stat allocation:** players get free stat points to distribute on level-up (see [stats.md](stats.md))
 - **Floor-scaling XP:** enemies on deeper floors should grant more XP
-- **XP curve tuning:** the linear curve may need to become exponential at higher levels
-
-## Open Questions
-
-- Should the XP curve be linear, polynomial, or exponential?
-- At what level does the current formula start to feel grindy?
-- Should there be a level cap, or is infinite leveling part of the design?
-- How should "limitless skill leveling" (mentioned in the README) interact with character level?
+- **XP curve tuning:** the prototype's linear formula will be updated to the linear-polynomial hybrid curve. The polynomial element should kick in at higher levels to create aspirational goals without feeling grindy.

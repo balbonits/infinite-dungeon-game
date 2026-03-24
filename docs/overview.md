@@ -6,9 +6,9 @@
 
 ## Design Philosophy
 
-- **Persistent character** — no rerolls, one character that grows across all sessions
+- **Multiple save slots** — players can have multiple characters to try different classes and builds. Each character has one save with permanent progression.
 - **Death has consequences** — penalties scale with depth but are never full permadeath
-- **Infinite depth** — the dungeon descends forever with escalating difficulty
+- **Infinite depth** — the dungeon descends forever with escalating difficulty. All floors are procedurally generated with scripted placement rules (boss rooms placed far from stairs/safe spots, rooms have sensible variety and themes). No hand-crafted floors.
 - **Isometric 2D** — classic 2:1 diamond-tile perspective, dark fantasy atmosphere
 - **Desktop native** — runs as a native Godot application, no browser dependency
 - **Docs first, code later** — every system is designed and documented before implementation
@@ -44,9 +44,3 @@ Documentation and planning phase. All game systems are being specified in detail
 
 These systems will be reimplemented in Godot with identical mechanics and values.
 
-## Open Questions
-
-- How far should procedural floor generation go before introducing hand-crafted content?
-- Should the game support multiple save slots or remain strictly single-character?
-- When should placeholder Polygon2D shapes be replaced with pixel art sprites?
-- What's the right camera zoom level for the isometric perspective? (Starting at 2x)

@@ -73,10 +73,5 @@ See [death.md](../systems/death.md) for the full penalty formulas.
 - Clear visual distinction between "protected" and "at risk" items/XP
 - Gold costs should be prominent so the player understands the trade-off
 - The confirm button should look different from other buttons (e.g., red/warning color)
-
-## Open Questions
-
-- Should the death screen show the player's inventory so they can see what's at risk?
-- Should there be an animation or transition when the death screen appears?
-- How should the UI work on mobile (scrollable panel? multi-page?)?
-- Should the death screen track death statistics (deaths per floor, total deaths)?
+- **Inventory is NOT shown** on the death screen — not knowing exactly what you'll lose is part of the penalty and tension
+- **Death screen appears instantly** — no animation or transition. Follows Diablo 1's approach: immediate, stark presentation.

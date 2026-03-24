@@ -14,7 +14,7 @@ Stats exist conceptually and are referenced in class selection, but stat-based f
 
 | Stat | Name | General Purpose |
 |------|------|----------------|
-| STR | Strength | Physical power — melee damage, carrying capacity |
+| STR | Strength | Physical power — melee damage |
 | DEX | Dexterity | Agility and speed — attack speed, evasion, ranged accuracy |
 | STA | Stamina | Health and endurance — max HP, damage resistance, recovery |
 | INT | Intelligence | Magic power — spell damage, mana pool, special ability potency |
@@ -32,11 +32,21 @@ Stats are kept intentionally loose at this stage. The purpose of each stat is de
 
 ### Stat Growth
 
-On each level-up, the player receives stat points. How they're distributed depends on the class — see [classes.md](classes.md).
+Stat growth uses a **hybrid allocation** system. On each level-up, the player receives both:
 
-## Open Questions
+1. **Automatic class bonuses** — fixed stat increases determined by the character's class (see [classes.md](classes.md))
+2. **Free stat points** — points the player allocates manually to any stat
 
-- Should players get free stat points to allocate manually, or is it all automatic per class?
-- How should diminishing returns work (if at all) to prevent one stat from dominating?
-- Should stats have soft caps or hard caps?
-- What's the relationship between STR and carrying capacity (backpack slots)?
+The number of free points scales with level progression, giving players increasing agency over their build as they advance.
+
+### Diminishing Returns
+
+Stats use **soft diminishing returns** — each additional point in a stat provides slightly less benefit than the last. This is designed to promote experimentation: players are encouraged to try new characters, classes, and builds rather than min-maxing a single stat on one character.
+
+### Stat Caps
+
+**No caps.** Stats grow indefinitely, fitting the infinite dungeon theme. Combined with diminishing returns, this means investment in any stat is always rewarded, just with decreasing marginal gains.
+
+### Backpack Size
+
+Backpack size is **fixed** and not influenced by any stat. STR is combat-only — it has no relationship to carrying capacity.
