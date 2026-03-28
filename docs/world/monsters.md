@@ -18,13 +18,17 @@ Migrating from Phaser 3 prototype to Godot 4:
 
 ## Design
 
-### Danger Tiers
+### Danger Tiers (Legacy — Phaser Prototype)
+
+The Phaser prototype used 3 fixed danger tiers with hardcoded colors. This system is **replaced by the unified color gradient** (see [color-system.md](../systems/color-system.md)), where monster color is computed from the level gap between the player and the monster's effective level (based on floor depth). The stats below remain valid for balance reference.
 
 | Tier | Name | Color (Hex) | Color (Godot) | HP Formula | HP | Speed Formula | Speed | Damage Formula | Damage | XP Formula | XP Reward |
 |------|------|-------------|---------------|-----------|-----|---------------|-------|----------------|--------|------------|-----------|
 | 1 | Low | `#6bff89` | `Color("#6bff89")` | 18 + 1 * 12 | 30 | 48 + 1 * 18 | 66 | 3 + 1 | 4 | 10 + 1 * 4 | 14 |
 | 2 | Mid | `#ffde66` | `Color("#ffde66")` | 18 + 2 * 12 | 42 | 48 + 2 * 18 | 84 | 3 + 2 | 5 | 10 + 2 * 4 | 18 |
 | 3 | High | `#ff6f6f` | `Color("#ff6f6f")` | 18 + 3 * 12 | 54 | 48 + 3 * 18 | 102 | 3 + 3 | 6 | 10 + 3 * 4 | 22 |
+
+**New color system:** Monster color is a continuous gradient (Grey → Blue → Cyan → Green → Yellow → Gold → Orange → Red) based on the level gap between the player and the monster. Warmer = more dangerous, cooler = less threatening. XP rewards scale with threat — harder (warmer) enemies give bonus XP. See [color-system.md](../systems/color-system.md) for full details.
 
 ### Stat Formulas (General)
 

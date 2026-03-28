@@ -56,9 +56,19 @@ How items are obtained is not yet designed:
 
 All loot details are **explicitly deferred** until the core systems (combat, death, inventory UI) are functional.
 
+### Item Color
+
+Item color uses the **unified color gradient** (see [color-system.md](../systems/color-system.md)). There are no discrete rarity tiers (no "Rare" or "Epic" labels). Instead, an item's color is computed from the level gap between the player and the item's effective level:
+
+- Warm colors (orange/red) = item is above your level, powerful but bonuses may be gated
+- Green/yellow = item is appropriate for your level
+- Cool colors (blue/cyan) = item is below your level, losing relevance
+- Grey = item is far below your level, candidate for recycling at the Blacksmith
+
+The same item shifts color as the player levels. No equipment restrictions on wearing items — any item can be equipped, but abilities/bonuses may be locked if the player is underleveled.
+
 ## Open Questions
 
-- What item rarity tiers should exist?
 - How does equipment affect stats?
 - Should items have durability?
 - How does the Blacksmith crafting system work?

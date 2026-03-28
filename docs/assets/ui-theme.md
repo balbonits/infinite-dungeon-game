@@ -38,6 +38,22 @@ Ported directly from the CSS `:root` custom properties in `index.html`. Every co
 | death-text | `#ffe1b0` | (1.0, 0.882, 0.690, 1.0) | Death screen JS | "You Died" title text (warm light gold) |
 | bg-scene | `#131927` | (0.075, 0.098, 0.153, 1.0) | `createBackground()` JS | Scene background fill (Phaser only) |
 
+### Level-Relative Color Gradient
+
+A continuous cool-to-warm gradient used across the game to communicate level-relative relevance and threat. See [color-system.md](../systems/color-system.md) for full design.
+
+| Position | Color | Hex | RGBA (0.0-1.0) | Meaning |
+|----------|-------|-----|-----------------|---------|
+| Trivial | Grey | `#9D9D9D` | (0.616, 0.616, 0.616, 1.0) | Far below player level |
+| Low | Blue | `#4A7DFF` | (0.290, 0.490, 1.0, 1.0) | Below player level |
+| Low-Mid | Cyan | `#4AE8E8` | (0.290, 0.910, 0.910, 1.0) | Slightly below |
+| Even | Green | `#6BFF89` | (0.420, 1.0, 0.537, 1.0) | Around player level |
+| Mid-High | Yellow | `#FFDE66` | (1.0, 0.871, 0.400, 1.0) | Slightly above |
+| High | Gold | `#F5C86B` | (0.961, 0.784, 0.420, 1.0) | Above player level |
+| Very High | Orange | `#FF9340` | (1.0, 0.576, 0.251, 1.0) | Significantly above |
+| Extreme | Red | `#FF6F6F` | (1.0, 0.435, 0.435, 1.0) | Way above player level |
+| Reserved | Purple | `#A335EE` | (0.639, 0.208, 0.933, 1.0) | Out-of-system (story, unkillable) |
+
 ### Godot Color Constants
 
 All colors as GDScript constants for use in scripts:

@@ -265,6 +265,7 @@ docs/
 │   ├── stats.md               — STR/DEX/STA/INT
 │   ├── classes.md             — Warrior/Ranger/Mage
 │   ├── skills.md              — Skill trees per class (hierarchical, infinite leveling)
+│   ├── color-system.md        — Unified color gradient (cool→warm, level-relative)
 │   ├── combat.md              — Auto-targeting, cooldowns, damage
 │   ├── leveling.md            — XP curve, level-up effects
 │   ├── death.md               — Penalties, gold buyout, Sacrificial Idol

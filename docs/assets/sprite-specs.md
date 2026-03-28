@@ -204,6 +204,88 @@ When the project moves past the prototype phase, Polygon2D nodes will be replace
 - Slash effect Polygon2D nodes are added as children of the Entities node (not the player or enemy) so their position is in world space, not relative to a moving entity.
 - The `queue_free()` call at the end of the slash tween ensures no memory leak from accumulated slash nodes.
 
+## Asset Generation Strategy
+
+The game uses a **template + runtime recoloring** pipeline to visually differentiate entities by element type, ability, and level-relative threat (see [color-system.md](../systems/color-system.md)). Base shapes are pre-made; accent colors are applied dynamically at runtime.
+
+### SVG as Base Assets
+
+Godot 4 imports SVG files natively — they are rasterized to `CompressedTexture2D` at import time. SVGs provide clean vector source art that scales to any resolution.
+
+For runtime use (Godot 4.2+), `Image.load_svg_from_string(svg_text, scale)` rasterizes an SVG string into an Image on the fly. This works in exported builds.
+
+**Limitations:** SVG `<text>` elements don't render (known Godot bug). Runtime rasterization is CPU-bound — fine if cached, not suitable per-frame.
+
+### Runtime Recoloring Approaches
+
+Ranked by complexity. Start simple, upgrade as needed.
+
+#### 1. Multi-Layer Sprites (Primary — Start Here)
+
+Split each sprite into two layers:
+- **Base layer:** The entity's shape and details (neutral/greyscale)
+- **Accent layer:** A white silhouette of the colored region (element band, glow area, trim)
+
+Apply `modulate` to the accent layer only — `accent_sprite.modulate = element_color`. The base layer stays unchanged.
+
+**Strengths:** No shader knowledge needed. Fits the current Polygon2D placeholder pattern. Easy to understand and maintain.
+
+**Use for:** Enemy element tinting, item accent bands (e.g., a ring with a colored gemstone), weapon element glow.
+
+#### 2. Shader Palette Swap (Advanced — When Needed)
+
+For finer control over which regions get recolored:
+
+1. Author base sprites with **marker colors** in accent regions (e.g., pure magenta `#FF00FF` for "recolor this region")
+2. A `canvas_item` shader replaces marker colors with the actual element/gradient color
+3. Set colors from GDScript via shader uniforms: `material.set_shader_parameter("accent_color", Color.RED)`
+
+**Strengths:** GPU-accelerated, trivial cost even with 50+ entities. Can recolor multiple independent regions in one sprite. Supports smooth gradient transitions.
+
+**Community resource:** [Godot-Palette-Swap-Shader](https://github.com/KoBeWi/Godot-Palette-Swap-Shader) — open-source, Godot 4 compatible.
+
+**Use for:** Complex sprites with multiple recolorable zones, smooth color transitions tied to the level-relative gradient.
+
+#### 3. SVG Template Swap (UI/Icons)
+
+For inventory icons, item tooltips, and UI elements:
+
+1. Store SVG template strings with placeholder fills (e.g., `fill="#ACCENT1"`)
+2. `String.replace("#ACCENT1", actual_hex)` to swap colors
+3. `Image.load_svg_from_string(modified_svg, scale)` to rasterize
+4. Cache result as `ImageTexture` — generate once per item type + color combo
+
+**Strengths:** Clean vector art at any resolution. Full control over SVG structure. Good for procedurally varied icons.
+
+**Use for:** Inventory item icons, skill icons with element coloring, UI badges.
+
+### Build-Time Generation
+
+The existing `scripts/generate_tiles.py` pattern (pure Python, zero dependencies, generates PNGs pixel-by-pixel) can be extended for batch sprite generation:
+- Sprite sheet variants with pre-baked color accents
+- Tile variants for floor depth visual changes
+- Icon sets with element-colored variants
+
+Run via `make tiles` (already in Makefile).
+
+### Recommended Pipeline
+
+| Phase | Approach | When |
+|-------|----------|------|
+| Prototype (current) | Polygon2D with `color` property | Now — already working |
+| Early sprites | Multi-layer sprites + `modulate` | When first real sprite art is added |
+| Element/gradient system | Shader palette swap | When the color gradient system is implemented |
+| Inventory UI | SVG template swap | When inventory UI is built |
+| Batch assets | Extend `generate_tiles.py` | For tilemap variants, icon sets |
+
+### Color Sources
+
+Runtime recoloring draws from two systems:
+- **Element type colors:** Fire (red), Water (blue), Air (cyan), Earth (brown), Light (gold), Dark (purple) — fixed per element, defined in [color-system.md](../systems/color-system.md)
+- **Level-relative gradient:** Grey → Blue → Cyan → Green → Yellow → Gold → Orange → Red — computed from `entity_level - player_level`, see [color-system.md](../systems/color-system.md)
+
+Both can be combined: a fire monster on an even-level floor might have red element accents AND a green/yellow threat tint.
+
 ## Licensing
 
 All sprite assets must use one of the following licenses: **CC0**, **CC-BY 3.0**, or **CC-BY 4.0**. Any asset requiring attribution must be listed in [`assets/ATTRIBUTION.md`](../../assets/ATTRIBUTION.md).
