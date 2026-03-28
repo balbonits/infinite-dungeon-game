@@ -46,7 +46,7 @@ Fixed at 420ms. Future plans:
 ### Range
 
 Fixed at 78px for melee. Future plans:
-- Archer class could have longer range
+- Marksman class could have longer range
 - Mage spells could have variable range
 - Melee range might scale slightly with weapon type
 

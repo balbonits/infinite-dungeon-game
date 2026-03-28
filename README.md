@@ -10,7 +10,7 @@
 
 **A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
 
-You control a **single permanent character** (Warrior, Archer, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with endless monster respawns on each floor (soft cap + timers), allowing safe farming on any level or risky deep pushes for better rewards.
+You control a **single permanent character** (Warrior, Marksman, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with endless monster respawns on each floor (soft cap + timers), allowing safe farming on any level or risky deep pushes for better rewards.
 
 Death hurts (gold buyout to mitigate EXP & loot penalties, scaling with deepest floor achieved), but it's not full permadeath. On death you choose: return to town (reset progress) or respawn at the last safe spot (keep current floor layout). Safe spots exist at every floor entrance/exit.
 
@@ -46,7 +46,7 @@ Detailed game design and architecture documentation lives in the [`docs/`](docs/
 - **[Architecture](docs/architecture/)** — tech stack, Godot basics, project structure, scene tree
 - **[Objects](docs/objects/)** — player, enemies, tilemap, effects specifications
 - **[Assets](docs/assets/)** — tile, sprite, and UI theme specifications
-- **[Systems](docs/systems/)** — stats, classes, combat, leveling, death, saves, movement, spawning, camera
+- **[Systems](docs/systems/)** — stats, classes, skills, combat, leveling, death, saves, movement, spawning, camera
 - **[World](docs/world/)** — dungeon, town, monsters
 - **[Inventory](docs/inventory/)** — backpack, bank, items
 - **[UI](docs/ui/)** — controls, HUD, death screen

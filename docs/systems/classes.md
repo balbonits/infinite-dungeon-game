@@ -2,7 +2,7 @@
 
 ## Summary
 
-Three classes define a character's playstyle: Warrior, Archer, Mage. Each has distinct stat bonuses. Class is chosen once and cannot be changed.
+Three classes define a character's playstyle: Warrior, Marksman, Mage. Each has distinct stat bonuses. Class is chosen once and cannot be changed.
 
 ## Current State
 
@@ -15,15 +15,15 @@ Class selection exists in the prototype's design but the stat bonuses are not ye
 | Class | Primary Stats | Playstyle |
 |-------|--------------|-----------|
 | Warrior | STR, STA | Melee-focused, tanky, high physical damage |
-| Archer | DEX | Ranged attacks, fast attack speed, evasive |
+| Marksman | DEX | Ranged attacks, fast attack speed, evasive |
 | Mage | INT | Spell-based damage, area effects, fragile |
 
 ### Base Stats + Class Bonuses
 
 All characters start with the same base stats. Class determines which stats get bonus points at creation and on each level-up.
 
-| Stat | Base | Warrior Bonus | Archer Bonus | Mage Bonus |
-|------|------|--------------|-------------|------------|
+| Stat | Base | Warrior Bonus | Marksman Bonus | Mage Bonus |
+|------|------|--------------|---------------|------------|
 | STR | 5 | +3 | +1 | +0 |
 | DEX | 5 | +1 | +3 | +1 |
 | STA | 5 | +2 | +1 | +0 |
@@ -36,14 +36,15 @@ All characters start with the same base stats. Class determines which stats get 
 Each class has its own unique skill tree. Skills are **designed now, built post-MVP** — the core skill tree structure is established in documentation, with implementation deferred.
 
 Key design decisions:
-- **Infinite skill leveling** — each individual skill has its own level. Leveling a skill improves its stats (e.g., fireball level increases damage, adds mechanics upgrades at thresholds)
+- **Infinite skill leveling** — every base skill and specific skill has no level cap
 - **Strictly class-locked** — skills are unique to each class. No skill sharing between classes.
-- The core skills tree needs its own dedicated doc (future task)
+- **Hierarchical** — base skills gate specific skills (inspired by Project Zomboid's skill system)
+- Full skill tree design: **[skills.md](skills.md)**
 
-Planned skill directions per class:
-- **Warrior:** shield block, ground slam, charge
-- **Archer:** multi-shot, dodge roll, trap
-- **Mage:** fireball, teleport, area freeze
+Skill tree status:
+- **Warrior:** Designed — 7 base skills (Body: Unarmed, Bladed, Blunt, Polearms, Shields / Mind: Inner, Outer)
+- **Marksman:** Designed — 7 base skills (Body: Drawn, Thrown, Firearms, Melee / Mind: Precision, Awareness, Trapping)
+- **Mage:** Designed — 9 base skills (Arcane: Fire, Water, Air, Earth, Light, Dark / Conduit: Restoration, Amplification, Overcharge)
 
 ### Equipment Restrictions
 
@@ -57,4 +58,4 @@ The character is permanent. Once a class is chosen, it cannot be changed. This m
 
 ### Three Classes, Emergent Builds
 
-There are exactly 3 classes: Warrior, Archer, and Mage. There are no hybrid classes or shared skill trees. Instead, "sub-classes" are **emergent** — players discover unique builds through their equipment choices and skill progression. The game is a platform for player creativity. Having no shared skills encourages rerolling new characters to try different classes.
+There are exactly 3 classes: Warrior, Marksman, and Mage. There are no hybrid classes or shared skill trees. Instead, "sub-classes" are **emergent** — players discover unique builds through their equipment choices and skill progression. The game is a platform for player creativity. Having no shared skills encourages rerolling new characters to try different classes.

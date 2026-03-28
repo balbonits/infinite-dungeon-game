@@ -40,7 +40,8 @@ dungeon-web-game/
 │   ├── assets/                            — Asset specifications
 │   ├── systems/                           — Game systems design
 │   │   ├── stats.md                       — STR/DEX/STA/INT stat system
-│   │   ├── classes.md                     — Warrior/Archer/Mage classes
+│   │   ├── classes.md                     — Warrior/Marksman/Mage classes
+│   │   ├── skills.md                      — Skill trees per class (hierarchical, infinite leveling)
 │   │   ├── combat.md                      — Auto-targeting, cooldowns, damage formulas
 │   │   ├── leveling.md                    — XP curve, level-up effects
 │   │   ├── death.md                       — Death penalties, gold buyout, Sacrificial Idol
