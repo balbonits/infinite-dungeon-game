@@ -10,7 +10,7 @@
 
 **A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
 
-You control a **single permanent character** (Warrior, Marksman, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with endless monster respawns on each floor (soft cap + timers), allowing safe farming on any level or risky deep pushes for better rewards.
+You control a **single permanent character** (Warrior, Ranger, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with endless monster respawns on each floor (soft cap + timers), allowing safe farming on any level or risky deep pushes for better rewards.
 
 Death hurts (gold buyout to mitigate EXP & loot penalties, scaling with deepest floor achieved), but it's not full permadeath. On death you choose: return to town (reset progress) or respawn at the last safe spot (keep current floor layout). Safe spots exist at every floor entrance/exit.
 

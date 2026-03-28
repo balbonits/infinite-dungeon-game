@@ -205,7 +205,7 @@ Detailed design docs live in `docs/`. Here's a summary with links.
 ### Character & Stats
 
 - **4 stats:** STR (physical power), DEX (agility), STA (health), INT (magic) — [docs/systems/stats.md](docs/systems/stats.md)
-- **3 classes:** Warrior (STR/STA), Marksman (DEX), Mage (INT) — [docs/systems/classes.md](docs/systems/classes.md)
+- **3 classes:** Warrior (STR/STA), Ranger (DEX), Mage (INT) — [docs/systems/classes.md](docs/systems/classes.md)
 - **Persistent character** — no rerolls, one character forever
 
 ### Combat
@@ -263,7 +263,7 @@ docs/
 │   └── ui-theme.md            — Color palette, fonts, panel styles
 ├── systems/
 │   ├── stats.md               — STR/DEX/STA/INT
-│   ├── classes.md             — Warrior/Marksman/Mage
+│   ├── classes.md             — Warrior/Ranger/Mage
 │   ├── skills.md              — Skill trees per class (hierarchical, infinite leveling)
 │   ├── combat.md              — Auto-targeting, cooldowns, damage
 │   ├── leveling.md            — XP curve, level-up effects

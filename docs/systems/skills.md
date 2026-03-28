@@ -8,7 +8,7 @@ Inspired by Project Zomboid's hierarchical skill system, adapted for infinite pr
 
 ## Current State
 
-Design phase. All three class skill trees (Warrior, Marksman, Mage) are defined. Individual skill details (scaling, cooldowns, formulas) are pending.
+Design phase. All three class skill trees (Warrior, Ranger, Mage) are defined. Individual skill details (scaling, cooldowns, formulas) are pending.
 
 ## Skill System Design
 
@@ -24,10 +24,16 @@ Two layers of actual skills. Categories are purely organizational — they group
 
 ### Progression Model
 
-1. **Base skills** are the entry point. The player levels a base skill (e.g., "Unarmed") through use or XP investment.
+1. **Base skills** are the entry point. The player levels a base skill (e.g., "Unarmed") through use and XP investment.
 2. When a base skill reaches **level 1**, all specific skills underneath it **unlock immediately**.
 3. Each specific skill is then leveled independently and infinitely.
 4. The base skill continues to be leveled infinitely alongside its specific skills.
+
+**Hybrid leveling:** Skills gain XP through two paths:
+- **Use-based XP** — performing actions with a skill earns XP toward that skill (e.g., swinging a sword levels Bladed, casting fire spells levels Fire)
+- **Skill points on level-up** — on each character level-up, the player receives skill points to allocate freely to any base or specific skill
+
+Both paths feed progression simultaneously.
 
 **Base skills provide two things:**
 - **Passive bonuses** that scale with level (e.g., Unarmed level 10 gives a passive unarmed damage bonus)
@@ -138,17 +144,17 @@ Enemy-focused mental presence. Passive bonuses: enemy stat debuff aura range, de
 
 ---
 
-## Marksman Skills
+## Ranger Skills
 
-The Marksman is the ranged combat class (formerly "Archer"). Power comes from distance, precision, and preparation. Not as physically dominant as the Warrior, but compensates with mental calculation — range, trajectory, and situational awareness.
+The Ranger is the ranged combat class (formerly "Archer"). Power comes from distance, precision, and preparation. Not as physically dominant as the Warrior, but compensates with mental calculation — range, trajectory, and situational awareness.
 
-**Categories:** Body, Mind
+**Categories:** Arms, Instinct
 
 **Ammo system:** Ammo is unlimited, but requires a "magazine" item equipped (quivers, mags, projectile bags, bandoliers). These are purchased, not crafted from drops.
 
-### Body
+### Arms
 
-Ranged weapon mastery and close-range defense. Four base skills covering all Marksman fighting styles.
+Ranged weapon mastery and close-range defense. Four base skills covering all Ranger fighting styles.
 
 #### Drawn
 
@@ -185,7 +191,7 @@ Pistols, rifles, and other guns. Passive bonuses: firearm damage, reload speed.
 
 #### Melee
 
-Defensive offhand weapons — knives, small bucklers, claw gauntlets. Passive bonuses: melee block chance, melee counter damage. These are offhand-only weapons that don't interfere with the Marksman's primary ranged weapon.
+Defensive offhand weapons — knives, small bucklers, claw gauntlets. Passive bonuses: melee block chance, melee counter damage. These are offhand-only weapons that don't interfere with the Ranger's primary ranged weapon.
 
 | Specific Skill | Description |
 |----------------|-------------|
@@ -194,9 +200,9 @@ Defensive offhand weapons — knives, small bucklers, claw gauntlets. Passive bo
 | Riposte | Counter-attack after a successful parry or block |
 | Disarm | Knock weapon from enemy's grip, reducing their damage temporarily |
 
-### Mind
+### Instinct
 
-Mental discipline for a solo ranged fighter. Three base skills covering offensive calculation, defensive awareness, and tactical preparation.
+Gut-level reactions and tactical sense. Three base skills covering offensive calculation, defensive awareness, and tactical preparation.
 
 #### Precision
 
@@ -249,7 +255,7 @@ Full spell acquisition system design is deferred to a dedicated doc (crosses int
 - **Base skill level (e.g., Fire):** Improves *casting* — cast speed, spell range, mana efficiency
 - **Specific skill level (e.g., Fireball):** Improves the *spell itself* — damage, area of effect, duration, healing amount, etc.
 
-This mirrors Warrior/Marksman where base skills improve general weapon handling and specific skills improve individual techniques.
+This mirrors Warrior/Ranger where base skills improve general weapon handling and specific skills improve individual techniques.
 
 ### Arcane
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Three classes define a character's playstyle: Warrior, Marksman, Mage. Each has distinct stat bonuses. Class is chosen once and cannot be changed.
+Three classes define a character's playstyle: Warrior, Ranger, Mage. Each has distinct stat bonuses. Class is chosen once and cannot be changed.
 
 ## Current State
 
@@ -15,14 +15,14 @@ Class selection exists in the prototype's design but the stat bonuses are not ye
 | Class | Primary Stats | Playstyle |
 |-------|--------------|-----------|
 | Warrior | STR, STA | Melee-focused, tanky, high physical damage |
-| Marksman | DEX | Ranged attacks, fast attack speed, evasive |
+| Ranger | DEX | Ranged attacks, fast attack speed, evasive |
 | Mage | INT | Spell-based damage, area effects, fragile |
 
 ### Base Stats + Class Bonuses
 
 All characters start with the same base stats. Class determines which stats get bonus points at creation and on each level-up.
 
-| Stat | Base | Warrior Bonus | Marksman Bonus | Mage Bonus |
+| Stat | Base | Warrior Bonus | Ranger Bonus | Mage Bonus |
 |------|------|--------------|---------------|------------|
 | STR | 5 | +3 | +1 | +0 |
 | DEX | 5 | +1 | +3 | +1 |
@@ -43,7 +43,7 @@ Key design decisions:
 
 Skill tree status:
 - **Warrior:** Designed — 7 base skills (Body: Unarmed, Bladed, Blunt, Polearms, Shields / Mind: Inner, Outer)
-- **Marksman:** Designed — 7 base skills (Body: Drawn, Thrown, Firearms, Melee / Mind: Precision, Awareness, Trapping)
+- **Ranger:** Designed — 7 base skills (Arms: Drawn, Thrown, Firearms, Melee / Instinct: Precision, Awareness, Trapping)
 - **Mage:** Designed — 9 base skills (Arcane: Fire, Water, Air, Earth, Light, Dark / Conduit: Restoration, Amplification, Overcharge)
 
 ### Equipment Restrictions
@@ -58,4 +58,4 @@ The character is permanent. Once a class is chosen, it cannot be changed. This m
 
 ### Three Classes, Emergent Builds
 
-There are exactly 3 classes: Warrior, Marksman, and Mage. There are no hybrid classes or shared skill trees. Instead, "sub-classes" are **emergent** — players discover unique builds through their equipment choices and skill progression. The game is a platform for player creativity. Having no shared skills encourages rerolling new characters to try different classes.
+There are exactly 3 classes: Warrior, Ranger, and Mage. There are no hybrid classes or shared skill trees. Instead, "sub-classes" are **emergent** — players discover unique builds through their equipment choices and skill progression. The game is a platform for player creativity. Having no shared skills encourages rerolling new characters to try different classes.
