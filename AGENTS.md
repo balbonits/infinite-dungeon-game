@@ -208,9 +208,25 @@ Detailed design docs live in `docs/`. Here's a summary with links.
 - **3 classes:** Warrior (STR/STA), Ranger (DEX), Mage (INT) — [docs/systems/classes.md](docs/systems/classes.md)
 - **Persistent character** — no rerolls, one character forever
 
+### Skills
+
+Hierarchical skill trees per class with unique category names, hybrid leveling (use-based + point-based), infinite scaling — [docs/systems/skills.md](docs/systems/skills.md)
+
+### Color System
+
+Unified cool→warm gradient for all game elements (enemies, items, zones), level-relative coloring — [docs/systems/color-system.md](docs/systems/color-system.md)
+
 ### Combat
 
 Auto-targeting, cooldown-based, scales with level and stats — [docs/systems/combat.md](docs/systems/combat.md)
+
+### Leveling
+
+Redesigned XP curve (linear-polynomial hybrid), rested XP bonus, floor-scaling enemy XP, no level cap — [docs/systems/leveling.md](docs/systems/leveling.md)
+
+### Player Engagement
+
+Feedback loops, session pacing, juice/feel, retention hooks — [docs/systems/player-engagement.md](docs/systems/player-engagement.md)
 
 ### Death Penalties
 

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `docs/systems/skills.md` — full skill trees for all 3 classes (Warrior, Ranger, Mage) with hierarchical categories, hybrid leveling (use-based + point-based), infinite scaling
+- `docs/systems/color-system.md` — unified cool→warm color gradient system for enemies, items, and zones (level-relative coloring)
+- `docs/systems/player-engagement.md` — feedback loops, session pacing, juice/feel, retention hooks
+- `docs/architecture/analytics.md` — opt-in telemetry, bug reporting, feedback system (offline-first)
+
+### Changed
+
+- `docs/systems/classes.md` — renamed Archer → Marksman → Ranger; added class-specific skill category names
+- `docs/systems/skills.md` — added equipment slots, refined hybrid skill leveling (use-based + point-based)
+- `docs/systems/leveling.md` — redesigned XP curve (linear-polynomial hybrid), added rested XP bonus, floor-scaling enemy XP, no level cap
+- `docs/systems/combat.md` — updated class references (Archer → Ranger)
+- `docs/inventory/items.md` — added equipment slot definitions and item tier coloring
+- `docs/assets/sprite-specs.md` — added asset generation strategy and color gradient integration
+- `docs/assets/ui-theme.md` — added color gradient palette entries
+- `docs/world/monsters.md` — updated enemy color references to use unified color system
+- `AGENTS.md` — added Skills, Color System, Player Engagement, Leveling to Game Design Quick Reference; updated Documentation Map with new docs
+
 ## [0.3.0] - 2026-03-23
 
 ### Added
