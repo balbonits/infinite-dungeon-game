@@ -251,7 +251,8 @@ docs/
 │   ├── scene-tree.md          — Complete node hierarchy for every scene
 │   ├── autoloads.md           — GameState + EventBus singleton design
 │   ├── signals.md             — Signal flow between all systems
-│   └── game-dev-concepts.md   — Game dev fundamentals (GDScript)
+│   ├── game-dev-concepts.md   — Game dev fundamentals (GDScript)
+│   └── analytics.md           — Opt-in telemetry, bug reporting, feedback (offline-first)
 ├── objects/
 │   ├── player.md              — Player node, script, movement, attack
 │   ├── enemies.md             — Enemy tiers, AI, damage
@@ -267,7 +268,8 @@ docs/
 │   ├── skills.md              — Skill trees per class (hierarchical, infinite leveling)
 │   ├── color-system.md        — Unified color gradient (cool→warm, level-relative)
 │   ├── combat.md              — Auto-targeting, cooldowns, damage
-│   ├── leveling.md            — XP curve, level-up effects
+│   ├── leveling.md            — XP curve, rested XP, floor-scaling enemy XP
+│   ├── player-engagement.md   — Feedback loops, session pacing, juice/feel, retention
 │   ├── death.md               — Penalties, gold buyout, Sacrificial Idol
 │   ├── save.md                — FileAccess, JSON, user://, Base64 export
 │   ├── movement.md            — Isometric movement + transform matrix

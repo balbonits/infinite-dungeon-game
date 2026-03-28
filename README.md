@@ -43,10 +43,10 @@ Detailed game design and architecture documentation lives in the [`docs/`](docs/
 
 - **[Overview](docs/overview.md)** — project vision and design philosophy
 - **[Best Practices](docs/best-practices.md)** — development guidelines
-- **[Architecture](docs/architecture/)** — tech stack, Godot basics, project structure, scene tree
+- **[Architecture](docs/architecture/)** — tech stack, Godot basics, project structure, scene tree, analytics
 - **[Objects](docs/objects/)** — player, enemies, tilemap, effects specifications
 - **[Assets](docs/assets/)** — tile, sprite, and UI theme specifications
-- **[Systems](docs/systems/)** — stats, classes, skills, color system, combat, leveling, death, saves, movement, spawning, camera
+- **[Systems](docs/systems/)** — stats, classes, skills, color system, combat, leveling, player engagement, death, saves, movement, spawning, camera
 - **[World](docs/world/)** — dungeon, town, monsters
 - **[Inventory](docs/inventory/)** — backpack, bank, items
 - **[UI](docs/ui/)** — controls, HUD, death screen

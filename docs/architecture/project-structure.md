@@ -35,7 +35,8 @@ dungeon-web-game/
 │   │   ├── tech-stack.md                  — Godot 4 stack, window config, migration table
 │   │   ├── godot-basics.md                — Godot 4 concepts for web developers
 │   │   ├── project-structure.md           — This file (directory layout, naming conventions)
-│   │   └── game-dev-concepts.md           — Game dev fundamentals mapped to web dev
+│   │   ├── game-dev-concepts.md           — Game dev fundamentals mapped to web dev
+│   │   └── analytics.md                  — Opt-in telemetry, bug reporting, feedback (offline-first)
 │   ├── objects/                           — Game entity specifications
 │   ├── assets/                            — Asset specifications
 │   ├── systems/                           — Game systems design
@@ -44,7 +45,8 @@ dungeon-web-game/
 │   │   ├── skills.md                      — Skill trees per class (hierarchical, infinite leveling)
 │   │   ├── color-system.md                — Unified color gradient (cool→warm, level-relative)
 │   │   ├── combat.md                      — Auto-targeting, cooldowns, damage formulas
-│   │   ├── leveling.md                    — XP curve, level-up effects
+│   │   ├── leveling.md                    — XP curve, rested XP, floor-scaling enemy XP
+│   │   ├── player-engagement.md           — Feedback loops, session pacing, juice/feel, retention
 │   │   ├── death.md                       — Death penalties, gold buyout, Sacrificial Idol
 │   │   └── save.md                        — Save system (FileAccess + JSON)
 │   ├── world/                             — World design
