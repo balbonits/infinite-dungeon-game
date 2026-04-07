@@ -35,9 +35,9 @@ Every task follows this sequence. Do not skip steps. Do not reorder.
 
 **4. Implement**
 - Write the minimum code that passes the tests and satisfies the spec
-- Follow [GDScript conventions](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html) and the project's naming rules (see AGENTS.md §6)
+- Follow [C# conventions](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_style_guide.html) and the project's naming rules (see AGENTS.md §6)
 - One responsibility per script, one purpose per function
-- Use static typing everywhere
+- Use static typing everywhere (C# enforces this)
 - Prefer composition (child nodes) over monolithic scripts
 
 **5. Verify**
@@ -58,11 +58,11 @@ Adapted from [Addy Osmani's spec-writing guide](https://addyosmani.com/blog/good
 
 **Always Do (no approval needed):**
 - Read spec docs before code changes
-- Use static typing in all GDScript
-- Follow naming conventions (snake_case vars, PascalCase nodes, past-tense signals)
+- Use static typing in all C# (enforced by the compiler)
+- Follow naming conventions (_camelCase private fields, PascalCase public members/methods/nodes, past-tense signals)
 - Run tests after implementing changes
 - Keep scripts under ~300 lines
-- Use `@onready` for node references
+- Use `GetNode<T>()` in `_Ready()` for node references
 - Follow "call down, signal up" pattern
 
 **Ask First (need user approval):**
@@ -126,15 +126,15 @@ Before any code is considered "done":
 1. **Spec compliance** — does the code do exactly what the spec describes? Nothing more?
 2. **Tests pass** — are there test cases, and do they pass?
 3. **Scope check** — does the diff contain ONLY changes related to the task?
-4. **Style check** — does the code follow GDScript conventions and project naming rules?
+4. **Style check** — does the code follow C# conventions and project naming rules?
 5. **Boundary check** — are dependencies explicit and one-directional? No hidden coupling?
 
 ## Automation
 
 The following tooling ensures AI assistants can develop, test, and validate code entirely from the terminal:
 
-- **Pre-commit hooks** (`.githooks/pre-commit`) — runs `gdlint` and `gdformat --check` on staged `.gd` files. Configured via `git config core.hooksPath .githooks` (or `make setup`).
-- **GDScript linting** (`gdtoolkit`) — `gdlint` for static analysis, `gdformat` for formatting. Installed via `pip3 install gdtoolkit`. Run with `make lint` / `make format`.
-- **GUT test framework** (`addons/gut/`) — headless test execution via `make test`. Tests live in `tests/` with `test_` prefix.
+- **Pre-commit hooks** (`.githooks/pre-commit`) — runs `dotnet format --verify-no-changes` on staged `.cs` files. Configured via `git config core.hooksPath .githooks` (or `make setup`).
+- **C# formatting** (`dotnet format`) — `dotnet format` for formatting and style enforcement. Run with `make lint` / `make format`.
+- **GdUnit4 test framework** (`addons/gdUnit4/`) — headless test execution via `make test`. Tests live in `tests/` with `Test` suffix.
 - **GitHub Actions CI** (`.github/workflows/ci.yml`) — lint + test on every push and PR to `main`.
 - **Makefile** — `make help` lists all targets: `setup`, `test`, `lint`, `format`, `check`, `run`, `tiles`, `clean`.

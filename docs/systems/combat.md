@@ -85,41 +85,47 @@ Player (CharacterBody2D)
 | monitorable | false (other areas do not need to detect this) |
 
 **Target finding algorithm (every physics frame):**
-```gdscript
-const ATTACK_COOLDOWN := 0.42  # seconds (420ms)
-var attack_cooldown_remaining := 0.0
+```csharp
+private const float AttackCooldown = 0.42f; // seconds (420ms)
+private float _attackCooldownRemaining = 0.0f;
 
-func _physics_process(delta: float) -> void:
-    # Decrement cooldown
-    attack_cooldown_remaining -= delta
-    if attack_cooldown_remaining > 0.0:
-        return
+public override void _PhysicsProcess(double delta)
+{
+    // Decrement cooldown
+    _attackCooldownRemaining -= (float)delta;
+    if (_attackCooldownRemaining > 0.0f)
+        return;
 
-    # Get all enemy bodies overlapping the AttackRange Area2D
-    var bodies := attack_range.get_overlapping_bodies()
+    // Get all enemy bodies overlapping the AttackRange Area2D
+    var bodies = _attackRange.GetOverlappingBodies();
 
-    # Find the nearest enemy
-    var best_enemy: CharacterBody2D = null
-    var best_distance := INF
+    // Find the nearest enemy
+    CharacterBody2D bestEnemy = null;
+    float bestDistance = float.PositiveInfinity;
 
-    for body in bodies:
-        if not body.is_in_group("enemies"):
-            continue
-        if not body.is_inside_tree():
-            continue
-        var dist := global_position.distance_to(body.global_position)
-        if dist < best_distance:
-            best_distance = dist
-            best_enemy = body
+    foreach (var body in bodies)
+    {
+        if (!body.IsInGroup("enemies"))
+            continue;
+        if (!body.IsInsideTree())
+            continue;
+        float dist = GlobalPosition.DistanceTo(body.GlobalPosition);
+        if (dist < bestDistance)
+        {
+            bestDistance = dist;
+            bestEnemy = (CharacterBody2D)body;
+        }
+    }
 
-    if best_enemy == null:
-        return
+    if (bestEnemy == null)
+        return;
 
-    # Attack the nearest enemy
-    attack_cooldown_remaining = ATTACK_COOLDOWN
-    var damage := 12 + int(GameState.level * 1.5)
-    best_enemy.take_damage(damage)
-    draw_slash(best_enemy.global_position)
+    // Attack the nearest enemy
+    _attackCooldownRemaining = AttackCooldown;
+    int damage = 12 + (int)(GameState.Level * 1.5f);
+    bestEnemy.TakeDamage(damage);
+    DrawSlash(bestEnemy.GlobalPosition);
+}
 ```
 
 **Damage calculation:**
@@ -136,22 +142,25 @@ damage = 12 + int(GameState.level * 1.5)
 | 10 | 27 | 12 + int(10 * 1.5) = 12 + 15 |
 
 **Slash visual effect (Godot):**
-```gdscript
-func draw_slash(target_pos: Vector2) -> void:
-    var slash := Polygon2D.new()
-    slash.polygon = PackedVector2Array([
-        Vector2(-13, -2), Vector2(13, -2),
-        Vector2(13, 2), Vector2(-13, 2)
-    ])
-    slash.color = Color(0.961, 0.784, 0.420, 0.95)  # #f5c86b @ 95%
-    slash.position = target_pos
-    slash.rotation = randf_range(-1.2, 1.2)
-    get_parent().add_child(slash)
+```csharp
+private void DrawSlash(Vector2 targetPos)
+{
+    var slash = new Polygon2D();
+    slash.Polygon = new Vector2[]
+    {
+        new Vector2(-13, -2), new Vector2(13, -2),
+        new Vector2(13, 2), new Vector2(-13, 2)
+    };
+    slash.Color = new Color(0.961f, 0.784f, 0.420f, 0.95f); // #f5c86b @ 95%
+    slash.Position = targetPos;
+    slash.Rotation = (float)GD.RandRange(-1.2, 1.2);
+    GetParent().AddChild(slash);
 
-    var tween := create_tween()
-    tween.tween_property(slash, "modulate:a", 0.0, 0.12)  # Fade out over 120ms
-    tween.parallel().tween_property(slash, "position:y", target_pos.y - 8.0, 0.12)  # Drift up 8px
-    tween.tween_callback(slash.queue_free)  # Clean up
+    var tween = CreateTween();
+    tween.TweenProperty(slash, "modulate:a", 0.0f, 0.12); // Fade out over 120ms
+    tween.Parallel().TweenProperty(slash, "position:y", targetPos.Y - 8.0f, 0.12); // Drift up 8px
+    tween.TweenCallback(Callable.From(slash.QueueFree)); // Clean up
+}
 ```
 
 ### Enemy Damage to Player (Godot)
@@ -191,30 +200,42 @@ Enemy (CharacterBody2D)
 **Damage flow:**
 
 1. **Initial hit:** When the player enters the HitArea, `body_entered` signal fires.
-   ```gdscript
-   func _on_hit_area_body_entered(body: Node2D) -> void:
-       if body.is_in_group("player") and hit_cooldown_timer.is_stopped():
-           _deal_damage_to_player(body)
-           hit_cooldown_timer.start()
+   ```csharp
+   private void OnHitAreaBodyEntered(Node2D body)
+   {
+       if (body.IsInGroup("player") && _hitCooldownTimer.IsStopped())
+       {
+           DealDamageToPlayer((CharacterBody2D)body);
+           _hitCooldownTimer.Start();
+       }
+   }
    ```
 
 2. **Continuous damage:** While the player remains in the HitArea, the cooldown timer repeats.
-   ```gdscript
-   func _on_hit_cooldown_timer_timeout() -> void:
-       var overlapping := hit_area.get_overlapping_bodies()
-       for body in overlapping:
-           if body.is_in_group("player"):
-               _deal_damage_to_player(body)
-               hit_cooldown_timer.start()  # Restart for next tick
-               return
-       # Player left the area -- do not restart timer
+   ```csharp
+   private void OnHitCooldownTimerTimeout()
+   {
+       var overlapping = _hitArea.GetOverlappingBodies();
+       foreach (var body in overlapping)
+       {
+           if (body.IsInGroup("player"))
+           {
+               DealDamageToPlayer((CharacterBody2D)body);
+               _hitCooldownTimer.Start(); // Restart for next tick
+               return;
+           }
+       }
+       // Player left the area -- do not restart timer
+   }
    ```
 
 3. **Damage calculation:**
-   ```gdscript
-   func _deal_damage_to_player(player: CharacterBody2D) -> void:
-       var damage := 3 + danger_tier
-       player.take_damage(damage)
+   ```csharp
+   private void DealDamageToPlayer(CharacterBody2D player)
+   {
+       int damage = 3 + _dangerTier;
+       player.TakeDamage(damage);
+   }
    ```
 
 **Damage values by tier:**
@@ -226,30 +247,34 @@ Enemy (CharacterBody2D)
 | 3 | 6 | `3 + 3` |
 
 **Player take_damage() handler:**
-```gdscript
-func take_damage(amount: int) -> void:
-    GameState.hp -= amount
-    shake_camera()
-    EventBus.player_damaged.emit(amount)
+```csharp
+public void TakeDamage(int amount)
+{
+    GameState.Hp -= amount;
+    ShakeCamera();
+    EventBus.PlayerDamaged.Emit(amount);
 
-    if GameState.hp <= 0:
-        GameState.hp = 0
-        _die()
+    if (GameState.Hp <= 0)
+    {
+        GameState.Hp = 0;
+        Die();
+    }
+}
 ```
 
 ### Key Differences from Phaser
 
 | Aspect | Phaser Prototype | Godot Implementation |
 |--------|-----------------|---------------------|
-| Attack range check | Manual `Phaser.Math.Distance.Between()` every frame for every enemy | Area2D `get_overlapping_bodies()` -- physics engine maintains the overlap list; script just reads it |
-| Nearest enemy search | `this.enemies.children.iterate()` with distance comparison | Same logic, but over `attack_range.get_overlapping_bodies()` (pre-filtered to in-range enemies only) |
-| Enemy-player overlap | `this.physics.add.overlap(player, enemies, callback)` -- fires every frame while overlapping | Area2D `body_entered` signal (event-based, fires once on enter) + Timer for sustained damage |
+| Attack range check | Manual `Phaser.Math.Distance.Between()` every frame for every enemy | Area2D `GetOverlappingBodies()` -- physics engine maintains the overlap list; script just reads it |
+| Nearest enemy search | `this.enemies.children.iterate()` with distance comparison | Same logic, but over `_attackRange.GetOverlappingBodies()` (pre-filtered to in-range enemies only) |
+| Enemy-player overlap | `this.physics.add.overlap(player, enemies, callback)` -- fires every frame while overlapping | Area2D `BodyEntered` signal (event-based, fires once on enter) + Timer for sustained damage |
 | Cooldown tracking | `time - this.lastAttackAt < ATTACK_COOLDOWN` using scene time in milliseconds | Float variable decremented by delta each frame; attack fires when <= 0 |
 | Enemy hit cooldown | `now - enemy.lastHitAt < 700` per-enemy timestamp | Timer node per enemy, 0.7s one_shot |
-| Slash effect | `this.add.rectangle(x, y, 26, 4, color, alpha)` + `this.tweens.add(...)` | `Polygon2D.new()` with vertices + `create_tween()` property animations |
-| Camera shake | `this.cameras.main.shake(90, 0.0035)` -- built-in method, oscillating | Tween `Camera2D.offset` -- single offset + return, 2 phases at 45ms each |
-| Damage application | Direct property mutation: `bestEnemy.hp -= damage` | Method call: `enemy.take_damage(damage)` -- allows encapsulation, signals, death checks |
-| Death check | Inline: `if (bestEnemy.hp <= 0) this.defeatEnemy(bestEnemy)` | Inside `take_damage()`: enemy checks its own HP and handles its own death |
+| Slash effect | `this.add.rectangle(x, y, 26, 4, color, alpha)` + `this.tweens.add(...)` | `new Polygon2D()` with vertices + `CreateTween()` property animations |
+| Camera shake | `this.cameras.main.shake(90, 0.0035)` -- built-in method, oscillating | Tween `Camera2D.Offset` -- single offset + return, 2 phases at 45ms each |
+| Damage application | Direct property mutation: `bestEnemy.hp -= damage` | Method call: `enemy.TakeDamage(damage)` -- allows encapsulation, signals, death checks |
+| Death check | Inline: `if (bestEnemy.hp <= 0) this.defeatEnemy(bestEnemy)` | Inside `TakeDamage()`: enemy checks its own HP and handles its own death |
 
 ### Attack Timing Analysis
 

@@ -14,10 +14,10 @@ The spawn system is fully implemented in the Phaser prototype with all parameter
 
 | Parameter | Value | Type | Purpose |
 |-----------|-------|------|---------|
-| `INITIAL_ENEMIES` | 10 | int | Number of enemies spawned immediately on room load (`_ready()`) |
-| `ENEMY_SOFT_CAP` | 14 | int | Maximum active enemies before periodic spawning pauses |
-| `SPAWN_INTERVAL` | 2.8 | float (seconds) | Timer period for periodic spawn checks |
-| `RESPAWN_DELAY` | 1.4 | float (seconds) | Delay before a replacement enemy spawns after one is defeated |
+| `InitialEnemies` | 10 | int | Number of enemies spawned immediately on room load (`_Ready()`) |
+| `EnemySoftCap` | 14 | int | Maximum active enemies before periodic spawning pauses |
+| `SpawnInterval` | 2.8 | float (seconds) | Timer period for periodic spawn checks |
+| `RespawnDelay` | 1.4 | float (seconds) | Delay before a replacement enemy spawns after one is defeated |
 
 **Phaser source for these values:**
 ```javascript
@@ -52,10 +52,14 @@ There are three spawn triggers. They operate independently and can overlap.
 
 Fires once when the room scene enters the tree.
 
-```gdscript
-func _ready() -> void:
-    for i in range(INITIAL_ENEMIES):
-        _spawn_enemy()
+```csharp
+public override void _Ready()
+{
+    for (int i = 0; i < InitialEnemies; i++)
+    {
+        SpawnEnemy();
+    }
+}
 ```
 
 - Spawns exactly 10 enemies instantly (synchronously, in one frame).
@@ -77,15 +81,19 @@ A repeating timer that attempts to add one enemy per interval.
 | process_callback | `TIMER_PROCESS_PHYSICS` (optional, for consistency with physics) |
 
 **Signal handler:**
-```gdscript
-func _on_spawn_timer_timeout() -> void:
-    var enemy_count := get_tree().get_nodes_in_group("enemies").size()
-    if enemy_count < ENEMY_SOFT_CAP:
-        _spawn_enemy()
+```csharp
+private void OnSpawnTimerTimeout()
+{
+    int enemyCount = GetTree().GetNodesInGroup("enemies").Count;
+    if (enemyCount < EnemySoftCap)
+    {
+        SpawnEnemy();
+    }
+}
 ```
 
 - Checks the current number of active enemies in the "enemies" group.
-- Only spawns if the count is strictly less than `ENEMY_SOFT_CAP` (14).
+- Only spawns if the count is strictly less than `EnemySoftCap` (14).
 - Spawns at most one enemy per timer tick.
 - The timer runs continuously -- even if the cap is reached, it keeps ticking and checking.
 
@@ -99,19 +107,23 @@ func _on_spawn_timer_timeout() -> void:
 When an enemy is defeated, a replacement spawns after a short delay.
 
 **Via EventBus signal:**
-```gdscript
-func _on_enemy_defeated(enemy: Node) -> void:
-    await get_tree().create_timer(RESPAWN_DELAY).timeout
-    _spawn_enemy()
+```csharp
+private async void OnEnemyDefeated(Node enemy)
+{
+    await ToSignal(GetTree().CreateTimer(RespawnDelay), "timeout");
+    SpawnEnemy();
+}
 ```
 
 **Via direct call (alternative approach):**
-```gdscript
-# In the enemy defeat handler:
-func _defeat_enemy(enemy: CharacterBody2D) -> void:
-    enemy.queue_free()
-    EventBus.enemy_defeated.emit(enemy)
-    # SpawnManager listens for this signal and spawns replacement after delay
+```csharp
+// In the enemy defeat handler:
+private void DefeatEnemy(CharacterBody2D enemy)
+{
+    enemy.QueueFree();
+    EventBus.EnemyDefeated.Emit(enemy);
+    // SpawnManager listens for this signal and spawns replacement after delay
+}
 ```
 
 - The delay is 1.4 seconds from the moment of defeat.
@@ -122,27 +134,29 @@ func _defeat_enemy(enemy: CharacterBody2D) -> void:
 
 Step-by-step enemy creation:
 
-```gdscript
-func _spawn_enemy() -> void:
-    # Step 1: Instance the enemy scene
-    var enemy: CharacterBody2D = ENEMY_SCENE.instantiate()
+```csharp
+private void SpawnEnemy()
+{
+    // Step 1: Instance the enemy scene
+    var enemy = EnemyScene.Instantiate<CharacterBody2D>();
 
-    # Step 2: Assign a random danger tier (1, 2, or 3)
-    enemy.danger_tier = randi_range(1, 3)
+    // Step 2: Assign a random danger tier (1, 2, or 3)
+    enemy.Set("DangerTier", (int)GD.RandRange(1, 4)); // RandRange upper bound exclusive for int cast
 
-    # Step 3: Calculate spawn position (room edge)
-    enemy.global_position = _get_spawn_position()
+    // Step 3: Calculate spawn position (room edge)
+    enemy.GlobalPosition = GetSpawnPosition();
 
-    # Step 4: Add to the scene tree under the Entities node
-    entities_node.add_child(enemy)
+    // Step 4: Add to the scene tree under the Entities node
+    _entitiesNode.AddChild(enemy);
 
-    # Step 5: Notify other systems
-    EventBus.enemy_spawned.emit(enemy)
+    // Step 5: Notify other systems
+    EventBus.EnemySpawned.Emit(enemy);
+}
 ```
 
 **Enemy scene reference:**
-```gdscript
-const ENEMY_SCENE: PackedScene = preload("res://scenes/enemy.tscn")
+```csharp
+private static readonly PackedScene EnemyScene = GD.Load<PackedScene>("res://scenes/enemy.tscn");
 ```
 
 **Entities node:** All enemies are added as children of a designated `Entities` Node2D in the room scene. This keeps the scene tree organized and allows batch operations (e.g., `entities_node.get_children()` to iterate all enemies).
@@ -151,26 +165,25 @@ const ENEMY_SCENE: PackedScene = preload("res://scenes/enemy.tscn")
 
 Enemies spawn at the edges of the dungeon room, on one of the four sides chosen at random.
 
-```gdscript
-const ROOM_SIZE := 10  # Room is 10x10 tiles
+```csharp
+private const int RoomSize = 10; // Room is 10x10 tiles
 
-func _get_spawn_position() -> Vector2:
-    var edge := randi() % 4  # 0=top, 1=right, 2=bottom, 3=left
-    var t := randi() % ROOM_SIZE  # Random tile index along the chosen edge
+private Vector2 GetSpawnPosition()
+{
+    int edge = (int)(GD.Randi() % 4); // 0=top, 1=right, 2=bottom, 3=left
+    int t = (int)(GD.Randi() % RoomSize); // Random tile index along the chosen edge
 
-    var coords: Vector2i
-    match edge:
-        0:  # Top edge: row 0, column varies
-            coords = Vector2i(t, 0)
-        1:  # Right edge: column ROOM_SIZE-1, row varies
-            coords = Vector2i(ROOM_SIZE - 1, t)
-        2:  # Bottom edge: row ROOM_SIZE-1, column varies
-            coords = Vector2i(t, ROOM_SIZE - 1)
-        _:  # Left edge: column 0, row varies
-            coords = Vector2i(0, t)
+    Vector2I coords = edge switch
+    {
+        0 => new Vector2I(t, 0),                // Top edge: row 0, column varies
+        1 => new Vector2I(RoomSize - 1, t),     // Right edge: column RoomSize-1, row varies
+        2 => new Vector2I(t, RoomSize - 1),     // Bottom edge: row RoomSize-1, column varies
+        _ => new Vector2I(0, t),                // Left edge: column 0, row varies
+    };
 
-    # Convert tile coordinates to world (pixel) position
-    return tile_map.map_to_local(coords)
+    // Convert tile coordinates to world (pixel) position
+    return _tileMap.MapToLocal(coords);
+}
 ```
 
 **Edge selection probability:**
@@ -186,7 +199,7 @@ func _get_spawn_position() -> Vector2:
 **Spawn-in-wall behavior:**
 Enemies spawn AT wall tile positions (the room perimeter IS the wall). This means they initially overlap with wall collision geometry. This is intentional and works because:
 1. Enemy AI immediately starts chasing the player (moving inward).
-2. `move_and_slide()` resolves the wall overlap on the first physics frame.
+2. `MoveAndSlide()` resolves the wall overlap on the first physics frame.
 3. The enemy slides out of the wall toward the player within 1-2 frames.
 4. Visually, enemies appear to "emerge from the walls," which is thematically appropriate for a dungeon.
 
@@ -209,7 +222,7 @@ The Phaser version spawns at pixel coordinates 10px from the screen edge. The Go
 
 | Tier | Probability | Selection Method |
 |------|-------------|-----------------|
-| 1 (Green) | 33.3% | `randi_range(1, 3)` -- uniform random integer |
+| 1 (Green) | 33.3% | `(int)GD.RandRange(1, 4)` -- uniform random integer |
 | 2 (Yellow) | 33.3% | Same |
 | 3 (Red) | 33.3% | Same |
 
@@ -268,15 +281,15 @@ The count can temporarily reach 15 (or even higher if multiple replacements queu
 
 All enemies are added to the `"enemies"` group for easy counting and iteration:
 
-```gdscript
-# In enemy.gd _ready():
-add_to_group("enemies")
+```csharp
+// In Enemy.cs _Ready():
+AddToGroup("enemies");
 
-# In spawn manager, to count:
-get_tree().get_nodes_in_group("enemies").size()
+// In spawn manager, to count:
+GetTree().GetNodesInGroup("enemies").Count;
 
-# In player.gd, to find attack targets:
-attack_range.get_overlapping_bodies()  # Area2D approach, filtered by group
+// In Player.cs, to find attack targets:
+_attackRange.GetOverlappingBodies(); // Area2D approach, filtered by group
 ```
 
 ### Edge Cases
@@ -284,19 +297,19 @@ attack_range.get_overlapping_bodies()  # Area2D approach, filtered by group
 | Scenario | Behavior |
 |----------|----------|
 | Player is dead | Spawning continues. Enemies do not care about player state. The periodic timer keeps running and replacements keep spawning. |
-| Scene is reloading | All spawned enemies are freed with the scene. SpawnTimer is a child of the scene and is freed too. The new scene's `_ready()` starts fresh with 10 initial enemies. |
+| Scene is reloading | All spawned enemies are freed with the scene. SpawnTimer is a child of the scene and is freed too. The new scene's `_Ready()` starts fresh with 10 initial enemies. |
 | All enemies killed simultaneously | Up to 14 replacement timers queue up. They will all fire after 1.4s, potentially spawning 14 enemies at once. The periodic timer was likely below cap and may also spawn. Worst case: 15 enemies in one burst. |
-| `await` interrupted by scene change | `create_timer().timeout` will not fire if the SceneTree changes. This is safe -- the timer is garbage collected with the old scene. |
+| `await` interrupted by scene change | `CreateTimer().Timeout` will not fire if the SceneTree changes. This is safe -- the timer is garbage collected with the old scene. |
 | Timer paused (tree paused) | If `process_mode` is not set, Timer nodes pause with the tree. If the game has a pause menu, spawning stops during pause. Set `process_mode = PROCESS_MODE_ALWAYS` on the SpawnTimer if spawning should continue during pause (not recommended). |
 
 ## Implementation Notes
 
 - The spawn manager should be a Node (or Node2D) in the room scene, not an autoloaded singleton. Each room has its own spawn state.
-- `ENEMY_SCENE` is preloaded at the top of the script to avoid repeated file system access.
-- `randi_range(1, 3)` is inclusive on both ends in GDScript, producing 1, 2, or 3 with equal probability.
-- `randi() % 4` produces 0, 1, 2, or 3. An alternative is `randi_range(0, 3)`.
-- The `tile_map` reference should be obtained via `@onready var tile_map: TileMapLayer = $TileMapLayer` or passed as an export variable.
-- The `entities_node` reference should be obtained via `@onready var entities_node: Node2D = $Entities`.
+- `EnemyScene` is loaded via `GD.Load<PackedScene>()` at the top of the script to avoid repeated file system access.
+- `GD.RandRange(1, 4)` cast to `int` produces 1, 2, or 3 (upper bound is exclusive after int cast).
+- `GD.Randi() % 4` produces 0, 1, 2, or 3.
+- The `_tileMap` reference should be obtained in `_Ready()` via `_tileMap = GetNode<TileMapLayer>("TileMapLayer")` or set as an `[Export]` property.
+- The `_entitiesNode` reference should be obtained in `_Ready()` via `_entitiesNode = GetNode<Node2D>("Entities")`.
 
 ## Open Questions
 

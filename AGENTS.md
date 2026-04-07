@@ -51,77 +51,145 @@ See [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md) for the
 - **DRY** — Don't Repeat Yourself. Extract shared logic when repetition appears; don't prematurely abstract.
 - **No scope creep** — Only implement what the current spec describes. Nothing extra.
 - **Spec-driven** — Every system is fully documented in `docs/` before code is written. Read the relevant doc before modifying any code.
-- **Test-driven** — Tests are written before implementation. Manual test cases first, then GUT automated tests, then code.
+- **Test-driven** — Tests are written before implementation. Manual test cases first, then automated tests (GdUnit4 + xUnit), then code.
 - **AI-coded** — All code is written by AI assistants. The user directs and reviews.
 - **Free assets only** — No paid assets. Polygon2D placeholders, then free/open-source packs.
 
-### 4. GDScript Conventions
+### 4. C# Conventions
 
-Follow the [official GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html). Key rules:
+Follow the [official Godot C# style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_style_guide.html) and standard [C# coding conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions).
 
 **Script ordering** (top to bottom):
-1. `class_name` / `extends`
-2. `## Docstring`
-3. Signals
+1. `using` directives
+2. `namespace` declaration
+3. `[Signal]` delegates
 4. Enums
 5. Constants
-6. `@export` variables
-7. Public variables
-8. Private variables (`_` prefix)
-9. `@onready` variables
-10. Built-in methods (`_ready`, `_process`, `_physics_process`)
-11. Public methods
-12. Private methods (`_` prefix)
+6. `[Export]` properties
+7. Public properties
+8. Private fields (`_camelCase`)
+9. Lifecycle overrides (`_Ready`, `_Process`, `_PhysicsProcess`)
+10. Public methods
+11. Private methods
+
+**All node scripts must use `partial`:**
+```csharp
+public partial class Player : CharacterBody2D { }
+```
+
+**Godot lifecycle methods** (override with `public override void`):
+```csharp
+public override void _Ready() { }
+public override void _Process(double delta) { }
+public override void _PhysicsProcess(double delta) { }
+public override void _Input(InputEvent @event) { }
+```
+
+**Signals** use `[Signal]` attribute with `EventHandler` suffix:
+```csharp
+[Signal] public delegate void StatsChangedEventHandler();
+[Signal] public delegate void EnemyDefeatedEventHandler(Vector2 position, int tier);
+
+// Emit:
+EmitSignal(SignalName.StatsChanged);
+// Connect (preferred — auto-disconnects on node free):
+source.Connect(SignalName.StatsChanged, new Callable(this, MethodName.OnStatsChanged));
+```
+Use `Connect()` over `+=` for signals — `Connect()` auto-disconnects when nodes are freed.
+
+**Exports:**
+```csharp
+[Export] public float Speed { get; set; } = 190.0f;
+[Export(PropertyHint.Range, "0,100,1")] public int Armor { get; set; }
+[ExportGroup("Movement")]
+[Export] public float JumpVelocity { get; set; } = 4.5f;
+```
+
+**Node references:**
+```csharp
+// Preferred — type-safe:
+private Sprite2D _sprite = null!;
+public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
+
+// Or with unique names (% in scene tree):
+[Export] public Sprite2D Sprite { get; set; } = null!;
+```
 
 **Scene architecture:**
 - **"Call down, signal up"** — parents call methods on children; children emit signals to parents. Never reach up the tree.
 - **One responsibility per node** — if a script exceeds ~300 lines, split behavior into child nodes.
 - **Composition over inheritance** — build entities by combining specialized child scenes, not deep inheritance chains.
-- **Use static typing** — `var speed: float = 190.0` not `var speed = 190`. Include return types on functions.
-- **Prefer `@onready`** — `@onready var sprite := $Sprite` over `get_node()` in methods.
-- **Autoloads sparingly** — only for truly global state (GameState) and cross-system signals (EventBus).
+- **Static typing is enforced** — C# provides compile-time type checking. Use explicit types everywhere.
+- **Nullable enabled** — use `null!` for fields initialized in `_Ready()`. Enable `<Nullable>enable</Nullable>` in `.csproj`.
+- **Autoloads sparingly** — only for truly global state (GameState) and cross-system signals (EventBus). Access via static `Instance` property.
 
 ### 5. Tech Stack
 
 | Layer | Technology | Notes |
 |-------|-----------|-------|
-| Engine | Godot 4.x | Open-source, scene/node architecture |
-| Language | GDScript | Python-like, tightly integrated with editor |
+| Engine | Godot 4.x (.NET edition) | Separate download from standard Godot |
+| Language | C# / .NET 8+ | Strong typing, PascalCase, partial classes |
 | Renderer | GL Compatibility | Broadest hardware support |
+| Testing | GdUnit4 + xUnit | GdUnit4 for Godot scene tests, xUnit for pure logic |
+| Serialization (saves) | System.Text.Json | Source-generated, human-readable, AOT-friendly |
+| Serialization (cache) | MessagePack-CSharp v3 | Binary, ~10x faster, source generator support |
+| Object pooling | Microsoft.Extensions.ObjectPool | Pool enemies, effects, projectiles — avoid GC |
+| Async generation | System.Threading.Channels | Background floor generation pipeline |
 | Physics | Built-in 2D | CharacterBody2D + Area2D |
 | Perspective | Isometric 2D | 2:1 diamond tiles (64×32), TileMapLayer |
 | UI | Control nodes | Built-in UI, Theme resources |
-| Persistence | FileAccess + JSON | user:// directory |
-| Platform | Desktop native | macOS primary |
+| Persistence | FileAccess + JSON/MessagePack | user:// directory |
+| Platform | Desktop native | macOS primary, Windows/Linux supported |
+
+**NuGet dependencies:**
+```xml
+<ItemGroup>
+  <PackageReference Include="gdUnit4.api" Version="5.1.0" />
+  <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+  <PackageReference Include="gdUnit4.analyzers" Version="1.0.0" />
+  <PackageReference Include="xunit" Version="2.9.3" />
+  <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+  <PackageReference Include="MessagePack" Version="3.1.4" />
+  <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.0" />
+</ItemGroup>
+```
+
+**Known limitation:** C# web export is not supported as of Godot 4.6. Desktop-only.
 
 See [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) for details.
 
 ### 6. Naming Conventions
 
-- **Variables/functions:** `snake_case` — `move_speed`, `handle_movement`, `attack_timer`
-- **Constants:** `UPPER_SNAKE_CASE` — `MOVE_SPEED`, `ATTACK_COOLDOWN`, `ENEMY_SOFT_CAP`
+- **Public properties/methods:** `PascalCase` — `MoveSpeed`, `HandleMovement()`, `MaxHp`
+- **Private fields:** `_camelCase` — `_attackTimer`, `_isDead`, `_moveSpeed`
+- **Constants:** `PascalCase` — `MoveSpeed`, `AttackCooldown`, `EnemySoftCap`
 - **Node names:** `PascalCase` — `CollisionShape2D`, `AttackRange`, `HitCooldownTimer`
-- **Signals:** `snake_case`, past tense — `enemy_defeated`, `stats_changed`, `player_died`
+- **Signals:** `PascalCase` + `EventHandler` — `EnemyDefeatedEventHandler`, `StatsChangedEventHandler`
+- **Namespaces:** `PascalCase` by directory — `DungeonGame.Autoloads`, `DungeonGame.Scenes.Player`
 - **Groups:** `snake_case` — `"player"`, `"enemies"`
-- **Files:** `snake_case` — `game_state.gd`, `death_screen.tscn`, `dungeon_tileset.tres`
-- **No abbreviations** — `player` not `plr`, `level` not `lvl`
+- **C# files:** `PascalCase.cs` — `GameState.cs`, `DeathScreen.cs`, `EventBus.cs`
+- **Scene/resource files:** `PascalCase` — `Player.tscn`, `DungeonTileset.tres`
+- **No abbreviations** — `Player` not `Plr`, `Level` not `Lvl`
 
 ### 7. Project Structure
 
 ```text
 dungeon-web-game/
-├── project.godot                  — Godot 4 project config
+├── DungeonGame.sln                — .NET solution file
+├── DungeonGame.csproj             — Main project (Godot.NET.Sdk, NuGet refs)
+├── project.godot                  — Godot 4 project config (.NET edition)
 ├── Makefile                       — AI-drivable automation (make help)
-├── .gitignore / .gdignore         — Git + editor ignores
-├── .editorconfig                  — Editor formatting rules
-├── .githooks/pre-commit           — GDScript lint on commit
-├── .github/workflows/ci.yml      — GitHub Actions CI (lint + test)
+├── .editorconfig                  — Editor formatting rules (C# + Godot)
+├── .gitignore / .gdignore         — Git + editor ignores (includes bin/, obj/)
+├── .githooks/pre-commit           — C# formatting check on commit
+├── .github/workflows/ci.yml      — GitHub Actions CI (build + lint + test)
 ├── AGENTS.md / CLAUDE.md          — AI assistant guidelines
 ├── README.md / CHANGELOG.md       — Project docs
 ├── archive/phaser-prototype/      — Original Phaser 3 code (preserved)
 ├── docs/                          — Game design documentation
-│   ├── overview.md / best-practices.md
-│   ├── architecture/              — Tech stack, Godot basics, project structure, scene tree, autoloads, signals
+│   ├── overview.md / best-practices.md / dev-tracker.md
+│   ├── architecture/              — Tech stack, setup guide, project structure, scene tree, autoloads, signals
 │   ├── objects/                   — Player, enemies, tilemap, effects specs
 │   ├── assets/                    — Tile, sprite, UI theme specs
 │   ├── systems/                   — Stats, classes, combat, leveling, death, save, movement, spawning, camera
@@ -129,15 +197,16 @@ dungeon-web-game/
 │   ├── inventory/                 — Backpack, bank, items
 │   ├── ui/                        — Controls, HUD, death screen
 │   └── testing/                   — Test strategy, manual tests, automated tests
-├── scenes/                        — Godot scenes + scripts
-│   ├── main.tscn + main.gd
+├── scenes/                        — Godot scenes (.tscn)
+│   ├── Main.tscn
 │   ├── dungeon/ player/ enemies/ ui/
-├── scripts/
-│   ├── autoloads/                 — GameState, EventBus singletons
-│   └── generate_tiles.py          — Tile asset generator
-├── tests/                         — GUT automated tests
-├── addons/gut/                    — GUT test framework (v9.x)
-├── assets/                        — Tiles, sprites, UI (binary assets)
+├── scripts/                       — C# scripts (.cs)
+│   ├── autoloads/                 — GameState.cs, EventBus.cs
+│   └── GenerateTiles.py           — Tile asset generator (Python)
+├── tests/                         — GdUnit4 + xUnit automated tests
+├── addons/                        — GdUnit4 addon (if required)
+├── assets/                        — Tiles, sprites, UI, audio (binary assets)
+│   └── ATTRIBUTION.md             — Asset license tracking
 └── resources/                     — TileSet, Theme (.tres resources)
 ```
 
@@ -169,30 +238,32 @@ All development can be driven from the terminal. Run `make help` for available t
 
 **Setup (first time):**
 ```bash
-make setup          # Configure git hooks + verify tools
+make setup          # Verify .NET SDK + Godot .NET, configure git hooks, NuGet restore
 ```
 
 **Daily workflow:**
 ```bash
-make lint           # Lint GDScript (gdlint)
-make format         # Check formatting (gdformat --check)
-make format-fix     # Auto-format GDScript
-make test           # Run GUT tests headlessly
-make check          # lint + format + test (all three)
-make run            # Launch the game
-make tiles          # Generate tile assets
+make build          # dotnet build
+make test           # dotnet test (xUnit + GdUnit4)
+make lint           # dotnet format --verify-no-changes
+make format         # dotnet format (auto-fix)
+make check          # build + lint + test (all three)
+make run            # Launch the game (godot --path .)
+make tiles          # Generate tile assets (Python)
 ```
 
 **Tools required:**
 | Tool | Install | Purpose |
 |------|---------|---------|
-| Godot 4.x | `brew install --cask godot` + symlink to PATH | Engine, headless test runner |
-| gdtoolkit | `pipx install gdtoolkit` | GDScript linting + formatting |
-| GUT | Bundled in `addons/gut/` | Godot unit test framework |
+| .NET 9 SDK | `brew install dotnet` | Build, test, format C# |
+| Godot 4.x (.NET) | Download from godotengine.org (.NET build) | Engine, scene test runner |
+| VS Code + C# Dev Kit | `ms-dotnettools.csharp` extension | IDE, IntelliSense, debugging |
 
-**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs lint + test on every push/PR to `main`.
+See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for full install instructions.
 
-**Pre-commit hook:** `.githooks/pre-commit` runs gdlint + gdformat on staged `.gd` files. Activated by `make setup`.
+**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `dotnet build` + `dotnet format --verify-no-changes` + `dotnet test` on every push/PR to `main`.
+
+**Pre-commit hook:** `.githooks/pre-commit` runs `dotnet format --verify-no-changes` on staged `.cs` files. Activated by `make setup`.
 
 See [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md) for the full automation reference.
 
@@ -267,7 +338,8 @@ docs/
 │   ├── scene-tree.md          — Complete node hierarchy for every scene
 │   ├── autoloads.md           — GameState + EventBus singleton design
 │   ├── signals.md             — Signal flow between all systems
-│   ├── game-dev-concepts.md   — Game dev fundamentals (GDScript)
+│   ├── game-dev-concepts.md   — Game dev fundamentals (C#)
+│   ├── setup-guide.md         — .NET SDK, Godot .NET, VS Code setup
 │   └── analytics.md           — Opt-in telemetry, bug reporting, feedback (offline-first)
 ├── objects/
 │   ├── player.md              — Player node, script, movement, attack
@@ -304,25 +376,26 @@ docs/
 │   ├── hud.md                 — HUD overlay with Control nodes
 │   └── death-screen.md        — Death UI flow
 └── testing/
-    ├── test-strategy.md       — Testing approach (manual + GUT)
+    ├── test-strategy.md       — Testing approach (manual + GdUnit4 + xUnit)
     ├── manual-tests.md        — 33 manual test cases
-    └── automated-tests.md     — GUT unit + integration tests
+    └── automated-tests.md     — GdUnit4 + xUnit automated tests
 ```
 
 ---
 
 ## Current State
 
-**Phase: Documentation & Planning**
+**Phase: Documentation & Planning (docs only — no code until all relevant specs are locked)**
 
-All game systems are being specified in exhaustive detail before code is written. The original Phaser prototype is archived in `archive/phaser-prototype/` for reference.
+All game systems are being specified in exhaustive detail before any code is written. No implementation begins until the user explicitly says so. The original Phaser prototype is archived in `archive/phaser-prototype/` for reference.
+
+**Current mode:** Docs and specs only. Do not write C#, create scenes, or modify any files outside `docs/`. Writing tests, autoloads, scenes, or any game code is out of scope until the user changes this directive. Language migration from GDScript to C# is in progress — all docs are being updated to reflect the new stack.
 
 ## Priorities
 
-1. Complete all documentation (architecture, objects, assets, systems, tests)
-2. Implement Phase 0: Godot project scaffold
-3. Implement Phase 1–7: Core gameplay systems
-4. Polish and parity check against Phaser prototype
+1. **Complete all spec gaps** — see [docs/dev-tracker.md](docs/dev-tracker.md) "Spec Gaps" section for the full list
+2. Lock every system doc (resolve all open questions, fill deferred sections)
+3. Only after all relevant specs are locked: implement per the dev tracker phases
 
 ---
 

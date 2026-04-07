@@ -22,15 +22,15 @@ A thin golden rectangle that appears on an enemy when the player attacks it. The
 
 #### Trigger Condition
 
-The slash effect is created in `player.gd.handle_attack()` immediately after a successful auto-attack:
+The slash effect is created in `Player.cs.HandleAttack()` immediately after a successful auto-attack:
 
 ```
-player.handle_attack(delta)
+Player.HandleAttack(delta)
   → Attack cooldown elapsed? Yes
   → Nearest enemy in AttackRange? Yes
-  → nearest_enemy.take_damage(damage)
-  → draw_slash(nearest_enemy.global_position)  ← TRIGGER
-  → EventBus.player_attacked.emit(nearest_enemy)
+  → nearestEnemy.Call("TakeDamage", damage)
+  → DrawSlash(nearestEnemy.GlobalPosition)  ← TRIGGER
+  → EventBus.Instance.EmitSignal(EventBus.SignalName.PlayerAttacked, nearestEnemy)
 ```
 
 The slash fires on EVERY successful attack, regardless of whether the enemy dies from the hit. One attack = one slash.
@@ -47,10 +47,10 @@ The slash fires on EVERY successful attack, regardless of whether the enemy dies
 |-----------|-------|-------------|
 | **Node type** | `Polygon2D` | Filled polygon, no texture needed |
 | **polygon** | `PackedVector2Array([Vector2(-13, -2), Vector2(13, -2), Vector2(13, 2), Vector2(-13, 2)])` | A 26x4 pixel thin horizontal rectangle. 26px wide (±13 from center), 4px tall (±2 from center). Represents a quick sword slash mark. |
-| **color** | `Color("#f5c86b", 0.95)` | Gold/accent color at 95% opacity. Hex `#f5c86b` = RGB(245, 200, 107). Matches CSS `var(--accent)` and Phaser's `COLORS.sword = 0xf5c86b`. The 0.95 opacity (not 1.0) adds a subtle translucency that makes the slash feel like a light effect rather than a solid object. |
-| **global_position** | `target_pos` (enemy's `global_position` at the moment of the attack) | The slash appears centered on the enemy. In isometric view, this places the slash directly over the enemy's diamond sprite. |
-| **rotation** | `randf_range(-1.2, 1.2)` radians | Random angle between approximately -68.75 degrees and +68.75 degrees. Each slash appears at a different angle, preventing the visual from looking repetitive when the player attacks the same enemy multiple times in succession. The range of 1.2 radians was chosen to keep slashes roughly horizontal -- they never go fully vertical (which would appear as a thin line and look broken). |
-| **parent** | `get_parent()` (Entities Node2D container) | The slash is added to the player's parent, which is the Entities container with `y_sort_enabled = true`. This ensures the slash sorts correctly with other entities in the isometric view. If it were added as a child of the player, it would move with the player instead of staying at the target position. |
+| **color** | `new Color("f5c86b", 0.95f)` | Gold/accent color at 95% opacity. Hex `#f5c86b` = RGB(245, 200, 107). Matches CSS `var(--accent)` and Phaser's `COLORS.sword = 0xf5c86b`. The 0.95 opacity (not 1.0) adds a subtle translucency that makes the slash feel like a light effect rather than a solid object. |
+| **GlobalPosition** | `targetPos` (enemy's `GlobalPosition` at the moment of the attack) | The slash appears centered on the enemy. In isometric view, this places the slash directly over the enemy's diamond sprite. |
+| **Rotation** | `(float)GD.RandRange(-1.2, 1.2)` radians | Random angle between approximately -68.75 degrees and +68.75 degrees. Each slash appears at a different angle, preventing the visual from looking repetitive when the player attacks the same enemy multiple times in succession. The range of 1.2 radians was chosen to keep slashes roughly horizontal -- they never go fully vertical (which would appear as a thin line and look broken). |
+| **parent** | `GetParent()` (Entities Node2D container) | The slash is added to the player's parent, which is the Entities container with `y_sort_enabled = true`. This ensures the slash sorts correctly with other entities in the isometric view. If it were added as a child of the player, it would move with the player instead of staying at the target position. |
 
 #### Polygon Shape Detail
 
@@ -77,33 +77,33 @@ The slash fires on EVERY successful attack, regardless of whether the enemy dies
 
 #### Tween Configuration
 
-```gdscript
-var tween: Tween = create_tween()
-tween.set_parallel(true)
-tween.tween_property(slash, "modulate:a", 0.0, 0.12)
-tween.tween_property(slash, "position:y", slash.position.y - 8, 0.12)
-tween.set_parallel(false)
-tween.tween_callback(slash.queue_free)
+```csharp
+Tween tween = CreateTween();
+tween.SetParallel(true);
+tween.TweenProperty(slash, "modulate:a", 0.0f, 0.12);
+tween.TweenProperty(slash, "position:y", slash.Position.Y - 8, 0.12);
+tween.SetParallel(false);
+tween.TweenCallback(Callable.From(slash.QueueFree));
 ```
 
-**`create_tween()`:** Creates a new tween bound to the player node. If the player is freed, the tween is automatically killed (cleaning up the slash).
+**`CreateTween()`:** Creates a new tween bound to the player node. If the player is freed, the tween is automatically killed (cleaning up the slash).
 
-**`set_parallel(true)`:** Subsequent tween calls run at the same time. Without this, the rise would happen AFTER the fade (0.12s fade, then 0.12s rise = 0.24s total), which would look wrong -- a fully transparent slash would be rising.
+**`SetParallel(true)`:** Subsequent tween calls run at the same time. Without this, the rise would happen AFTER the fade (0.12s fade, then 0.12s rise = 0.24s total), which would look wrong -- a fully transparent slash would be rising.
 
-**`tween_property(slash, "modulate:a", 0.0, 0.12)`:** Tweens the `modulate` Color's alpha channel from its current value (1.0) to 0.0 over 0.12 seconds. `modulate` is a Color that multiplies the node's base color. Setting alpha to 0 makes the node invisible.
+**`TweenProperty(slash, "modulate:a", 0.0f, 0.12)`:** Tweens the `modulate` Color's alpha channel from its current value (1.0) to 0.0 over 0.12 seconds. `modulate` is a Color that multiplies the node's base color. Setting alpha to 0 makes the node invisible.
 
-**`tween_property(slash, "position:y", slash.position.y - 8, 0.12)`:** Tweens the Y position 8 pixels upward (in screen space, "upward" is negative Y). This creates a "floating away" visual.
+**`TweenProperty(slash, "position:y", slash.Position.Y - 8, 0.12)`:** Tweens the Y position 8 pixels upward (in screen space, "upward" is negative Y). This creates a "floating away" visual.
 
-**`set_parallel(false)`:** Switches back to sequential mode so the callback runs AFTER both parallel tweens complete.
+**`SetParallel(false)`:** Switches back to sequential mode so the callback runs AFTER both parallel tweens complete.
 
-**`tween_callback(slash.queue_free)`:** When the tween finishes (after 0.12s), the slash node is freed from memory. Without this cleanup, slash nodes would accumulate indefinitely, leaking memory and potentially affecting performance after hundreds of attacks.
+**`TweenCallback(Callable.From(slash.QueueFree))`:** When the tween finishes (after 0.12s), the slash node is freed from memory. Without this cleanup, slash nodes would accumulate indefinitely, leaking memory and potentially affecting performance after hundreds of attacks.
 
 #### Lifecycle
 
 ```
 Frame N: Player attacks enemy
   1. Polygon2D created (26x4 gold rectangle)
-  2. Position set to enemy's global_position
+  2. Position set to enemy's GlobalPosition
   3. Rotation randomized: -1.2 to 1.2 radians
   4. Added to Entities container
   5. Tween created: fade + rise over 0.12s
@@ -113,8 +113,8 @@ Frame N to N+~7 (0.12s at 60fps ≈ 7 frames):
   7. Slash becomes progressively more transparent and higher
 
 Frame N+~7: Tween completes
-  8. tween_callback fires
-  9. slash.queue_free() called
+  8. TweenCallback fires
+  9. slash.QueueFree() called
   10. Slash node removed from scene tree and freed from memory
 ```
 
@@ -141,9 +141,9 @@ drawSlash(x, y) {
 | Phaser | Godot |
 |--------|-------|
 | `this.add.rectangle(x, y, 26, 4, color, 0.95)` | `Polygon2D.new()` with rectangle polygon, color, position |
-| `slash.rotation = FloatBetween(-1.2, 1.2)` | `slash.rotation = randf_range(-1.2, 1.2)` |
-| `this.tweens.add({targets, alpha, y, duration})` | `create_tween().tween_property(...)` |
-| `onComplete: () => slash.destroy()` | `tween_callback(slash.queue_free)` |
+| `slash.rotation = FloatBetween(-1.2, 1.2)` | `slash.Rotation = (float)GD.RandRange(-1.2, 1.2)` |
+| `this.tweens.add({targets, alpha, y, duration})` | `CreateTween().TweenProperty(...)` |
+| `onComplete: () => slash.destroy()` | `TweenCallback(Callable.From(slash.QueueFree))` |
 | `duration: 120` (milliseconds) | `0.12` (seconds) |
 
 ---
@@ -156,13 +156,13 @@ A brief camera displacement that occurs when the player takes damage. The Camera
 
 #### Trigger Condition
 
-Camera shake is triggered in `enemy.gd._deal_damage_to()` after dealing damage to the player:
+Camera shake is triggered in `Enemy.cs.DealDamageTo()` after dealing damage to the player:
 
 ```
-Enemy._deal_damage_to(player_node)
-  → GameState.take_damage(3 + danger_tier)
-  → player_node.shake_camera()  ← TRIGGER
-  → hit_cooldown.start()
+Enemy.DealDamageTo(playerNode)
+  → GameState.TakeDamage(3 + DangerTier)
+  → playerNode.Call("ShakeCamera")  ← TRIGGER
+  → _hitCooldown.Start()
 ```
 
 The shake fires on EVERY successful damage tick, including:
@@ -184,13 +184,13 @@ The shake fires on EVERY successful damage tick, including:
 
 | Property | Start Value | End Value | Duration |
 |----------|-------------|-----------|----------|
-| `offset` | Current value (normally `Vector2.ZERO`) | `Vector2(randf_range(-3, 3), randf_range(-3, 3))` | `0.045` seconds (45ms) |
+| `offset` | Current value (normally `Vector2.Zero`) | `new Vector2((float)GD.RandRange(-3, 3), (float)GD.RandRange(-3, 3))` | `0.045` seconds (45ms) |
 
 **Phase 2: Return (0.045 seconds)**
 
 | Property | Start Value | End Value | Duration |
 |----------|-------------|-----------|----------|
-| `offset` | (wherever Phase 1 ended) | `Vector2.ZERO` | `0.045` seconds (45ms) |
+| `offset` | (wherever Phase 1 ended) | `Vector2.Zero` | `0.045` seconds (45ms) |
 
 **Phases are sequential** -- the return happens AFTER the displacement completes.
 
@@ -198,8 +198,8 @@ The shake fires on EVERY successful damage tick, including:
 
 | Parameter | Value | Explanation |
 |-----------|-------|-------------|
-| **Displacement X** | `randf_range(-3, 3)` | Random value between -3 and +3 pixels. Each shake has a different horizontal direction. |
-| **Displacement Y** | `randf_range(-3, 3)` | Random value between -3 and +3 pixels. Each shake has a different vertical direction. Independent of X. |
+| **Displacement X** | `(float)GD.RandRange(-3, 3)` | Random value between -3 and +3 pixels. Each shake has a different horizontal direction. |
+| **Displacement Y** | `(float)GD.RandRange(-3, 3)` | Random value between -3 and +3 pixels. Each shake has a different vertical direction. Independent of X. |
 | **Max displacement** | ~4.24 pixels (diagonal: sqrt(3^2 + 3^2)) | The maximum possible displacement when both X and Y are at their extremes. |
 | **Displacement duration** | `0.045` seconds (45ms) | Time to move camera from center to the displaced position. |
 | **Return duration** | `0.045` seconds (45ms) | Time to move camera from displaced position back to center. |
@@ -225,28 +225,30 @@ The ±3 pixel range was chosen as a clean round number that closely approximates
 
 #### Tween Configuration
 
-```gdscript
-func shake_camera() -> void:
-    var tween: Tween = create_tween()
-    tween.tween_property(
-        camera, "offset",
-        Vector2(randf_range(-3, 3), randf_range(-3, 3)),
+```csharp
+public void ShakeCamera()
+{
+    Tween tween = CreateTween();
+    tween.TweenProperty(
+        _camera, "offset",
+        new Vector2((float)GD.RandRange(-3, 3), (float)GD.RandRange(-3, 3)),
         0.045
-    )
-    tween.tween_property(
-        camera, "offset",
-        Vector2.ZERO,
+    );
+    tween.TweenProperty(
+        _camera, "offset",
+        Vector2.Zero,
         0.045
-    )
+    );
+}
 ```
 
-**`create_tween()`:** Creates a tween bound to the player node. Sequential by default (no `set_parallel`), so Phase 2 starts after Phase 1 completes.
+**`CreateTween()`:** Creates a tween bound to the player node. Sequential by default (no `SetParallel`), so Phase 2 starts after Phase 1 completes.
 
-**First `tween_property`:** Animates `camera.offset` from its current value to a random displacement over 0.045 seconds.
+**First `TweenProperty`:** Animates `_camera.Offset` from its current value to a random displacement over 0.045 seconds.
 
-**Second `tween_property`:** Animates `camera.offset` from the displaced position back to `Vector2.ZERO` over 0.045 seconds.
+**Second `TweenProperty`:** Animates `_camera.Offset` from the displaced position back to `Vector2.Zero` over 0.045 seconds.
 
-**No cleanup callback needed:** The tween completes and is automatically freed. The camera offset ends at `Vector2.ZERO`, so no residual displacement remains.
+**No cleanup callback needed:** The tween completes and is automatically freed. The camera offset ends at `Vector2.Zero`, so no residual displacement remains.
 
 #### Edge Cases
 
@@ -254,25 +256,25 @@ func shake_camera() -> void:
 
 If the player takes damage twice within 90ms (e.g., two enemies hit simultaneously), two tweens are created. Both modify `camera.offset` concurrently. Behavior:
 - The second tween's Phase 1 overwrites whatever the first tween is doing to `offset`
-- Both tweens' Phase 2 target `Vector2.ZERO`, so the camera always returns to center
+- Both tweens' Phase 2 target `Vector2.Zero`, so the camera always returns to center
 - Visual result: slightly more intense shake (two rapid jolts), which appropriately signals heavier damage
 - No crash or stuck offset -- the last tween to complete sets offset to ZERO
 
 **Shake during death:**
 
-When the player takes lethal damage, `shake_camera()` fires and then `GameState.take_damage()` triggers the death sequence (pause game, show death screen). The tree is paused (`get_tree().paused = true`), which pauses the tween. The camera offset may be stuck at a non-zero value during the death screen. This is acceptable because:
+When the player takes lethal damage, `ShakeCamera()` fires and then `GameState.TakeDamage()` triggers the death sequence (pause game, show death screen). The tree is paused (`GetTree().Paused = true`), which pauses the tween. The camera offset may be stuck at a non-zero value during the death screen. This is acceptable because:
 1. The death screen covers the game view with a semi-transparent overlay
-2. On restart, the scene is reloaded, creating a new Camera2D with default offset `Vector2.ZERO`
+2. On restart, the scene is reloaded, creating a new Camera2D with default offset `Vector2.Zero`
 
 **Shake when no camera exists:**
 
-The `camera` variable is set via `@onready`. If `shake_camera()` is somehow called before `_ready()` (shouldn't happen), `camera` would be null and the tween creation would fail silently. The `has_method("shake_camera")` check in `enemy.gd._deal_damage_to()` ensures the method exists, but doesn't guard against null camera.
+The `_camera` field is set in `_Ready()`. If `ShakeCamera()` is somehow called before `_Ready()` (shouldn't happen), `_camera` would be null and the tween creation would fail. The `HasMethod("ShakeCamera")` check in `Enemy.cs.DealDamageTo()` ensures the method exists, but doesn't guard against a null camera.
 
 #### Lifecycle
 
 ```
 Frame N: Player takes damage
-  1. enemy._deal_damage_to() calls player.shake_camera()
+  1. Enemy.DealDamageTo() calls player.ShakeCamera()
   2. Tween created (sequential: Phase 1 then Phase 2)
 
 Frame N to N+~3 (Phase 1: 0.045s ≈ 2-3 frames at 60fps):
@@ -285,7 +287,7 @@ Frame N+~3 to N+~5 (Phase 2: 0.045s ≈ 2-3 frames at 60fps):
 
 Frame N+~5: Tween completes
   7. Tween auto-freed by Godot
-  8. Camera offset is exactly Vector2.ZERO
+  8. Camera offset is exactly Vector2.Zero
 ```
 
 **Total lifetime:** ~0.09 seconds (5-6 frames at 60fps). The shake is extremely fast -- just enough to register as a "hit" visual cue without disrupting gameplay or causing motion sickness.
@@ -327,13 +329,15 @@ These effects are not yet implemented but are listed for future reference. Each 
 | Return duration | 0.05 seconds (50ms) | Smooth return to normal color |
 | Total | 0.1 seconds (100ms) | Slightly shorter than the slash effect |
 
-```gdscript
-# Pseudocode
-func flash_hit() -> void:
-    var original_modulate: Color = sprite.modulate
-    var tween = create_tween()
-    tween.tween_property(sprite, "modulate", Color.WHITE, 0.05)
-    tween.tween_property(sprite, "modulate", original_modulate, 0.05)
+```csharp
+// Pseudocode
+private void FlashHit()
+{
+    Color originalModulate = _sprite.Modulate;
+    var tween = CreateTween();
+    tween.TweenProperty(_sprite, "modulate", Colors.White, 0.05);
+    tween.TweenProperty(_sprite, "modulate", originalModulate, 0.05);
+}
 ```
 
 #### Death Particles
@@ -400,8 +404,8 @@ func flash_hit() -> void:
 ## Implementation Notes
 
 - All transient effects (slash, particles, etc.) should be added to the Entities container (not as children of the player or enemy) so they y-sort correctly and don't move with the entity after creation.
-- Tweens created via `create_tween()` on a node are tied to that node's lifetime. If the node is freed, the tween stops. For slash effects, the tween is created on the player (not the slash) because the player persists -- if it were on the slash, freeing the slash would kill the tween prematurely.
-- `queue_free()` in tween callbacks is safe because the callback runs at a point where the node is not being iterated over by the scene tree. Godot defers the actual freeing to the end of the frame.
+- Tweens created via `CreateTween()` on a node are tied to that node's lifetime. If the node is freed, the tween stops. For slash effects, the tween is created on the player (not the slash) because the player persists -- if it were on the slash, freeing the slash would kill the tween prematurely.
+- `QueueFree()` in tween callbacks is safe because the callback runs at a point where the node is not being iterated over by the scene tree. Godot defers the actual freeing to the end of the frame.
 - Camera shake uses the Camera2D's `offset` property specifically to avoid interfering with `position_smoothing`. The smoothing system controls `position`; the shake controls `offset`. They don't conflict.
 - All effect durations are intentionally short (0.09s - 0.12s). The game runs at 60fps, so these effects last only 5-7 frames. They provide visual feedback without slowing down the fast-paced combat flow.
 

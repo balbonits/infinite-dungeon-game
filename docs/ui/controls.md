@@ -9,7 +9,7 @@ The game supports keyboard and gamepad input for movement. Combat is fully autom
 Migrating from Phaser 3 prototype to Godot 4:
 - **Keyboard:** WASD and arrow keys for movement (both mapped to the same Input Map actions)
 - **Combat:** fully automatic (no input required -- auto-targets nearest enemy)
-- **Death restart:** R key via `_unhandled_input(event)`, or click Restart button
+- **Death restart:** R key via `_UnhandledInput(InputEvent)`, or click Restart button
 - **Mouse/touch movement:** deferred (was click/tap-to-move in Phaser prototype)
 - **Gamepad:** deferred but trivial to add via Input Map
 
@@ -34,8 +34,8 @@ No separate handling for WASD vs. arrow keys is needed. The Input Map unifies bo
 
 Movement direction is read as a single normalized vector each physics frame:
 
-```gdscript
-var raw_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+```csharp
+Vector2 rawInput = Input.GetVector("move_left", "move_right", "move_up", "move_down");
 ```
 
 This returns a `Vector2` where:
@@ -46,12 +46,16 @@ This returns a `Vector2` where:
 
 #### Death Screen Input
 
-The death/restart screen uses `_unhandled_input(event)` rather than polling in `_physics_process`:
+The death/restart screen uses `_UnhandledInput(InputEvent)` rather than polling in `_PhysicsProcess`:
 
-```gdscript
-func _unhandled_input(event: InputEvent) -> void:
-    if event is InputEventKey and event.pressed and event.keycode == KEY_R:
-        restart_game()
+```csharp
+public override void _UnhandledInput(InputEvent @event)
+{
+    if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.R)
+    {
+        RestartGame();
+    }
+}
 ```
 
 This ensures:
@@ -67,10 +71,10 @@ Raw keyboard input is in **screen space** (up/down/left/right as seen on the mon
 
 A `Transform2D` matrix converts screen-space directions to isometric world directions:
 
-```gdscript
-var iso_transform := Transform2D(Vector2(1, 0.5), Vector2(-1, 0.5), Vector2.ZERO)
-var world_direction := (iso_transform * raw_input).normalized()
-velocity = world_direction * move_speed
+```csharp
+var isoTransform = new Transform2D(new Vector2(1, 0.5f), new Vector2(-1, 0.5f), Vector2.Zero);
+Vector2 worldDirection = (isoTransform * rawInput).Normalized();
+Velocity = worldDirection * MoveSpeed;
 ```
 
 #### Directional Mapping (what the player sees)
@@ -94,7 +98,7 @@ Mouse/touch pointer-to-move is **deferred** for the Godot version.
 
 In the Phaser prototype, click/tap-and-hold moved the player toward the pointer position with a 12px dead zone. Implementing this in Godot requires:
 - Screen-to-isometric coordinate conversion (pointer position is in screen space)
-- `get_global_mouse_position()` returns world-space coordinates, but the isometric transform must be accounted for
+- `GetGlobalMousePosition()` returns world-space coordinates, but the isometric transform must be accounted for
 - Dead zone logic to prevent jitter when the pointer is near the player
 
 This will be added as a separate feature after core keyboard movement is solid.
@@ -111,7 +115,7 @@ Godot has native gamepad support through the same Input Map system used for keyb
    - `move_right`: Left stick right (axis 0, positive)
    - `move_up`: Left stick up (axis 1, negative)
    - `move_down`: Left stick down (axis 1, positive)
-3. No code changes needed -- `Input.get_vector()` automatically reads joypad axes
+3. No code changes needed -- `Input.GetVector()` automatically reads joypad axes
 
 #### Planned Gamepad Mapping
 
@@ -121,7 +125,7 @@ Godot has native gamepad support through the same Input Map system used for keyb
 | A button (Xbox) / Cross (PlayStation) | Future: manual attack |
 | Start / Options | Future: pause menu |
 
-Godot auto-detects gamepad connection and disconnection. No setup code is needed. The `Input.get_vector()` call already used for keyboard will seamlessly read gamepad axes once the Input Map entries are added.
+Godot auto-detects gamepad connection and disconnection. No setup code is needed. The `Input.GetVector()` call already used for keyboard will seamlessly read gamepad axes once the Input Map entries are added.
 
 ### Virtual Joystick (Deferred)
 
@@ -135,29 +139,29 @@ For mobile/touch devices, a virtual joystick overlay is planned:
 
 In the current implementation, there are no priority conflicts because only keyboard input is active:
 
-1. **Keyboard / Gamepad:** Both handled simultaneously via Input Map. If both are providing input, their values combine (this is Godot's default behavior with `Input.get_vector()`). Since the result is normalized, combined input never exceeds speed 1.0.
+1. **Keyboard / Gamepad:** Both handled simultaneously via Input Map. If both are providing input, their values combine (this is Godot's default behavior with `Input.GetVector()`). Since the result is normalized, combined input never exceeds speed 1.0.
 2. **Mouse / Touch:** Deferred. When implemented, pointer movement will likely override keyboard (matching the Phaser prototype behavior where pointer-down overrode WASD).
-3. **UI Input:** Death screen restart (R key) is handled via `_unhandled_input()`, which only fires if no UI Control node consumed the event first. This prevents accidental restarts while interacting with future UI elements.
+3. **UI Input:** Death screen restart (R key) is handled via `_UnhandledInput()`, which only fires if no UI Control node consumed the event first. This prevents accidental restarts while interacting with future UI elements.
 
 ### Comparison to Phaser Prototype
 
 | Aspect | Phaser 3 | Godot 4 |
 |--------|----------|---------|
 | Key binding | `createCursorKeys()` + `addKeys("W,A,S,D")` | Input Map (project settings) |
-| Reading input | Poll `isDown` each frame | `Input.get_vector()` returns normalized direction |
-| Normalization | Manual `Vector2.normalize().scale(190)` | `get_vector()` auto-normalizes; multiply by speed |
+| Reading input | Poll `isDown` each frame | `Input.GetVector()` returns normalized direction |
+| Normalization | Manual `Vector2.normalize().scale(190)` | `GetVector()` auto-normalizes; multiply by speed |
 | Pointer move | `pointer.worldX/Y` relative to player | Deferred |
 | Gamepad | Not implemented | Native via Input Map (deferred) |
-| Death restart | `keyboard.once("keydown-R")` | `_unhandled_input()` checking `KEY_R` |
+| Death restart | `keyboard.once("keydown-R")` | `_UnhandledInput()` checking `Key.R` |
 | Isometric transform | Not needed (top-down) | `Transform2D` matrix conversion required |
 
 ## Implementation Notes
 
 - Input Map actions should be set up in `project.godot` or via Project Settings before any movement code runs
-- The `Input.get_vector()` call handles dead zones for analog stick input automatically (default dead zone: 0.5)
+- The `Input.GetVector()` call handles dead zones for analog stick input automatically (default dead zone: 0.5)
 - Adjust dead zone per-action in Input Map settings if gamepad feels unresponsive
-- Movement speed (190 px/s) is applied after normalization: `velocity = world_direction * 190.0`
-- Player movement code lives in `_physics_process(delta)` for deterministic physics behavior
+- Movement speed (190 px/s) is applied after normalization: `Velocity = worldDirection * 190.0f`
+- Player movement code lives in `_PhysicsProcess(double delta)` for deterministic physics behavior
 
 ## Open Questions
 

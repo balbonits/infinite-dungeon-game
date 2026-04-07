@@ -14,9 +14,15 @@ The project is transitioning from a single-file Phaser 3 prototype (preserved in
 
 ```
 dungeon-web-game/
-├── project.godot                          — Godot 4 project config
-├── .gitignore                             — Git ignore rules
+├── DungeonGame.sln                        — .NET solution file
+├── DungeonGame.csproj                     — Main project (Godot.NET.Sdk, NuGet refs)
+├── project.godot                          — Godot 4 project config (.NET edition)
+├── Makefile                               — AI-drivable automation (make help)
+├── .editorconfig                          — Editor formatting rules (C# + Godot)
+├── .gitignore                             — Git ignore rules (includes bin/, obj/)
 ├── .gdignore                              — Godot editor ignore rules
+├── .githooks/pre-commit                   — C# formatting check on commit
+├── .github/workflows/ci.yml              — GitHub Actions CI (build + lint + test)
 ├── AGENTS.md                              — AI coding assistant guidelines
 ├── CLAUDE.md                              — Points to AGENTS.md
 ├── README.md                              — Project overview, how to run
@@ -62,38 +68,46 @@ dungeon-web-game/
 │   │   ├── hud.md                         — HUD overlay display
 │   │   └── death-screen.md                — Death UI flow
 │   └── testing/                           — Test plans
-├── scenes/                                — Godot scene files (.tscn) + scripts (.gd)
-│   ├── main.tscn                          — Entry point scene (root of the game)
-│   ├── main.gd                            — Entry point script (scene transitions, UI layer)
+├── scenes/                                — Godot scene files (.tscn)
+│   ├── Main.tscn                          — Entry point scene (root of the game)
 │   ├── dungeon/
-│   │   ├── dungeon.tscn                   — Dungeon floor scene
-│   │   └── dungeon.gd                     — Dungeon floor logic (tilemap, spawning, entity container)
+│   │   └── Dungeon.tscn                   — Dungeon floor scene
 │   ├── player/
-│   │   ├── player.tscn                    — Player character scene
-│   │   └── player.gd                      — Player logic (movement, auto-attack, camera)
+│   │   └── Player.tscn                    — Player character scene
 │   ├── enemies/
-│   │   ├── enemy.tscn                     — Base enemy scene
-│   │   └── enemy.gd                       — Base enemy logic (chase AI, damage, tier system)
+│   │   └── Enemy.tscn                     — Base enemy scene
 │   └── ui/
-│       ├── hud.tscn                       — HUD overlay scene
-│       ├── hud.gd                         — HUD logic (stats display, signal listeners)
-│       ├── death_screen.tscn              — Death/restart screen scene
-│       └── death_screen.gd                — Death screen logic (restart, penalties)
-├── scripts/                               — Standalone scripts (not attached to scenes)
+│       ├── Hud.tscn                       — HUD overlay scene
+│       └── DeathScreen.tscn               — Death/restart screen scene
+├── scripts/                               — C# scripts (.cs)
+│   ├── Main.cs                            — Entry point script (scene transitions, UI layer)
+│   ├── dungeon/
+│   │   └── Dungeon.cs                     — Dungeon floor logic (tilemap, spawning, entity container)
+│   ├── player/
+│   │   └── Player.cs                      — Player logic (movement, auto-attack, camera)
+│   ├── enemies/
+│   │   └── Enemy.cs                       — Base enemy logic (chase AI, damage, tier system)
+│   ├── ui/
+│   │   ├── Hud.cs                         — HUD logic (stats display, signal listeners)
+│   │   └── DeathScreen.cs                 — Death screen logic (restart, penalties)
 │   └── autoloads/
-│       ├── game_state.gd                  — Singleton: HP, XP, level, floor, signals
-│       └── event_bus.gd                   — Singleton: decoupled signal hub
+│       ├── GameState.cs                   — Singleton: HP, XP, level, floor, signals
+│       └── EventBus.cs                    — Singleton: decoupled signal hub
 ├── assets/                                — Binary resources (images, audio)
 │   ├── tiles/                             — Isometric tile PNG images
 │   │   ├── floor.png                      — Floor tile (filled 64x32 diamond)
 │   │   └── wall.png                       — Wall tile (outlined diamond, used with physics)
 │   ├── sprites/                           — Character and enemy sprite images (future)
 │   └── ui/                                — UI-specific images and icons (future)
+├── tests/                                 — Automated tests
+│   ├── DungeonGame.Tests.csproj           — Test project (GdUnit4 + xUnit)
+│   └── ...                                — Test files mirroring scripts/ structure
+├── addons/                                — GdUnit4 addon (if required by framework)
 └── resources/                             — Godot resource files (.tres)
     ├── tile_sets/
-    │   └── dungeon_tileset.tres           — Isometric TileSet (tile size, shapes, physics, atlas)
+    │   └── DungeonTileset.tres            — Isometric TileSet (tile size, shapes, physics, atlas)
     └── themes/
-        └── game_theme.tres                — Dark fantasy UI Theme (colors, fonts, StyleBoxes)
+        └── GameTheme.tres                 — Dark fantasy UI Theme (colors, fonts, StyleBoxes)
 ```
 
 ### File-by-File Explanations
@@ -190,32 +204,33 @@ dungeon-web-game/
 
 #### File Names
 
-All files use `snake_case` with their appropriate extension:
-
 | Type | Convention | Example |
 |------|-----------|---------|
-| GDScript files | `snake_case.gd` | `game_state.gd`, `player.gd`, `death_screen.gd` |
-| Scene files | `snake_case.tscn` | `player.tscn`, `dungeon.tscn`, `hud.tscn` |
-| Resource files | `snake_case.tres` | `dungeon_tileset.tres`, `game_theme.tres` |
+| C# files | `PascalCase.cs` | `GameState.cs`, `Player.cs`, `DeathScreen.cs` |
+| Scene files | `PascalCase.tscn` | `Player.tscn`, `Dungeon.tscn`, `Hud.tscn` |
+| Resource files | `PascalCase.tres` | `DungeonTileset.tres`, `GameTheme.tres` |
 | Image files | `snake_case.png` | `floor.png`, `wall.png`, `player_idle.png` |
 | Documentation | `kebab-case.md` | `tech-stack.md`, `game-dev-concepts.md`, `death-screen.md` |
 
-**Why `snake_case` for Godot files:** This is the Godot community convention. GDScript itself uses `snake_case` for variables and functions, so file names match. The Godot editor generates `snake_case` file names by default when creating new scripts and scenes.
+**Why `PascalCase` for C# and scene files:** C# convention is to name files after the class they contain (`GameState.cs` → `public partial class GameState`). Scene files match their associated script name for clarity.
 
-**Why `kebab-case` for docs:** Markdown documentation follows web conventions where `kebab-case` is standard for URLs and file names. Docs are not loaded by Godot — they're read by humans and rendered by GitHub/markdown viewers.
+**Why `snake_case` for images:** Asset files follow a different convention — they're not C# classes. Snake_case is common for binary assets and matches Godot's default import naming.
 
-#### GDScript Identifiers
+**Why `kebab-case` for docs:** Markdown documentation follows web conventions where `kebab-case` is standard for URLs and file names.
+
+#### C# Identifiers
 
 | Identifier type | Convention | Example |
 |----------------|-----------|---------|
-| Variables | `snake_case` | `move_speed`, `max_hp`, `danger_tier`, `floor_number` |
-| Functions | `snake_case` | `handle_movement()`, `spawn_enemy()`, `take_damage()` |
-| Constants | `UPPER_SNAKE_CASE` | `MOVE_SPEED`, `ATTACK_COOLDOWN`, `MAX_ENEMIES` |
-| Signals | `snake_case`, past tense for events | `enemy_defeated`, `stats_changed`, `player_died`, `floor_completed` |
-| Enums | `PascalCase` name, `UPPER_SNAKE_CASE` values | `enum DangerTier { LOW, MEDIUM, HIGH }` |
-| Class names | `PascalCase` (rare in GDScript) | `class_name EnemyData` (only when needed for type hints or editor visibility) |
+| Public properties/methods | `PascalCase` | `MoveSpeed`, `MaxHp`, `HandleMovement()`, `SpawnEnemy()` |
+| Private fields | `_camelCase` | `_moveSpeed`, `_maxHp`, `_dangerTier`, `_floorNumber` |
+| Constants | `PascalCase` | `MoveSpeed`, `AttackCooldown`, `MaxEnemies` |
+| Signals | `PascalCase` + `EventHandler` | `EnemyDefeatedEventHandler`, `StatsChangedEventHandler` |
+| Enums | `PascalCase` name and values | `enum DangerTier { Low, Medium, High }` |
+| Classes | `PascalCase`, `partial` | `public partial class Player : CharacterBody2D` |
+| Namespaces | `PascalCase` by directory | `DungeonGame.Autoloads`, `DungeonGame.Scenes.Player` |
 
-**Why past tense for signal names:** Signals represent events that have already happened. `enemy_defeated` means "an enemy was just defeated" — listeners react to something that already occurred. This prevents ambiguity: `enemy_defeat` could be interpreted as "request to defeat an enemy" or "an enemy was defeated."
+**Why `EventHandler` suffix for signals:** Godot C# requires signal delegates to end with `EventHandler`. This is enforced by the engine — omitting it causes build errors.
 
 #### Node Names in Scenes
 
@@ -268,15 +283,14 @@ Game design docs (combat formulas, death penalties, stat scaling) describe game 
 **`archive/` preserves the original prototype:**
 The Phaser prototype is the reference implementation. During migration, we compare Godot behavior against the prototype to verify feature parity. After migration is complete, the archive serves as historical documentation of the project's origins.
 
-**Why no `tests/` directory (yet):**
-Godot has a built-in testing framework (GUT — Godot Unit Test) but we haven't set it up yet. When we do, tests will go in a `tests/` directory at the project root, with a structure mirroring `scenes/`. The `docs/testing/` directory is for test PLANS (manual checklists), not automated test scripts.
+**`tests/` for automated tests:**
+Tests live in a separate .csproj (`DungeonGame.Tests.csproj`) referencing the main project. GdUnit4 tests use `[RequireGodotRuntime]` when they need Godot nodes/scenes. Pure logic tests (xUnit) run without Godot. Test structure mirrors `scripts/`.
 
-**Why no `addons/` directory:**
-We intentionally avoid Godot plugins/addons. Vanilla Godot 4 only. If we ever add an addon (like GUT for testing), it would go in the standard `addons/` directory that Godot expects.
+**`addons/` for GdUnit4:**
+GdUnit4 may require an addon component in addition to NuGet packages. This is the only addon — no other third-party plugins.
 
 ## Open Questions
 
 - Should `.import` files be gitignored or committed? Godot regenerates them, but committing them prevents the "first open" import delay for new contributors.
-- Should enemy variants (different tiers, different behaviors) be separate scenes inheriting from `enemy.tscn`, or a single configurable scene with `@export` properties?
-- Should we add a `data/` directory for JSON configuration files (enemy stats, loot tables) that are loaded at runtime, or keep everything in `@export` properties and resources?
-- When automated tests are added, should they live in `tests/` at the root or inside each entity's folder (e.g., `scenes/player/test_player.gd`)?
+- Should enemy variants (different tiers, different behaviors) be separate scenes inheriting from `Enemy.tscn`, or a single configurable scene with `[Export]` properties?
+- Should we add a `data/` directory for JSON configuration files (enemy stats, loot tables) that are loaded at runtime, or keep everything in `[Export]` properties and resources?

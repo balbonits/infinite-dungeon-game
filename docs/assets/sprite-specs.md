@@ -76,14 +76,19 @@ All enemies share the same diamond shape but are slightly smaller than the playe
 | 2 | Mid (Yellow) | `#ffde66` | `Color(1.0, 0.871, 0.400, 1.0)` | (255, 222, 102, 255) | (1.0, 0.871, 0.400, 1.0) |
 | 3 | High (Red) | `#ff6f6f` | `Color(1.0, 0.435, 0.435, 1.0)` | (255, 111, 111, 255) | (1.0, 0.435, 0.435, 1.0) |
 
-**Setting enemy color in GDScript:**
-```gdscript
-# In enemy.gd, after setting danger_tier:
-func _set_tier_color() -> void:
-    match danger_tier:
-        1: polygon.color = Color(0.420, 1.0, 0.537, 1.0)   # Green
-        2: polygon.color = Color(1.0, 0.871, 0.400, 1.0)    # Yellow
-        3: polygon.color = Color(1.0, 0.435, 0.435, 1.0)    # Red
+**Setting enemy color in C#:**
+```csharp
+// In Enemy.cs, after setting DangerTier:
+private void SetTierColor()
+{
+    _polygon.Color = DangerTier switch
+    {
+        1 => new Color(0.420f, 1.0f, 0.537f, 1.0f),   // Green
+        2 => new Color(1.0f, 0.871f, 0.400f, 1.0f),    // Yellow
+        3 => new Color(1.0f, 0.435f, 0.435f, 1.0f),    // Red
+        _ => new Color(0.420f, 1.0f, 0.537f, 1.0f),    // Default to green
+    };
+}
 ```
 
 **Phaser equivalent:**
@@ -132,26 +137,29 @@ The slash effect is a brief visual indicator that plays at the target enemy's po
 | Height | 4 pixels |
 | Color hex | `#f5c86b` at 95% opacity |
 | Color Godot | `Color(0.961, 0.784, 0.420, 0.95)` |
-| Rotation | Random per instance: `randf_range(-1.2, 1.2)` radians (approximately -69 to +69 degrees) |
+| Rotation | Random per instance: `(float)GD.RandRange(-1.2, 1.2)` radians (approximately -69 to +69 degrees) |
 | Lifetime | ~120ms (destroyed after tween completes) |
 
 **Slash animation tween:**
-```gdscript
-func draw_slash(target_pos: Vector2) -> void:
-    var slash := Polygon2D.new()
-    slash.polygon = PackedVector2Array([
-        Vector2(-13, -2), Vector2(13, -2),
-        Vector2(13, 2), Vector2(-13, 2)
-    ])
-    slash.color = Color(0.961, 0.784, 0.420, 0.95)
-    slash.position = target_pos
-    slash.rotation = randf_range(-1.2, 1.2)
-    get_parent().add_child(slash)
+```csharp
+private void DrawSlash(Vector2 targetPos)
+{
+    var slash = new Polygon2D();
+    slash.Polygon = new Vector2[]
+    {
+        new Vector2(-13, -2), new Vector2(13, -2),
+        new Vector2(13, 2), new Vector2(-13, 2)
+    };
+    slash.Color = new Color(0.961f, 0.784f, 0.420f, 0.95f);
+    slash.Position = targetPos;
+    slash.Rotation = (float)GD.RandRange(-1.2, 1.2);
+    GetParent().AddChild(slash);
 
-    var tween := create_tween()
-    tween.tween_property(slash, "modulate:a", 0.0, 0.12)
-    tween.parallel().tween_property(slash, "position:y", target_pos.y - 8.0, 0.12)
-    tween.tween_callback(slash.queue_free)
+    Tween tween = CreateTween();
+    tween.TweenProperty(slash, "modulate:a", 0.0f, 0.12);
+    tween.Parallel().TweenProperty(slash, "position:y", targetPos.Y - 8.0f, 0.12);
+    tween.TweenCallback(Callable.From(slash.QueueFree));
+}
 ```
 
 **Phaser equivalent:**
@@ -175,7 +183,7 @@ The Godot version replicates the exact same behavior: a 26x4 gold rectangle, ran
 |--------|--------|
 | Matches Phaser prototype | The Phaser version uses `this.add.circle()` and `this.add.rectangle()` -- colored geometric primitives, not image sprites |
 | No external assets needed | Zero PNG files to manage for characters; the entire visual is defined in code |
-| Dynamic color | Enemy tier color is set via `polygon.color` -- no need for separate sprite sheets per tier |
+| Dynamic color | Enemy tier color is set via `_polygon.Color` -- no need for separate sprite sheets per tier |
 | Minimal scope | This is a learning project; adding sprite art is deferred until gameplay systems are solid |
 | Easy to swap later | Replace the Polygon2D node with an AnimatedSprite2D node in the scene; the parent CharacterBody2D, collision shapes, and scripts remain unchanged |
 
@@ -193,7 +201,7 @@ When the project moves past the prototype phase, Polygon2D nodes will be replace
 1. Create SpriteFrames resource with named animations ("walk_down", "walk_up", "idle", "attack", "death")
 2. Replace Polygon2D node with AnimatedSprite2D in the scene tree
 3. Set sprite sheet texture and frame grid (hframes/vframes or atlas regions)
-4. Update script to call `animated_sprite.play("walk_down")` based on movement direction
+4. Update script to call `_animatedSprite.Play("walk_down")` based on movement direction
 5. Collision shapes remain unchanged -- they are siblings of the sprite node, not children
 
 ## Implementation Notes
@@ -202,7 +210,7 @@ When the project moves past the prototype phase, Polygon2D nodes will be replace
 - The player diamond is intentionally asymmetric in aspect ratio (wider:taller = 24:32 = 3:4) to create a "tall" look fitting for a character in isometric view.
 - Enemy diamonds are proportionally similar (20:28 = 5:7) but ~17% smaller in each dimension, making them visually subordinate to the player.
 - Slash effect Polygon2D nodes are added as children of the Entities node (not the player or enemy) so their position is in world space, not relative to a moving entity.
-- The `queue_free()` call at the end of the slash tween ensures no memory leak from accumulated slash nodes.
+- The `QueueFree()` call at the end of the slash tween ensures no memory leak from accumulated slash nodes.
 
 ## Asset Generation Strategy
 
@@ -238,7 +246,7 @@ For finer control over which regions get recolored:
 
 1. Author base sprites with **marker colors** in accent regions (e.g., pure magenta `#FF00FF` for "recolor this region")
 2. A `canvas_item` shader replaces marker colors with the actual element/gradient color
-3. Set colors from GDScript via shader uniforms: `material.set_shader_parameter("accent_color", Color.RED)`
+3. Set colors from C# via shader uniforms: `material.Set("shader_parameter/accent_color", Colors.Red)`
 
 **Strengths:** GPU-accelerated, trivial cost even with 50+ entities. Can recolor multiple independent regions in one sprite. Supports smooth gradient transitions.
 

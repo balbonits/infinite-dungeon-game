@@ -2,7 +2,7 @@
 
 ## Summary
 
-The player moves in 8 directions using WASD or arrow keys. Input is transformed through an isometric projection matrix so that pressing "up" moves the player diagonally up-left in screen space (into the screen in isometric perspective, like Diablo 1). Movement uses Godot's CharacterBody2D with `move_and_slide()` for built-in wall collision and sliding.
+The player moves in 8 directions using WASD or arrow keys. Input is transformed through an isometric projection matrix so that pressing "up" moves the player diagonally up-left in screen space (into the screen in isometric perspective, like Diablo 1). Movement uses Godot's CharacterBody2D with `MoveAndSlide()` for built-in wall collision and sliding.
 
 ## Current State
 
@@ -14,10 +14,10 @@ Keyboard-only movement is implemented. The Phaser prototype also supported click
 
 | Property | Value |
 |----------|-------|
-| Method | `Input.get_vector("move_left", "move_right", "move_up", "move_down")` |
+| Method | `Input.GetVector("move_left", "move_right", "move_up", "move_down")` |
 | Return type | `Vector2` with x in [-1, 1] and y in [-1, 1] |
-| Diagonal normalization | Automatic (get_vector normalizes the result when both axes are active) |
-| Fallback method | `Input.is_key_pressed(KEY_W)`, etc. (not used if Input Map is configured) |
+| Diagonal normalization | Automatic (GetVector normalizes the result when both axes are active) |
+| Fallback method | `Input.IsKeyPressed(Key.W)`, etc. (not used if Input Map is configured) |
 | Dead zone | 0.0 (keyboard is binary; dead zone applies to joystick input if added later) |
 
 **Input Map Configuration (project.godot):**
@@ -43,8 +43,8 @@ move_up={
 The core of the isometric movement system is a 2x2 affine transform that converts screen-space input directions into isometric world directions.
 
 **Matrix definition:**
-```gdscript
-const ISO_TRANSFORM := Transform2D(Vector2(1, 0.5), Vector2(-1, 0.5), Vector2.ZERO)
+```csharp
+private static readonly Transform2D IsoTransform = new Transform2D(new Vector2(1, 0.5f), new Vector2(-1, 0.5f), Vector2.Zero);
 ```
 
 This Transform2D has:
@@ -79,7 +79,7 @@ Complete mapping of all 8 input directions through the isometric transform:
 | Down+Right | S+D | (0.707, 0.707) | (0, 0.707) | (0, 1) | South | Pure down |
 | Down+Left | S+A | (-0.707, 0.707) | (-1.414, 0) | (-1, 0) | West | Pure left |
 
-**Note on diagonal screen vectors:** `Input.get_vector()` automatically normalizes diagonal input, so W+D produces `(0.707, -0.707)` rather than `(1, -1)`. The 0.707 value is `1 / sqrt(2)`.
+**Note on diagonal screen vectors:** `Input.GetVector()` automatically normalizes diagonal input, so W+D produces `(0.707, -0.707)` rather than `(1, -1)`. The 0.707 value is `1 / sqrt(2)`.
 
 ### Isometric Direction Diagram
 
@@ -107,43 +107,45 @@ This shows the isometric compass directions and which keyboard keys produce each
 
 ### Movement Algorithm
 
-Step-by-step, executed every physics frame in `_physics_process(delta)`:
+Step-by-step, executed every physics frame in `_PhysicsProcess(delta)`:
 
-```gdscript
-func _physics_process(delta: float) -> void:
-    # Step 1: Read raw input as a screen-space direction vector
-    var input_dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-    # Result: Vector2 with components in [-1, 1], normalized for diagonals
-    # Example: W pressed -> (0, -1), W+D pressed -> (0.707, -0.707)
+```csharp
+public override void _PhysicsProcess(double delta)
+{
+    // Step 1: Read raw input as a screen-space direction vector
+    Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+    // Result: Vector2 with components in [-1, 1], normalized for diagonals
+    // Example: W pressed -> (0, -1), W+D pressed -> (0.707, -0.707)
 
-    # Step 2: Transform screen input to isometric world direction
-    var iso_dir := ISO_TRANSFORM * input_dir
-    # Result: Vector2 in isometric world space
-    # Example: (0, -1) -> (1, -0.5), (0.707, -0.707) -> (1.414, 0)
+    // Step 2: Transform screen input to isometric world direction
+    Vector2 isoDir = IsoTransform * inputDir;
+    // Result: Vector2 in isometric world space
+    // Example: (0, -1) -> (1, -0.5), (0.707, -0.707) -> (1.414, 0)
 
-    # Step 3: Normalize and scale to movement speed
-    velocity = iso_dir.normalized() * MOVE_SPEED
-    # Result: Vector2 with magnitude = MOVE_SPEED (or zero if no input)
-    # Example: (1, -0.5).normalized() * 190 = (169.7, -84.9)
+    // Step 3: Normalize and scale to movement speed
+    Velocity = isoDir.Normalized() * MoveSpeed;
+    // Result: Vector2 with magnitude = MoveSpeed (or zero if no input)
+    // Example: (1, -0.5).Normalized() * 190 = (169.7, -84.9)
 
-    # Step 4: Apply movement with collision resolution
-    move_and_slide()
-    # CharacterBody2D handles delta time internally
-    # Resolves collisions with physics bodies (walls)
-    # Applies sliding along walls rather than stopping dead
+    // Step 4: Apply movement with collision resolution
+    MoveAndSlide();
+    // CharacterBody2D handles delta time internally
+    // Resolves collisions with physics bodies (walls)
+    // Applies sliding along walls rather than stopping dead
+}
 ```
 
 **Important details:**
-- `iso_dir.normalized()` is safe even when `input_dir` is `Vector2.ZERO` because `Vector2.ZERO.normalized()` returns `Vector2.ZERO` in Godot (no division by zero).
-- `move_and_slide()` uses the `velocity` property of CharacterBody2D directly. It does NOT take a velocity parameter in Godot 4.
-- `move_and_slide()` handles delta time internally -- do not multiply velocity by delta.
-- When no keys are pressed, `input_dir` is `(0, 0)`, `iso_dir` is `(0, 0)`, `velocity` is `(0, 0)`, and the player stands still.
+- `isoDir.Normalized()` is safe even when `inputDir` is `Vector2.Zero` because `Vector2.Zero.Normalized()` returns `Vector2.Zero` in Godot (no division by zero).
+- `MoveAndSlide()` uses the `Velocity` property of CharacterBody2D directly. It does NOT take a velocity parameter in Godot 4.
+- `MoveAndSlide()` handles delta time internally -- do not multiply velocity by delta.
+- When no keys are pressed, `inputDir` is `(0, 0)`, `isoDir` is `(0, 0)`, `Velocity` is `(0, 0)`, and the player stands still.
 
 ### Movement Speed
 
 | Property | Value | Unit |
 |----------|-------|------|
-| MOVE_SPEED | 190.0 | pixels per second |
+| MoveSpeed | 190.0 | pixels per second |
 
 This value is taken directly from the Phaser prototype:
 ```javascript
@@ -158,27 +160,27 @@ body.setVelocity(normalized.x, normalized.y);
 This means single-key movement covers more horizontal ground than vertical ground, which is correct for a 2:1 isometric ratio. However, the perceived speed may feel different from the Phaser version and might need tuning.
 
 **Max velocity (Phaser comparison):**
-The Phaser prototype also sets `body.setMaxVelocity(220, 220)`, which caps velocity at 220 px/s per axis. In Godot, CharacterBody2D does not have a built-in max velocity property. The velocity is set explicitly each frame, so it is naturally clamped to `MOVE_SPEED` (190) after normalization. No additional capping is needed.
+The Phaser prototype also sets `body.setMaxVelocity(220, 220)`, which caps velocity at 220 px/s per axis. In Godot, CharacterBody2D does not have a built-in max velocity property. The velocity is set explicitly each frame, so it is naturally clamped to `MoveSpeed` (190) after normalization. No additional capping is needed.
 
 ### Wall Collision
 
 | Property | Detail |
 |----------|--------|
 | Player body type | CharacterBody2D |
-| Collision method | `move_and_slide()` |
+| Collision method | `MoveAndSlide()` |
 | Wall physics | TileMapLayer collision polygons on physics layer 1 |
 | Player collision_layer | 2 (player layer) |
 | Player collision_mask | 1 (walls layer) -- player collides with walls |
 | Slide behavior | Player slides along walls at reduced speed rather than stopping completely |
 | Collision shape | CircleShape2D, radius 12.0 px (see sprite-specs.md) |
 
-**How move_and_slide() resolves collisions:**
+**How MoveAndSlide() resolves collisions:**
 1. Applies velocity as a motion vector for the frame.
 2. If the motion would cause overlap with a physics body, computes the collision normal.
 3. Subtracts the component of velocity along the collision normal (the "into the wall" component).
 4. Applies the remaining velocity (the "along the wall" component) as a slide.
-5. Repeats for up to `max_slides` iterations (default 6) to handle corners.
-6. Updates the `velocity` property with the post-slide velocity.
+5. Repeats for up to `MaxSlides` iterations (default 6) to handle corners.
+6. Updates the `Velocity` property with the post-slide velocity.
 
 This means a player running diagonally into a wall will slide along it smoothly, which feels natural.
 
@@ -224,10 +226,10 @@ Key differences from the Godot version:
 | Aspect | Phaser | Godot |
 |--------|--------|-------|
 | Coordinate system | Screen-aligned (up = -Y) | Isometric (up = into-screen via transform) |
-| Input method | Manual key checks + pointer | `Input.get_vector()` + ISO_TRANSFORM |
+| Input method | Manual key checks + pointer | `Input.GetVector()` + IsoTransform |
 | Collision | Arcade physics world bounds | CharacterBody2D + TileMapLayer polygons |
 | Pointer movement | Supported (click/drag) | Deferred (not implemented) |
-| Normalization | Manual `new Vector2(vx, vy).normalize()` | `Input.get_vector()` auto-normalizes |
+| Normalization | Manual `new Vector2(vx, vy).normalize()` | `Input.GetVector()` auto-normalizes |
 | Speed | 190 px/s screen space | 190 px/s world space (appears different due to iso transform) |
 
 ### Pointer Movement (Deferred)
@@ -247,27 +249,29 @@ if (this.movePointer && this.movePointer.isDown) {
 
 This is deferred in the Godot version because:
 1. **Screen-to-iso conversion:** In isometric view, the screen position of a click must be converted to isometric world coordinates before computing a direction vector. This requires the inverse of the isometric transform.
-2. **Camera offset:** The Camera2D position and zoom must be accounted for when converting screen coordinates to world coordinates (using `get_global_mouse_position()` helps, but the direction still needs iso-awareness).
+2. **Camera offset:** The Camera2D position and zoom must be accounted for when converting screen coordinates to world coordinates (using `GetGlobalMousePosition()` helps, but the direction still needs iso-awareness).
 3. **Complexity budget:** Adding pointer movement is a polish feature. Keyboard works for all gameplay. Will be added when touch/mobile support is prioritized.
 
 **When implemented, the algorithm would be:**
-```gdscript
-var mouse_world := get_global_mouse_position()
-var direction := (mouse_world - global_position)
-if direction.length() > 12.0:
-    velocity = direction.normalized() * MOVE_SPEED
-    move_and_slide()
+```csharp
+Vector2 mouseWorld = GetGlobalMousePosition();
+Vector2 direction = mouseWorld - GlobalPosition;
+if (direction.Length() > 12.0f)
+{
+    Velocity = direction.Normalized() * MoveSpeed;
+    MoveAndSlide();
+}
 ```
 
-Note: since `get_global_mouse_position()` returns world-space coordinates, and the player's `global_position` is also in world space, the direction vector is already in the correct coordinate system. No additional isometric conversion is needed for pointer movement -- the iso transform is only needed for keyboard input because keyboard directions are screen-relative.
+Note: since `GetGlobalMousePosition()` returns world-space coordinates, and the player's `GlobalPosition` is also in world space, the direction vector is already in the correct coordinate system. No additional isometric conversion is needed for pointer movement -- the iso transform is only needed for keyboard input because keyboard directions are screen-relative.
 
 ## Implementation Notes
 
-- The `ISO_TRANSFORM` constant should be defined at the top of `player.gd` as a class-level constant.
-- `_physics_process()` is used instead of `_process()` because movement involves physics collision via `move_and_slide()`. This ensures movement is synced with the physics engine's fixed timestep.
+- The `IsoTransform` field should be defined at the top of `Player.cs` as a static readonly class-level field.
+- `_PhysicsProcess()` is used instead of `_Process()` because movement involves physics collision via `MoveAndSlide()`. This ensures movement is synced with the physics engine's fixed timestep.
 - The default physics tick rate is 60 Hz (`physics/common/physics_ticks_per_second = 60` in project.godot). Movement at 190 px/s means ~3.17 pixels per physics frame.
-- If the player is dead (`GameState.is_dead`), movement input should be ignored (set velocity to zero and return early from `_physics_process`).
-- Enemy movement uses `NavigationAgent2D` or direct `move_and_slide()` toward the player, NOT the isometric transform. Enemies move in world space, not screen space.
+- If the player is dead (`GameState.IsDead`), movement input should be ignored (set Velocity to zero and return early from `_PhysicsProcess`).
+- Enemy movement uses `NavigationAgent2D` or direct `MoveAndSlide()` toward the player, NOT the isometric transform. Enemies move in world space, not screen space.
 
 ## Open Questions
 

@@ -83,10 +83,10 @@ At the default viewport resolution of 1920x1080:
 2x zoom is the balance point where the full room is visible but fills the viewport well.
 
 **Adjusting zoom at runtime:**
-```gdscript
-# Smooth zoom transition:
-var tween := create_tween()
-tween.tween_property(camera, "zoom", Vector2(2.5, 2.5), 0.5)
+```csharp
+// Smooth zoom transition:
+var tween = CreateTween();
+tween.TweenProperty(_camera, "zoom", new Vector2(2.5f, 2.5f), 0.5);
 ```
 
 ### Camera Shake Algorithm
@@ -94,22 +94,24 @@ tween.tween_property(camera, "zoom", Vector2(2.5, 2.5), 0.5)
 Triggered when the player takes damage from an enemy contact. Provides tactile feedback that the player was hit.
 
 **Implementation:**
-```gdscript
-func shake_camera() -> void:
-    var tween := create_tween()
-    var shake_offset := Vector2(
-        randf_range(-3.0, 3.0),
-        randf_range(-3.0, 3.0)
-    )
-    tween.tween_property(camera, "offset", shake_offset, 0.045)
-    tween.tween_property(camera, "offset", Vector2.ZERO, 0.045)
+```csharp
+private void ShakeCamera()
+{
+    var tween = CreateTween();
+    var shakeOffset = new Vector2(
+        (float)GD.RandRange(-3.0, 3.0),
+        (float)GD.RandRange(-3.0, 3.0)
+    );
+    tween.TweenProperty(_camera, "offset", shakeOffset, 0.045);
+    tween.TweenProperty(_camera, "offset", Vector2.Zero, 0.045);
+}
 ```
 
 **Step-by-step breakdown:**
 1. Create a new tween (each shake gets its own tween instance).
 2. Generate a random offset: x in [-3, 3] pixels, y in [-3, 3] pixels.
-3. Phase 1 (0.045s): Animate `camera.offset` from current position to `shake_offset`.
-4. Phase 2 (0.045s): Animate `camera.offset` from `shake_offset` back to `Vector2.ZERO`.
+3. Phase 1 (0.045s): Animate `_camera.Offset` from current position to `shakeOffset`.
+4. Phase 2 (0.045s): Animate `_camera.Offset` from `shakeOffset` back to `Vector2.Zero`.
 5. Total duration: 0.09 seconds (90ms).
 6. The tween is automatically freed when it completes.
 
@@ -147,50 +149,63 @@ If the player is hit again while a shake tween is still running:
 
 **Potential enhancement -- multi-oscillation shake:**
 For a closer match to Phaser's continuous oscillation:
-```gdscript
-func shake_camera_oscillating() -> void:
-    var tween := create_tween()
-    for i in range(4):  # 4 oscillations
-        var offset := Vector2(
-            randf_range(-3.0, 3.0),
-            randf_range(-3.0, 3.0)
-        )
-        tween.tween_property(camera, "offset", offset, 0.0225)
-    tween.tween_property(camera, "offset", Vector2.ZERO, 0.0225)
-    # Total: 5 * 0.0225 = 0.1125s (~112ms)
+```csharp
+private void ShakeCameraOscillating()
+{
+    var tween = CreateTween();
+    for (int i = 0; i < 4; i++) // 4 oscillations
+    {
+        var offset = new Vector2(
+            (float)GD.RandRange(-3.0, 3.0),
+            (float)GD.RandRange(-3.0, 3.0)
+        );
+        tween.TweenProperty(_camera, "offset", offset, 0.0225);
+    }
+    tween.TweenProperty(_camera, "offset", Vector2.Zero, 0.0225);
+    // Total: 5 * 0.0225 = 0.1125s (~112ms)
+}
 ```
 
 ### Trigger Integration
 
 Camera shake is called from the player's damage handler:
 
-```gdscript
-# In player.gd:
-func take_damage(amount: int) -> void:
-    GameState.hp -= amount
-    shake_camera()
-    # ... update HUD, check death, etc.
+```csharp
+// In Player.cs:
+public void TakeDamage(int amount)
+{
+    GameState.Hp -= amount;
+    ShakeCamera();
+    // ... update HUD, check death, etc.
+}
 ```
 
-The `shake_camera()` function accesses the Camera2D node:
-```gdscript
-@onready var camera: Camera2D = $Camera2D
+The `ShakeCamera()` function accesses the Camera2D node:
+```csharp
+private Camera2D _camera;
 
-func shake_camera() -> void:
-    var tween := create_tween()
-    var shake_offset := Vector2(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0))
-    tween.tween_property(camera, "offset", shake_offset, 0.045)
-    tween.tween_property(camera, "offset", Vector2.ZERO, 0.045)
+public override void _Ready()
+{
+    _camera = GetNode<Camera2D>("Camera2D");
+}
+
+private void ShakeCamera()
+{
+    var tween = CreateTween();
+    var shakeOffset = new Vector2((float)GD.RandRange(-3.0, 3.0), (float)GD.RandRange(-3.0, 3.0));
+    tween.TweenProperty(_camera, "offset", shakeOffset, 0.045);
+    tween.TweenProperty(_camera, "offset", Vector2.Zero, 0.045);
+}
 ```
 
 ### Process Callback
 
-The Camera2D `process_callback` should be set to `CAMERA2D_PROCESS_PHYSICS` to match the player's `_physics_process()` movement. This prevents the camera from updating on a different frame than the player moves, which can cause micro-jitter.
+The Camera2D `process_callback` should be set to `CAMERA2D_PROCESS_PHYSICS` to match the player's `_PhysicsProcess()` movement. This prevents the camera from updating on a different frame than the player moves, which can cause micro-jitter.
 
 | Setting | Updates During | Best For |
 |---------|---------------|----------|
-| `CAMERA2D_PROCESS_IDLE` (default) | `_process()` frame | UI cameras, non-physics games |
-| `CAMERA2D_PROCESS_PHYSICS` | `_physics_process()` frame | **Physics-based movement (use this)** |
+| `CAMERA2D_PROCESS_IDLE` (default) | `_Process()` frame | UI cameras, non-physics games |
+| `CAMERA2D_PROCESS_PHYSICS` | `_PhysicsProcess()` frame | **Physics-based movement (use this)** |
 
 ### Viewport and Resolution
 
@@ -223,23 +238,23 @@ window/stretch/aspect="keep"
 | Minimap camera | Secondary Camera2D at lower zoom for a minimap viewport | Low | Medium -- SubViewport + secondary Camera2D |
 
 **Camera limits calculation (for future):**
-```gdscript
-# Given a 10x10 tile room:
-var room_min := tile_map.map_to_local(Vector2i(0, 0))
-var room_max := tile_map.map_to_local(Vector2i(ROOM_SIZE - 1, ROOM_SIZE - 1))
-camera.limit_left = int(room_min.x) - 64   # Padding
-camera.limit_top = int(room_min.y) - 32
-camera.limit_right = int(room_max.x) + 64
-camera.limit_bottom = int(room_max.y) + 32
+```csharp
+// Given a 10x10 tile room:
+Vector2 roomMin = _tileMap.MapToLocal(new Vector2I(0, 0));
+Vector2 roomMax = _tileMap.MapToLocal(new Vector2I(RoomSize - 1, RoomSize - 1));
+_camera.LimitLeft = (int)roomMin.X - 64;   // Padding
+_camera.LimitTop = (int)roomMin.Y - 32;
+_camera.LimitRight = (int)roomMax.X + 64;
+_camera.LimitBottom = (int)roomMax.Y + 32;
 ```
 
 ## Implementation Notes
 
 - Camera2D must be a child of the Player scene (not the room scene) so it automatically follows the player.
-- Only one Camera2D should be `enabled = true` at a time per viewport. If multiple cameras exist (e.g., minimap), use separate SubViewports.
-- The `offset` property is in local coordinates relative to the camera's parent (the player). A shake offset of `Vector2(3, 0)` moves the camera 3 pixels right of the player in world space.
+- Only one Camera2D should be `Enabled = true` at a time per viewport. If multiple cameras exist (e.g., minimap), use separate SubViewports.
+- The `Offset` property is in local coordinates relative to the camera's parent (the player). A shake offset of `new Vector2(3, 0)` moves the camera 3 pixels right of the player in world space.
 - At 2x zoom, a 3-pixel shake offset appears as 6 pixels of movement on screen. This is subtle but noticeable.
-- `create_tween()` called on the player node creates a tween bound to that node. If the player is freed (e.g., scene change), the tween is automatically killed. No manual cleanup needed.
+- `CreateTween()` called on the player node creates a tween bound to that node. If the player is freed (e.g., scene change), the tween is automatically killed. No manual cleanup needed.
 
 ## Open Questions
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-**A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler built with Godot 4 and GDScript. Isometric 2D perspective (Diablo 1 style), desktop native (macOS primary). Inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
+**A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler built with Godot 4 and C# (.NET 8+). Isometric 2D perspective (Diablo 1 style), desktop native (macOS primary). Inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
 
 ## Design Philosophy
 
@@ -24,7 +24,7 @@
 The game began as a single-file Phaser 3 browser prototype (`index.html`, ~450 lines). The original code is preserved in `archive/phaser-prototype/` for reference. The Godot 4 rebuild keeps all game design intact while adopting:
 
 - **Godot 4.x** as the engine (replacing Phaser 3)
-- **GDScript** as the language (replacing vanilla JavaScript)
+- **C#** as the language (replacing vanilla JavaScript)
 - **Isometric 2D** perspective (replacing top-down 2D)
 - **Desktop native** platform (replacing browser)
 - **Scene/node architecture** (replacing single-file monolith)

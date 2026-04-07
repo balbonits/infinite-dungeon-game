@@ -6,7 +6,7 @@ Complete visual theme for all UI elements in the game. Every color, font size, s
 
 ## Current State
 
-The color palette and layout values are fully defined and ported from the Phaser prototype. For the Godot prototype, theme values are applied programmatically via GDScript constants rather than a `.tres` theme resource file. This keeps all styling in one editable location and avoids complex theme resource hand-editing during early development.
+The color palette and layout values are fully defined and ported from the Phaser prototype. For the Godot prototype, theme values are applied programmatically via C# static constants rather than a `.tres` theme resource file. This keeps all styling in one editable location and avoids complex theme resource hand-editing during early development.
 
 ## Design
 
@@ -56,32 +56,36 @@ A continuous cool-to-warm gradient used across the game to communicate level-rel
 
 ### Godot Color Constants
 
-All colors as GDScript constants for use in scripts:
+All colors as C# static constants for use in scripts:
 
-```gdscript
-# ui_theme.gd -- centralized color constants
+```csharp
+// UiTheme.cs -- centralized color constants
+using Godot;
 
-# Core UI palette (from CSS custom properties)
-const COLOR_BG_0 := Color(0.059, 0.067, 0.090, 1.0)        # #0f1117
-const COLOR_BG_1 := Color(0.106, 0.129, 0.188, 1.0)        # #1b2130
-const COLOR_INK := Color(0.925, 0.941, 1.0, 1.0)            # #ecf0ff
-const COLOR_MUTED := Color(0.714, 0.749, 0.859, 1.0)        # #b6bfdb
-const COLOR_ACCENT := Color(0.961, 0.784, 0.420, 1.0)       # #f5c86b
-const COLOR_DANGER := Color(1.0, 0.435, 0.435, 1.0)         # #ff6f6f
-const COLOR_SAFE := Color(0.463, 0.969, 0.624, 1.0)         # #76f79f
-const COLOR_PANEL_BG := Color(0.086, 0.106, 0.157, 0.75)    # rgba(22,27,40,0.75)
-const COLOR_PANEL_BORDER := Color(0.961, 0.784, 0.420, 0.3) # rgba(245,200,107,0.3)
+public static class UiTheme
+{
+    // Core UI palette (from CSS custom properties)
+    public static readonly Color ColorBg0 = new(0.059f, 0.067f, 0.090f, 1.0f);        // #0f1117
+    public static readonly Color ColorBg1 = new(0.106f, 0.129f, 0.188f, 1.0f);        // #1b2130
+    public static readonly Color ColorInk = new(0.925f, 0.941f, 1.0f, 1.0f);          // #ecf0ff
+    public static readonly Color ColorMuted = new(0.714f, 0.749f, 0.859f, 1.0f);      // #b6bfdb
+    public static readonly Color ColorAccent = new(0.961f, 0.784f, 0.420f, 1.0f);     // #f5c86b
+    public static readonly Color ColorDanger = new(1.0f, 0.435f, 0.435f, 1.0f);       // #ff6f6f
+    public static readonly Color ColorSafe = new(0.463f, 0.969f, 0.624f, 1.0f);       // #76f79f
+    public static readonly Color ColorPanelBg = new(0.086f, 0.106f, 0.157f, 0.75f);   // rgba(22,27,40,0.75)
+    public static readonly Color ColorPanelBorder = new(0.961f, 0.784f, 0.420f, 0.3f); // rgba(245,200,107,0.3)
 
-# Entity colors (from Phaser COLORS object)
-const COLOR_PLAYER := Color(0.557, 0.839, 1.0, 1.0)         # #8ed6ff
-const COLOR_ENEMY_LOW := Color(0.420, 1.0, 0.537, 1.0)      # #6bff89
-const COLOR_ENEMY_MID := Color(1.0, 0.871, 0.400, 1.0)      # #ffde66
-const COLOR_ENEMY_HIGH := Color(1.0, 0.435, 0.435, 1.0)     # #ff6f6f
-const COLOR_SWORD := Color(0.961, 0.784, 0.420, 0.95)       # #f5c86b @ 95%
+    // Entity colors (from Phaser COLORS object)
+    public static readonly Color ColorPlayer = new(0.557f, 0.839f, 1.0f, 1.0f);       // #8ed6ff
+    public static readonly Color ColorEnemyLow = new(0.420f, 1.0f, 0.537f, 1.0f);     // #6bff89
+    public static readonly Color ColorEnemyMid = new(1.0f, 0.871f, 0.400f, 1.0f);     // #ffde66
+    public static readonly Color ColorEnemyHigh = new(1.0f, 0.435f, 0.435f, 1.0f);    // #ff6f6f
+    public static readonly Color ColorSword = new(0.961f, 0.784f, 0.420f, 0.95f);     // #f5c86b @ 95%
 
-# Special colors
-const COLOR_DEATH_TEXT := Color(1.0, 0.882, 0.690, 1.0)     # #ffe1b0
-const COLOR_DEATH_OVERLAY := Color(0.0, 0.0, 0.0, 0.75)     # black @ 75%
+    // Special colors
+    public static readonly Color ColorDeathText = new(1.0f, 0.882f, 0.690f, 1.0f);    // #ffe1b0
+    public static readonly Color ColorDeathOverlay = new(0.0f, 0.0f, 0.0f, 0.75f);    // black @ 75%
+}
 ```
 
 ### Font Specification
@@ -144,25 +148,27 @@ The HUD panel is a PanelContainer in the top-left corner of the viewport display
 | `content_margin_top` | 10 | `padding: 10px 12px` (vertical) |
 | `content_margin_bottom` | 10 | `padding: 10px 12px` (vertical) |
 
-**GDScript to create the StyleBoxFlat programmatically:**
-```gdscript
-func _create_panel_style() -> StyleBoxFlat:
-    var style := StyleBoxFlat.new()
-    style.bg_color = Color(0.086, 0.106, 0.157, 0.75)
-    style.border_color = Color(0.961, 0.784, 0.420, 0.3)
-    style.border_width_left = 1
-    style.border_width_right = 1
-    style.border_width_top = 1
-    style.border_width_bottom = 1
-    style.corner_radius_top_left = 10
-    style.corner_radius_top_right = 10
-    style.corner_radius_bottom_left = 10
-    style.corner_radius_bottom_right = 10
-    style.content_margin_left = 12
-    style.content_margin_right = 12
-    style.content_margin_top = 10
-    style.content_margin_bottom = 10
-    return style
+**C# to create the StyleBoxFlat programmatically:**
+```csharp
+private static StyleBoxFlat CreatePanelStyle()
+{
+    var style = new StyleBoxFlat();
+    style.BgColor = new Color(0.086f, 0.106f, 0.157f, 0.75f);
+    style.BorderColor = new Color(0.961f, 0.784f, 0.420f, 0.3f);
+    style.BorderWidthLeft = 1;
+    style.BorderWidthRight = 1;
+    style.BorderWidthTop = 1;
+    style.BorderWidthBottom = 1;
+    style.CornerRadiusTopLeft = 10;
+    style.CornerRadiusTopRight = 10;
+    style.CornerRadiusBottomLeft = 10;
+    style.CornerRadiusBottomRight = 10;
+    style.ContentMarginLeft = 12;
+    style.ContentMarginRight = 12;
+    style.ContentMarginTop = 10;
+    style.ContentMarginBottom = 10;
+    return style;
+}
 ```
 
 **Note on backdrop blur:** Phaser's CSS uses `backdrop-filter: blur(5px)` for a frosted glass effect. Godot's Control nodes do not natively support backdrop blur. To approximate this, use a BackBufferCopy node or a custom shader. Deferred for prototype -- the semi-transparent panel background is sufficient.
@@ -272,10 +278,10 @@ For the prototype, a flat `Color(0.059, 0.067, 0.090, 1.0)` clear color is suffi
 ### Godot Theme Resource Strategy
 
 **Prototype approach (current):**
-- All colors and style values live as constants in `ui_theme.gd` (autoloaded singleton or static class).
-- StyleBoxFlat objects are created programmatically in `_ready()` and applied via `add_theme_stylebox_override()`.
-- Font sizes applied via `add_theme_font_size_override()`.
-- Font colors applied via `add_theme_color_override()`.
+- All colors and style values live as constants in `UiTheme.cs` (static class).
+- StyleBoxFlat objects are created programmatically in `_Ready()` and applied via `AddThemeStyleboxOverride()`.
+- Font sizes applied via `AddThemeFontSizeOverride()`.
+- Font colors applied via `AddThemeColorOverride()`.
 
 **Future approach (when UI stabilizes):**
 - Create `game_theme.tres` (Godot Theme resource).
@@ -303,9 +309,9 @@ In Godot, responsive UI is handled differently:
 
 ## Implementation Notes
 
-- The `ui_theme.gd` script should be added as an Autoload singleton so all scenes can access `UiTheme.COLOR_ACCENT`, etc.
-- When creating StyleBoxFlat objects, create them once in `_ready()` and cache them. Do not create new StyleBoxFlat instances every frame.
-- Godot's default font is adequate for the prototype. When a custom font is added, load it as a `.tres` FontFile resource and set it via `add_theme_font_override("font", custom_font)`.
+- The `UiTheme.cs` static class is accessible from any script via `UiTheme.ColorAccent`, etc. No autoload is needed for a static class.
+- When creating StyleBoxFlat objects, create them once in `_Ready()` and cache them. Do not create new StyleBoxFlat instances every frame.
+- Godot's default font is adequate for the prototype. When a custom font is added, load it as a `.tres` FontFile resource and set it via `AddThemeFontOverride("font", customFont)`.
 - The death screen should be a separate scene (or CanvasLayer) instanced on top of the game scene, not a replacement of the game scene.
 
 ## Open Questions

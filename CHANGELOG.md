@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `docs/dev-tracker.md` — single-file development progress tracker with phased checklist
+- `docs/architecture/setup-guide.md` — .NET SDK, Godot .NET edition, VS Code extension setup guide
+
+### Changed
+
+- **Language migration: GDScript → C# (.NET 8+)** — all docs, conventions, and tooling updated for C#
+- `AGENTS.md` — overhauled: C# conventions (§4), tech stack with NuGet deps (§5), PascalCase naming (§6), new project structure (§7), dotnet tooling (§10)
+- `CLAUDE.md` — added C# migration mode, setup guide reference
+- `docs/architecture/tech-stack.md` — rewritten for C#/.NET 8+, added NuGet deps, platform support matrix, perf comparison
+- `docs/architecture/project-structure.md` — updated directory tree for .csproj/.sln, PascalCase files, C# naming conventions
+- `docs/dev-tracker.md` — updated all file extensions (.gd → .cs), test refs (GUT → GdUnit4), added Phase 0.2 C# migration checklist
+- Stack additions: MessagePack-CSharp (binary floor cache), Microsoft.Extensions.ObjectPool (entity pooling), System.Threading.Channels (async generation), GdUnit4 + xUnit (testing)
+- Autoloads open questions resolved: while-loop multi-level-up, player_damaged signal added, scripts over scenes, floor_number stays on GameState, save slot-aware interface
+
+### Removed
+
+- GDScript conventions, gdlint/gdformat references, GUT test framework references (replaced by C# equivalents)
+
+### Previous Unreleased
+
 - `docs/systems/skills.md` — full skill trees for all 3 classes (Warrior, Ranger, Mage) with hierarchical categories, hybrid leveling (use-based + point-based), infinite scaling
 - `docs/systems/color-system.md` — unified cool→warm color gradient system for enemies, items, and zones (level-relative coloring)
 - `docs/systems/player-engagement.md` — feedback loops, session pacing, juice/feel, retention hooks

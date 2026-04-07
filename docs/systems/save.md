@@ -14,7 +14,7 @@ Save/export functionality is referenced in the project design but not yet implem
 
 | Property | Phaser (Old) | Godot (New) |
 |----------|-------------|-------------|
-| API | `localStorage.setItem()` / `localStorage.getItem()` | `FileAccess.open()` / `file.store_string()` |
+| API | `localStorage.setItem()` / `localStorage.getItem()` | `FileAccess.Open()` / `file.StoreString()` |
 | Key / Path | `dungeonGame_save` (localStorage key) | `user://save_data.json` (file path) |
 | Format | JSON string | JSON string (pretty-printed with tabs) |
 | Location | Browser storage (per-origin) | OS-specific app data directory |
@@ -75,94 +75,116 @@ The save captures all persistent state. The structure is a dictionary serialized
 ### Save API
 
 **Save function:**
-```gdscript
-func save_game() -> void:
-    var save_data := {
-        "version": 1,
-        "character": {
-            "level": GameState.level,
-            "xp": GameState.xp,
-            "hp": GameState.hp,
-            "max_hp": GameState.max_hp,
+```csharp
+public void SaveGame()
+{
+    var saveData = new Godot.Collections.Dictionary
+    {
+        ["version"] = 1,
+        ["character"] = new Godot.Collections.Dictionary
+        {
+            ["level"] = GameState.Instance.Level,
+            ["xp"] = GameState.Instance.Xp,
+            ["hp"] = GameState.Instance.Hp,
+            ["max_hp"] = GameState.Instance.MaxHp,
         },
-        "dungeon": {
-            "floor_number": GameState.floor_number,
+        ["dungeon"] = new Godot.Collections.Dictionary
+        {
+            ["floor_number"] = GameState.Instance.FloorNumber,
         }
-    }
+    };
 
-    var file := FileAccess.open("user://save_data.json", FileAccess.WRITE)
-    if file == null:
-        push_error("Failed to open save file for writing: %s" % FileAccess.get_open_error())
-        return
-    file.store_string(JSON.stringify(save_data, "\t"))
-    # File is automatically closed when the variable goes out of scope
+    using var file = FileAccess.Open("user://save_data.json", FileAccess.ModeFlags.Write);
+    if (file == null)
+    {
+        GD.PushError($"Failed to open save file for writing: {FileAccess.GetOpenError()}");
+        return;
+    }
+    file.StoreString(Json.Stringify(saveData, "\t"));
+}
 ```
 
 **Load function:**
-```gdscript
-func load_game() -> bool:
-    if not FileAccess.file_exists("user://save_data.json"):
-        return false
+```csharp
+public bool LoadGame()
+{
+    if (!FileAccess.FileExists("user://save_data.json"))
+        return false;
 
-    var file := FileAccess.open("user://save_data.json", FileAccess.READ)
-    if file == null:
-        push_error("Failed to open save file for reading: %s" % FileAccess.get_open_error())
-        return false
+    using var file = FileAccess.Open("user://save_data.json", FileAccess.ModeFlags.Read);
+    if (file == null)
+    {
+        GD.PushError($"Failed to open save file for reading: {FileAccess.GetOpenError()}");
+        return false;
+    }
 
-    var json := JSON.new()
-    var parse_result := json.parse(file.get_as_text())
-    if parse_result != OK:
-        push_error("Failed to parse save JSON: %s at line %d" % [json.get_error_message(), json.get_error_line()])
-        return false
+    var json = new Json();
+    Error parseResult = json.Parse(file.GetAsText());
+    if (parseResult != Error.Ok)
+    {
+        GD.PushError($"Failed to parse save JSON: {json.GetErrorMessage()} at line {json.GetErrorLine()}");
+        return false;
+    }
 
-    var data: Dictionary = json.data
-    if not _validate_save_data(data):
-        push_error("Save data validation failed")
-        return false
+    var data = (Godot.Collections.Dictionary)json.Data;
+    if (!ValidateSaveData(data))
+    {
+        GD.PushError("Save data validation failed");
+        return false;
+    }
 
-    # Apply loaded data to GameState
-    GameState.level = data["character"]["level"]
-    GameState.xp = data["character"]["xp"]
-    GameState.hp = data["character"]["hp"]
-    GameState.max_hp = data["character"]["max_hp"]
-    GameState.floor_number = data["dungeon"]["floor_number"]
+    // Apply loaded data to GameState
+    var character = (Godot.Collections.Dictionary)data["character"];
+    var dungeon = (Godot.Collections.Dictionary)data["dungeon"];
+    GameState.Instance.Level = (int)character["level"];
+    GameState.Instance.Xp = (int)character["xp"];
+    GameState.Instance.Hp = (int)character["hp"];
+    GameState.Instance.MaxHp = (int)character["max_hp"];
+    GameState.Instance.FloorNumber = (int)dungeon["floor_number"];
 
-    return true
+    return true;
+}
 ```
 
 **Validation function:**
-```gdscript
-func _validate_save_data(data: Dictionary) -> bool:
-    # Check required top-level keys
-    if not data.has("version"):
-        return false
-    if not data.has("character"):
-        return false
-    if not data.has("dungeon"):
-        return false
+```csharp
+private bool ValidateSaveData(Godot.Collections.Dictionary data)
+{
+    // Check required top-level keys
+    if (!data.ContainsKey("version"))
+        return false;
+    if (!data.ContainsKey("character"))
+        return false;
+    if (!data.ContainsKey("dungeon"))
+        return false;
 
-    # Check character fields
-    var character: Dictionary = data.get("character", {})
-    for key in ["level", "xp", "hp", "max_hp"]:
-        if not character.has(key):
-            return false
+    // Check character fields
+    var character = data.GetValueOrDefault("character", new Godot.Collections.Dictionary())
+        as Godot.Collections.Dictionary ?? new();
+    foreach (string key in new[] { "level", "xp", "hp", "max_hp" })
+    {
+        if (!character.ContainsKey(key))
+            return false;
+    }
 
-    # Check dungeon fields
-    var dungeon: Dictionary = data.get("dungeon", {})
-    if not dungeon.has("floor_number"):
-        return false
+    // Check dungeon fields
+    var dungeon = data.GetValueOrDefault("dungeon", new Godot.Collections.Dictionary())
+        as Godot.Collections.Dictionary ?? new();
+    if (!dungeon.ContainsKey("floor_number"))
+        return false;
 
-    # Sanity checks on values
-    if character["level"] < 1 or character["level"] > 999:
-        return false
-    if character["hp"] < 0 or character["hp"] > 99999:
-        return false
-    if character["xp"] < 0:
-        return false
-    if dungeon["floor_number"] < 1:
-        return false
+    // Sanity checks on values
+    if ((int)character["level"] < 1 || (int)character["level"] > 999)
+        return false;
+    if ((int)character["hp"] < 0 || (int)character["hp"] > 99999)
+        return false;
+    if ((int)character["xp"] < 0)
+        return false;
+    if ((int)dungeon["floor_number"] < 1)
+        return false;
 
-    return true
+    return true;
+}
 ```
 
 ### Auto-Save Triggers
@@ -178,19 +200,25 @@ The game saves automatically at these moments (unchanged from the original desig
 | Town entry/exit | After the transition between town and dungeon completes | Preserve location state |
 
 **Implementation pattern:**
-```gdscript
-# In GameState autoload:
-signal level_up_completed
-signal floor_changed
+```csharp
+// In GameState autoload:
+[Signal]
+public delegate void LevelUpCompletedEventHandler();
+[Signal]
+public delegate void FloorChangedEventHandler();
 
-# In save_manager.gd:
-func _ready() -> void:
-    GameState.level_up_completed.connect(_on_auto_save_trigger)
-    GameState.floor_changed.connect(_on_auto_save_trigger)
-    EventBus.player_respawned.connect(_on_auto_save_trigger)
+// In SaveManager.cs:
+public override void _Ready()
+{
+    GameState.Instance.LevelUpCompleted += OnAutoSaveTrigger;
+    GameState.Instance.FloorChanged += OnAutoSaveTrigger;
+    EventBus.Instance.PlayerRespawned += OnAutoSaveTrigger;
+}
 
-func _on_auto_save_trigger() -> void:
-    save_game()
+private void OnAutoSaveTrigger()
+{
+    SaveGame();
+}
 ```
 
 ### Export / Import
@@ -199,93 +227,127 @@ Players can export their save as a Base64-encoded string for backup, sharing, or
 
 | Property | Phaser (Old) | Godot (New) |
 |----------|-------------|-------------|
-| Encode | `btoa(JSON.stringify(saveData))` | `Marshalls.utf8_to_base64(JSON.stringify(save_data))` |
-| Decode | `JSON.parse(atob(base64String))` | `JSON.parse(Marshalls.base64_to_utf8(base64_string))` |
-| Clipboard | `navigator.clipboard.writeText()` | `DisplayServer.clipboard_set()` / `DisplayServer.clipboard_get()` |
+| Encode | `btoa(JSON.stringify(saveData))` | `Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonString))` |
+| Decode | `JSON.parse(atob(base64String))` | `Encoding.UTF8.GetString(Convert.FromBase64String(base64String))` |
+| Clipboard | `navigator.clipboard.writeText()` | `DisplayServer.ClipboardSet()` / `DisplayServer.ClipboardGet()` |
 
 **Export function:**
-```gdscript
-func export_save() -> String:
-    if not FileAccess.file_exists("user://save_data.json"):
-        return ""
+```csharp
+public string ExportSave()
+{
+    if (!FileAccess.FileExists("user://save_data.json"))
+        return string.Empty;
 
-    var file := FileAccess.open("user://save_data.json", FileAccess.READ)
-    if file == null:
-        return ""
+    using var file = FileAccess.Open("user://save_data.json", FileAccess.ModeFlags.Read);
+    if (file == null)
+        return string.Empty;
 
-    var json_string := file.get_as_text()
-    var base64_string := Marshalls.utf8_to_base64(json_string)
-    return base64_string
+    string jsonString = file.GetAsText();
+    return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(jsonString));
+}
 ```
 
 **Import function:**
-```gdscript
-func import_save(base64_string: String) -> bool:
-    # Decode Base64 to JSON string
-    var json_string := Marshalls.base64_to_utf8(base64_string)
-    if json_string.is_empty():
-        push_error("Failed to decode Base64 import string")
-        return false
+```csharp
+public bool ImportSave(string base64String)
+{
+    // Decode Base64 to JSON string
+    string jsonString;
+    try
+    {
+        jsonString = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64String));
+    }
+    catch (FormatException)
+    {
+        GD.PushError("Failed to decode Base64 import string");
+        return false;
+    }
 
-    # Parse JSON
-    var json := JSON.new()
-    if json.parse(json_string) != OK:
-        push_error("Import data is not valid JSON")
-        return false
+    if (string.IsNullOrEmpty(jsonString))
+    {
+        GD.PushError("Failed to decode Base64 import string");
+        return false;
+    }
 
-    var data: Dictionary = json.data
+    // Parse JSON
+    var json = new Json();
+    if (json.Parse(jsonString) != Error.Ok)
+    {
+        GD.PushError("Import data is not valid JSON");
+        return false;
+    }
 
-    # Validate
-    if not _validate_save_data(data):
-        push_error("Import data failed validation")
-        return false
+    var data = (Godot.Collections.Dictionary)json.Data;
 
-    # Write to save file (overwrites existing save)
-    var file := FileAccess.open("user://save_data.json", FileAccess.WRITE)
-    if file == null:
-        return false
-    file.store_string(json_string)
+    // Validate
+    if (!ValidateSaveData(data))
+    {
+        GD.PushError("Import data failed validation");
+        return false;
+    }
 
-    # Reload
-    return load_game()
+    // Write to save file (overwrites existing save)
+    using var file = FileAccess.Open("user://save_data.json", FileAccess.ModeFlags.Write);
+    if (file == null)
+        return false;
+    file.StoreString(jsonString);
+
+    // Reload
+    return LoadGame();
+}
 ```
 
 **Copy to clipboard:**
-```gdscript
-func copy_save_to_clipboard() -> void:
-    var base64 := export_save()
-    if not base64.is_empty():
-        DisplayServer.clipboard_set(base64)
+```csharp
+public void CopySaveToClipboard()
+{
+    string base64 = ExportSave();
+    if (!string.IsNullOrEmpty(base64))
+        DisplayServer.ClipboardSet(base64);
+}
 
-func paste_save_from_clipboard() -> bool:
-    var base64 := DisplayServer.clipboard_get()
-    if base64.is_empty():
-        return false
-    return import_save(base64)
+public bool PasteSaveFromClipboard()
+{
+    string base64 = DisplayServer.ClipboardGet();
+    if (string.IsNullOrEmpty(base64))
+        return false;
+    return ImportSave(base64);
+}
 ```
 
 ### Save File Versioning
 
 The `version` field in the save data enables forward migration:
 
-```gdscript
-func _migrate_save(data: Dictionary) -> Dictionary:
-    var version: int = data.get("version", 0)
+```csharp
+private Godot.Collections.Dictionary MigrateSave(Godot.Collections.Dictionary data)
+{
+    int version = data.ContainsKey("version") ? (int)data["version"] : 0;
 
-    # Version 0 -> 1: Add max_hp field
-    if version < 1:
-        if data.has("character"):
-            var character: Dictionary = data["character"]
-            if not character.has("max_hp"):
-                character["max_hp"] = 100 + character.get("level", 1) * 8
-        data["version"] = 1
+    // Version 0 -> 1: Add max_hp field
+    if (version < 1)
+    {
+        if (data.ContainsKey("character"))
+        {
+            var character = (Godot.Collections.Dictionary)data["character"];
+            if (!character.ContainsKey("max_hp"))
+            {
+                int level = character.ContainsKey("level") ? (int)character["level"] : 1;
+                character["max_hp"] = 100 + level * 8;
+            }
+        }
+        data["version"] = 1;
+    }
 
-    # Future migrations:
-    # if version < 2:
-    #     ... add new fields, restructure, etc.
-    #     data["version"] = 2
+    // Future migrations:
+    // if (version < 2)
+    // {
+    //     ... add new fields, restructure, etc.
+    //     data["version"] = 2;
+    // }
 
-    return data
+    return data;
+}
 ```
 
 Migration is applied during `load_game()` before validation, so old saves are upgraded transparently.
@@ -298,28 +360,32 @@ These rules protect against data loss:
 |------|---------------|
 | Never overwrite without confirmation | Import shows a confirmation dialog before replacing existing save |
 | Import warns about existing progress | If a save file already exists, display: "This will replace your current save (Level X, Floor Y). Continue?" |
-| Reject corrupted data | `_validate_save_data()` checks structure and value ranges; invalid data is rejected with an error message |
+| Reject corrupted data | `ValidateSaveData()` checks structure and value ranges; invalid data is rejected with an error message |
 | Backup before import | Before import overwrites the save file, copy the existing file to `user://save_data_backup.json` |
-| Clear error messages | Every failure path produces a specific error via `push_error()` and returns false/empty to the caller |
+| Clear error messages | Every failure path produces a specific error via `GD.PushError()` and returns false/empty to the caller |
 
 **Backup before import:**
-```gdscript
-func _backup_existing_save() -> void:
-    if FileAccess.file_exists("user://save_data.json"):
-        var src := FileAccess.open("user://save_data.json", FileAccess.READ)
-        var content := src.get_as_text()
-        var dst := FileAccess.open("user://save_data_backup.json", FileAccess.WRITE)
-        dst.store_string(content)
+```csharp
+private void BackupExistingSave()
+{
+    if (FileAccess.FileExists("user://save_data.json"))
+    {
+        using var src = FileAccess.Open("user://save_data.json", FileAccess.ModeFlags.Read);
+        string content = src.GetAsText();
+        using var dst = FileAccess.Open("user://save_data_backup.json", FileAccess.ModeFlags.Write);
+        dst.StoreString(content);
+    }
+}
 ```
 
 ## Implementation Notes
 
 - The save manager should be an Autoload singleton (`SaveManager`) so it is accessible from any scene.
-- `FileAccess` in Godot 4 uses reference counting -- files are closed automatically when the `FileAccess` variable goes out of scope. No explicit `close()` call is needed.
-- `JSON.stringify(data, "\t")` produces human-readable JSON with tab indentation. This makes the save file debuggable by opening it in a text editor.
+- `FileAccess` in Godot 4 with C# implements `IDisposable` -- use `using` statements to ensure files are closed deterministically.
+- `Json.Stringify(data, "\t")` produces human-readable JSON with tab indentation. This makes the save file debuggable by opening it in a text editor.
 - `user://` is a virtual path that Godot resolves at runtime. Never hardcode the OS-specific path.
 - On web exports (HTML5), `user://` maps to IndexedDB via Emscripten's virtual filesystem. The same `FileAccess` API works, but data persistence depends on browser storage policies.
-- The `Marshalls` class is a built-in Godot utility -- no imports or plugins needed.
+- Base64 encoding uses `System.Convert.ToBase64String()` and `System.Convert.FromBase64String()` from the .NET standard library -- no Godot-specific utility needed.
 
 ## Open Questions
 

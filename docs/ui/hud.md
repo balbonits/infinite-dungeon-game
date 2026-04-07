@@ -11,7 +11,7 @@ Migrating from Phaser 3 prototype to Godot 4:
 - **Godot implementation:** `CanvasLayer` (layer 10) containing a `Control` node tree with `PanelContainer`, `VBoxContainer`, and `Label` nodes
 - Displays: game title, control hints, and stats line (`HP: {hp} | XP: {xp} | LVL: {level} | Floor: {floor}`)
 - Stats update reactively via signal from `GameState` autoload
-- Click-through enabled (`mouse_filter = MOUSE_FILTER_IGNORE`) so input passes to the game world
+- Click-through enabled (`MouseFilter = MouseFilterEnum.Ignore`) so input passes to the game world
 
 ## Design
 
@@ -58,8 +58,8 @@ The complete scene tree for the HUD:
 
 ```
 UILayer (CanvasLayer, layer=10)
-└── HUD (Control, full_rect) [hud.gd]
-    │ mouse_filter = MOUSE_FILTER_IGNORE
+└── HUD (Control, full_rect) [Hud.cs]
+    │ MouseFilter = MouseFilterEnum.Ignore
     └── PanelContainer
         │ anchors: top=0, left=0 (top-left corner)
         │ offsets: left=12, top=12
@@ -98,8 +98,8 @@ UILayer (CanvasLayer, layer=10)
 | Property | Value | Reason |
 |----------|-------|--------|
 | `layout` | Full Rect | Fills the entire viewport (anchors 0,0 to 1,1) |
-| `mouse_filter` | `MOUSE_FILTER_IGNORE` | Clicks pass through to the game world below |
-| Script | `hud.gd` | Handles signal connection and stats label updates |
+| `MouseFilter` | `MouseFilterEnum.Ignore` | Clicks pass through to the game world below |
+| Script | `Hud.cs` | Handles signal connection and stats label updates |
 
 #### PanelContainer
 
@@ -133,7 +133,7 @@ UILayer (CanvasLayer, layer=10)
 
 The StyleBoxFlat can be created either:
 1. **In the editor:** Select PanelContainer > Theme Overrides > Styles > Panel > New StyleBoxFlat > set properties
-2. **Programmatically in `_ready()`:** Create a `StyleBoxFlat` resource and call `add_theme_stylebox_override("panel", style_box)`
+2. **Programmatically in `_Ready()`:** Create a `StyleBoxFlat` resource and call `AddThemeStyleboxOverride("panel", styleBox)`
 
 #### VBoxContainer
 
@@ -166,42 +166,48 @@ The StyleBoxFlat can be created either:
 | `theme_override_colors/font_color` | `Color("#ecf0ff")` -- ink white |
 | `theme_override_font_sizes/font_size` | 12 |
 
-### hud.gd Script
+### Hud.cs Script
 
-```gdscript
-extends Control
+```csharp
+using Godot;
 
-@onready var stats_label: Label = $PanelContainer/VBoxContainer/StatsLabel
+public partial class Hud : Control
+{
+    private Label _statsLabel = null!;
 
-func _ready() -> void:
-    mouse_filter = Control.MOUSE_FILTER_IGNORE
-    GameState.stats_changed.connect(_on_stats_changed)
-    _on_stats_changed()  # Initialize display with current values
+    public override void _Ready()
+    {
+        _statsLabel = GetNode<Label>("PanelContainer/VBoxContainer/StatsLabel");
+        MouseFilter = MouseFilterEnum.Ignore;
+        GameState.Instance.StatsChanged += OnStatsChanged;
+        OnStatsChanged();  // Initialize display with current values
+    }
 
-func _on_stats_changed() -> void:
-    stats_label.text = "HP: %d | XP: %d | LVL: %d | Floor: %d" % [
-        GameState.hp, GameState.xp, GameState.level, GameState.floor_number
-    ]
+    private void OnStatsChanged()
+    {
+        _statsLabel.Text = $"HP: {GameState.Instance.Hp} | XP: {GameState.Instance.Xp} | LVL: {GameState.Instance.Level} | Floor: {GameState.Instance.FloorNumber}";
+    }
+}
 ```
 
 #### Script Behavior
 
-1. **On `_ready()`:** Connects to `GameState.stats_changed` signal and immediately calls the handler to populate the label with current values.
-2. **On `_on_stats_changed()`:** Rebuilds the stats string using `GameState` properties. This fires whenever HP, XP, level, or floor changes.
-3. **`mouse_filter`:** Set to `IGNORE` so the entire HUD Control tree does not intercept mouse events. This is critical -- without it, the HUD would block clicks/taps on the game world.
+1. **On `_Ready()`:** Connects to `GameState.StatsChanged` event and immediately calls the handler to populate the label with current values.
+2. **On `OnStatsChanged()`:** Rebuilds the stats string using `GameState` properties. This fires whenever HP, XP, level, or floor changes.
+3. **`MouseFilter`:** Set to `Ignore` so the entire HUD Control tree does not intercept mouse events. This is critical -- without it, the HUD would block clicks/taps on the game world.
 
 #### Signal Flow
 
 ```
-GameState.take_damage()   ──┐
-GameState.award_xp()      ──┤── emit stats_changed signal
-GameState.reset()          ──┘
+GameState.TakeDamage()    ──┐
+GameState.AwardXp()       ──┤── emit StatsChanged event
+GameState.Reset()         ──┘
                                │
                                v
-                    hud.gd._on_stats_changed()
+                    Hud.OnStatsChanged()
                                │
                                v
-                    StatsLabel.text = "HP: ..."
+                    StatsLabel.Text = "HP: ..."
 ```
 
 ### CanvasLayer Rendering
@@ -219,7 +225,7 @@ GameState.reset()          ──┘
 | Background | `background: var(--panel)` + `backdrop-filter: blur(5px)` | `StyleBoxFlat` with `bg_color` (no blur) |
 | Border | `border: 1px solid var(--panel-border)` | `StyleBoxFlat` with `border_color` + `border_width` |
 | Corner radius | `border-radius: 10px` | `StyleBoxFlat` with `corner_radius` = 10 |
-| Click-through | `pointer-events: none` | `mouse_filter = MOUSE_FILTER_IGNORE` |
+| Click-through | `pointer-events: none` | `MouseFilter = MouseFilterEnum.Ignore` |
 | Title color | CSS `color: var(--accent)` | `theme_override_colors/font_color = Color("#f5c86b")` |
 | Stats update | Direct DOM: `hud.textContent = ...` | Signal from `GameState` -> `Label.text` property |
 | Responsive | `@media (max-width: 900px)` CSS changes | Godot anchors auto-adapt; manual responsive logic if needed |

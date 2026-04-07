@@ -2,13 +2,14 @@
 
 ## Summary
 
-Testing approach for "A Dungeon in the Middle of Nowhere" during the Godot 4 migration. Combines manual playtesting, unit tests, and integration tests to catch regressions and verify that game feel matches the Phaser 3 prototype.
+Testing approach for "A Dungeon in the Middle of Nowhere" using Godot 4 + C#. Combines manual playtesting, unit tests (xUnit), and integration/scene tests (GdUnit4) to catch regressions and verify that game feel matches the Phaser 3 prototype.
 
 ## Current State
 
-- No automated tests exist yet (project is migrating to Godot 4)
-- Manual playtesting has been the primary QA method during Phaser prototype development
-- GUT (Godot Unit Test) framework selected for automated testing
+- No automated tests exist yet (project is in docs-only phase)
+- Manual playtesting was the primary QA method during Phaser prototype development
+- **GdUnit4** selected for Godot scene/node testing (NuGet: `gdUnit4.api`)
+- **xUnit** selected for pure C# logic testing (stat formulas, XP curves, data structures)
 - Test cases documented in `docs/testing/manual-tests.md` and `docs/testing/automated-tests.md`
 
 ## Design
@@ -22,86 +23,153 @@ This is a learning project. Testing should:
 - **Teach game testing patterns** -- learn how to test game logic vs. visual output vs. game feel
 - **Focus on logic over visuals** -- automated tests verify math and state; manual tests verify visuals and feel
 
+### Dual Framework Approach
+
+**Why two frameworks?**
+
+| Framework | Use Case | Godot Runtime? | Speed |
+|-----------|----------|----------------|-------|
+| xUnit | Pure C# logic (formulas, state, data) | No — runs without Godot | Very fast (~ms per test) |
+| GdUnit4 | Scene tests, node interaction, signals | Yes — needs Godot runtime | Slower (~100ms per test) |
+
+Most game logic (stat formulas, XP curves, damage calculations, level-up math) is pure C# — no Godot nodes needed. Test these with xUnit for maximum speed. Scene-dependent behavior (signal flow, node interactions, timer-based spawning) needs GdUnit4's `[RequireGodotRuntime]`.
+
 ### Testing Layers
 
 | Layer | Tool | Purpose | When to Run | Duration Target |
 |-------|------|---------|-------------|-----------------|
 | Manual playtest | Godot editor (F5) | Verify game feel, visual correctness, fun factor | Every change | 2-5 minutes |
-| Unit tests | GUT framework | Verify formulas, state logic, isolated behavior | After each system is implemented | < 5 seconds |
-| Integration tests | GUT framework | Verify systems work together (e.g., attack -> XP -> level up) | After milestones or cross-system changes | < 10 seconds |
+| Unit tests | xUnit | Verify formulas, state logic, isolated behavior | After each system is implemented | < 2 seconds |
+| Integration tests | GdUnit4 | Verify systems work together (e.g., attack -> XP -> level up) | After milestones or cross-system changes | < 10 seconds |
 | Performance test | Godot profiler | Verify frame rate with max enemies on screen | Periodically, and before any release | Manual (5 minutes) |
 
 ### What to Test Per System
 
-| System | Unit Tests | Integration Tests | Manual Tests |
+| System | Unit Tests (xUnit) | Integration Tests (GdUnit4) | Manual Tests |
 |--------|-----------|-------------------|--------------|
-| GameState | Property defaults, damage clamping, XP/level math, signal emission | N/A (pure logic autoload) | Debugger inspection of values |
+| GameState | Property defaults, damage clamping, XP/level math | Signal emission verification | Debugger inspection of values |
 | Movement | Isometric transform math, normalized vector length | Move + wall collision response | WASD feel, diagonal speed consistency, camera follow |
 | Combat | Damage formulas, cooldown timing, range detection | Player attacks enemy -> XP awarded -> level up triggers | Attack feel, slash visual effect, target selection |
 | Enemies | Tier stat calculation (HP/speed/damage/XP), color assignment | Chase + contact damage + death flow | Enemy colors match tiers, chase feels right, no stuck enemies |
-| Spawning | N/A (timer-based, hard to unit test) | Initial count = 10, cap = 14 enforced, respawn after death | Visual count, spawn locations at edges, no clustering |
-| HUD | N/A (display only, no logic) | `GameState.stats_changed` signal -> HUD label updates correctly | Readability, positioning, colors match spec |
+| Spawning | N/A (timer-based) | Initial count = 10, cap = 14 enforced, respawn after death | Visual count, spawn locations at edges, no clustering |
+| HUD | N/A (display only) | `StatsChanged` signal -> HUD label updates correctly | Readability, positioning, colors match spec |
 | Death/Restart | N/A (UI flow) | HP reaches 0 -> death screen appears -> R key restarts -> clean state | Screen appearance, overlay visibility, R key responsiveness |
 
-### GUT Framework
+### GdUnit4 Framework
 
-**What is GUT?**
-- Godot Unit Test: a testing framework for Godot 4
-- GitHub: https://github.com/bitwes/Gut
-- Provides `assert_eq`, `assert_true`, `assert_signal_emitted`, and many other assertions
-- Tests run inside the Godot editor or headless from command line
+**What is GdUnit4?**
+- Testing framework for Godot 4 with first-class C# support
+- GitHub: https://github.com/godot-gdunit-labs/gdUnit4Net
+- Provides `AssertThat()`, `AssertSignal()`, scene runner, and many assertions
+- Tests run via `dotnet test` (headless) or in VS Code Test Explorer
+- v5.0+ runs tests **without Godot runtime by default** — add `[RequireGodotRuntime]` only when needed
 
-**Installation:**
-1. **Via AssetLib:** Godot editor -> AssetLib tab -> search "GUT" -> install -> enable plugin
-2. **Via Git:** `git clone https://github.com/bitwes/Gut.git` into `addons/gut/`
-3. Enable in Project Settings -> Plugins -> GUT -> Active
-
-**Running Tests:**
-- **Editor:** GUT panel (bottom dock) -> "Run All" button
-- **Command line:** `godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/ -gexit`
-- **Specific file:** `godot --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/test_game_state.gd -gexit`
-
-**Writing Tests:**
-```gdscript
-extends GutTest
-
-func test_example():
-    assert_eq(1 + 1, 2, "Basic math should work")
+**NuGet packages:**
+```xml
+<PackageReference Include="gdUnit4.api" Version="5.1.0" />
+<PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+<PackageReference Include="gdUnit4.analyzers" Version="1.0.0" />
 ```
 
-- Test files must start with `test_` prefix
-- Test functions must start with `test_` prefix
-- Tests extend `GutTest` (not `Node` or `SceneTree`)
-- Use `before_each()` and `after_each()` for setup/teardown
+**Writing GdUnit4 tests:**
+```csharp
+using GdUnit4;
+using static GdUnit4.Assertions;
+
+[TestSuite]
+public partial class GameStateTests
+{
+    [TestCase]
+    public void TestInitialHp()
+    {
+        var state = new GameState();
+        state.Reset();
+        AssertThat(state.Hp).IsEqual(100);
+    }
+
+    [TestCase]
+    [RequireGodotRuntime] // Only when test needs Godot nodes/scenes
+    public void TestSignalEmission()
+    {
+        // Scene runner tests that need the Godot engine
+    }
+}
+```
+
+### xUnit Framework
+
+**For pure logic tests** that don't touch Godot nodes:
+
+```csharp
+using Xunit;
+
+public class DamageFormulaTests
+{
+    [Fact]
+    public void TestBaseDamageAtLevel1()
+    {
+        int damage = 12 + (int)(1 * 1.5);
+        Assert.Equal(13, damage);
+    }
+
+    [Theory]
+    [InlineData(1, 90)]
+    [InlineData(2, 180)]
+    [InlineData(10, 900)]
+    public void TestXpThreshold(int level, int expectedXp)
+    {
+        int threshold = level * 90;
+        Assert.Equal(expectedXp, threshold);
+    }
+}
+```
 
 ### Test File Organization
 
 ```
 tests/
-├── test_game_state.gd      -- Unit tests for GameState autoload
-│                               (HP, XP, leveling, damage, reset, signals)
-├── test_enemy.gd            -- Unit tests for enemy stat formulas
-│                               (tier HP, speed, damage, XP values)
-├── test_player.gd           -- Unit tests for player stats and movement math
-│                               (damage formula, iso transform, speed normalization)
-├── test_spawning.gd         -- Integration tests for spawn system
-│                               (initial count, cap enforcement, respawn timing)
-├── test_combat.gd           -- Integration tests for combat flow
-│                               (attack -> damage -> death -> XP -> level up)
-└── test_death_restart.gd    -- Integration tests for death/restart cycle
-                                (HP=0 -> death state -> reset -> clean state)
+├── DungeonGame.Tests.csproj    -- Test project (references main .csproj)
+├── Unit/                        -- xUnit pure logic tests
+│   ├── GameStateTests.cs        -- HP, XP, leveling, damage, reset
+│   ├── EnemyStatsTests.cs       -- Tier HP, speed, damage, XP formulas
+│   ├── MovementTests.cs         -- Isometric transform, speed normalization
+│   └── DamageFormulaTests.cs    -- Combat damage calculations
+├── Integration/                 -- GdUnit4 scene/node tests
+│   ├── CombatFlowTests.cs       -- Attack -> damage -> death -> XP -> level up
+│   ├── SpawningTests.cs         -- Initial count, cap, respawn timing
+│   └── DeathRestartTests.cs     -- HP=0 -> death state -> reset -> clean state
 ```
 
 ### Testing Workflow
 
-For each system implemented during the Godot migration:
+For each system implemented:
 
-1. **Implement the system** -- write the GDScript code, create scenes
-2. **Playtest manually (F5)** -- run the game, verify it looks and feels right
-3. **Write unit tests** for the system's logic (formulas, state changes, signal emissions)
-4. **Write integration tests** for cross-system behavior (e.g., killing an enemy awards XP and triggers level-up)
-5. **Run all tests** -- verify no regressions from the new system
-6. **Document behavior differences** from the Phaser prototype (if any)
+1. **Write unit tests first** (xUnit) for pure logic (formulas, state changes)
+2. **Write integration tests** (GdUnit4) for cross-system behavior
+3. **Run `dotnet test`** to verify tests pass
+4. **Implement the system** -- write the C# code, create scenes
+5. **Playtest manually (F5)** -- run the game, verify it looks and feels right
+6. **Run all tests again** -- verify no regressions
+7. **Document behavior differences** from the Phaser prototype (if any)
+
+### Running Tests
+
+```bash
+# All tests (xUnit + GdUnit4)
+make test
+# or: dotnet test
+
+# With coverage
+make coverage
+# or: dotnet test --collect:"XPlat Code Coverage"
+
+# Specific test class
+dotnet test --filter "FullyQualifiedName~GameStateTests"
+
+# Watch mode (auto-run on file change)
+make watch
+# or: dotnet watch test
+```
 
 ### Performance Testing
 
@@ -124,6 +192,18 @@ Performance testing is manual, using Godot's built-in profiler:
 | Physics process | < 2ms | < 5ms | > 8ms |
 | Enemy count at 60 FPS | 14 (soft cap) | 20+ | N/A |
 | Memory growth per minute | < 1 MB | < 5 MB | > 10 MB |
+| Floor generation time | < 100ms | < 500ms | > 1s |
+
+### Debug Overlay
+
+A toggleable in-game debug panel (F3 key) showing:
+- FPS counter
+- Active entity count (enemies, effects)
+- Floor generation time (ms)
+- Memory usage (MB)
+- Object pool stats (rented/returned)
+
+Built with Godot Control nodes in a CanvasLayer. No external dependency. Disabled in release builds via `#if DEBUG`.
 
 ### Regression Testing
 
@@ -135,19 +215,28 @@ When a bug is found:
 
 When behavior changes are intentional:
 1. Update the relevant test to expect the new behavior
-2. Document why the change was made in a comment
+2. Document why the change was made in the commit message
+
+### Test Coverage
+
+Coverage reports generated via `coverlet` + `ReportGenerator`:
+
+```bash
+make coverage    # Generate HTML coverage report in coverage/
+```
+
+No hard coverage targets — this is a learning project. Coverage is a tool for finding untested paths, not a metric to optimize for.
 
 ## Implementation Notes
 
-- GUT tests run in an isolated scene tree, which means `GameState` autoload must be accessible
-- For integration tests that need scene instances (e.g., enemy scene), use `add_child_autofree()` to automatically clean up after each test
-- Timer-based tests may need `await get_tree().create_timer(0.1).timeout` to advance time; use sparingly as they slow down test execution
-- Camera shake and visual effects are not tested automatically -- rely on manual testing for these
+- GdUnit4 tests with `[RequireGodotRuntime]` run inside a Godot scene tree, so autoloads are accessible
+- For integration tests that need scene instances, use GdUnit4's scene runner API
+- Timer-based tests may need `await` with `ToSignal()` to advance time; use sparingly
+- Camera shake and visual effects are not tested automatically -- rely on manual testing
+- xUnit tests run without Godot entirely — fast, parallelizable, CI-friendly
 
-## Open Questions
+## Resolved Questions
 
-- Should CI/CD run tests automatically on push? (GitHub Actions with headless Godot)
-- Should visual regression testing be added (screenshot comparison)?
-- At what point should performance benchmarks be formalized (beyond manual profiler checks)?
-- Should test coverage targets be set, or is that overkill for a learning project?
-- Should playtesting sessions be logged/documented for tracking game feel evolution?
+- **CI/CD:** Yes — GitHub Actions runs `dotnet build` + `dotnet format --verify-no-changes` + `dotnet test` on every push/PR to main
+- **Coverage:** Added via coverlet. No hard targets, used as a diagnostic tool.
+- **Debug overlay:** Specced as F3-toggleable panel with FPS, entity count, gen time, memory.
