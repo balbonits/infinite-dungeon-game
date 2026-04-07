@@ -152,7 +152,7 @@ Enemy stats should scale with floor depth:
 ### Enemy Scene (enemy.tscn)
 
 ```
-Enemy (CharacterBody2D) [enemy.gd]
+Enemy (CharacterBody2D) [Enemy.cs]
 ├── CollisionShape2D (CircleShape2D, radius=10)
 │   Purpose: Physics body for move_and_slide() wall/body collisions
 ├── Sprite (Polygon2D, diamond shape)
@@ -180,68 +180,95 @@ The enemy's `HitArea` has:
 
 This means the HitArea only detects the player, never other enemies or walls.
 
-### enemy.gd Script
+### Enemy.cs Script
 
-```gdscript
-extends CharacterBody2D
+```csharp
+using Godot;
+using System.Collections.Generic;
 
-@export var danger_tier: int = 1
+public partial class Enemy : CharacterBody2D
+{
+    [Export] public int DangerTier { get; set; } = 1;
 
-var hp: int
-var move_speed: float
-var damage: int
-var xp_reward: int
+    public int Hp { get; private set; }
+    public float MoveSpeed { get; private set; }
+    public int Damage { get; private set; }
+    public int XpReward { get; private set; }
 
-@onready var hit_area: Area2D = $HitArea
-@onready var hit_cooldown: Timer = $HitCooldownTimer
-@onready var sprite: Polygon2D = $Sprite
+    private Area2D _hitArea;
+    private Timer _hitCooldown;
+    private Polygon2D _sprite;
 
-const TIER_COLORS := {
-    1: Color("#6bff89"),  # Green - low danger
-    2: Color("#ffde66"),  # Yellow - mid danger
-    3: Color("#ff6f6f"),  # Red - high danger
+    private static readonly Dictionary<int, Color> TierColors = new()
+    {
+        { 1, new Color("#6bff89") },  // Green - low danger
+        { 2, new Color("#ffde66") },  // Yellow - mid danger
+        { 3, new Color("#ff6f6f") },  // Red - high danger
+    };
+
+    public override void _Ready()
+    {
+        _hitArea = GetNode<Area2D>("HitArea");
+        _hitCooldown = GetNode<Timer>("HitCooldownTimer");
+        _sprite = GetNode<Polygon2D>("Sprite");
+
+        Hp = 18 + DangerTier * 12;
+        MoveSpeed = 48.0f + DangerTier * 18.0f;
+        Damage = 3 + DangerTier;
+        XpReward = 10 + DangerTier * 4;
+        _sprite.Color = TierColors.GetValueOrDefault(DangerTier, Colors.White);
+
+        _hitArea.BodyEntered += OnHitAreaBodyEntered;
+        _hitCooldown.Timeout += OnHitCooldownTimeout;
+    }
+
+    public override void _PhysicsProcess(double delta)
+    {
+        var player = GetTree().GetFirstNodeInGroup("player");
+        if (player == null)
+            return;
+        var direction = (((Node2D)player).GlobalPosition - GlobalPosition).Normalized();
+        Velocity = direction * MoveSpeed;
+        MoveAndSlide();
+    }
+
+    public void TakeDamage(int amount)
+    {
+        Hp -= amount;
+        if (Hp <= 0)
+            Die();
+    }
+
+    public void Die()
+    {
+        QueueFree();
+    }
+
+    private void OnHitAreaBodyEntered(Node2D body)
+    {
+        if (body.IsInGroup("player") && _hitCooldown.IsStopped())
+            DealDamageToPlayer(body);
+    }
+
+    private void OnHitCooldownTimeout()
+    {
+        // Check if player is still overlapping
+        foreach (var body in _hitArea.GetOverlappingBodies())
+        {
+            if (body.IsInGroup("player"))
+            {
+                DealDamageToPlayer((Node2D)body);
+                return;
+            }
+        }
+    }
+
+    private void DealDamageToPlayer(Node2D player)
+    {
+        GameState.TakeDamage(Damage);
+        _hitCooldown.Start();
+    }
 }
-
-func _ready() -> void:
-    hp = 18 + danger_tier * 12
-    move_speed = 48.0 + danger_tier * 18.0
-    damage = 3 + danger_tier
-    xp_reward = 10 + danger_tier * 4
-    sprite.color = TIER_COLORS.get(danger_tier, Color.WHITE)
-
-    hit_area.body_entered.connect(_on_hit_area_body_entered)
-    hit_cooldown.timeout.connect(_on_hit_cooldown_timeout)
-
-func _physics_process(_delta: float) -> void:
-    var player = get_tree().get_first_node_in_group("player")
-    if not player:
-        return
-    var direction := (player.global_position - global_position).normalized()
-    velocity = direction * move_speed
-    move_and_slide()
-
-func take_damage(amount: int) -> void:
-    hp -= amount
-    if hp <= 0:
-        die()
-
-func die() -> void:
-    queue_free()
-
-func _on_hit_area_body_entered(body: Node2D) -> void:
-    if body.is_in_group("player") and hit_cooldown.is_stopped():
-        _deal_damage_to_player(body)
-
-func _on_hit_cooldown_timeout() -> void:
-    # Check if player is still overlapping
-    for body in hit_area.get_overlapping_bodies():
-        if body.is_in_group("player"):
-            _deal_damage_to_player(body)
-            return
-
-func _deal_damage_to_player(_player: Node2D) -> void:
-    GameState.take_damage(damage)
-    hit_cooldown.start()
 ```
 
 ### Spawning System
@@ -252,49 +279,62 @@ Enemy spawning is managed by the main game scene (not by individual enemies). Th
 2. **Periodic timer (2.8s):** Checks if active enemy count < 14; if so, spawns one new enemy
 3. **On enemy death:** Starts a 1.4s one-shot timer; on timeout, spawns a replacement enemy
 
-```gdscript
-# In the main game scene or spawn manager:
+```csharp
+// In the main game scene or spawn manager:
+using Godot;
 
-func _ready() -> void:
-    # Initial spawn
-    for i in range(10):
-        spawn_enemy()
+public partial class SpawnManager : Node
+{
+    private PackedScene _enemyScene = GD.Load<PackedScene>("res://scenes/enemy.tscn");
 
-    # Periodic spawn timer
-    var spawn_timer := Timer.new()
-    spawn_timer.wait_time = 2.8
-    spawn_timer.autostart = true
-    spawn_timer.timeout.connect(_on_spawn_timer)
-    add_child(spawn_timer)
+    public override void _Ready()
+    {
+        // Initial spawn
+        for (int i = 0; i < 10; i++)
+            SpawnEnemy();
 
-func spawn_enemy() -> void:
-    var enemy_scene := preload("res://scenes/enemy.tscn")
-    var enemy := enemy_scene.instantiate()
-    enemy.danger_tier = randi_range(1, 3)
-    enemy.global_position = _random_edge_position()
-    add_child(enemy)
-    enemy.tree_exiting.connect(_on_enemy_died.bind(enemy))
+        // Periodic spawn timer
+        var spawnTimer = new Timer();
+        spawnTimer.WaitTime = 2.8;
+        spawnTimer.Autostart = true;
+        spawnTimer.Timeout += OnSpawnTimer;
+        AddChild(spawnTimer);
+    }
 
-func _on_spawn_timer() -> void:
-    if get_tree().get_nodes_in_group("enemies").size() < 14:
-        spawn_enemy()
+    public void SpawnEnemy()
+    {
+        var enemy = _enemyScene.Instantiate<Enemy>();
+        enemy.DangerTier = (int)GD.RandRange(1, 3);
+        enemy.GlobalPosition = RandomEdgePosition();
+        AddChild(enemy);
+        enemy.TreeExiting += () => OnEnemyDied(enemy);
+    }
 
-func _on_enemy_died(_enemy: Node) -> void:
-    # Respawn after 1.4s delay
-    get_tree().create_timer(1.4).timeout.connect(spawn_enemy)
+    private void OnSpawnTimer()
+    {
+        if (GetTree().GetNodesInGroup("enemies").Count < 14)
+            SpawnEnemy();
+    }
 
-func _random_edge_position() -> Vector2:
-    var edge := randi_range(0, 3)
-    match edge:
-        0:  # Top
-            return Vector2(randf_range(0, world_width), 10)
-        1:  # Right
-            return Vector2(world_width - 10, randf_range(0, world_height))
-        2:  # Bottom
-            return Vector2(randf_range(0, world_width), world_height - 10)
-        3:  # Left
-            return Vector2(10, randf_range(0, world_height))
-    return Vector2.ZERO
+    private void OnEnemyDied(Node enemy)
+    {
+        // Respawn after 1.4s delay
+        GetTree().CreateTimer(1.4).Timeout += SpawnEnemy;
+    }
+
+    private Vector2 RandomEdgePosition()
+    {
+        int edge = (int)GD.RandRange(0, 3);
+        return edge switch
+        {
+            0 => new Vector2((float)GD.RandRange(0, _worldWidth), 10),   // Top
+            1 => new Vector2(_worldWidth - 10, (float)GD.RandRange(0, _worldHeight)), // Right
+            2 => new Vector2((float)GD.RandRange(0, _worldWidth), _worldHeight - 10), // Bottom
+            3 => new Vector2(10, (float)GD.RandRange(0, _worldHeight)),  // Left
+            _ => Vector2.Zero,
+        };
+    }
+}
 ```
 
 ### Camera Shake on Hit
@@ -305,26 +345,30 @@ When the player takes damage from an enemy, the camera shakes:
 - Phaser equivalent: `this.cameras.main.shake(90, 0.0035)` -- 90ms duration, 0.0035 intensity (which is ~3.85 pixels on a 1100px canvas)
 
 In Godot, camera shake can be implemented on the `Camera2D` node:
-```gdscript
-func shake(intensity: float = 3.0, duration: float = 0.045) -> void:
-    var tween := create_tween()
-    tween.tween_property(self, "offset", Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity)), duration)
-    tween.tween_property(self, "offset", Vector2.ZERO, duration)
+```csharp
+public void Shake(float intensity = 3.0f, float duration = 0.045f)
+{
+    var tween = CreateTween();
+    tween.TweenProperty(this, "offset",
+        new Vector2((float)GD.RandRange(-intensity, intensity), (float)GD.RandRange(-intensity, intensity)),
+        duration);
+    tween.TweenProperty(this, "offset", Vector2.Zero, duration);
+}
 ```
 
 ### Comparison to Phaser Prototype
 
-| Aspect | Phaser 3 | Godot 4 |
-|--------|----------|---------|
+| Aspect | Phaser 3 | Godot 4 (C#) |
+|--------|----------|--------------|
 | Enemy node | `this.add.circle(x, y, 10, tint)` | `CharacterBody2D` + `Polygon2D` (diamond) |
 | Physics body | `this.physics.add.existing(enemy)` | Built into `CharacterBody2D` |
-| Movement | `this.physics.moveToObject(enemy, player, speed)` | Manual `velocity = direction * speed` + `move_and_slide()` |
-| Hit detection | `this.physics.add.overlap(player, enemies, callback)` | `Area2D.body_entered` signal |
+| Movement | `this.physics.moveToObject(enemy, player, speed)` | Manual `Velocity = direction * speed` + `MoveAndSlide()` |
+| Hit detection | `this.physics.add.overlap(player, enemies, callback)` | `Area2D.BodyEntered` signal |
 | Hit cooldown | `enemy.lastHitAt` timestamp comparison | `Timer` node (one_shot, 0.7s) |
-| Respawn delay | `this.time.delayedCall(1400, callback)` | `get_tree().create_timer(1.4).timeout` or Timer node |
-| Spawn cap check | `this.enemies.countActive(true) < 14` | `get_tree().get_nodes_in_group("enemies").size() < 14` |
-| Random tier | `Phaser.Math.Between(1, 3)` | `randi_range(1, 3)` |
-| Death | `enemy.disableBody(true, true)` | `queue_free()` |
+| Respawn delay | `this.time.delayedCall(1400, callback)` | `GetTree().CreateTimer(1.4).Timeout` or Timer node |
+| Spawn cap check | `this.enemies.countActive(true) < 14` | `GetTree().GetNodesInGroup("enemies").Count < 14` |
+| Random tier | `Phaser.Math.Between(1, 3)` | `GD.RandRange(1, 3)` |
+| Death | `enemy.disableBody(true, true)` | `QueueFree()` |
 
 ## Open Questions
 
