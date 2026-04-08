@@ -14,24 +14,48 @@ Single source of truth for all work. Organized as tickets within epics. Specs ar
 
 Quick reference for all 44 tickets. Search by ID, title, or status.
 
-### SPEC — Spec Completion (12 tickets)
+### SPEC — Spec Completion (26 sub-tickets)
+
+All handled by `@design-lead`, reviewed by `@qa-lead`.
 
 | ID | Title | Status | Deps | Doc |
 |----|-------|--------|------|-----|
-| SPEC-01 | Town hub spec | To Do | — | [town.md](world/town.md) |
-| SPEC-02 | Crafting/blacksmith spec | To Do | SPEC-06 | *new doc* |
-| SPEC-03 | Mage spell acquisition spec | To Do | SPEC-05 | *new doc* |
-| SPEC-04 | Lock stat formulas | To Do | — | [stats.md](systems/stats.md) |
-| SPEC-05 | Lock class scaling bonuses | To Do | SPEC-04 | [classes.md](systems/classes.md) |
-| SPEC-06 | Lock item system spec | To Do | SPEC-04 | [items.md](inventory/items.md) |
-| SPEC-07 | Lock leveling spec | To Do | — | [leveling.md](systems/leveling.md) |
-| SPEC-08 | Lock skill system spec | To Do | SPEC-04, 05 | [skills.md](systems/skills.md) |
-| SPEC-09 | Lock dungeon generation spec | To Do | — | [dungeon.md](world/dungeon.md) |
-| SPEC-10 | Lock save system spec | To Do | SPEC-09 | [save.md](systems/save.md) |
-| SPEC-11 | Complete inventory UI specs | To Do | SPEC-06 | [backpack.md](inventory/backpack.md), [bank.md](inventory/bank.md) |
+| SPEC-01a | Town layout and scene flow | To Do | — | [town.md](world/town.md) |
+| SPEC-01b | Item Shop NPC spec | To Do | SPEC-01a | [town.md](world/town.md) |
+| SPEC-01c | Blacksmith NPC spec | To Do | SPEC-01a, SPEC-02 | [town.md](world/town.md) |
+| SPEC-01d | Adventure Guild NPC spec | To Do | SPEC-01a | [town.md](world/town.md) |
+| SPEC-01e | Level Teleporter NPC spec | To Do | SPEC-01a | [town.md](world/town.md) |
+| SPEC-01f | Banker NPC spec | To Do | SPEC-01a | [town.md](world/town.md) |
+| SPEC-02 | Crafting/blacksmith system | To Do | SPEC-06 | *new: crafting.md* |
+| SPEC-03 | Mage spell acquisition | To Do | SPEC-05 | *new: spell-acquisition.md* |
+| SPEC-04a | STR → melee damage formula | To Do | — | [stats.md](systems/stats.md) |
+| SPEC-04b | DEX → attack speed / evasion formula | To Do | — | [stats.md](systems/stats.md) |
+| SPEC-04c | STA → HP / defense formula | To Do | — | [stats.md](systems/stats.md) |
+| SPEC-04d | INT → magic power formula | To Do | — | [stats.md](systems/stats.md) |
+| SPEC-04e | Stat diminishing returns curve | To Do | SPEC-04a–d | [stats.md](systems/stats.md) |
+| SPEC-05a | Warrior per-level bonuses | To Do | SPEC-04a–d | [classes.md](systems/classes.md) |
+| SPEC-05b | Ranger per-level bonuses | To Do | SPEC-04a–d | [classes.md](systems/classes.md) |
+| SPEC-05c | Mage per-level bonuses | To Do | SPEC-04a–d | [classes.md](systems/classes.md) |
+| SPEC-05d | Free stat point allocation rules | To Do | SPEC-05a–c | [classes.md](systems/classes.md) |
+| SPEC-06a | Item data model (types, tiers, fields) | To Do | SPEC-04e | [items.md](inventory/items.md) |
+| SPEC-06b | Loot drop rates and tables | To Do | SPEC-06a | [items.md](inventory/items.md) |
+| SPEC-06c | Equipment slot stat effects | To Do | SPEC-06a | [items.md](inventory/items.md) |
+| SPEC-07a | XP curve formula (lock constant) | To Do | — | [leveling.md](systems/leveling.md) |
+| SPEC-07b | Floor-scaling enemy XP multiplier | To Do | SPEC-07a | [leveling.md](systems/leveling.md) |
+| SPEC-07c | Rested XP rules and display | To Do | — | [leveling.md](systems/leveling.md) |
+| SPEC-07d | Level-up milestone rewards | To Do | SPEC-07a | [leveling.md](systems/leveling.md) |
+| SPEC-08 | Lock skill system spec | To Do | SPEC-04e, SPEC-05d | [skills.md](systems/skills.md) |
+| SPEC-09a | Dungeon generation algorithm | To Do | — | [dungeon.md](world/dungeon.md) |
+| SPEC-09b | Floor difficulty scaling | To Do | SPEC-09a | [dungeon.md](world/dungeon.md) |
+| SPEC-09c | Special room types (boss, treasure, safe) | To Do | SPEC-09a | [dungeon.md](world/dungeon.md) |
+| SPEC-10 | Lock save system spec | To Do | SPEC-09a | [save.md](systems/save.md) |
+| SPEC-11a | Backpack UI and death-loss logic | To Do | SPEC-06a | [backpack.md](inventory/backpack.md) |
+| SPEC-11b | Bank UI and deposit/withdraw flow | To Do | SPEC-06a | [bank.md](inventory/bank.md) |
 | SPEC-12 | Finalize autoloads spec | Done | — | [autoloads.md](architecture/autoloads.md) |
 
 ### SETUP — C# Project Setup (7 tickets)
+
+All handled by `@devops-lead`.
 
 | ID | Title | Status | Deps |
 |----|-------|--------|------|
@@ -44,6 +68,8 @@ Quick reference for all 44 tickets. Search by ID, title, or status.
 | SETUP-07 | Write C# sanity tests | To Do | SETUP-04 |
 
 ### P1 — Prototype Parity (11 tickets)
+
+`@systems-lead` (logic), `@engine-lead` (scenes), `@ui-lead` (HUD/death), `@qa-lead` (tests).
 
 | ID | Title | Status | Deps | Spec | Tests |
 |----|-------|--------|------|------|-------|
@@ -164,119 +190,480 @@ Full acceptance criteria for each ticket. Organized by epic.
 
 > Complete all design docs before any implementation begins. This epic gates everything else.
 
-#### SPEC-01: Write town hub spec
+#### SPEC-01a: Town layout and scene flow
 
-- **Description:** Full design doc for town scene — layout, NPC list, interaction mechanics, shop UI, scene transition to/from dungeon.
+- **Type:** spec | **Team:** Design
+- **Description:** Define the town as a safe zone — physical layout, how the player enters/exits, what the player sees when they arrive.
+- **Doc:** `docs/world/town.md`
+- **Decisions Needed:**
+  - [ ] How big is the town? (single screen, scrollable, multiple areas?)
+  - [ ] How does the player enter from the dungeon? (portal, stairs, fade transition?)
+  - [ ] What's the visual feel? (cozy refuge vs bustling hub?)
 - **Acceptance Criteria:**
-  - [ ] `docs/world/town.md` has layout, NPC specs (Item Shop, Blacksmith, Adventure Guild, Level Teleporter, Banker), interaction flow, and scene transition design
+  - [ ] Town layout described (where NPCs stand, where the entrance/exit is)
+  - [ ] Scene transition design (dungeon ↔ town) documented
   - [ ] No open questions remain
 - **Status:** To Do
 - **Deps:** None
 
-#### SPEC-02: Write crafting/blacksmith spec
+#### SPEC-01b: Item Shop NPC spec
 
-- **Description:** Blacksmith recycling system — break items into materials, crafting recipes, no magical drops.
+- **Type:** spec | **Team:** Design
+- **Description:** What does the Item Shop sell? How does buying/selling work?
+- **Doc:** `docs/world/town.md` (NPC section)
+- **Decisions Needed:**
+  - [ ] What items are for sale? (consumables, basic gear, scrolls?)
+  - [ ] How are prices determined? (fixed, scaled by level, dynamic?)
+  - [ ] Can the player sell items back? At what rate?
 - **Acceptance Criteria:**
-  - [ ] `docs/systems/crafting.md` covers material extraction, recipe system, UI flow, and integration with inventory
-  - [ ] No open questions remain
+  - [ ] Shop inventory rules defined
+  - [ ] Pricing formula documented
+  - [ ] Buy/sell UI flow described
 - **Status:** To Do
-- **Deps:** SPEC-06
+- **Deps:** SPEC-01a
 
-#### SPEC-03: Write Mage spell acquisition spec
+#### SPEC-01c: Blacksmith NPC spec
 
-- **Description:** Scroll osmosis learning system — how Mages discover and learn spells from scrolls.
+- **Type:** spec | **Team:** Design
+- **Description:** What does the Blacksmith do? Crafting, recycling, upgrades?
+- **Doc:** `docs/world/town.md` (NPC section)
+- **Decisions Needed:**
+  - [ ] What services does the Blacksmith offer? (recycle items, craft gear, upgrade?)
+  - [ ] How does the player interact? (menu, dialogue, drag-drop?)
 - **Acceptance Criteria:**
-  - [ ] `docs/systems/spell-acquisition.md` covers scroll types, learning process, spell unlocking, and interaction with skill tree
-  - [ ] No open questions remain
+  - [ ] Blacksmith services listed with interaction flow
+  - [ ] Links to SPEC-02 (crafting system) for detail
 - **Status:** To Do
-- **Deps:** SPEC-05
+- **Deps:** SPEC-01a, SPEC-02
 
-#### SPEC-04: Lock stat formulas
+#### SPEC-01d: Adventure Guild NPC spec
 
-- **Description:** Finalize how STR/DEX/STA/INT map to gameplay values (damage, attack speed, HP, magic power). Currently intentionally vague.
+- **Type:** spec | **Team:** Design
+- **Description:** What does the Adventure Guild offer? Quests, bounties, leaderboards?
+- **Doc:** `docs/world/town.md` (NPC section)
+- **Decisions Needed:**
+  - [ ] Does the guild give quests/bounties? Or just provide info?
+  - [ ] Is there a leaderboard or achievement display?
 - **Acceptance Criteria:**
-  - [ ] `docs/systems/stats.md` has concrete formulas for each stat (e.g., "1 STR = +X base melee damage")
-  - [ ] Diminishing returns formula defined
-  - [ ] All open questions resolved
+  - [ ] Guild purpose and services documented
+  - [ ] Interaction flow described
+- **Status:** To Do
+- **Deps:** SPEC-01a
+
+#### SPEC-01e: Level Teleporter NPC spec
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does the teleporter work? Can you skip to previously reached floors?
+- **Doc:** `docs/world/town.md` (NPC section)
+- **Decisions Needed:**
+  - [ ] Can you teleport to any previously visited floor, or only milestones (every 5/10)?
+  - [ ] Does teleporting cost gold?
+  - [ ] Is there a cooldown?
+- **Acceptance Criteria:**
+  - [ ] Teleport rules documented (which floors, cost, cooldown)
+  - [ ] Interaction flow described
+- **Status:** To Do
+- **Deps:** SPEC-01a
+
+#### SPEC-01f: Banker NPC spec
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does banking work beyond the basic bank spec?
+- **Doc:** `docs/world/town.md` (NPC section)
+- **Decisions Needed:**
+  - [ ] Does the banker offer slot expansion? At what cost?
+  - [ ] Any gold storage? Interest?
+- **Acceptance Criteria:**
+  - [ ] Banker services documented
+  - [ ] Links to SPEC-11b (bank UI) for detail
+- **Status:** To Do
+- **Deps:** SPEC-01a
+
+#### SPEC-02: Crafting/blacksmith system
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does the recycling/crafting system work? Break items into materials, craft new gear. No magical drops — all special gear is crafted.
+- **Doc:** *new:* `docs/systems/crafting.md`
+- **Decisions Needed:**
+  - [ ] What materials exist? (ore, cloth, leather, gems?)
+  - [ ] How many materials does recycling yield? (based on item tier?)
+  - [ ] What recipes exist? (one material type per gear slot? Complex recipes?)
+  - [ ] Is crafting instant or does it take time?
+- **Acceptance Criteria:**
+  - [ ] Material types defined
+  - [ ] Recycling formula (item tier → material yield)
+  - [ ] Recipe system rules
+  - [ ] Crafting UI flow
+- **Status:** To Do
+- **Deps:** SPEC-06a
+
+#### SPEC-03: Mage spell acquisition
+
+- **Type:** spec | **Team:** Design
+- **Description:** How do Mages learn spells? Scroll osmosis system — find scrolls, study them, unlock spells.
+- **Doc:** *new:* `docs/systems/spell-acquisition.md`
+- **Decisions Needed:**
+  - [ ] How does a Mage "learn" from a scroll? (use it X times? Study for duration? Instant?)
+  - [ ] Are scrolls consumed or reusable?
+  - [ ] How many spells can a Mage know at once?
+  - [ ] How does this interact with the skill tree?
+- **Acceptance Criteria:**
+  - [ ] Scroll types and rarity defined
+  - [ ] Learning process documented
+  - [ ] Spell slot/limit rules
+  - [ ] Skill tree interaction documented
+- **Status:** To Do
+- **Deps:** SPEC-05d
+
+#### SPEC-04a: STR → melee damage formula
+
+- **Type:** spec | **Team:** Design
+- **Description:** How much extra melee damage does each point of STR give? This is the Warrior's primary stat.
+- **Doc:** `docs/systems/stats.md`
+- **Context:** STR should feel impactful for Warriors but still useful for other classes. Each point should make attacks hit noticeably harder, especially early on.
+- **Decisions Needed:**
+  - [ ] How much base damage does 1 STR add? (flat bonus? percentage?)
+  - [ ] Does STR also affect anything else? (carry weight, knockback, shield block?)
+- **Acceptance Criteria:**
+  - [ ] Formula written: `melee_damage = base + STR * X` with exact X value
+  - [ ] Example values at STR 10, 50, 100
 - **Status:** To Do
 - **Deps:** None
 
-#### SPEC-05: Lock class scaling bonuses
+#### SPEC-04b: DEX → attack speed / evasion formula
 
-- **Description:** Define exact per-level stat bonuses for Warrior, Ranger, Mage. Currently marked "must be concrete."
+- **Type:** spec | **Team:** Design
+- **Description:** What does DEX do for the player? This is the Ranger's primary stat.
+- **Doc:** `docs/systems/stats.md`
+- **Context:** DEX should make the Ranger feel fast and agile. Could affect attack speed, evasion chance, or both.
+- **Decisions Needed:**
+  - [ ] Does DEX increase attack speed? (reduce cooldown? increase attack rate?)
+  - [ ] Does DEX add evasion/dodge chance?
+  - [ ] Does DEX affect ranged damage?
 - **Acceptance Criteria:**
-  - [ ] `docs/systems/classes.md` has per-level bonus tables for all 3 classes
-  - [ ] Interaction with free stat points documented
-  - [ ] All open questions resolved
-- **Status:** To Do
-- **Deps:** SPEC-04
-
-#### SPEC-06: Lock item system spec
-
-- **Description:** Full loot/item design — data model, drop rates, stat generation, tier coloring, equipment restrictions.
-- **Acceptance Criteria:**
-  - [ ] `docs/inventory/items.md` has item data model, loot tables, drop rate formulas, stat generation rules, and class restrictions
-  - [ ] Equipment slot definitions finalized
-  - [ ] Color gradient integration documented
-  - [ ] All open questions resolved
-- **Status:** To Do
-- **Deps:** SPEC-04
-
-#### SPEC-07: Lock leveling spec
-
-- **Description:** Finalize XP curve constant, floor multiplier shape, milestone rewards, rested XP details.
-- **Acceptance Criteria:**
-  - [ ] `docs/systems/leveling.md` has locked XP curve formula with exact constant
-  - [ ] Floor multiplier formula finalized (linear vs polynomial)
-  - [ ] Milestone reward schedule documented
-  - [ ] Rested XP display format decided
-  - [ ] All open questions resolved
+  - [ ] Formula(s) written with exact values
+  - [ ] Example values at DEX 10, 50, 100
 - **Status:** To Do
 - **Deps:** None
+
+#### SPEC-04c: STA → HP / defense formula
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does STA affect survivability? Applies to all classes but especially Warrior.
+- **Doc:** `docs/systems/stats.md`
+- **Context:** Currently max_hp = 100 + level * 8. STA should add on top of that. The player should feel tankier with more STA.
+- **Decisions Needed:**
+  - [ ] How much HP does 1 STA add?
+  - [ ] Does STA also reduce incoming damage? (flat reduction? percentage?)
+  - [ ] Does STA affect HP regeneration?
+- **Acceptance Criteria:**
+  - [ ] HP formula updated: `max_hp = base + level * X + STA * Y`
+  - [ ] Any damage reduction formula
+  - [ ] Example values at STA 10, 50, 100
+- **Status:** To Do
+- **Deps:** None
+
+#### SPEC-04d: INT → magic power formula
+
+- **Type:** spec | **Team:** Design
+- **Description:** What does INT do? This is the Mage's primary stat.
+- **Doc:** `docs/systems/stats.md`
+- **Context:** INT should make spells hit harder and feel more powerful. Could also affect mana/cooldowns if those exist.
+- **Decisions Needed:**
+  - [ ] Does INT increase spell damage? By how much?
+  - [ ] Does INT affect spell cooldowns?
+  - [ ] Is there a mana system, and does INT affect max mana?
+- **Acceptance Criteria:**
+  - [ ] Formula(s) written with exact values
+  - [ ] Example values at INT 10, 50, 100
+- **Status:** To Do
+- **Deps:** None
+
+#### SPEC-04e: Stat diminishing returns curve
+
+- **Type:** spec | **Team:** Design
+- **Description:** How do stats scale at high levels? Should 100 STR be twice as good as 50 STR, or less?
+- **Doc:** `docs/systems/stats.md`
+- **Context:** Without diminishing returns, stats scale infinitely and balance breaks. With too much diminishing, high-level investment feels bad. Need a curve that rewards investment but doesn't explode.
+- **Decisions Needed:**
+  - [ ] Soft cap or logarithmic curve? (e.g., `effective = stat * (1 - stat/(stat + K))`)
+  - [ ] At what point do returns start diminishing noticeably?
+  - [ ] Should the curve be the same for all stats?
+- **Acceptance Criteria:**
+  - [ ] Diminishing returns formula with exact constants
+  - [ ] Graph-friendly example: effective value at 10, 25, 50, 100, 200, 500 raw stat
+  - [ ] Applied consistently to SPEC-04a through 04d formulas
+- **Status:** To Do
+- **Deps:** SPEC-04a, SPEC-04b, SPEC-04c, SPEC-04d
+
+#### SPEC-05a: Warrior per-level bonuses
+
+- **Type:** spec | **Team:** Design
+- **Description:** How many bonus stat points does a Warrior get per level, and in which stats?
+- **Doc:** `docs/systems/classes.md`
+- **Context:** Warriors favor STR and STA. They should feel tough and hit hard compared to other classes.
+- **Acceptance Criteria:**
+  - [ ] Bonus points per level defined (e.g., +2 STR, +1 STA per level)
+  - [ ] Values feel distinct from Ranger and Mage
+- **Status:** To Do
+- **Deps:** SPEC-04a, SPEC-04c
+
+#### SPEC-05b: Ranger per-level bonuses
+
+- **Type:** spec | **Team:** Design
+- **Description:** How many bonus stat points does a Ranger get per level?
+- **Doc:** `docs/systems/classes.md`
+- **Context:** Rangers favor DEX. They should feel fast and evasive.
+- **Acceptance Criteria:**
+  - [ ] Bonus points per level defined
+  - [ ] Values feel distinct from Warrior and Mage
+- **Status:** To Do
+- **Deps:** SPEC-04b
+
+#### SPEC-05c: Mage per-level bonuses
+
+- **Type:** spec | **Team:** Design
+- **Description:** How many bonus stat points does a Mage get per level?
+- **Doc:** `docs/systems/classes.md`
+- **Context:** Mages favor INT. They should feel powerful but fragile.
+- **Acceptance Criteria:**
+  - [ ] Bonus points per level defined
+  - [ ] Values feel distinct from Warrior and Ranger
+- **Status:** To Do
+- **Deps:** SPEC-04d
+
+#### SPEC-05d: Free stat point allocation rules
+
+- **Type:** spec | **Team:** Design
+- **Description:** How many free points does the player get per level to spend however they want?
+- **Doc:** `docs/systems/classes.md`
+- **Context:** Free points let players customize their build beyond the class default. Too many = classes feel the same. Too few = no player choice.
+- **Decisions Needed:**
+  - [ ] How many free points per level? (1? 2? 3?)
+  - [ ] Can free points go into any stat, or only non-primary?
+  - [ ] Can the player respec? (cost? limit?)
+- **Acceptance Criteria:**
+  - [ ] Free points per level defined
+  - [ ] Allocation rules documented
+  - [ ] Respec rules (if any) documented
+- **Status:** To Do
+- **Deps:** SPEC-05a, SPEC-05b, SPEC-05c
+
+#### SPEC-06a: Item data model
+
+- **Type:** spec | **Team:** Design
+- **Description:** What fields does an item have? Types, tiers, rarity, stats, restrictions.
+- **Doc:** `docs/inventory/items.md`
+- **Decisions Needed:**
+  - [ ] What item types exist? (weapon, armor, consumable, scroll, material, quest?)
+  - [ ] How many tiers/rarity levels? (common, uncommon, rare, epic, legendary?)
+  - [ ] What stats can an item have? (STR bonus, damage, defense, speed?)
+  - [ ] Class restrictions per item type?
+- **Acceptance Criteria:**
+  - [ ] Item data structure defined (all fields with types)
+  - [ ] Tier/rarity list with color mapping (using color-system.md gradient)
+  - [ ] Class restriction rules
+- **Status:** To Do
+- **Deps:** SPEC-04e
+
+#### SPEC-06b: Loot drop rates and tables
+
+- **Type:** spec | **Team:** Design
+- **Description:** How often do enemies drop items? What determines what drops?
+- **Doc:** `docs/inventory/items.md`
+- **Decisions Needed:**
+  - [ ] Base drop chance per enemy kill? (10%? 25%? Always?)
+  - [ ] Does drop chance scale with enemy tier or floor depth?
+  - [ ] How is the dropped item's tier determined?
+- **Acceptance Criteria:**
+  - [ ] Drop chance formula
+  - [ ] Loot table structure (how tier/type is selected)
+  - [ ] Example drop rates at floor 1, 10, 50
+- **Status:** To Do
+- **Deps:** SPEC-06a
+
+#### SPEC-06c: Equipment slot stat effects
+
+- **Type:** spec | **Team:** Design
+- **Description:** How do equipped items modify the player's stats?
+- **Doc:** `docs/inventory/items.md`
+- **Decisions Needed:**
+  - [ ] Do items give flat stat bonuses? Percentage? Both?
+  - [ ] Can items have multiple stat bonuses?
+  - [ ] Are there set bonuses (wearing matching items)?
+- **Acceptance Criteria:**
+  - [ ] Stat modification rules documented
+  - [ ] Example items at different tiers with their stat effects
+- **Status:** To Do
+- **Deps:** SPEC-06a
+
+#### SPEC-07a: XP curve formula
+
+- **Type:** spec | **Team:** Design
+- **Description:** How much XP does each level require? Lock the exact formula constant.
+- **Doc:** `docs/systems/leveling.md`
+- **Context:** Current proposal is `floor(level^2 * 45)`. Need to verify this feels right at all levels.
+- **Acceptance Criteria:**
+  - [ ] XP formula locked with exact constant
+  - [ ] Table showing XP required at levels 1, 5, 10, 25, 50, 100
+  - [ ] Feels right: early levels are quick, later levels are a satisfying grind (not punishing)
+- **Status:** To Do
+- **Deps:** None
+
+#### SPEC-07b: Floor-scaling enemy XP multiplier
+
+- **Type:** spec | **Team:** Design
+- **Description:** How much more XP do deeper-floor enemies give?
+- **Doc:** `docs/systems/leveling.md`
+- **Context:** Current proposal: `baseXp * (1 + (floor-1) * 0.5)`. Deeper floors should reward more XP so pushing deeper always feels worthwhile.
+- **Acceptance Criteria:**
+  - [ ] Multiplier formula locked
+  - [ ] Table showing XP per tier at floors 1, 5, 10, 25, 50
+  - [ ] Deeper floors always give meaningfully more XP
+- **Status:** To Do
+- **Deps:** SPEC-07a
+
+#### SPEC-07c: Rested XP rules and display
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does the rested XP bonus work for players who take breaks?
+- **Doc:** `docs/systems/leveling.md`
+- **Context:** Proposal: 5% bonus per 8h offline, caps at 1.5 levels worth. Rewards returning players without punishing daily players.
+- **Decisions Needed:**
+  - [ ] How is rested XP shown to the player? (bar color change? icon? tooltip?)
+  - [ ] Does rested XP double gains or add a flat bonus?
+- **Acceptance Criteria:**
+  - [ ] Rested XP accumulation formula locked
+  - [ ] Cap defined
+  - [ ] Display/UI indicator described
+- **Status:** To Do
+- **Deps:** None
+
+#### SPEC-07d: Level-up milestone rewards
+
+- **Type:** spec | **Team:** Design
+- **Description:** What special rewards happen at milestone levels (10, 25, 50, etc.)?
+- **Doc:** `docs/systems/leveling.md`
+- **Decisions Needed:**
+  - [ ] Which levels are milestones?
+  - [ ] What do milestones give? (extra skill points? cosmetic unlock? title?)
+- **Acceptance Criteria:**
+  - [ ] Milestone levels listed
+  - [ ] Reward per milestone defined
+- **Status:** To Do
+- **Deps:** SPEC-07a
 
 #### SPEC-08: Lock skill system spec
 
-- **Description:** Finalize passive bonus values per level, diminishing returns formula, unlock progression rules.
+- **Type:** spec | **Team:** Design
+- **Description:** Finalize passive bonus values per level, diminishing returns, unlock progression for all class skill trees.
+- **Doc:** `docs/systems/skills.md`
+- **Decisions Needed:**
+  - [ ] Exact bonus per skill level (e.g., "Sword Mastery level 5 = +X% melee damage")
+  - [ ] Diminishing returns on skill levels (same curve as stats? different?)
+  - [ ] Unlock all skills at base level 1, or unlock progressively?
 - **Acceptance Criteria:**
-  - [ ] `docs/systems/skills.md` has exact bonus-per-level values for all base/specific skills
-  - [ ] Diminishing returns formula defined
-  - [ ] Unlock progression (all at base level 1 vs progressive) decided
-  - [ ] All open questions resolved
+  - [ ] Every base and specific skill has concrete per-level values
+  - [ ] Skill diminishing returns formula defined
+  - [ ] Unlock progression rules defined
 - **Status:** To Do
-- **Deps:** SPEC-04, SPEC-05
+- **Deps:** SPEC-04e, SPEC-05d
 
-#### SPEC-09: Lock dungeon generation spec
+#### SPEC-09a: Dungeon generation algorithm
 
-- **Description:** Define procedural generation algorithm, floor difficulty curve, special room types, boss floor rules.
+- **Type:** spec | **Team:** Design
+- **Description:** How are dungeon floors built? What algorithm generates the rooms and corridors?
+- **Doc:** `docs/world/dungeon.md`
+- **Decisions Needed:**
+  - [ ] BSP tree, random walk, cellular automata, or room placement?
+  - [ ] How big are floors? (grid size, room count)
+  - [ ] How are rooms connected? (corridors, doors, open passages?)
 - **Acceptance Criteria:**
-  - [ ] `docs/world/dungeon.md` has generation algorithm (BSP, random walk, or other) with pseudocode
-  - [ ] Floor difficulty scaling formula defined
-  - [ ] Special room types documented (boss, treasure, safe)
-  - [ ] Floor caching strategy finalized
-  - [ ] All open questions resolved
+  - [ ] Algorithm chosen with reasoning
+  - [ ] Floor size parameters defined
+  - [ ] Room/corridor generation rules documented
 - **Status:** To Do
 - **Deps:** None
 
+#### SPEC-09b: Floor difficulty scaling
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does difficulty increase as the player goes deeper?
+- **Doc:** `docs/world/dungeon.md`
+- **Decisions Needed:**
+  - [ ] How does enemy tier distribution change per floor?
+  - [ ] Do floors get physically larger or more complex?
+  - [ ] Are there difficulty "plateaus" (e.g., floors 1-5 feel similar, then 6-10 step up)?
+- **Acceptance Criteria:**
+  - [ ] Tier distribution formula per floor depth
+  - [ ] Floor complexity scaling rules
+  - [ ] Difficulty curve feels like steady escalation (not sudden walls)
+- **Status:** To Do
+- **Deps:** SPEC-09a
+
+#### SPEC-09c: Special room types
+
+- **Type:** spec | **Team:** Design
+- **Description:** What special rooms exist? Boss rooms, treasure rooms, safe spots?
+- **Doc:** `docs/world/dungeon.md`
+- **Decisions Needed:**
+  - [ ] How often do boss rooms appear? (every 5 floors? 10?)
+  - [ ] What makes a boss room different? (bigger, tougher enemy, unique loot?)
+  - [ ] Are there treasure rooms? Rest areas? Hidden rooms?
+- **Acceptance Criteria:**
+  - [ ] Each special room type defined with frequency and rules
+  - [ ] Placement constraints documented (boss rooms far from stairs, etc.)
+- **Status:** To Do
+- **Deps:** SPEC-09a
+
 #### SPEC-10: Lock save system spec
 
-- **Description:** Resolve remaining save system questions — multiple slots, backup rotation, file size with cached floors.
+- **Type:** spec | **Team:** Design
+- **Description:** Resolve remaining save questions — slots, backup rotation, floor cache size.
+- **Doc:** `docs/systems/save.md`
+- **Decisions Needed:**
+  - [ ] How many save slots? (3? 5? unlimited?)
+  - [ ] Backup rotation? (keep last N saves? one backup?)
+  - [ ] How big is a saved floor in MB? (estimate based on tile data + enemy state)
 - **Acceptance Criteria:**
-  - [ ] `docs/systems/save.md` has slot-aware save data structure
-  - [ ] Backup rotation strategy defined
-  - [ ] Floor cache serialization size estimated
+  - [ ] Slot count locked
+  - [ ] Backup strategy defined
+  - [ ] Floor cache size estimated (10 floors × X MB)
   - [ ] All open questions resolved
 - **Status:** To Do
-- **Deps:** SPEC-09
+- **Deps:** SPEC-09a
 
-#### SPEC-11: Complete inventory UI specs
+#### SPEC-11a: Backpack UI and death-loss logic
 
-- **Description:** Finalize backpack and bank UI layout, slot interaction, death-loss selection.
+- **Type:** spec | **Team:** Design
+- **Description:** How does the backpack look and how does death-item-loss selection work?
+- **Doc:** `docs/inventory/backpack.md`
+- **Decisions Needed:**
+  - [ ] Grid layout? (5×5? scrollable list?)
+  - [ ] When items are lost on death, which items? (random? cheapest? player chooses?)
+  - [ ] How does the player interact? (click to use? drag to equip? right-click menu?)
 - **Acceptance Criteria:**
-  - [ ] `docs/inventory/backpack.md` has UI wireframe, slot interaction flow, death-loss item selection logic
-  - [ ] `docs/inventory/bank.md` has UI wireframe, deposit/withdraw flow, slot expansion rules
-  - [ ] All open questions resolved
+  - [ ] UI layout described (wireframe-level)
+  - [ ] Death-loss selection logic defined
+  - [ ] Interaction flow documented
 - **Status:** To Do
-- **Deps:** SPEC-06
+- **Deps:** SPEC-06a
+
+#### SPEC-11b: Bank UI and deposit/withdraw flow
+
+- **Type:** spec | **Team:** Design
+- **Description:** How does the bank storage UI work?
+- **Doc:** `docs/inventory/bank.md`
+- **Decisions Needed:**
+  - [ ] Same grid layout as backpack?
+  - [ ] How does deposit/withdraw work? (drag between backpack and bank? click to transfer?)
+  - [ ] Can bank slots be expanded? How? (gold? gameplay milestone?)
+- **Acceptance Criteria:**
+  - [ ] UI layout described
+  - [ ] Deposit/withdraw interaction flow
+  - [ ] Slot expansion rules (if any)
+- **Status:** To Do
+- **Deps:** SPEC-06a
 
 #### SPEC-12: Finalize autoloads spec
 
