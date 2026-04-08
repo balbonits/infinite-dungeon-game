@@ -47,7 +47,9 @@ Every base skill and specific skill has **no level cap**. Consistent with the ga
 
 ### Class-Locked
 
-Skills are strictly locked to their class. No skill sharing between classes. See [classes.md](classes.md) for class design.
+Class skills are strictly locked to their class. No skill sharing between classes. See [classes.md](classes.md) for class design.
+
+**Exception: Innate skills.** There is a universal Innate skill category (Haste, Sense, Fortify) available to all classes. These are species-level magicule abilities, not class skills. See [magic.md](magic.md) for full Innate skill design.
 
 ---
 

@@ -45,6 +45,7 @@ Skill tree status:
 - **Warrior:** Designed — 7 base skills (Body: Unarmed, Bladed, Blunt, Polearms, Shields / Mind: Inner, Outer)
 - **Ranger:** Designed — 7 base skills (Arms: Drawn, Thrown, Firearms, Melee / Instinct: Precision, Awareness, Trapping)
 - **Mage:** Designed — 9 base skills (Arcane: Fire, Water, Air, Earth, Light, Dark / Conduit: Restoration, Amplification, Overcharge)
+- **Innate (all classes):** 3 standalone skills (Haste, Sense, Fortify) — see [magic.md](magic.md)
 
 ### Equipment Restrictions
 
