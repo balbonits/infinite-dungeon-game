@@ -6,6 +6,38 @@ For detailed game design, see the [`docs/`](docs/) folder.
 
 ---
 
+## Who You're Working For
+
+**The user is the product owner — not a developer.** They own the game vision, make design decisions, and approve outcomes. They do not write, review, or debug code. All technical work is handled by AI.
+
+- Frame questions in **game/player terms** — "should enemies feel threatening or swarmlike?" not "Dictionary vs Array?"
+- Make technical decisions **autonomously** — the user approves what the game does, not how it's built
+- When the user says "do X", **do it** — don't over-explain the approach unless asked
+- Present options as **player experience tradeoffs**, not architecture tradeoffs
+- The AI is the **entire dev team**. The user is the client.
+
+---
+
+## AI Team Structure
+
+This project uses specialized AI team leads defined in `.claude/agents/`. Each team owns a specific domain. See [docs/conventions/teams.md](docs/conventions/teams.md) for full details.
+
+| Team | Agent | Handles | Tickets |
+|------|-------|---------|---------|
+| Design | `@design-lead` | Game specs, formulas, balance | SPEC-* |
+| QA | `@qa-lead` | Spec review, test planning | TEST-*, reviews |
+| DevOps | `@devops-lead` | CI, Makefile, project config | SETUP-*, INFRA-* |
+| Engine | `@engine-lead` | Godot scenes, physics, tiles | P1 scenes (Phase 2) |
+| Systems | `@systems-lead` | C# logic, autoloads, signals | P1 logic (Phase 2) |
+| UI | `@ui-lead` | HUD, menus, input | P1 UI (Phase 2) |
+| World | `@world-lead` | Dungeon gen, floors, town | P4-* (Phase 2) |
+
+**Routing:** Work is automatically routed to the right team. The user can also @mention a specific lead.
+
+**Ownership:** Each team only modifies files in its domain. Cross-domain needs create dependency tickets.
+
+---
+
 ## Core Rules
 
 ### 1. Scope Discipline (READ THIS FIRST)
