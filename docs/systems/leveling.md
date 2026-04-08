@@ -10,6 +10,20 @@ All formulas in this doc are intended to be **player-facing** — published so t
 
 Prototype uses placeholder linear formula (`level * 90`). This doc specifies the redesigned system based on research across 50+ games (Diablo 1-4, PoE, WoW, RuneScape, Hades, Dead Cells, D&D 5e, etc.).
 
+## EXP Lore
+
+Experience points represent **processed mana** — magicules that have been absorbed and transformed by the brain through action. EXP is not something you collect from the environment. It is something your brain creates.
+
+**You cannot level up by passively absorbing mana.** Sitting in a mana-dense room does nothing for your growth. The brain must actively use magicules — through fighting, casting spells, executing skills — for those magicules to become experience. Raw mana is fuel. Processed mana is growth.
+
+**Each action is "chewing."** When the brain directs magicules to power a sword strike, fire an arrow, or manifest a spell, the act of using that mana leaves an imprint. The brain remembers what it did, how it directed the magicules, and what the result was. That memory IS experience. Repetition deepens the imprint — which is why use-based skill leveling works. The brain literally gets better at the thing it keeps doing.
+
+**Leveling up** means the brain and body have accumulated enough of these processed mana memories to fundamentally grow. The character's capacity expands — more HP, stronger stats, deeper mana reserves — because the sum of their actions has reshaped them. It is not arbitrary progression. It is earned through doing.
+
+This is also why the dungeon wants adventurers to grow strong before they die: processed mana is far richer nutrition than raw magicules. A high-level adventurer is a feast. A low-level adventurer is barely a snack. See [death.md](death.md) for how the dungeon harvests EXP on death.
+
+---
+
 ## Design
 
 ### XP Curve

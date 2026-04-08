@@ -6,7 +6,6 @@
 
 | ID | Title | Status | Details |
 |----|-------|--------|---------|
-| SETUP-01 | Install dev environment | Done | .NET 10, Godot .NET 4.6.2, VS Code extensions |
 | SETUP-02 | Create .csproj and .sln | To Do | Let Godot generate, add NuGet refs |
 | SETUP-03 | Remove GUT and GDScript tests | To Do | Delete `addons/gut/`, `tests/test_project_setup.gd` |
 

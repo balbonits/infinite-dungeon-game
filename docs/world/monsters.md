@@ -16,6 +16,33 @@ Migrating from Phaser 3 prototype to Godot 4:
 - Soft cap: spawn timer only adds new enemies if fewer than 14 are active
 - 10 enemies spawned on initial game start
 
+## Monster Lore
+
+### Magicule-Warped Creatures
+
+Monsters are not evil. They are creatures whose brains **cannot properly process magicules**. Where a human brain absorbs and directs magicules safely — turning them into controlled magic — a monster's brain fails at this task. The magicules flood through their bodies unprocessed, causing mutations: warped limbs, unnatural size, elemental volatility, aggression beyond any survival instinct.
+
+Every monster was once (or descended from) an ordinary creature. Heavy magicule exposure — the kind found inside the dungeon — twisted them into what they are now. The deeper the dungeon, the denser the magicules, the more extreme the mutations. A shallow-floor monster might just be an oversized rat with tough hide. A deep-floor monster might be an unrecognizable mass of bone, muscle, and elemental energy.
+
+**The surface is mostly safe.** Magicule density above ground is low enough that most creatures live normal lives. Monster threats on the surface are rare and usually weak — they wandered up from shallow dungeon entrances or were born near minor magicule seeps. The dungeon is where monsters truly thrive, because the dense magicule environment constantly fuels their mutations.
+
+### The Dungeon's Biology
+
+Monsters serve two roles inside the dungeon's living body:
+
+- **Immune system (defense)** — Monsters attack adventurers the same way white blood cells attack foreign bodies. The dungeon is a living entity, and adventurers are invaders. Monsters protect the dungeon's body from intrusion.
+- **Digestive system (harvesting)** — When monsters kill adventurers, the dungeon absorbs the adventurer's accumulated processed mana (EXP). Monsters are the dungeon's digestive enzymes — they break down prey so the dungeon can feed.
+
+Monsters don't consciously serve the dungeon. They act on instinct — territorial aggression, hunger, self-defense. But the dungeon shapes their behavior through the magicule environment, breeding creatures that are naturally hostile to anything that enters.
+
+### What Monsters Eat
+
+Monsters don't need to eat meat to survive. They can sustain themselves on **raw mana absorption** — drawing magicules directly from the dungeon's dense environment. This is why the dungeon can support massive populations of creatures without any visible food chain.
+
+However, monsters find **processed mana far tastier** than raw magicules. Processed mana is the EXP stored in living beings who have fought, grown, and learned. When a monster kills an adventurer, the processed mana released is like a gourmet meal compared to the ambient raw mana they normally absorb. This is why monsters are aggressive toward adventurers — not just territorial instinct, but hunger for something better than their usual diet.
+
+---
+
 ## Design
 
 ### Danger Tiers (Legacy — Phaser Prototype)

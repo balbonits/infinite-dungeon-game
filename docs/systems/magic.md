@@ -18,6 +18,34 @@ Magic extends the laws of physics, biology, and chemistry — pushing them to an
 
 The source of magicules is irrelevant to gameplay. What matters is the rules they follow.
 
+### The Brain as Magicule Processor
+
+The brain is the central organ for all magic. Every magical ability — from a Warrior's reinforced muscles to a Mage's fireball — is routed through the brain. The brain absorbs, processes, and directs magicules.
+
+**INT as a stat represents brain processing capacity.** A higher INT means the brain can handle more magicules at once, form more detailed mental models, and sustain more complex magical effects. Skill improvement is literally the brain getting better at forming and executing mental models.
+
+**Why humans are special:** The human brain is uniquely suited to process magicules safely. It can absorb and direct them without adverse effects, which is why humans can wield magic as a tool rather than being consumed by it. This is a biological trait of the species — not learned, not gifted. Every human brain does this from birth.
+
+**Rare exceptions:** Humans with brain damage, genetic defects, or neurological conditions can be adversely affected by magicules. A compromised brain can't properly process magicules, which can lead to mutations or magical illness. This is rare but exists in the world.
+
+**Monsters exist because their brains can't do this.** Creatures with brains that fail to process magicules properly are warped by exposure instead of empowered. Heavy magicule environments — especially the dungeon — breed increasingly mutated, dangerous beings. The deeper the dungeon, the denser the magicules, the more twisted the creatures. The surface is safe because magicule density is low above ground, so there are few high-level monster threats outside the dungeon.
+
+---
+
+### EXP as Processed Mana
+
+Experience points are not raw mana. You cannot level up by sitting in a mana-dense area and passively absorbing magicules. EXP is mana that has been **processed by the brain through action** — fighting, casting spells, using skills.
+
+**Each action is "chewing."** When the brain uses mana as fuel for a skill or spell, that use leaves an imprint — a memory of the action. Those imprinted memories ARE experience. The brain literally remembers what it did, how it directed the magicules, and what happened as a result. That's what EXP represents.
+
+**Leveling up** means the brain has accumulated enough processed mana memories to fundamentally grow. The body and mind have been reshaped by the sum of everything the character has done. It's not arbitrary — it's earned through action.
+
+**Processed mana is "tastier" than raw mana.** Monsters, dungeons, and other magical entities can survive on raw mana absorption (like eating raw ingredients), but processed mana — the kind that comes from a living being who has fought, learned, and grown — is premium nutrition. It's like the difference between flour and fresh bread. This is why the dungeon wants adventurers to grow strong before they die: stronger adventurers carry richer, more processed mana.
+
+**Death means memory loss.** When a character dies, the dungeon eats a portion of their imprinted action memories (EXP). Lose enough memories and the character loses levels — they literally forget what their body and mind learned. This is the lore behind the XP penalty on death (see [death.md](death.md)).
+
+---
+
 ### How Magic Works: Mental Models
 
 All magic — whether a Warrior's enhanced strength or a Mage's fireball — operates through the same mechanism:

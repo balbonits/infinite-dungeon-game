@@ -10,10 +10,10 @@ Tickets with no blockers — ready to work on now.
 
 | ID | Title | Status | Doc |
 |----|-------|--------|-----|
-| SPEC-04a | STR → melee damage formula | To Do | [stats.md](../../systems/stats.md) |
-| SPEC-04b | DEX → attack speed / evasion formula | To Do | [stats.md](../../systems/stats.md) |
-| SPEC-04c | STA → HP / defense formula | To Do | [stats.md](../../systems/stats.md) |
-| SPEC-04d | INT → magic power formula | To Do | [stats.md](../../systems/stats.md) |
+| SPEC-05a | Warrior per-level bonuses | To Do | [classes.md](../../systems/classes.md) |
+| SPEC-05b | Ranger per-level bonuses | To Do | [classes.md](../../systems/classes.md) |
+| SPEC-05c | Mage per-level bonuses | To Do | [classes.md](../../systems/classes.md) |
+| SPEC-06a | Item data model (types, tiers, fields) | To Do | [items.md](../../inventory/items.md) |
 | SPEC-07a | XP curve formula (lock constant) | To Do | [leveling.md](../../systems/leveling.md) |
 | SPEC-07c | Rested XP rules and display | To Do | [leveling.md](../../systems/leveling.md) |
 | SPEC-09a | Dungeon generation algorithm | To Do | [dungeon.md](../../world/dungeon.md) |
@@ -25,12 +25,7 @@ Waiting on other tickets to finish first.
 
 | ID | Title | Status | Blocked By |
 |----|-------|--------|------------|
-| SPEC-04e | Stat diminishing returns curve | Blocked | SPEC-04a–d |
-| SPEC-05a | Warrior per-level bonuses | Blocked | SPEC-04a, 04c |
-| SPEC-05b | Ranger per-level bonuses | Blocked | SPEC-04b |
-| SPEC-05c | Mage per-level bonuses | Blocked | SPEC-04d |
 | SPEC-05d | Free stat point allocation rules | Blocked | SPEC-05a–c |
-| SPEC-06a | Item data model | Blocked | SPEC-04e |
 | SPEC-06b | Loot drop rates and tables | Blocked | SPEC-06a |
 | SPEC-06c | Equipment slot stat effects | Blocked | SPEC-06a |
 | SPEC-07b | Floor-scaling enemy XP multiplier | Blocked | SPEC-07a |
@@ -53,4 +48,9 @@ Waiting on other tickets to finish first.
 
 | ID | Title |
 |----|-------|
+| SPEC-04a | STR → melee damage formula |
+| SPEC-04b | DEX → attack speed / evasion formula |
+| SPEC-04c | STA → HP / defense formula |
+| SPEC-04d | INT → magic power formula |
+| SPEC-04e | Stat diminishing returns curve |
 | SPEC-12 | Finalize autoloads spec |

@@ -28,11 +28,11 @@ All handled by `@design-lead`, reviewed by `@qa-lead`.
 | SPEC-01f | Banker NPC spec | To Do | SPEC-01a | [town.md](world/town.md) |
 | SPEC-02 | Crafting/blacksmith system | To Do | SPEC-06 | *new: crafting.md* |
 | SPEC-03 | Mage spell acquisition | To Do | SPEC-05 | *new: spell-acquisition.md* |
-| SPEC-04a | STR → melee damage formula | To Do | — | [stats.md](systems/stats.md) |
-| SPEC-04b | DEX → attack speed / evasion formula | To Do | — | [stats.md](systems/stats.md) |
-| SPEC-04c | STA → HP / defense formula | To Do | — | [stats.md](systems/stats.md) |
-| SPEC-04d | INT → magic power formula | To Do | — | [stats.md](systems/stats.md) |
-| SPEC-04e | Stat diminishing returns curve | To Do | SPEC-04a–d | [stats.md](systems/stats.md) |
+| SPEC-04a | STR → melee damage formula | Done | — | [stats.md](systems/stats.md) |
+| SPEC-04b | DEX → attack speed / evasion formula | Done | — | [stats.md](systems/stats.md) |
+| SPEC-04c | STA → HP / defense formula | Done | — | [stats.md](systems/stats.md) |
+| SPEC-04d | INT → magic power formula | Done | — | [stats.md](systems/stats.md) |
+| SPEC-04e | Stat diminishing returns curve | Done | SPEC-04a–d | [stats.md](systems/stats.md) |
 | SPEC-05a | Warrior per-level bonuses | To Do | SPEC-04a–d | [classes.md](systems/classes.md) |
 | SPEC-05b | Ranger per-level bonuses | To Do | SPEC-04a–d | [classes.md](systems/classes.md) |
 | SPEC-05c | Mage per-level bonuses | To Do | SPEC-04a–d | [classes.md](systems/classes.md) |
@@ -59,7 +59,7 @@ All handled by `@devops-lead`.
 
 | ID | Title | Status | Deps |
 |----|-------|--------|------|
-| SETUP-01 | Install dev environment | To Do | — |
+| SETUP-01 | Install dev environment | Done | — |
 | SETUP-02 | Create .csproj and .sln | To Do | SETUP-01 |
 | SETUP-03 | Remove GUT and GDScript tests | To Do | SETUP-02 |
 | SETUP-04 | Update project.godot for .NET | To Do | SETUP-02 |
@@ -322,12 +322,12 @@ Full acceptance criteria for each ticket. Organized by epic.
 - **Doc:** `docs/systems/stats.md`
 - **Context:** STR should feel impactful for Warriors but still useful for other classes. Each point should make attacks hit noticeably harder, especially early on.
 - **Decisions Needed:**
-  - [ ] How much base damage does 1 STR add? (flat bonus? percentage?)
-  - [ ] Does STR also affect anything else? (carry weight, knockback, shield block?)
+  - [x] How much base damage does 1 STR add? (flat bonus? percentage?)
+  - [x] Does STR also affect anything else? (carry weight, knockback, shield block?)
 - **Acceptance Criteria:**
-  - [ ] Formula written: `melee_damage = base + STR * X` with exact X value
-  - [ ] Example values at STR 10, 50, 100
-- **Status:** To Do
+  - [x] Formula written: `melee_damage = base + STR * X` with exact X value
+  - [x] Example values at STR 10, 50, 100
+- **Status:** Done
 - **Deps:** None
 
 #### SPEC-04b: DEX → attack speed / evasion formula
@@ -337,13 +337,13 @@ Full acceptance criteria for each ticket. Organized by epic.
 - **Doc:** `docs/systems/stats.md`
 - **Context:** DEX should make the Ranger feel fast and agile. Could affect attack speed, evasion chance, or both.
 - **Decisions Needed:**
-  - [ ] Does DEX increase attack speed? (reduce cooldown? increase attack rate?)
-  - [ ] Does DEX add evasion/dodge chance?
-  - [ ] Does DEX affect ranged damage?
+  - [x] Does DEX increase attack speed? (reduce cooldown? increase attack rate?)
+  - [x] Does DEX add evasion/dodge chance?
+  - [x] Does DEX affect ranged damage?
 - **Acceptance Criteria:**
-  - [ ] Formula(s) written with exact values
-  - [ ] Example values at DEX 10, 50, 100
-- **Status:** To Do
+  - [x] Formula(s) written with exact values
+  - [x] Example values at DEX 10, 50, 100
+- **Status:** Done
 - **Deps:** None
 
 #### SPEC-04c: STA → HP / defense formula
@@ -353,14 +353,14 @@ Full acceptance criteria for each ticket. Organized by epic.
 - **Doc:** `docs/systems/stats.md`
 - **Context:** Currently max_hp = 100 + level * 8. STA should add on top of that. The player should feel tankier with more STA.
 - **Decisions Needed:**
-  - [ ] How much HP does 1 STA add?
-  - [ ] Does STA also reduce incoming damage? (flat reduction? percentage?)
-  - [ ] Does STA affect HP regeneration?
+  - [x] How much HP does 1 STA add?
+  - [x] Does STA also reduce incoming damage? (flat reduction? percentage?)
+  - [x] Does STA affect HP regeneration?
 - **Acceptance Criteria:**
-  - [ ] HP formula updated: `max_hp = base + level * X + STA * Y`
-  - [ ] Any damage reduction formula
-  - [ ] Example values at STA 10, 50, 100
-- **Status:** To Do
+  - [x] HP formula updated: `max_hp = base + level * X + STA * Y`
+  - [x] Any damage reduction formula
+  - [x] Example values at STA 10, 50, 100
+- **Status:** Done
 - **Deps:** None
 
 #### SPEC-04d: INT → magic power formula
@@ -370,13 +370,13 @@ Full acceptance criteria for each ticket. Organized by epic.
 - **Doc:** `docs/systems/stats.md`
 - **Context:** INT should make spells hit harder and feel more powerful. Could also affect mana/cooldowns if those exist.
 - **Decisions Needed:**
-  - [ ] Does INT increase spell damage? By how much?
-  - [ ] Does INT affect spell cooldowns?
-  - [ ] Is there a mana system, and does INT affect max mana?
+  - [x] Does INT increase spell damage? By how much?
+  - [x] Does INT affect spell cooldowns?
+  - [x] Is there a mana system, and does INT affect max mana?
 - **Acceptance Criteria:**
-  - [ ] Formula(s) written with exact values
-  - [ ] Example values at INT 10, 50, 100
-- **Status:** To Do
+  - [x] Formula(s) written with exact values
+  - [x] Example values at INT 10, 50, 100
+- **Status:** Done
 - **Deps:** None
 
 #### SPEC-04e: Stat diminishing returns curve
@@ -386,14 +386,14 @@ Full acceptance criteria for each ticket. Organized by epic.
 - **Doc:** `docs/systems/stats.md`
 - **Context:** Without diminishing returns, stats scale infinitely and balance breaks. With too much diminishing, high-level investment feels bad. Need a curve that rewards investment but doesn't explode.
 - **Decisions Needed:**
-  - [ ] Soft cap or logarithmic curve? (e.g., `effective = stat * (1 - stat/(stat + K))`)
-  - [ ] At what point do returns start diminishing noticeably?
-  - [ ] Should the curve be the same for all stats?
+  - [x] Soft cap or logarithmic curve? (e.g., `effective = stat * (1 - stat/(stat + K))`)
+  - [x] At what point do returns start diminishing noticeably?
+  - [x] Should the curve be the same for all stats?
 - **Acceptance Criteria:**
-  - [ ] Diminishing returns formula with exact constants
-  - [ ] Graph-friendly example: effective value at 10, 25, 50, 100, 200, 500 raw stat
-  - [ ] Applied consistently to SPEC-04a through 04d formulas
-- **Status:** To Do
+  - [x] Diminishing returns formula with exact constants
+  - [x] Graph-friendly example: effective value at 10, 25, 50, 100, 200, 500 raw stat
+  - [x] Applied consistently to SPEC-04a through 04d formulas
+- **Status:** Done
 - **Deps:** SPEC-04a, SPEC-04b, SPEC-04c, SPEC-04d
 
 #### SPEC-05a: Warrior per-level bonuses
@@ -682,13 +682,13 @@ Full acceptance criteria for each ticket. Organized by epic.
 
 #### SETUP-01: Install development environment
 
-- **Description:** Install .NET 9 SDK, Godot .NET edition, VS Code C# extensions per [setup-guide.md](architecture/setup-guide.md).
+- **Description:** Install .NET 10 SDK, Godot .NET 4.6.2, VS Code C# extensions per [setup-guide.md](architecture/setup-guide.md).
 - **Acceptance Criteria:**
-  - [ ] `dotnet --version` returns 9.0.x
-  - [ ] `godot --version` returns 4.6.x with .mono suffix
-  - [ ] VS Code C# Dev Kit extension active
-  - [ ] Godot shows C# as script language option
-- **Status:** To Do
+  - [x] `dotnet --version` returns 10.0.x
+  - [x] `godot --version` returns 4.6.x with .NET suffix
+  - [x] VS Code C# Dev Kit extension active
+  - [x] Godot shows C# as script language option
+- **Status:** Done
 - **Deps:** None
 
 #### SETUP-02: Create .csproj and .sln

@@ -8,6 +8,34 @@ Death imposes penalties scaled by the deepest floor achieved. Players can spend 
 
 The prototype has a basic death screen ("You Died — Tap / Press R to restart") that restarts the scene. No penalties, gold buyout, or death options are implemented yet.
 
+## Death Lore
+
+Death in the dungeon is not a simple mechanical reset. It is a transaction between the adventurer and the living dungeon entity.
+
+### XP Loss = The Dungeon Eating Your Memories
+
+When an adventurer dies, the dungeon consumes a portion of their processed mana — the imprinted action memories that make up their EXP. These memories are the record of every fight, every skill used, every lesson learned. The dungeon strips them away and absorbs them as nutrition. Losing EXP on death means the adventurer literally forgets some of what their body and mind learned. Lose enough, and they lose levels — their growth partially undone.
+
+### Revival = The Dungeon Rebuilding Its Prey
+
+The dungeon does not let adventurers die permanently. At the moment of death, the dungeon captures the adventurer's consciousness — which is itself a form of magic — and holds it. While held, the consciousness experiences the death screen: choosing where to respawn, deciding what protections to buy. From a lore perspective, the adventurer is negotiating with the dungeon entity for the terms of their return.
+
+The dungeon then constructs a new physical body using magic and imbues the consciousness into it. But before releasing the adventurer, it takes its cut — skimming memories (EXP) as payment. Revival is not mercy. It is the dungeon investing in future harvests. A dead adventurer earns the dungeon nothing more. A revived adventurer can grow, push deeper, and die again — yielding an even bigger meal next time.
+
+### Gold Buyout = Bribing the Dungeon
+
+Spending gold to protect EXP or backpack items on the death screen is the adventurer offering the dungeon an alternative payment. Gold carries its own magical value — it's a concentrated, tradeable form of processed resources. By offering enough gold, the adventurer convinces the dungeon to eat fewer of their memories or leave their belongings intact. The dungeon accepts because gold is still nutrition, just a different kind.
+
+### Sacrificial Idol = A Tastier Offering
+
+The Sacrificial Idol is an item crafted or purchased specifically to appeal to the dungeon's appetite. It is "tastier" than the adventurer's backpack contents — magically rich enough that the dungeon accepts it as a substitute for the items it would otherwise consume. When an idol is in the backpack at death, the dungeon takes the idol and leaves the rest of the backpack alone. One idol, one death, consumed on use.
+
+### The Death Screen = Consciousness Negotiating
+
+The death screen UI represents the adventurer's consciousness suspended inside the dungeon, bargaining for revival. The dungeon is in no hurry — it holds the consciousness for as long as needed (the death screen is untimed). The choices the player makes on the death screen are the terms of the deal: where to be reborn, what to sacrifice, what to protect. Once the player confirms, the deal is struck and the dungeon releases them.
+
+---
+
 ## Design
 
 ### Death Flow
