@@ -1,101 +1,94 @@
 # A Dungeon in the Middle of Nowhere
 
-**Repo name:** dungeon-web-game
-**Current Status:** Documentation & planning phase (Godot 4 migration)
-**Engine:** Godot 4.x with GDScript
+**Engine:** Godot 4.x (.NET edition) with C#
 **Perspective:** Isometric 2D (Diablo 1 style, 2:1 diamond tiles)
-**Platform:** Desktop native (macOS primary)
+**Platform:** Desktop native (macOS primary, Windows/Linux supported)
+**Status:** Documentation & planning phase — specs being locked before implementation
 
 ## What is this?
 
 **A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
 
-You control a **single permanent character** (Warrior, Ranger, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with endless monster respawns on each floor (soft cap + timers), allowing safe farming on any level or risky deep pushes for better rewards.
+You control a **single permanent character** (Warrior, Ranger, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with escalating difficulty, endless monster respawns, and a living dungeon entity that feeds on adventurers who die within it.
 
-Death hurts (gold buyout to mitigate EXP & loot penalties, scaling with deepest floor achieved), but it's not full permadeath. On death you choose: return to town (reset progress) or respawn at the last safe spot (keep current floor layout). Safe spots exist at every floor entrance/exit.
+Death hurts (the dungeon eats your experience), but it's not permadeath. Gold buyout mitigates penalties, Sacrificial Idols protect your inventory, and revival is always an option — because the dungeon *wants* you to come back and grow stronger before it harvests you again.
 
-### Prototype Features (from Phaser version)
+### Core Features
 
-These mechanics are documented and will be reimplemented in Godot:
-
-- Isometric movement (WASD / arrow keys)
-- Auto-targeting combat — attacks nearest enemy within range
-- Infinite respawning enemies with 3 danger tiers (green/yellow/red)
-- HUD overlay (HP, XP, level, floor)
-- Basic death/restart screen
-- XP and leveling system
-- Dark fantasy UI theme
-
-### Planned Features
-
-- Death screen with penalty choices, gold buyout, and confirmation dialog
-- Town hub with NPC interaction (Item Shop, Blacksmith, Adventure Guild, Level Teleporter)
-- Depth-scaled death penalties with Sacrificial Idol mitigation
-- Backpack (risky carry, 25 slots) vs Bank (safe storage, 15 slots)
-- Procedural dungeon floors with seed-based generation
-- Blacksmith crafting with risky upgrades
-- Gamepad support
-- Limitless skill leveling
+- **3 classes** — Warrior (melee bruiser), Ranger (agile marksman), Mage (thought-based spellcaster)
+- **Unified magic system** — all skills run on magicules (natural magic particles). Warriors enhance muscles, Rangers imbue weapons, Mages manifest elements from thought
+- **Infinite progression** — no level cap, no skill cap, diminishing returns but never zero growth
+- **Living dungeon** — the dungeon is an intelligent entity that attracts, fattens, and harvests adventurers
+- **Meaningful death** — XP loss scales with depth, gold buyout, inventory risk, revival negotiation
+- **Town hub** — safe zone with NPCs (Shop, Blacksmith, Adventure Guild, Teleporter, Banker)
+- **Procedural floors** — seeded generation, background threaded, 10-floor cache
+- **Spell scroll osmosis** — Mages learn spells through repeated scroll use (knowledge retention)
 
 ## Documentation
 
-Detailed game design and architecture documentation lives in the [`docs/`](docs/) folder:
+All game design lives in [`docs/`](docs/). Architecture and AI context in [AGENTS.md](AGENTS.md).
 
-- **[Overview](docs/overview.md)** — project vision and design philosophy
-- **[Best Practices](docs/best-practices.md)** — development guidelines
-- **[Architecture](docs/architecture/)** — tech stack, Godot basics, project structure, scene tree, analytics
-- **[Objects](docs/objects/)** — player, enemies, tilemap, effects specifications
-- **[Assets](docs/assets/)** — tile, sprite, and UI theme specifications
-- **[Systems](docs/systems/)** — stats, classes, skills, color system, combat, leveling, player engagement, death, saves, movement, spawning, camera
-- **[World](docs/world/)** — dungeon, town, monsters
-- **[Inventory](docs/inventory/)** — backpack, bank, items
-- **[UI](docs/ui/)** — controls, HUD, death screen
-- **[Testing](docs/testing/)** — test strategy, manual tests, automated tests
+| Folder | Contents |
+|--------|----------|
+| [architecture/](docs/architecture/) | Tech stack, project structure, autoloads, signals, setup guide |
+| [systems/](docs/systems/) | Stats, classes, skills, magic, combat, leveling, death, save, color system |
+| [objects/](docs/objects/) | Player, enemies, tilemap, effects |
+| [world/](docs/world/) | Dungeon (living entity lore), town, monsters |
+| [inventory/](docs/inventory/) | Backpack, bank, items |
+| [ui/](docs/ui/) | Controls, HUD, death screen |
+| [testing/](docs/testing/) | Test strategy, 33 manual tests, 64 automated tests (GdUnit4 + xUnit) |
+| [conventions/](docs/conventions/) | Team structure, ticketing |
+| [teams/](docs/teams/) | Per-team ticket boards (Design, QA, DevOps, Engine, Systems, UI, World) |
+| [reference/](docs/reference/) | Subagent research, technical references |
 
-For AI coding assistant guidelines, see [AGENTS.md](AGENTS.md).
+Development progress: [**dev-tracker.md**](docs/dev-tracker.md) (44 tickets across 8 epics)
 
-## How to run
+## Tech Stack
 
-> **Note:** The game is currently in the documentation phase. Code implementation has not started yet.
+| Layer | Technology |
+|-------|-----------|
+| Engine | Godot 4.x (.NET edition) |
+| Language | C# / .NET 8+ |
+| Testing | GdUnit4 (scene tests) + xUnit (logic tests) |
+| Serialization | System.Text.Json (saves) + MessagePack (floor cache) |
+| Object pooling | Microsoft.Extensions.ObjectPool |
+| Async generation | System.Threading.Channels |
+
+## How to Run
+
+> The game is in the documentation phase. Code implementation has not started yet.
 
 When implementation begins:
 
-1. Install [Godot 4.x](https://godotengine.org/download) (standard version, not .NET)
-2. Clone the repo
-3. Open the project folder in Godot editor (Project → Import → select the `project.godot` file)
-4. Press F5 to run
+1. Install [.NET 9+ SDK](https://dotnet.microsoft.com/download)
+2. Install [Godot 4.x .NET edition](https://godotengine.org/download) (the .NET build, not standard)
+3. Clone the repo
+4. `dotnet restore` to install NuGet packages
+5. Open the project in Godot editor → Press F5 to run
+
+See [setup guide](docs/architecture/setup-guide.md) for detailed environment setup.
 
 ### Archived Phaser prototype
 
 The original browser prototype is preserved in `archive/phaser-prototype/`. To run it:
 1. Open `archive/phaser-prototype/index.html` in a browser
-2. Or serve with any static server
 
-## Why this repo?
+## Development
 
-I'm a front-end developer (@balbonits) building my first real game. This is a personal learning project: Godot 4, GDScript, isometric 2D, procedural generation, state management — all while trying to make something addictive and fun.
+All development is AI-assisted. The product owner directs game vision; AI teams handle implementation.
 
-The approach is docs-first: every system is designed and documented in exhaustive detail before a single line of code is written.
+```bash
+make build      # dotnet build
+make test       # dotnet test (GdUnit4 + xUnit)
+make lint       # dotnet format --verify-no-changes
+make check      # build + lint + test
+make run        # Launch in Godot
+```
 
-No fixed release date or polish promises — it's evolving slowly and thoughtfully.
-
-## Roadmap (loose & flexible)
-
-1. Complete all design documentation (architecture, objects, assets, systems, tests)
-2. Godot project scaffold (project.godot, scenes, autoloads)
-3. Isometric tile floor + player movement
-4. Game state autoloads + HUD
-5. Enemy spawning + chase AI
-6. Combat system (auto-attack, damage, slash effects)
-7. Death & restart flow
-8. Polish + parity check against Phaser prototype
-9. Death screen UI + penalties
-10. Town hub + NPC interaction
-11. Inventory systems (backpack + bank)
-12. Procedural dungeon generation
+7 AI team leads are defined in `.claude/agents/` for specialized work (Design, QA, DevOps, Engine, Systems, UI, World). See [team conventions](docs/conventions/teams.md).
 
 ## Contributing
 
-Solo learning project for now — no formal contributions, but feel free to fork, play, and open issues with feedback or questions.
+Solo learning project — no formal contributions, but feel free to fork, play, and open issues with feedback.
 
 Made with curiosity in Los Angeles, 2026.

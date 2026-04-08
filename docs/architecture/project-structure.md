@@ -145,7 +145,7 @@ dungeon-web-game/
 | `docs/architecture/tech-stack.md` | Technology decisions | Godot 4 stack table, window configuration, what we avoid, migration comparison from Phaser. The "why" behind every technology choice. |
 | `docs/architecture/godot-basics.md` | Godot for web devs | Bridge document mapping web concepts (DOM, CSS, events, components) to Godot equivalents (scene tree, Inspector, signals, scenes). Essential reading for a front-end developer learning Godot. |
 | `docs/architecture/project-structure.md` | This file | Directory layout, naming conventions, file purposes. The "map" of the codebase. |
-| `docs/architecture/game-dev-concepts.md` | Game dev fundamentals | Game loop, delta time, collision, state management — explained through web dev analogies with GDScript examples. |
+| `docs/architecture/game-dev-concepts.md` | Game dev fundamentals | Game loop, delta time, collision, state management — explained through web dev analogies with C# examples. |
 | `docs/systems/*.md` | Game system specs | Detailed specifications for stats, classes, combat, leveling, death penalties, save system. Engine-agnostic where possible — describe what the system does, not how it's implemented. |
 | `docs/world/*.md` | World design specs | Dungeon structure, town hub, monster types. Describes the game world and its rules. |
 | `docs/inventory/*.md` | Inventory system specs | Backpack, bank, item definitions. Describes storage and loot mechanics. |
