@@ -12,7 +12,7 @@ Single source of truth for all work. Organized as tickets within epics. Specs ar
 
 ## Ticket Index
 
-Quick reference for all 44 tickets. Search by ID, title, or status.
+Quick reference for all tickets. Search by ID, title, or status.
 
 ### SPEC — Spec Completion (26 sub-tickets)
 
@@ -53,82 +53,397 @@ All handled by `@design-lead`, reviewed by `@qa-lead`.
 | SPEC-11b | Bank UI and deposit/withdraw flow | Done | SPEC-06a | [bank.md](inventory/bank.md) |
 | SPEC-12 | Finalize autoloads spec | Done | — | [autoloads.md](architecture/autoloads.md) |
 
-### SETUP — C# Project Setup (7 tickets)
+### SETUP — C# Project Setup (10 sub-tickets)
 
 All handled by `@devops-lead`.
 
 | ID | Title | Status | Deps |
 |----|-------|--------|------|
 | SETUP-01 | Install dev environment | Done | — |
-| SETUP-02 | Create .csproj and .sln | To Do | SETUP-01 |
-| SETUP-03 | Remove GUT and GDScript tests | To Do | SETUP-02 |
-| SETUP-04 | Update project.godot for .NET | To Do | SETUP-02 |
-| SETUP-05 | Update Makefile for C# | To Do | SETUP-02 |
-| SETUP-06 | Update CI and pre-commit hook | To Do | SETUP-05 |
-| SETUP-07 | Write C# sanity tests | To Do | SETUP-04 |
+| SETUP-02a | Generate .csproj via Godot editor | To Do | SETUP-01 |
+| SETUP-02b | Create .sln and verify dotnet build | To Do | SETUP-02a |
+| SETUP-02c | Add NuGet packages (gdUnit4, xunit, MessagePack) | To Do | SETUP-02b |
+| SETUP-03 | Remove GUT addon and GDScript test files | To Do | SETUP-02a |
+| SETUP-04a | Update project.godot for .NET runtime | To Do | SETUP-02a |
+| SETUP-04b | Define Input Map actions in project.godot | To Do | SETUP-04a |
+| SETUP-05 | Update Makefile for C# (dotnet build/test/run) | To Do | SETUP-02b |
+| SETUP-06 | Update CI workflow and pre-commit hook for C# | To Do | SETUP-05 |
+| SETUP-07 | Write C# sanity tests (build + run + xUnit hello world) | To Do | SETUP-02c, SETUP-04a |
 
-### P1 — Prototype Parity (11 tickets)
+### P1 — Prototype Parity (28 sub-tickets)
 
 `@systems-lead` (logic), `@engine-lead` (scenes), `@ui-lead` (HUD/death), `@qa-lead` (tests).
 
-| ID | Title | Status | Deps | Spec | Tests |
-|----|-------|--------|------|------|-------|
-| P1-01 | GameState autoload | To Do | SETUP-07 | [autoloads](architecture/autoloads.md) | 24 unit |
-| P1-02 | EventBus autoload | To Do | SETUP-07 | [autoloads](architecture/autoloads.md), [signals](architecture/signals.md) | — |
-| P1-03 | Tilemap and dungeon room | To Do | P1-01 | [tilemap](objects/tilemap.md) | MT-002 |
-| P1-04 | Player scene and movement | To Do | P1-03 | [player](objects/player.md), [movement](systems/movement.md) | MT-003–012, 6 unit |
-| P1-05 | Enemy scene and tiers | To Do | P1-04 | [enemies](objects/enemies.md) | MT-013–015, 15 unit |
-| P1-06 | Enemy spawning system | To Do | P1-05 | [spawning](systems/spawning.md) | MT-016–017, 5 integ |
-| P1-07 | Combat system | To Do | P1-06 | [combat](systems/combat.md), [effects](objects/effects.md) | MT-018–027, 8 integ |
-| P1-08 | HUD overlay | To Do | P1-01 | [hud](ui/hud.md), [ui-theme](assets/ui-theme.md) | MT-028–029 |
-| P1-09 | Death screen and restart | To Do | P1-01 | [death](systems/death.md), [death-screen](ui/death-screen.md) | MT-030–033, 6 integ |
-| P1-10 | Main scene wiring | To Do | P1-07, 08, 09 | [scene-tree](architecture/scene-tree.md) | MT-001, full 33 manual |
-| P1-11 | Debug overlay | To Do | P1-10 | [test-strategy](testing/test-strategy.md) | — |
+**P1-01 — GameState Autoload**
 
-### P2 — Core Systems (5 tickets)
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-01a | Create GameState singleton class with base properties (HP, MaxHP, Level, XP, Floor) | To Do | SETUP-07 |
+| P1-01b | Implement TakeDamage, Heal, AwardXp methods | To Do | P1-01a |
+| P1-01c | Implement level-up logic (XP threshold, stat increase, reset) | To Do | P1-01b |
+| P1-01d | Add StatsChanged signal and emit on every state mutation | To Do | P1-01b |
+| P1-01e | Register as autoload in project.godot | To Do | P1-01a |
+| P1-01f | Write GameState unit tests (24 tests) | To Do | P1-01d |
 
-| ID | Title | Status | Deps | Spec |
-|----|-------|--------|------|------|
-| P2-01 | Leveling redesign | To Do | P1-10 | [leveling](systems/leveling.md) |
-| P2-02 | Stats system | To Do | P1-10 | [stats](systems/stats.md) |
-| P2-03 | Class system | To Do | P2-02 | [classes](systems/classes.md) |
-| P2-04 | Save/load system | To Do | P1-10 | [save](systems/save.md) |
-| P2-05 | Full death flow | To Do | P2-04 | [death](systems/death.md) |
+**P1-02 — EventBus Autoload**
 
-### P3 — Skills & Equipment (2 tickets)
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-02a | Create EventBus singleton with all signal definitions | To Do | SETUP-07 |
+| P1-02b | Register as autoload in project.godot | To Do | P1-02a |
 
-| ID | Title | Status | Deps | Spec |
-|----|-------|--------|------|------|
-| P3-01 | Skill tree system | To Do | P2-03 | [skills](systems/skills.md) |
-| P3-02 | Equipment system | To Do | P2-02 | [items](inventory/items.md) |
+**P1-03 — Tilemap and Dungeon Room**
 
-### P4 — World (3 tickets)
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-03a | Create TileMapLayer with floor and wall tile sources | To Do | P1-01e |
+| P1-03b | Build single static dungeon room (walls + floor + collision) | To Do | P1-03a |
+| P1-03c | Set up collision layer 1 (walls) with physics polygons | To Do | P1-03b |
 
-| ID | Title | Status | Deps | Spec |
-|----|-------|--------|------|------|
-| P4-01 | Procedural dungeon generation | To Do | P1-03 | [dungeon](world/dungeon.md) |
-| P4-02 | Floor caching and descent | To Do | P4-01 | [dungeon](world/dungeon.md) |
-| P4-03 | Town hub | To Do | P1-10 | [town](world/town.md) |
+**P1-04 — Player Scene and Movement**
 
-### P5 — Inventory & Items (4 tickets)
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-04a | Create player.tscn (CharacterBody2D + CollisionShape + Polygon2D sprite) | To Do | P1-03b |
+| P1-04b | Add player to "player" group and set collision layer 2 / mask 1 | To Do | P1-04a |
+| P1-04c | Implement arrow key input reading via Input.GetVector | To Do | P1-04a |
+| P1-04d | Implement isometric Transform2D and MoveAndSlide | To Do | P1-04c |
+| P1-04e | Add Camera2D child with 2x zoom and position smoothing | To Do | P1-04a |
+| P1-04f | Write movement unit tests (iso transform math, normalized speed) | To Do | P1-04d |
 
-| ID | Title | Status | Deps | Spec |
-|----|-------|--------|------|------|
-| P5-01 | Backpack system | To Do | P2-05 | [backpack](inventory/backpack.md) |
-| P5-02 | Bank system | To Do | P4-03 | [bank](inventory/bank.md) |
-| P5-03 | Loot and item drops | To Do | P3-02, P5-01 | [items](inventory/items.md) |
-| P5-04 | Blacksmith crafting | To Do | P5-01 | [items](inventory/items.md), [town](world/town.md) |
+**P1-05 — Enemy Scene and Tiers**
 
-### P6 — Polish & Juice (6 tickets)
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-05a | Create enemy.tscn (CharacterBody2D + CollisionShape + Polygon2D) | To Do | P1-04a |
+| P1-05b | Implement DangerTier property and stat formulas (HP/speed/damage/XP) | To Do | P1-05a |
+| P1-05c | Implement tier-based color assignment | To Do | P1-05b |
+| P1-05d | Implement straight-line chase AI (move toward player each frame) | To Do | P1-05a |
+| P1-05e | Add HitArea (Area2D) with contact damage and 700ms cooldown timer | To Do | P1-05a |
+| P1-05f | Implement TakeDamage and Die methods | To Do | P1-05b |
+| P1-05g | Write enemy stat formula unit tests (15 tests) | To Do | P1-05b |
 
-| ID | Title | Status | Deps | Spec |
-|----|-------|--------|------|------|
-| P6-01 | Visual effects | To Do | P1-07 | [effects](objects/effects.md) |
-| P6-02 | Game feel (hitstop, knockback) | To Do | P1-07 | [player-engagement](systems/player-engagement.md) |
-| P6-03 | Object pooling | To Do | P1-10 | — |
-| P6-04 | Art assets | To Do | P1-10 | [sprite-specs](assets/sprite-specs.md) |
-| P6-05 | Audio | To Do | P1-10 | — |
-| P6-06 | Test coverage tooling | To Do | SETUP-07 | — |
+**P1-06 — Enemy Spawning System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-06a | Create SpawnManager node with initial 10-enemy spawn | To Do | P1-05f |
+| P1-06b | Implement periodic spawn timer (2.8s) with soft cap (14) | To Do | P1-06a |
+| P1-06c | Implement respawn-on-death timer (1.4s delay) | To Do | P1-06a |
+| P1-06d | Implement random edge spawn position calculation | To Do | P1-06a |
+| P1-06e | Write spawning integration tests (5 tests) | To Do | P1-06b |
+
+**P1-07 — Combat System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-07a | Add AttackRange Area2D to player (CircleShape2D, 78px radius) | To Do | P1-06a |
+| P1-07b | Implement face button attack input (action_cross default) | To Do | P1-07a |
+| P1-07c | Implement nearest-enemy targeting within AttackRange | To Do | P1-07a |
+| P1-07d | Implement attack cooldown (420ms) and damage dealing | To Do | P1-07c |
+| P1-07e | Implement slash visual effect (Polygon2D + tween fade/rise) | To Do | P1-07d |
+| P1-07f | Implement camera shake on player hit (90ms, ±3px) | To Do | P1-05e |
+| P1-07g | Implement XP award on enemy kill (via GameState.AwardXp) | To Do | P1-07d, P1-01c |
+| P1-07h | Write combat integration tests (8 tests) | To Do | P1-07g |
+
+**P1-08 — HUD Overlay**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-08a | Create CanvasLayer (layer 10) with HUD Control node | To Do | P1-01d |
+| P1-08b | Build PanelContainer with StyleBoxFlat (dark panel, gold border) | To Do | P1-08a |
+| P1-08c | Add title, controls hint, and stats labels | To Do | P1-08b |
+| P1-08d | Connect StatsChanged signal to update stats label | To Do | P1-08c |
+| P1-08e | Set MouseFilter to Ignore (click-through) | To Do | P1-08a |
+
+**P1-09 — Death Screen and Restart**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-09a | Create death screen CanvasLayer (hidden by default) | To Do | P1-01d |
+| P1-09b | Show death screen when GameState.HP reaches 0 | To Do | P1-09a |
+| P1-09c | Implement restart via Esc key (_UnhandledInput) | To Do | P1-09b |
+| P1-09d | Reset GameState and reload scene on restart | To Do | P1-09c |
+| P1-09e | Write death/restart integration tests (6 tests) | To Do | P1-09d |
+
+**P1-10 — Main Scene Wiring**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-10a | Create main.tscn with Dungeon, Entities, UILayer containers | To Do | P1-07h, P1-08d, P1-09d |
+| P1-10b | Wire player spawn into Entities container at room center | To Do | P1-10a |
+| P1-10c | Wire SpawnManager into Entities container | To Do | P1-10a |
+| P1-10d | Wire HUD and DeathScreen into UILayer | To Do | P1-10a |
+| P1-10e | Run full 33-case manual test pass (MT-001 through MT-033) | To Do | P1-10d |
+
+**P1-11 — Debug Overlay**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P1-11a | Create debug overlay (FPS, entity count, floor, player pos) | To Do | P1-10e |
+| P1-11b | Toggle debug overlay with a hotkey (F3 or backtick) | To Do | P1-11a |
+
+### P2 — Core Systems (18 sub-tickets)
+
+**P2-01 — Leveling Redesign**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P2-01a | Replace linear XP formula with quadratic (`L^2 * 45`) | To Do | P1-10e |
+| P2-01b | Implement floor-scaling enemy XP (`base * floor_multiplier`) | To Do | P2-01a |
+| P2-01c | Implement multi-reward level-up (HP, stat points, skill points) | To Do | P2-01a |
+| P2-01d | Implement milestone bonuses (every 10th level: +2 stat, +1 skill) | To Do | P2-01c |
+| P2-01e | Implement rested XP (accumulate offline, double kill XP) | To Do | P2-01a |
+| P2-01f | Write leveling unit tests | To Do | P2-01d |
+
+**P2-02 — Stats System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P2-02a | Implement 4-stat model (STR/DEX/STA/INT) with diminishing returns | To Do | P1-10e |
+| P2-02b | Implement STR → melee damage (flat + % boost) | To Do | P2-02a |
+| P2-02c | Implement DEX → attack speed + dodge chance | To Do | P2-02a |
+| P2-02d | Implement STA → max HP + HP regen | To Do | P2-02a |
+| P2-02e | Implement INT → mana pool + mana regen + processing efficiency | To Do | P2-02a |
+| P2-02f | Replace placeholder combat formula with STR-based formula | To Do | P2-02b |
+| P2-02g | Write stat formula unit tests | To Do | P2-02e |
+
+**P2-03 — Class System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P2-03a | Implement class enum (Warrior/Ranger/Mage) and creation bonuses | To Do | P2-02g |
+| P2-03b | Implement per-level auto stat bonuses per class | To Do | P2-03a |
+| P2-03c | Implement milestone scaling (every 25 levels, +1 to non-zero bonuses) | To Do | P2-03b |
+| P2-03d | Implement free stat point allocation (3/level, +2 at milestones) | To Do | P2-03b |
+| P2-03e | Create character creation screen (pick class + name) | To Do | P2-03a |
+| P2-03f | Write class system unit tests | To Do | P2-03d |
+
+**P2-04 — Save/Load System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P2-04a | Create SaveManager autoload with Save/Load methods | To Do | P1-10e |
+| P2-04b | Implement 10-slot save file structure (`user://saves/slot_N.json`) | To Do | P2-04a |
+| P2-04c | Implement auto-save triggers (level-up, floor transition, town, death) | To Do | P2-04b |
+| P2-04d | Implement save data validation and version migration | To Do | P2-04b |
+| P2-04e | Implement Base64 export/import with clipboard | To Do | P2-04b |
+| P2-04f | Implement backup-before-import | To Do | P2-04b |
+| P2-04g | Create save slot selection UI (10 slots) | To Do | P2-04b, P2-03e |
+| P2-04h | Write save/load integration tests | To Do | P2-04d |
+
+**P2-05 — Full Death Flow**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P2-05a | Implement multi-step death screen (destination → mitigations → summary → confirm) | To Do | P2-04c |
+| P2-05b | Implement EXP loss formula (`min(deepestFloor * 0.4, 50)%`) | To Do | P2-05a |
+| P2-05c | Implement backpack item loss formula (`floor(deepestFloor / 10) + 1`) | To Do | P2-05a |
+| P2-05d | Implement gold buyout options (EXP protection + backpack protection) | To Do | P2-05b |
+| P2-05e | Implement Sacrificial Idol auto-consume on death | To Do | P2-05c |
+| P2-05f | Implement respawn destinations (town vs last safe spot) | To Do | P2-05a |
+| P2-05g | Write death flow integration tests | To Do | P2-05f |
+
+### P3 — Skills & Equipment (14 sub-tickets)
+
+**P3-01 — Skill Tree System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P3-01a | Implement skill data model (base skills, specific skills, innate skills) | To Do | P2-03f |
+| P3-01b | Implement use-based skill XP system (XP per use, floor multiplier) | To Do | P3-01a |
+| P3-01c | Implement skill point allocation (XP boost per point) | To Do | P3-01a |
+| P3-01d | Implement passive bonus formula (`skill_level * multiplier * DR`) | To Do | P3-01a |
+| P3-01e | Implement weapon requirement checks for specific skills | To Do | P3-01a, P3-02a |
+| P3-01f | Create skill tree UI (view categories, base skills, specific skills) | To Do | P3-01d |
+| P3-01g | Write skill system unit tests | To Do | P3-01d |
+
+**P3-02 — Equipment System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P3-02a | Implement item data model (Item struct with base stats, quality, affixes) | To Do | P2-02g |
+| P3-02b | Implement equipment slot system (11 slots + 10 rings) | To Do | P3-02a |
+| P3-02c | Implement equip/unequip with stat recalculation | To Do | P3-02b |
+| P3-02d | Implement affix data model (prefix/suffix, tier gating by item level) | To Do | P3-02a |
+| P3-02e | Implement defense formula (diminishing returns, K=100) | To Do | P3-02c |
+| P3-02f | Create equipment UI (slots, drag-to-equip, stat comparison) | To Do | P3-02c |
+| P3-02g | Write equipment unit tests | To Do | P3-02e |
+
+### P4 — World (12 sub-tickets)
+
+**P4-01 — Procedural Dungeon Generation**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P4-01a | Implement BSP room placement algorithm | To Do | P1-03c |
+| P4-01b | Implement Drunkard's Walk corridor generation | To Do | P4-01a |
+| P4-01c | Implement Cellular Automata smoothing pass | To Do | P4-01b |
+| P4-01d | Place entrance room, exit room, and staircase tiles | To Do | P4-01c |
+| P4-01e | Implement seeded generation (floor seed → deterministic layout) | To Do | P4-01d |
+| P4-01f | Write dungeon generation tests (connectivity, room count, entrance/exit) | To Do | P4-01e |
+
+**P4-02 — Floor Caching and Descent**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P4-02a | Implement 10-floor cache (store/retrieve floor layouts) | To Do | P4-01e |
+| P4-02b | Implement floor transition (walk to stairs → load next floor) | To Do | P4-02a |
+| P4-02c | Implement cache eviction (oldest floor purged when cache full) | To Do | P4-02a |
+| P4-02d | Implement ascend/descend with cached floor restoration | To Do | P4-02b |
+
+**P4-03 — Town Hub**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P4-03a | Create town scene with compact walkable layout and 5 NPC positions | To Do | P1-10e |
+| P4-03b | Implement walk-up NPC interaction (proximity trigger → panel open) | To Do | P4-03a |
+
+### P5 — Inventory & Items (16 sub-tickets)
+
+**P5-01 — Backpack System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P5-01a | Implement backpack data structure (25 slots, stackable items) | To Do | P2-05g |
+| P5-01b | Implement add/remove/move item operations | To Do | P5-01a |
+| P5-01c | Create backpack UI (grid of slots, item icons, stack counts) | To Do | P5-01b |
+| P5-01d | Write backpack unit tests | To Do | P5-01b |
+
+**P5-02 — Bank System**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P5-02a | Implement bank data structure (50 slots, expandable) | To Do | P4-03b |
+| P5-02b | Implement deposit/withdraw between backpack and bank | To Do | P5-02a, P5-01b |
+| P5-02c | Implement bank expansion purchase (10 slots, `500 * N^2` gold) | To Do | P5-02a |
+| P5-02d | Create bank UI (Banker NPC panel with deposit/withdraw) | To Do | P5-02b |
+
+**P5-03 — Loot and Item Drops**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P5-03a | Implement drop chance formula (tier-based + floor bonus) | To Do | P3-02g, P5-01d |
+| P5-03b | Implement base quality distribution (Normal/Superior/Elite by floor) | To Do | P5-03a |
+| P5-03c | Implement material drop system (25% flat chance, floor-appropriate tier) | To Do | P5-03a |
+| P5-03d | Implement boss first-kill rare material drops | To Do | P5-03c |
+| P5-03e | Create loot pickup interaction (walk over → add to backpack) | To Do | P5-03b |
+
+**P5-04 — Blacksmith Crafting**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P5-04a | Implement deterministic affix application (pick affix, pay materials) | To Do | P5-01d, P3-02d |
+| P5-04b | Implement gear recycling (break down → materials) | To Do | P5-04a |
+| P5-04c | Create Blacksmith NPC panel UI (add affix, recycle, material costs) | To Do | P5-04b |
+
+### P6 — Polish & Juice (14 sub-tickets)
+
+**P6-01 — Visual Effects**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P6-01a | Implement level-up flash and particle burst | To Do | P1-07h |
+| P6-01b | Implement enemy death fade-out effect | To Do | P1-07h |
+| P6-01c | Implement damage number popups (floating text) | To Do | P1-07h |
+
+**P6-02 — Game Feel**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P6-02a | Implement hitstop (2-3 frame pause on hit) | To Do | P1-07h |
+| P6-02b | Implement knockback on enemy hit | To Do | P1-07h |
+| P6-02c | Implement screen flash on player damage | To Do | P1-07h |
+
+**P6-03 — Object Pooling**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P6-03a | Implement enemy object pool (pre-allocate, reuse on spawn/death) | To Do | P1-10e |
+| P6-03b | Implement effect object pool (slash effects, damage numbers) | To Do | P6-01c |
+
+**P6-04 — Art Assets**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P6-04a | Replace player Polygon2D with DCSS character sprite | To Do | P1-10e |
+| P6-04b | Replace enemy Polygon2D with DCSS monster sprites (per tier) | To Do | P1-10e |
+| P6-04c | Replace tilemap placeholder tiles with DCSS dungeon tiles | To Do | P1-10e |
+
+**P6-05 — Audio**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P6-05a | Add attack/hit sound effects | To Do | P1-10e |
+| P6-05b | Add dungeon ambient music (loopable) | To Do | P1-10e |
+
+**P6-06 — Testing**
+
+| ID | Title | Status | Deps |
+|----|-------|--------|------|
+| P6-06a | Set up test coverage reporting | To Do | SETUP-07 |
+| P6-06b | Set up CI test runner (dotnet test in GitHub Actions) | To Do | SETUP-06 |
+
+### RES — Research (parallel, enhances specs & implementation)
+
+Research tickets run in parallel via researcher agent. Findings feed back into specs, tickets, and code patterns. Each research ticket produces a brief in `docs/reference/`.
+
+**RES-SETUP — Pre-Implementation Research**
+
+| ID | Title | Status | Feeds Into |
+|----|-------|--------|-----------|
+| RES-01 | Godot 4 C# project structure best practices | To Do | SETUP-02, project-structure.md |
+| RES-02 | Godot 4 autoload patterns and singleton pitfalls in C# | To Do | P1-01, P1-02 |
+| RES-03 | CharacterBody2D movement patterns (MoveAndSlide edge cases) | To Do | P1-04, movement.md |
+| RES-04 | Godot 4 TileMap/TileMapLayer best practices for dungeon crawlers | To Do | P1-03, P4-01 |
+| RES-05 | Input Map + rebinding at runtime in Godot 4 C# | To Do | SETUP-04b, controls.md |
+
+**RES-COMBAT — Combat & Game Feel Research**
+
+| ID | Title | Status | Feeds Into |
+|----|-------|--------|-----------|
+| RES-06 | How Diablo 2 / PoE handle target cycling on controller | To Do | P1-07, combat.md |
+| RES-07 | Hitstop / hit-freeze implementation patterns in 2D games | To Do | P6-02, player-engagement.md |
+| RES-08 | Auto-attack + button-press hybrid combat in ARPGs (edge cases, feel) | To Do | P1-07, combat.md |
+| RES-09 | Object pooling patterns for enemies and effects in Godot 4 | To Do | P6-03, spawning.md |
+| RES-10 | Damage number popup patterns (font, animation, stacking) | To Do | P6-01c, effects.md |
+
+**RES-SYSTEMS — Core Systems Research**
+
+| ID | Title | Status | Feeds Into |
+|----|-------|--------|-----------|
+| RES-11 | XP curve balancing: how games tune leveling speed post-launch | To Do | P2-01, leveling.md |
+| RES-12 | Stat diminishing returns: how PoE / D2 / Last Epoch handle soft caps | To Do | P2-02, stats.md |
+| RES-13 | Skill tree UI patterns for controller-first games | To Do | P3-01f, skills.md |
+| RES-14 | Equipment stat stacking edge cases (10 rings, overflow, cap behavior) | To Do | P3-02, items.md |
+| RES-15 | Save system corruption prevention and recovery patterns | To Do | P2-04, save.md |
+
+**RES-WORLD — Dungeon & World Research**
+
+| ID | Title | Status | Feeds Into |
+|----|-------|--------|-----------|
+| RES-16 | BSP + Drunkard's Walk implementation reference (code examples, tuning params) | To Do | P4-01, dungeon.md |
+| RES-17 | Floor caching strategies in roguelikes (memory, serialization) | To Do | P4-02, dungeon.md |
+| RES-18 | Boss encounter design patterns in hack-n-slash games | To Do | P4-01, dungeon.md |
+| RES-19 | NPC interaction UI patterns on controller (proximity, panels) | To Do | P4-03, town.md |
+
+**RES-ITEMS — Inventory & Loot Research**
+
+| ID | Title | Status | Feeds Into |
+|----|-------|--------|-----------|
+| RES-20 | Diablo 2 affix generation deep dive (ilvl, alvl, qlvl formulas) | To Do | P5-03, items.md |
+| RES-21 | Deterministic crafting UX patterns (how to make no-RNG feel rewarding) | To Do | P5-04, items.md |
+| RES-22 | Inventory UI patterns for controller-first games (grid, cursor, quick-move) | To Do | P5-01c, backpack.md |
+| RES-23 | Drop rate tuning: how games avoid loot drought and loot flood | To Do | P5-03, items.md |
+
+**RES-QA — Testing & Edge Cases**
+
+| ID | Title | Status | Feeds Into |
+|----|-------|--------|-----------|
+| RES-24 | Common game-breaking bugs in ARPGs (duplication, overflow, desync) | To Do | All P-tickets |
+| RES-25 | Roguelike edge cases: seed reproducibility, RNG fairness testing | To Do | P4-01, dungeon.md |
+| RES-26 | Performance profiling patterns for Godot 4 C# (GC pressure, allocations) | To Do | P6-03, all code |
+| RES-27 | Accessibility in ARPGs: colorblind modes, input assist, UI scaling | To Do | P6, hud.md, color-system.md |
 
 ---
 
