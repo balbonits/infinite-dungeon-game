@@ -6,6 +6,8 @@ Real-time button-press combat with target cycling. The player presses face butto
 
 ## Current State
 
+> **Entity Framework:** Combat is now implemented via `CombatSystem.DealDamage(attacker, target)` -- a single function for all entity-vs-entity combat (player vs enemy, enemy vs player, or any future entity matchup). The formulas in this spec are implemented across `StatSystem` (defense reduction via diminishing returns) and `CombatSystem` (crit rolls, damage floor of 1, final damage calculation). See [entity-framework.md](../architecture/entity-framework.md) for system architecture and formula details.
+
 Implemented in the prototype:
 - Auto-targeting: finds nearest enemy within `ATTACK_RANGE` (78px)
 - Attack cooldown: `ATTACK_COOLDOWN` (420ms)

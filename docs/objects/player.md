@@ -6,6 +6,8 @@ The player is a CharacterBody2D with isometric movement, button-press combat wit
 
 ## Current State
 
+> **Entity Framework:** The player's data model and core systems are now provided by the unified entity framework. The player is created via `EntityFactory.CreatePlayer()`, combat damage flows through `CombatSystem.DealDamage(attacker, target)`, and HP/MP management uses `VitalSystem`. The Godot scene (Player.cs) handles input, rendering, and collision -- all stat/combat/progression logic lives in the framework's pure C# systems. See [entity-framework.md](../architecture/entity-framework.md) for the full spec. The legacy `GameState.Level`-based damage formula below is superseded by the framework's `StatSystem` and `CombatSystem`.
+
 Fully functional placeholder player with:
 - Isometric 8-directional movement at 190 pixels/second
 - Auto-attack system targeting nearest enemy within range

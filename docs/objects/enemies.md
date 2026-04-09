@@ -6,6 +6,8 @@ Enemies are CharacterBody2D instances with a configurable `DangerTier` (1-3) tha
 
 ## Current State
 
+> **Entity Framework:** Enemies now use the unified entity framework. Each enemy is created via `EntityFactory.CreateEnemy(name, tier, floor)`, which configures all stats (HP, damage, speed, XP reward) based on tier and floor depth. Combat damage flows through the same `CombatSystem.DealDamage(attacker, target)` function used for all entity-vs-entity combat. The Godot scene (Enemy.cs) handles AI movement, collision, and rendering -- all stat/combat logic lives in the framework's pure C# systems. See [entity-framework.md](../architecture/entity-framework.md) for the full spec. The legacy tier formulas below document the prototype values; the factory now owns stat configuration.
+
 Three enemy tiers are fully functional:
 - Tier 1 (green) -- low danger, 30 HP, slow, 4 damage, 14 XP
 - Tier 2 (yellow) -- medium danger, 42 HP, moderate speed, 5 damage, 18 XP

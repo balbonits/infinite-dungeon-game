@@ -167,6 +167,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Serialization (cache) | MessagePack-CSharp v3 | Binary, ~10x faster, source generator support |
 | Object pooling | Microsoft.Extensions.ObjectPool | Pool enemies, effects, projectiles — avoid GC |
 | Async generation | System.Threading.Channels | Background floor generation pipeline |
+| Entity System | Static C# classes | EntityData + 6 systems (Vital, Stat, Combat, Effect, Progression, Skill) |
 | Physics | Built-in 2D | CharacterBody2D + Area2D |
 | Perspective | Isometric 2D | 2:1 diamond tiles — floors 64×32, wall blocks 64×64 (ISS standard) |
 | UI | Control nodes | Built-in UI, Theme resources |
@@ -429,7 +430,7 @@ docs/
 
 **Phase: Implementation active.** All 26 specs are locked. Code is being written.
 
-Stack: Godot 4.6 + C# (.NET 8+). Learning demo with 46-step automated showcase covering all core mechanics and UI patterns. 51 unit tests + 40 E2E assertions passing.
+Stack: Godot 4.6 + C# (.NET 8+). Learning demo with 46-step automated showcase covering all core mechanics and UI patterns. 219 unit tests + 40 E2E assertions passing. Unified entity framework (EntityData + 6 systems) replaces separate PlayerState/MonsterData.
 
 **Current mode:** Implementation. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md). SETUP tickets partially complete (02a, 02b, 04a done). P1 tickets next.
 

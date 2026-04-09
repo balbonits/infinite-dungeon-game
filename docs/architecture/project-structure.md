@@ -102,9 +102,27 @@ dungeon-web-game/
 │   ├── ui/
 │   │   ├── Hud.cs                         — HUD logic (stats display, signal listeners)
 │   │   └── DeathScreen.cs                 — Death screen logic (restart, penalties)
-│   └── autoloads/
-│       ├── GameState.cs                   — Singleton: HP, XP, level, floor, signals
-│       └── EventBus.cs                    — Singleton: decoupled signal hub
+│   ├── autoloads/
+│   │   ├── GameState.cs                   — Singleton: HP, XP, level, floor, signals
+│   │   └── EventBus.cs                    — Singleton: decoupled signal hub
+│   └── game/                              — Entity mechanics framework
+│       ├── GameCore.cs                    — Legacy demo script (deprecated)
+│       ├── HpMpOrbs.cs                    — HP/MP orb UI component
+│       ├── entities/
+│       │   ├── EntityData.cs              — Unified entity data (replaces PlayerState/MonsterData)
+│       │   ├── EntityFactory.cs           — Factory methods for creating typed entities
+│       │   └── EntityType.cs              — Entity type enum (Player, Monster, NPC, etc.)
+│       ├── systems/
+│       │   ├── VitalSystem.cs             — HP/MP management, damage, healing, death
+│       │   ├── StatSystem.cs              — STR/DEX/STA/INT calculation, modifiers, scaling
+│       │   ├── CombatSystem.cs            — Damage formulas, attack resolution, defense
+│       │   ├── EffectSystem.cs            — Buff/debuff application, stacking, tick processing
+│       │   ├── ProgressionSystem.cs       — XP awards, level-up logic, stat growth
+│       │   └── SkillSystem.cs             — Skill unlocking, leveling, cooldowns
+│       └── effects/
+│           ├── EffectData.cs              — Effect definition (type, magnitude, duration)
+│           ├── ActiveEffect.cs            — Runtime effect instance (remaining time, stacks)
+│           └── EffectType.cs              — Effect type enum (Poison, Regen, Haste, etc.)
 ├── assets/                                — Binary resources (images, audio)
 │   ├── tiles/                             — Isometric tile PNG images
 │   │   ├── floor.png                      — Floor tile (filled 64x32 diamond)
@@ -114,7 +132,16 @@ dungeon-web-game/
 │   └── ui/                                — UI-specific images and icons (future)
 ├── tests/                                 — Automated tests
 │   ├── DungeonGame.Tests.csproj           — Test project (GdUnit4 + xUnit)
-│   └── ...                                — Test files mirroring scripts/ structure
+│   ├── CombatTests.cs                     — Combat formula tests (legacy)
+│   ├── DungeonTests.cs                    — Dungeon generation tests (legacy)
+│   ├── InventoryTests.cs                  — Inventory system tests (legacy)
+│   ├── LevelingTests.cs                   — XP/leveling tests (legacy)
+│   ├── ShopTests.cs                       — Shop system tests (legacy)
+│   ├── EntityFactoryTests.cs              — Entity creation and type validation
+│   ├── VitalSystemTests.cs                — HP/MP, damage, healing, death edge cases
+│   ├── StatSystemTests.cs                 — Stat calculation, modifiers, scaling
+│   ├── CombatSystemTests.cs               — Attack resolution, defense, damage formulas
+│   └── EffectSystemTests.cs               — Buff/debuff application, ticking, expiry
 ├── addons/                                — GdUnit4 addon (if required by framework)
 └── resources/                             — Godot resource files (.tres)
     ├── tile_sets/

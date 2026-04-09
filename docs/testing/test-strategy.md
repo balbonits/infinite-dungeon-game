@@ -6,8 +6,7 @@ Testing approach for "A Dungeon in the Middle of Nowhere" using Godot 4 + C#. Co
 
 ## Current State
 
-- No automated tests exist yet (project is in docs-only phase)
-- Manual playtesting was the primary QA method during Phaser prototype development
+- **219 unit tests passing** (51 legacy + 168 entity framework)
 - **GdUnit4** selected for Godot scene/node testing (NuGet: `gdUnit4.api`)
 - **xUnit** selected for pure C# logic testing (stat formulas, XP curves, data structures)
 - Test cases documented in `docs/testing/manual-tests.md` and `docs/testing/automated-tests.md`
@@ -128,16 +127,17 @@ public class DamageFormulaTests
 
 ```
 tests/
-├── DungeonGame.Tests.csproj    -- Test project (references main .csproj)
-├── Unit/                        -- xUnit pure logic tests
-│   ├── GameStateTests.cs        -- HP, XP, leveling, damage, reset
-│   ├── EnemyStatsTests.cs       -- Tier HP, speed, damage, XP formulas
-│   ├── MovementTests.cs         -- Isometric transform, speed normalization
-│   └── DamageFormulaTests.cs    -- Combat damage calculations
-├── Integration/                 -- GdUnit4 scene/node tests
-│   ├── CombatFlowTests.cs       -- Attack -> damage -> death -> XP -> level up
-│   ├── SpawningTests.cs         -- Initial count, cap, respawn timing
-│   └── DeathRestartTests.cs     -- HP=0 -> death state -> reset -> clean state
+├── DungeonGame.Tests.csproj     -- Test project (references main .csproj)
+├── CombatTests.cs               -- Combat formula tests (legacy, 51 total legacy tests)
+├── DungeonTests.cs              -- Dungeon generation tests (legacy)
+├── InventoryTests.cs            -- Inventory system tests (legacy)
+├── LevelingTests.cs             -- XP/leveling tests (legacy)
+├── ShopTests.cs                 -- Shop system tests (legacy)
+├── EntityFactoryTests.cs        -- Entity creation and type validation
+├── VitalSystemTests.cs          -- HP/MP, damage, healing, death edge cases
+├── StatSystemTests.cs           -- Stat calculation, modifiers, scaling
+├── CombatSystemTests.cs         -- Attack resolution, defense, damage formulas
+└── EffectSystemTests.cs         -- Buff/debuff application, ticking, expiry
 ```
 
 ### Testing Workflow
@@ -226,6 +226,27 @@ make coverage    # Generate HTML coverage report in coverage/
 ```
 
 No hard coverage targets — this is a learning project. Coverage is a tool for finding untested paths, not a metric to optimize for.
+
+### Entity Framework Tests
+
+168 new xUnit tests across 5 test files covering the unified entity mechanics framework. These tests validate the core gameplay logic that all entities (players, monsters, NPCs) share.
+
+| Test File | Count | Covers |
+|-----------|-------|--------|
+| `EntityFactoryTests.cs` | Entity creation | Factory methods, type assignment, default values, entity type validation |
+| `VitalSystemTests.cs` | HP/MP operations | Damage clamping, healing caps, death triggers, overkill, zero-damage edge cases |
+| `StatSystemTests.cs` | Stat calculations | Base stats, modifier stacking, level scaling, stat floor/ceiling bounds |
+| `CombatSystemTests.cs` | Attack resolution | Damage formulas, defense reduction, critical hits, attack-against-dead targets |
+| `EffectSystemTests.cs` | Buff/debuff logic | Effect application, tick processing, expiry, stacking rules, removal |
+
+**Test categories covered:**
+- **Boundary conditions** -- min/max values, zero inputs, negative inputs, overflow scenarios
+- **Edge cases** -- dead entity interactions, empty effect lists, duplicate effects
+- **Stress tests** -- rapid sequential operations, many simultaneous effects, multi-level-up chains
+- **Symmetry proofs** -- damage then heal returns to original, apply then remove effect is clean
+- **Regression guards** -- specific bug scenarios that were caught and prevented from recurring
+
+**Total test count:** 219 (51 legacy game logic tests + 168 entity framework tests).
 
 ## Implementation Notes
 

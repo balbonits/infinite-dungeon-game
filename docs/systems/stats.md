@@ -6,6 +6,8 @@ Four core stats define a character's strengths: STR, DEX, STA, INT. Stats influe
 
 ## Current State
 
+> **Entity Framework:** The diminishing returns formula `raw * (100 / (raw + 100))` is implemented in `StatSystem.GetEffective()`. Derived stats MaxHP and MaxMP are calculated by `StatSystem.GetMaxHP()` and `StatSystem.GetMaxMP()` respectively. The entity framework uses the stat name **VIT** (Vitality) for what this spec calls **STA** (Stamina) -- they are the same stat. See [entity-framework.md](../architecture/entity-framework.md) for the full system architecture.
+
 Stat formulas are **locked**. This doc defines the exact math for every stat-derived value. All formulas are intended to be player-facing — published so the community can create build guides.
 
 ## Design

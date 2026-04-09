@@ -100,6 +100,8 @@ All handled by `@devops-lead`.
 
 **P1-01 — GameState Autoload**
 
+> **Note:** The new entity framework (`scripts/game/`) supersedes this spec's original design for entity data management. `EntityData` + 6 static systems (Vital, Stat, Combat, Effect, Progression, Skill) now handle HP, XP, stats, damage, leveling, and effects. The GameState autoload will delegate to the entity framework rather than managing HP/XP directly. 219 unit tests cover the framework. See `docs/architecture/entity-framework.md`.
+
 | ID | Title | Pri | Status | Deps |
 |----|-------|-----|--------|------|
 | P1-01a | Create GameState singleton class with base properties (HP, MaxHP, Level, XP, Floor) | P1 | To Do | SETUP-07 |

@@ -34,6 +34,7 @@ Master navigation for all project documentation. 60+ files across 11 directories
 | [architecture/autoloads.md](architecture/autoloads.md) | GameState + EventBus singleton design |
 | [architecture/signals.md](architecture/signals.md) | Signal registry (9 signals), flow diagrams |
 | [architecture/setup-guide.md](architecture/setup-guide.md) | .NET SDK, Godot .NET, VS Code setup |
+| [architecture/entity-framework.md](architecture/entity-framework.md) | Unified entity data model + 6 gameplay systems |
 | [architecture/analytics.md](architecture/analytics.md) | Opt-in telemetry, bug reporting, feedback |
 
 ## Reference and Learning
@@ -70,10 +71,10 @@ Run `make help` to see all targets, or use the category runners below.
 | Command | What it launches |
 | --- | --- |
 | `make test-visual` | Everything below (all visual tests) |
-| `make test-creatures` | All 8 creature viewers |
+| `make test-creatures` | Creature browser (Up/Down to switch between all 8) |
 | `make test-characters` | Hero equipment viewer |
-| `make test-env` | All 9 environment viewers |
-| `make test-ui-all` | All 3 UI viewers |
+| `make test-env` | All 10 environment viewers |
+| `make test-ui-all` | All 2 UI viewers |
 
 **Creatures:**
 
@@ -107,6 +108,7 @@ Run `make help` to see all targets, or use the category runners below.
 | `make test-water` | SBS water + autotile transitions (128x64) |
 | `make test-objects` | SBS objects (stairs, copings, temple kit) |
 | `make test-town` | SBS town building + roof tiles |
+| `make test-items` | Dungeon items and objects (crates, stairs, copings, temple) |
 
 **UI:**
 
@@ -114,13 +116,18 @@ Run `make help` to see all targets, or use the category runners below.
 | --- | --- |
 | `make test-ui` | HUD elements, HP/MP orbs |
 | `make test-buttons` | Button sprites (round, square, states, arrows) |
-| `make test-icons` | UI icons (weapons, potions, coins, gear) |
 
 **Effects:**
 
 | Command | Asset |
 | --- | --- |
 | `make test-combat` | Combat effects (slash, damage, hit/die) |
+
+**Entity Framework:**
+
+| Scene | Purpose |
+| --- | --- |
+| `scenes/tests/test_entity.tscn` | Entity framework visual test (EntityData + systems) |
 
 ## Supporting
 
