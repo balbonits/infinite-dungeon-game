@@ -39,7 +39,7 @@ public partial class TestRoads : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var helpPanel = TestHelper.CreateStyledPanel("SBS ROADS & PATHWAYS", new Vector2(12, 12), new Vector2(360, 160));
+        var helpPanel = TestHelper.CreatePanel("SBS ROADS & PATHWAYS", new Vector2(12, 12), new Vector2(360, 160));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "Left/Right: cycle between Roads / Pathways\n" +
@@ -50,8 +50,8 @@ public partial class TestRoads : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 190);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 
         LoadCategory(0);
@@ -122,7 +122,7 @@ public partial class TestRoads : Node2D
             var label = new Label();
             label.Text = $"{entry.name}  ({sheetW}x{sheetH})";
             label.Position = new Vector2(startX + sheetW + 12, groupY + 4);
-            label.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f, 0.8f));
+            label.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.8f));
             label.AddThemeFontSizeOverride("font_size", 10);
             _displayContainer.AddChild(label);
 

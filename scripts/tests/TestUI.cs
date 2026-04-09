@@ -20,7 +20,7 @@ public partial class TestUI : Node2D
         AddChild(ui);
 
         // HUD panel
-        var hudPanel = TestHelper.CreateStyledPanel("A DUNGEON IN THE MIDDLE OF NOWHERE", new Vector2(12, 12), new Vector2(320, 120));
+        var hudPanel = TestHelper.CreatePanel("A DUNGEON IN THE MIDDLE OF NOWHERE", new Vector2(12, 12), new Vector2(320, 120));
         hudPanel.Visible = true;
         hudPanel.GetNode<Label>("Content").Text = $"HP: {_hp}/{_maxHp} | MP: {_mp}/{_maxMp}\nLVL: 1 | XP: 0 | Floor: 1";
         ui.AddChild(hudPanel);
@@ -32,7 +32,7 @@ public partial class TestUI : Node2D
         _orbs.UpdateValues(_hp, _maxHp, _mp, _maxMp);
 
         // Controls help
-        var helpPanel = TestHelper.CreateStyledPanel("UI TEST CONTROLS", new Vector2(12, 220), new Vector2(320, 120));
+        var helpPanel = TestHelper.CreatePanel("UI TEST CONTROLS", new Vector2(12, 220), new Vector2(320, 120));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "1: damage HP (-20)\n" +
@@ -44,8 +44,8 @@ public partial class TestUI : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 360);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
     }
 

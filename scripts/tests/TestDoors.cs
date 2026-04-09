@@ -96,7 +96,7 @@ public partial class TestDoors : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var helpPanel = TestHelper.CreateStyledPanel(
+        var helpPanel = TestHelper.CreatePanel(
             "DOORWAYS & PASSAGES", new Vector2(12, 12), new Vector2(340, 180));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
@@ -109,8 +109,8 @@ public partial class TestDoors : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 210);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 
         ShowDoorway();
@@ -288,7 +288,7 @@ public partial class TestDoors : Node2D
         // Outline around the full strip
         var outline = new ColorRect
         {
-            Color = new Color(0.961f, 0.784f, 0.420f, 0.3f),
+            Color = new Color(0.78f, 0.67f, 0.43f, 0.3f),
             Size = new Vector2(tex.GetWidth() * 2 + 4, fh * 2 + 4),
             Position = _stripSprite.Position - new Vector2(2, 2),
             ZIndex = -1,
@@ -307,7 +307,7 @@ public partial class TestDoors : Node2D
         // Highlight rect that follows the animated frame
         _frameHighlight = new ColorRect
         {
-            Color = new Color(0.961f, 0.784f, 0.420f, 0.15f),
+            Color = new Color(0.78f, 0.67f, 0.43f, 0.15f),
             Size = new Vector2(fw * 2 + 8, fh * 2 + 8),
             ZIndex = -1,
         };

@@ -101,7 +101,7 @@ public partial class TestEntity : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var helpPanel = TestHelper.CreateStyledPanel("ENTITY VIEWER", new Vector2(12, 12), new Vector2(360, 220));
+        var helpPanel = TestHelper.CreatePanel("ENTITY VIEWER", new Vector2(12, 12), new Vector2(360, 220));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "Up/Down: switch entity\n" +
@@ -114,32 +114,32 @@ public partial class TestEntity : Node2D
 
         _entityLabel = new Label();
         _entityLabel.Position = new Vector2(12, 250);
-        _entityLabel.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f));
-        _entityLabel.AddThemeFontSizeOverride("font_size", 16);
+        _entityLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.9f));
+        _entityLabel.AddThemeFontSizeOverride("font_size", 15);
         ui.AddChild(_entityLabel);
 
         _animLabel = new Label();
         _animLabel.Position = new Vector2(12, 274);
-        _animLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
+        _animLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
         _animLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_animLabel);
 
         _dirLabel = new Label();
         _dirLabel.Position = new Vector2(12, 294);
-        _dirLabel.AddThemeColorOverride("font_color", new Color(0.75f, 0.8f, 0.9f));
+        _dirLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
         _dirLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_dirLabel);
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 314);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.75f, 0.8f, 0.9f, 0.6f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 11);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 
         _layerLabel = new Label();
         _layerLabel.Position = new Vector2(12, 340);
-        _layerLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _layerLabel.AddThemeFontSizeOverride("font_size", 11);
+        _layerLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _layerLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_layerLabel);
 
         // Find start entity

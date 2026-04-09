@@ -46,7 +46,7 @@ public partial class TestCrates : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var helpPanel = TestHelper.CreateStyledPanel("SBS CRATES", new Vector2(12, 12), new Vector2(340, 160));
+        var helpPanel = TestHelper.CreatePanel("SBS CRATES", new Vector2(12, 12), new Vector2(340, 160));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "Left/Right: cycle crate sheet\n" +
@@ -57,8 +57,8 @@ public partial class TestCrates : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 190);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 
         if (_sheetNames.Count > 0)
@@ -128,7 +128,7 @@ public partial class TestCrates : Node2D
                 var idxLabel = new Label();
                 idxLabel.Text = $"{spriteIndex}";
                 idxLabel.Position = sprite.Position + new Vector2(24, -2);
-                idxLabel.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f, 0.6f));
+                idxLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.6f));
                 idxLabel.AddThemeFontSizeOverride("font_size", 9);
                 _displayContainer.AddChild(idxLabel);
 

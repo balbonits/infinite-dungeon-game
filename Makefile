@@ -5,7 +5,7 @@ GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 TIMEOUT    := 15
 
-.PHONY: help setup build run run-headless test import kill clean status verify doctor
+.PHONY: help setup build run run-headless test import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -140,6 +140,22 @@ test-buttons: build ## View button sprites (round, square, states)
 
 test-combat: build ## View combat effects (slash, damage, hit/die)
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_combat.tscn &
+
+# ─── Dungeon Generation ────────────────────────────────────────────────────
+
+test-bsp: build ## View BSP room partitioning
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_bsp.tscn &
+
+test-drunkard: build ## View drunkard's walk corridor generation
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_drunkard.tscn &
+
+test-cellular: build ## View cellular automata smoothing
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_cellular.tscn &
+
+test-dungeon: build ## View full dungeon generation pipeline
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_dungeon_gen.tscn &
+
+test-procgen: test-bsp test-drunkard test-cellular test-dungeon ## Launch all proc gen test scenes
 
 # ─── Utilities ───────────────────────────────────────────────────────────────
 

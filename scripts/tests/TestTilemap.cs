@@ -18,7 +18,7 @@ public partial class TestTilemap : Node2D
 
         var ui = new CanvasLayer();
         AddChild(ui);
-        var helpPanel = TestHelper.CreateStyledPanel("ISOMETRIC TILEMAP", new Vector2(12, 12), new Vector2(320, 160));
+        var helpPanel = TestHelper.CreatePanel("ISOMETRIC TILEMAP", new Vector2(12, 12), new Vector2(320, 160));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "1-8: switch ground type\n" +
@@ -29,8 +29,8 @@ public partial class TestTilemap : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 200);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 
         LoadGround(0);

@@ -26,8 +26,8 @@ public partial class HpMpOrbs : Control
     private static readonly Color HpFill = new(0.75f, 0.08f, 0.08f);
     private static readonly Color MpEmpty = new(0.02f, 0.02f, 0.28f);
     private static readonly Color MpFill = new(0.08f, 0.15f, 0.8f);
-    private static readonly Color BorderOuter = new(0.28f, 0.23f, 0.18f);
-    private static readonly Color BorderInner = new(0.45f, 0.38f, 0.3f);
+    private static readonly Color BorderOuter = new(0.78f, 0.67f, 0.43f, 0.6f);
+    private static readonly Color BorderInner = new(0.78f, 0.67f, 0.43f, 0.35f);
     private static readonly Color Highlight = new(1f, 1f, 1f, 0.12f);
     private static readonly Color LabelColor = new(0.9f, 0.9f, 0.9f);
 

@@ -20,37 +20,34 @@ public static class TestHelper
         return ImageTexture.CreateFromImage(img);
     }
 
-    public static Panel CreateStyledPanel(string title, Vector2 position, Vector2 size)
+    public static Panel CreatePanel(string title, Vector2 position, Vector2 size)
     {
         var panel = new Panel();
         panel.Position = position;
         panel.Size = size;
 
         var style = new StyleBoxFlat();
-        style.BgColor = new Color(0.086f, 0.106f, 0.157f, 0.9f);
-        style.BorderColor = new Color(0.961f, 0.784f, 0.420f, 0.4f);
-        style.SetBorderWidthAll(2);
-        style.SetCornerRadiusAll(8);
+        style.BgColor = new Color(0.047f, 0.047f, 0.07f, 0.88f);
+        style.BorderColor = new Color(0.78f, 0.67f, 0.43f, 0.25f);
+        style.SetBorderWidthAll(1);
+        style.SetCornerRadiusAll(6);
         panel.AddThemeStyleboxOverride("panel", style);
 
         var titleLabel = new Label();
         titleLabel.Text = title;
-        titleLabel.Position = new Vector2(14, 6);
-        titleLabel.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f));
-        titleLabel.AddThemeFontSizeOverride("font_size", 13);
+        titleLabel.Position = new Vector2(12, 12);
+        titleLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.9f));
+        var titleFont = ResourceLoader.Load<Font>("res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf");
+        if (titleFont != null)
+            titleLabel.AddThemeFontOverride("font", titleFont);
+        titleLabel.AddThemeFontSizeOverride("font_size", 15);
         panel.AddChild(titleLabel);
-
-        var sep = new ColorRect();
-        sep.Color = new Color(0.961f, 0.784f, 0.420f, 0.3f);
-        sep.Position = new Vector2(10, 26);
-        sep.Size = new Vector2(size.X - 20, 1);
-        panel.AddChild(sep);
 
         var content = new Label();
         content.Name = "Content";
-        content.Position = new Vector2(14, 34);
-        content.Size = new Vector2(size.X - 28, size.Y - 46);
-        content.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
+        content.Position = new Vector2(12, 12 + 15 + 8);
+        content.Size = new Vector2(size.X - 24, size.Y - 12 - 15 - 8 - 12);
+        content.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f, 1.0f));
         content.AddThemeFontSizeOverride("font_size", 12);
         panel.AddChild(content);
 
@@ -163,7 +160,7 @@ public static class TestHelper
         slash.Polygon = new Vector2[] {
             new(-13, -2), new(13, -2), new(13, 2), new(-13, 2)
         };
-        slash.Color = new Color(0.961f, 0.784f, 0.420f, 0.95f);
+        slash.Color = new Color(0.78f, 0.67f, 0.43f, 0.95f);
         slash.Position = pos;
         slash.Rotation = (float)GD.RandRange(-1.2, 1.2);
         slash.ZIndex = 50;

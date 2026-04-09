@@ -34,7 +34,7 @@ public partial class TestCombat : Node2D
         // UI
         var ui = new CanvasLayer();
         AddChild(ui);
-        var helpPanel = TestHelper.CreateStyledPanel("COMBAT EFFECTS", new Vector2(12, 12), new Vector2(300, 140));
+        var helpPanel = TestHelper.CreatePanel("COMBAT EFFECTS", new Vector2(12, 12), new Vector2(300, 140));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "Space: attack skeleton\n" +
@@ -44,8 +44,8 @@ public partial class TestCombat : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 180);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
         UpdateInfo();
     }

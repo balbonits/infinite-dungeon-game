@@ -19,6 +19,16 @@
     <Compile Include="../scripts/game/GameCore.cs" Link="GameCore.cs" />
   </ItemGroup>
 
+  <!-- Include dungeon generation files — no Godot dependency -->
+  <ItemGroup>
+    <Compile Include="../scripts/game/dungeon/DungeonData.cs" Link="dungeon/DungeonData.cs" />
+    <Compile Include="../scripts/game/dungeon/BspGenerator.cs" Link="dungeon/BspGenerator.cs" />
+    <Compile Include="../scripts/game/dungeon/DrunkardWalkCarver.cs" Link="dungeon/DrunkardWalkCarver.cs" />
+    <Compile Include="../scripts/game/dungeon/CellularAutomata.cs" Link="dungeon/CellularAutomata.cs" />
+    <Compile Include="../scripts/game/dungeon/DungeonGenerator.cs" Link="dungeon/DungeonGenerator.cs" />
+    <Compile Include="../scripts/game/dungeon/FloorCache.cs" Link="dungeon/FloorCache.cs" />
+  </ItemGroup>
+
   <!-- Include entity framework files — no Godot dependency -->
   <ItemGroup>
     <Compile Include="../scripts/game/entities/EntityData.cs" Link="entities/EntityData.cs" />

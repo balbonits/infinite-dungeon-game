@@ -37,7 +37,7 @@ public partial class TestItems : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var helpPanel = TestHelper.CreateStyledPanel("DUNGEON ITEMS & OBJECTS", new Vector2(12, 12), new Vector2(360, 180));
+        var helpPanel = TestHelper.CreatePanel("DUNGEON ITEMS & OBJECTS", new Vector2(12, 12), new Vector2(360, 180));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "Up/Down: switch category\n" +
@@ -48,13 +48,13 @@ public partial class TestItems : Node2D
 
         _catLabel = new Label();
         _catLabel.Position = new Vector2(12, 210);
-        _catLabel.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f));
-        _catLabel.AddThemeFontSizeOverride("font_size", 14);
+        _catLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.9f));
+        _catLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_catLabel);
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 232);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
         _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 

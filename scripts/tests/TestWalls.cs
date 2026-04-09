@@ -85,7 +85,7 @@ public partial class TestWalls : Node2D
 
             _torchFrameLabel = new Label();
             _torchFrameLabel.Position = new Vector2(540, 70);
-            _torchFrameLabel.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f));
+            _torchFrameLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.9f));
             _torchFrameLabel.AddThemeFontSizeOverride("font_size", 12);
             AddChild(_torchFrameLabel);
         }
@@ -94,7 +94,7 @@ public partial class TestWalls : Node2D
         var ui = new CanvasLayer();
         AddChild(ui);
 
-        var helpPanel = TestHelper.CreateStyledPanel("ISS WALL BLOCKS", new Vector2(12, 12), new Vector2(340, 180));
+        var helpPanel = TestHelper.CreatePanel("ISS WALL BLOCKS", new Vector2(12, 12), new Vector2(340, 180));
         helpPanel.Visible = true;
         helpPanel.GetNode<Label>("Content").Text =
             "Left/Right: cycle wall theme\n" +
@@ -106,8 +106,8 @@ public partial class TestWalls : Node2D
 
         _infoLabel = new Label();
         _infoLabel.Position = new Vector2(12, 210);
-        _infoLabel.AddThemeColorOverride("font_color", new Color(0.925f, 0.941f, 1.0f));
-        _infoLabel.AddThemeFontSizeOverride("font_size", 14);
+        _infoLabel.AddThemeColorOverride("font_color", new Color(0.92f, 0.94f, 1.0f));
+        _infoLabel.AddThemeFontSizeOverride("font_size", 13);
         ui.AddChild(_infoLabel);
 
         LoadTheme(0);
@@ -175,7 +175,7 @@ public partial class TestWalls : Node2D
             var label = new Label();
             label.Text = $"{i}";
             label.Position = sprite.Position + new Vector2(24, -2);
-            label.AddThemeColorOverride("font_color", new Color(0.961f, 0.784f, 0.420f, 0.6f));
+            label.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.6f));
             label.AddThemeFontSizeOverride("font_size", 9);
             _blockContainer.AddChild(label);
         }
