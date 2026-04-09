@@ -357,9 +357,15 @@ The current 10x10 bordered room is a placeholder. Future dungeon generation will
 
 ## Open Questions
 
-- Should floor tiles have subtle visual variation (multiple floor tile alternatives) to break up the uniform look?
-- Should wall tiles be taller than floor tiles (rendered as 64x48 or 64x64 "wall blocks") to create a 2.5D effect?
 - How should the TileSet evolve when procedural generation is added -- stay programmatic or move to a `.tres` file?
 - Should there be a fog-of-war system that hides unexplored tiles?
-- What procedural generation algorithm is best for the dungeon layout (BSP, random walk, cellular automata)?
-- Should tile textures be hand-drawn pixel art or generated from code (shader-based rendering)?
+
+## Resolved Questions
+
+| Question | Decision |
+|----------|----------|
+| Should floor tiles have visual variation? | Yes — ISS provides multiple variants per floor theme (e.g., ISS_Floor_Dirt has 6 tile variants). Use random selection when painting. |
+| Should wall tiles be taller (64x64 "wall blocks")? | Yes — ISS wall blocks are 64x64 with full and half block variants plus top-face overlays. Walls use a separate TileMapLayer with 64x64 tile size. |
+| What procedural generation algorithm? | Hybrid: BSP + Drunkard's Walk + Cellular Automata (see [dungeon.md](../world/dungeon.md)). |
+| Should tile textures be hand-drawn or generated? | Neither — use Isometric Stone Soup (ISS) pre-rendered sprites. The Python-generated placeholder tiles are superseded. |
+| What is the primary environment tileset? | Isometric Stone Soup by Screaming Brain Studios (CC0). 49 floor sheets (64x32), 43 wall block sheets (64x64), 3 torch sprites. All environment art must conform to ISS dimensions. |

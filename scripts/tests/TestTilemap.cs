@@ -3,8 +3,8 @@ using Godot;
 public partial class TestTilemap : Node2D
 {
     private static readonly string[] GroundNames = {
-        "stone_path", "dirt", "dirt_dark", "sand",
-        "grass_dry", "grass_green", "grass_medium", "forest_ground"
+        "floor_rect_gray", "floor_dirt", "floor_sand", "floor_grass",
+        "floor_cobble_blood", "floor_marble", "floor_limestone", "floor_crypt"
     };
 
     private TileMapLayer _tileMap;
@@ -42,7 +42,7 @@ public partial class TestTilemap : Node2D
         if (_tileMap != null) { _tileMap.QueueFree(); _tileMap = null; }
 
         var name = GroundNames[index];
-        var tex = TestHelper.LoadPng($"res://assets/isometric/tiles/ground/{name}_64x32.png");
+        var tex = TestHelper.LoadIssPng($"res://assets/isometric/tiles/stone-soup/floors/{name}.png");
         if (tex == null) { GD.PrintErr($"Could not load {name}"); return; }
 
         var tileSet = new TileSet();

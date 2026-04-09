@@ -61,6 +61,67 @@ Master navigation for all project documentation. 60+ files across 11 directories
 | [dev-journal.md](dev-journal.md) | Running session log (append-only) |
 | [overview.md](overview.md) | Project vision and design philosophy |
 
+## Visual Test Scenes
+
+Run `make help` to see all targets, or use the category runners below.
+
+**Category Runners:**
+
+| Command | What it launches |
+| --- | --- |
+| `make test-visual` | Everything below (all visual tests) |
+| `make test-creatures` | All 8 creature viewers |
+| `make test-characters` | Hero equipment viewer |
+| `make test-env` | All 9 environment viewers |
+| `make test-ui-all` | All 3 UI viewers |
+
+**Creatures:**
+
+| Command | Asset |
+| --- | --- |
+| `make test-slime` | Slime sprite sheet |
+| `make test-skeleton` | Skeleton sprite sheet |
+| `make test-goblin` | Goblin sprite sheet |
+| `make test-zombie` | Zombie sprite sheet |
+| `make test-ogre` | Ogre sprite sheet |
+| `make test-werewolf` | Werewolf sprite sheet |
+| `make test-elemental` | Elemental sprite sheet |
+| `make test-magician` | Magician sprite sheet |
+
+**Characters:**
+
+| Command | Asset |
+| --- | --- |
+| `make test-hero` | Hero/heroine with toggleable equipment layers |
+
+**Environment:**
+
+| Command | Asset |
+| --- | --- |
+| `make test-floors` | ISS floor themes (49 themes, Left/Right to cycle) |
+| `make test-walls` | ISS wall blocks + animated torch (22 themes) |
+| `make test-doors` | Doorways & passages (closed, open, archway) |
+| `make test-tilemap` | Isometric tilemap rendering |
+| `make test-crates` | SBS crate sprite sheets (64x64) |
+| `make test-roads` | SBS road + pathway tiles (128x64) |
+| `make test-water` | SBS water + autotile transitions (128x64) |
+| `make test-objects` | SBS objects (stairs, copings, temple kit) |
+| `make test-town` | SBS town building + roof tiles |
+
+**UI:**
+
+| Command | Asset |
+| --- | --- |
+| `make test-ui` | HUD elements, HP/MP orbs |
+| `make test-buttons` | Button sprites (round, square, states, arrows) |
+| `make test-icons` | UI icons (weapons, potions, coins, gear) |
+
+**Effects:**
+
+| Command | Asset |
+| --- | --- |
+| `make test-combat` | Combat effects (slash, damage, hit/die) |
+
 ## Supporting
 
 | Directory | Contents |

@@ -168,7 +168,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Object pooling | Microsoft.Extensions.ObjectPool | Pool enemies, effects, projectiles — avoid GC |
 | Async generation | System.Threading.Channels | Background floor generation pipeline |
 | Physics | Built-in 2D | CharacterBody2D + Area2D |
-| Perspective | Isometric 2D | 2:1 diamond tiles (64×32), TileMapLayer |
+| Perspective | Isometric 2D | 2:1 diamond tiles — floors 64×32, wall blocks 64×64 (ISS standard) |
 | UI | Control nodes | Built-in UI, Theme resources |
 | Persistence | FileAccess + JSON/MessagePack | user:// directory |
 | Platform | Desktop native | macOS primary, Windows/Linux supported |
@@ -262,7 +262,7 @@ See [docs/architecture/project-structure.md](docs/architecture/project-structure
   - Enemy tiers: `#6bff89` (green), `#ffde66` (yellow), `#ff6f6f` (red)
   - Accent/sword: `#f5c86b` (gold)
   - UI panel: `rgba(22, 27, 40, 0.75)` with `rgba(245, 200, 107, 0.3)` border
-- **Tiles:** 64×32 isometric diamonds — floor dark blue, wall outlined
+- **Tiles:** [Screaming Brain Studios](https://opengameart.org/users/screaming-brain-studios) (CC0) — sole source for all isometric textures/tiles. ISS pack: floors 64×32, wall blocks 64×64, magenta key
 - See [docs/assets/ui-theme.md](docs/assets/ui-theme.md) for the full color palette
 
 ### 10. Development Automation

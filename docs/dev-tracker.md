@@ -120,8 +120,8 @@ All handled by `@devops-lead`.
 
 | ID | Title | Pri | Status | Deps |
 |----|-------|-----|--------|------|
-| P1-03a | Create TileMapLayer with floor and wall tile sources | P1 | To Do | P1-01e |
-| P1-03b | Build single static dungeon room (walls + floor + collision) | P1 | To Do | P1-03a |
+| P1-03a | Create TileMapLayer with ISS floor tiles (64x32) and wall blocks (64x64) | P1 | To Do | P1-01e |
+| P1-03b | Build single static dungeon room using ISS Stone theme (walls + floor + collision) | P1 | To Do | P1-03a |
 | P1-03c | Set up collision layer 1 (walls) with physics polygons | P1 | To Do | P1-03b |
 
 **P1-04 — Player Scene and Movement**
@@ -397,7 +397,7 @@ All handled by `@devops-lead`.
 |----|-------|-----|--------|------|
 | P6-04a | Replace player Polygon2D with DCSS character sprite | P3 | To Do | P1-10e |
 | P6-04b | Replace enemy Polygon2D with DCSS monster sprites (per tier) | P3 | To Do | P1-10e |
-| P6-04c | Replace tilemap placeholder tiles with DCSS dungeon tiles | P3 | To Do | P1-10e |
+| P6-04c | Replace remaining placeholder tiles with ISS themed variants (biome-specific floors/walls) | P3 | To Do | P1-10e |
 
 **P6-05 — Audio**
 
@@ -709,22 +709,27 @@ All 26 spec tickets are complete. Every system has a locked spec document. See t
 
 #### P1-03: Tilemap and dungeon room
 
-- **Description:** Static 10x10 isometric room with floor and wall tiles, programmatic TileSet.
+- **Description:** Static 10x10 isometric room using Isometric Stone Soup (ISS) tileset by Screaming Brain Studios (CC0).
 - **Create:** `scenes/dungeon/Dungeon.tscn`, `scripts/dungeon/Dungeon.cs`
 - **Class:** `public partial class Dungeon : Node2D`
-- **Scene tree:** `Dungeon (Node2D)` → `TileMapLayer` + `EntityContainer (Node2D, YSortEnabled=true)` + `SpawnTimer (Timer, WaitTime=2.8, Autostart=true)`
-- **TileSet** (created programmatically in `_Ready()`):
-  - Tile size: 64×32, shape: diamond, layout: diamond down, offset axis: horizontal
-  - Tile 0 (floor): filled diamond, color `#1a2438`, no collision
-  - Tile 1 (wall): outlined diamond, color `#2a3a5c`, diamond collision polygon for wall sliding
+- **Scene tree:** `Dungeon (Node2D)` → `FloorLayer (TileMapLayer)` + `WallLayer (TileMapLayer)` + `EntityContainer (Node2D, YSortEnabled=true)` + `SpawnTimer (Timer, WaitTime=2.8, Autostart=true)`
+- **Asset source:** ISS tileset — 49 floor sheets, 43 wall block sheets, 3 torch sprites. Magenta (#FF00FF) = transparency key.
+- **TileSet configuration:**
+  - TileShape: Isometric
+  - Tile size: 64×32 (isometric diamond — matches ISS floor tile dimensions)
+  - Layout: diamond down, offset axis: horizontal
+- **Floor tiles:** ISS floor sprites at 64×32 pixels (isometric diamond). Placed on `FloorLayer`. No collision.
+- **Wall blocks:** ISS wall block sprites at 64×64 pixels (isometric cube — full and half block variants). Placed on `WallLayer` (separate TileMapLayer, drawn above FloorLayer). Wall blocks include collision polygons for wall sliding.
 - **Room layout:** 10×10 grid. Walls on all edges (row 0, row 9, col 0, col 9). Floor interior.
-- **Painting:** Loop `for x in 0..9, y in 0..9`: `SetCell(new Vector2I(x, y), 0, isEdge ? wallAtlas : floorAtlas)`
+- **Painting:** Loop `for x in 0..9, y in 0..9`: set floor tile on FloorLayer for all cells; set wall block on WallLayer for edge cells.
 - **Acceptance Criteria:**
-  - [ ] Room renders as isometric diamond grid (64×32 tiles)
+  - [ ] Room renders as isometric diamond grid (64×32 floor tiles)
+  - [ ] Wall blocks (64×64) render correctly on top of floor tiles at room edges
   - [ ] Walls have collision polygons — player slides along them, doesn't pass through
-  - [ ] Floor tiles are walkable, dark blue
+  - [ ] Floor tiles are walkable, using ISS stone floor art
   - [ ] EntityContainer has `YSortEnabled = true` for correct draw order
   - [ ] MT-002 passes (isometric floor visible, no gaps, grid aligned)
+  - [ ] Magenta (#FF00FF) transparency renders correctly (no magenta pixels visible)
 - **Spec:** [tilemap.md](objects/tilemap.md), [tile-specs.md](assets/tile-specs.md)
 - **Status:** To Do
 - **Deps:** P1-01
@@ -1146,11 +1151,12 @@ All 26 spec tickets are complete. Every system has a locked spec document. See t
 
 #### P6-04: Art assets
 
-- **Description:** Replace Polygon2D placeholders with pixel art sprites.
+- **Description:** Replace Polygon2D placeholders with pixel art sprites. Environment tiles already use ISS (Isometric Stone Soup, CC0) as of P1-03; this ticket covers character/enemy sprites and biome-specific tile variants.
 - **Acceptance Criteria:**
   - [ ] Player, enemy (3 tiers), and slash have sprite animations
   - [ ] All assets are CC0 or CC-BY, tracked in ATTRIBUTION.md
   - [ ] AnimatedSprite2D replaces Polygon2D nodes
+  - [ ] Biome-specific ISS floor/wall variants are assigned per dungeon depth range
 - **Status:** To Do
 - **Deps:** P1-10
 

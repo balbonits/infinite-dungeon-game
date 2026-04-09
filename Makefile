@@ -38,43 +38,108 @@ test-all: test e2e ## Run all tests (unit + E2E)
 iso: build ## Run isometric asset demo (validates rendering)
 	@$(GODOT) --path . --main-scene res://scenes/iso_demo.tscn &
 
-# ─── Modular Asset Tests ────────────────────────────────────────────────────
+# ─── Category Runners ───────────────────────────────────────────────────────
 
-test-slime: build ## View slime sprite sheet
+test-creatures: build ## Browse all creatures (Up/Down to switch)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_creatures.tscn &
+
+test-characters: build ## Launch all character viewers (hero)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_hero.tscn &
+
+test-env: build ## Launch all environment viewers
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_floors.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_walls.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_doors.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_crates.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_roads.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_water.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_objects.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_town.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_tilemap.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_items.tscn &
+
+test-ui-all: build ## Launch all UI viewers
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_ui.tscn &
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_buttons.tscn &
+
+test-visual: build ## Launch ALL visual test viewers
+	@$(MAKE) test-creatures test-characters test-env test-ui-all
+
+# ─── Creatures ──────────────────────────────────────────────────────────────
+
+test-slime: build ## View slime (starts creature browser on slime)
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_slime.tscn &
 
-test-skeleton: build ## View skeleton sprite sheet
+test-skeleton: build ## View skeleton
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_skeleton.tscn &
 
-test-goblin: build ## View goblin sprite sheet
+test-goblin: build ## View goblin
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_goblin.tscn &
 
-test-zombie: build ## View zombie sprite sheet
+test-zombie: build ## View zombie
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_zombie.tscn &
 
-test-ogre: build ## View ogre sprite sheet
+test-ogre: build ## View ogre
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_ogre.tscn &
 
-test-werewolf: build ## View werewolf sprite sheet
+test-werewolf: build ## View werewolf
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_werewolf.tscn &
 
-test-elemental: build ## View elemental sprite sheet
+test-elemental: build ## View elemental
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_elemental.tscn &
 
-test-magician: build ## View magician sprite sheet
+test-magician: build ## View magician
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_magician.tscn &
+
+# ─── Characters ─────────────────────────────────────────────────────────────
 
 test-hero: build ## View hero with toggleable equipment layers
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_hero.tscn &
 
+# ─── Environment ────────────────────────────────────────────────────────────
+
 test-tilemap: build ## View isometric tilemap rendering
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_tilemap.tscn &
 
-test-combat: build ## View combat effects (slash, damage, hit/die)
-	@$(GODOT) --path . --main-scene res://scenes/tests/test_combat.tscn &
+test-floors: build ## Cycle through ISS floor themes
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_floors.tscn &
+
+test-walls: build ## View ISS wall blocks + animated torch
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_walls.tscn &
+
+test-doors: build ## View doorways and passages (closed, open, archway)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_doors.tscn &
+
+test-crates: build ## View SBS crate sprite sheets (64x64)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_crates.tscn &
+
+test-roads: build ## View SBS road and pathway tiles (128x64)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_roads.tscn &
+
+test-water: build ## View SBS water and autotile transitions (128x64)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_water.tscn &
+
+test-objects: build ## View SBS objects (stairs, copings, temple kit)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_objects.tscn &
+
+test-town: build ## View SBS town building and roof tiles
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_town.tscn &
+
+test-items: build ## View dungeon items & objects (crates, stairs, copings, temple)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_items.tscn &
+
+# ─── UI ─────────────────────────────────────────────────────────────────────
 
 test-ui: build ## View UI elements (HUD, icons, HP/MP orbs)
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_ui.tscn &
+
+test-buttons: build ## View button sprites (round, square, states)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_buttons.tscn &
+
+# ─── Effects ────────────────────────────────────────────────────────────────
+
+test-combat: build ## View combat effects (slash, damage, hit/die)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_combat.tscn &
 
 # ─── Utilities ───────────────────────────────────────────────────────────────
 

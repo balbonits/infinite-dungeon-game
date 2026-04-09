@@ -19,4 +19,20 @@
     <Compile Include="../scripts/game/GameCore.cs" Link="GameCore.cs" />
   </ItemGroup>
 
+  <!-- Include entity framework files — no Godot dependency -->
+  <ItemGroup>
+    <Compile Include="../scripts/game/entities/EntityData.cs" Link="entities/EntityData.cs" />
+    <Compile Include="../scripts/game/entities/EntityType.cs" Link="entities/EntityType.cs" />
+    <Compile Include="../scripts/game/entities/EntityFactory.cs" Link="entities/EntityFactory.cs" />
+    <Compile Include="../scripts/game/effects/EffectData.cs" Link="effects/EffectData.cs" />
+    <Compile Include="../scripts/game/effects/ActiveEffect.cs" Link="effects/ActiveEffect.cs" />
+    <Compile Include="../scripts/game/effects/EffectType.cs" Link="effects/EffectType.cs" />
+    <Compile Include="../scripts/game/systems/VitalSystem.cs" Link="systems/VitalSystem.cs" />
+    <Compile Include="../scripts/game/systems/StatSystem.cs" Link="systems/StatSystem.cs" />
+    <Compile Include="../scripts/game/systems/CombatSystem.cs" Link="systems/CombatSystem.cs" />
+    <Compile Include="../scripts/game/systems/EffectSystem.cs" Link="systems/EffectSystem.cs" />
+    <Compile Include="../scripts/game/systems/ProgressionSystem.cs" Link="systems/ProgressionSystem.cs" />
+    <Compile Include="../scripts/game/systems/SkillSystem.cs" Link="systems/SkillSystem.cs" />
+  </ItemGroup>
+
 </Project>

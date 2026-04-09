@@ -1,7 +1,11 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/tests/TestCreature.cs" id="1"]
+[ext_resource type="Script" path="res://scripts/tests/TestEntity.cs" id="1"]
 
-[node name="TestCreature" type="Node2D"]
+[node name="TestEntity" type="Node2D"]
 script = ExtResource("1")
-CreatureName = "goblin"
+StartEntity = "goblin"
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(180, 40)
+zoom = Vector2(1.5, 1.5)

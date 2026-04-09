@@ -109,6 +109,7 @@ dungeon-web-game/
 │   ├── tiles/                             — Isometric tile PNG images
 │   │   ├── floor.png                      — Floor tile (filled 64x32 diamond)
 │   │   └── wall.png                       — Wall tile (outlined diamond, used with physics)
+│   ├── isometric/tiles/stone-soup/        — ISS environment tileset (CC0, 95 sheets, 86 .tsx)
 │   ├── sprites/                           — Character and enemy sprite images (future)
 │   └── ui/                                — UI-specific images and icons (future)
 ├── tests/                                 — Automated tests
@@ -198,6 +199,23 @@ dungeon-web-game/
 |------|---------|---------|
 | `assets/tiles/floor.png` | Floor tile image | 64x32 pixel PNG. Filled diamond shape. Dark stone color. Used in the TileSet as the walkable floor tile. No collision polygon. |
 | `assets/tiles/wall.png` | Wall tile image | 64x32 pixel PNG (may be taller for the wall "face"). Outlined diamond with depth shading. Used in the TileSet as the impassable wall tile. Has a collision polygon matching its shape. |
+| `assets/isometric/tiles/stone-soup/` | ISS environment tileset | Isometric Stone Soup by Screaming Brain Studios (CC0). 95 sprite sheets: 43 wall blocks (64x64), 49 floors (64x32), 3 torch sprites. Magenta (#FF00FF) backgrounds = transparency key. Includes 86 Tiled .tsx files. Defines the project-wide tile grid standard. See `docs/reference/game-development.md` Section 3. |
+| `assets/isometric/tiles/floors-hires/` | Hi-res floor tiles & textures | 1000 Isometric Floor Tiles + Isometric Floor Textures packs (CC0, SBS). |
+| `assets/isometric/tiles/roads/` | Road overlay tiles | 700 Isometric Road Tiles (CC0, SBS). 128x64 decoration overlays. |
+| `assets/isometric/tiles/pathways/` | Pathway overlay tiles | 5000 Isometric Pathway Tiles (CC0, SBS). 128x64 decoration overlays. |
+| `assets/isometric/tiles/autotiles/` | Autotile overlays | Floor Tile Update 1 - Autotiles (CC0, SBS). 128x64 decoration overlays. |
+| `assets/isometric/tiles/water/` | Water overlay tiles | Floor Tile Update 2 - Water (CC0, SBS). 128x64 decoration overlays. |
+| `assets/isometric/tiles/wall-textures/` | Wall texture overlays | Isometric Wall Texture Pack (CC0, SBS). 128x128 decoration overlays. |
+| `assets/isometric/tiles/town/` | Town environment tiles | 400 Isometric Town Tiles (CC0, SBS). |
+| `assets/isometric/walls/` | Wall tile sprites | 1800 Isometric Wall Tiles (CC0, SBS). |
+| `assets/isometric/objects/crates/` | Crate object sprites | 380 Isometric Crates (CC0, SBS). |
+| `assets/isometric/objects/doorways/` | Doorway object sprites | 1700 Isometric Doorways (CC0, SBS). |
+| `assets/isometric/objects/stairs/` | Stair object sprites | From 300 Isometric Object Tiles (CC0, SBS). |
+| `assets/isometric/objects/copings/` | Coping object sprites | From 300 Isometric Object Tiles (CC0, SBS). |
+| `assets/isometric/objects/temple/` | Temple object sprites | From 300 Isometric Object Tiles (CC0, SBS). |
+| `assets/isometric/ui/buttons/` | Small UI button sprites | 200 Tiny Buttons (CC0, SBS). |
+| `assets/isometric/source/toolkit/` | Tile creation toolkit | Isometric Tile Toolkit (CC0, SBS). Source files for creating tiles. |
+| `assets/isometric/source/grid-pack/` | Grid reference textures | Texture Grid Pack (CC0, SBS). Alignment references for tile work. |
 | `assets/sprites/` | Character and enemy sprites | Future — currently using Polygon2D nodes (colored shapes). When pixel art is created, sprite sheets go here. Will be referenced by Sprite2D nodes in scenes. |
 | `assets/ui/` | UI images and icons | Future — currently using default Godot Control styling. When custom UI art is created, icons and panel backgrounds go here. Will be referenced by Theme resources. |
 

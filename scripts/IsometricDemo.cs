@@ -224,8 +224,8 @@ public partial class IsometricDemo : Node2D
             tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
             tileSet.TileSize = new Vector2I(IsoTileW, IsoTileH);
 
-            var texPath = AssetBase + "tiles/ground/stone_path_64x32.png";
-            var tex = LoadPng(texPath);
+            var texPath = AssetBase + "tiles/stone-soup/floors/floor_rect_gray.png";
+            var tex = LoadIssPng(texPath);
             if (tex == null)
             {
                 LogFail(1, $"Could not load texture: {texPath}");
@@ -679,28 +679,37 @@ public partial class IsometricDemo : Node2D
             var statsLabel = hudPanel.GetNode<Label>("Content");
             statsLabel.Text = "HP: 100 | XP: 0 | LVL: 1 | Floor: 1\n\nMove: Arrow keys\nAuto-attack: nearest enemy";
 
-            // UI icon bar
-            var iconBar = new HBoxContainer();
-            iconBar.Position = new Vector2(12, 180);
-            _uiLayer.AddChild(iconBar);
+            // UI button bar (SBS button sheet frames)
+            var buttonBar = new HBoxContainer();
+            buttonBar.Position = new Vector2(12, 180);
+            _uiLayer.AddChild(buttonBar);
 
-            string[] iconFiles = { "Icon-sword.png", "Icon-potion.png", "Icon-potionmana.png", "Icon-coin.png", "Icon-gear.png" };
-            int iconsLoaded = 0;
-            foreach (var iconFile in iconFiles)
+            var btnSheetPath = AssetBase + "ui/buttons/buttons_round_a-24x24.png";
+            var btnTex = LoadIssPng(btnSheetPath);
+            int buttonsLoaded = 0;
+            if (btnTex != null)
             {
-                var iconPath = AssetBase + "ui/" + iconFile;
-                var tex = LoadPng(iconPath);
-                if (tex != null)
+                int frameW = 24, frameH = 24;
+                int cols = btnTex.GetWidth() / frameW;
+                int rows = btnTex.GetHeight() / frameH;
+                int total = cols * rows;
+                for (int i = 0; i < total && i < 8; i++)
                 {
+                    int c = i % cols;
+                    int r = i / cols;
+                    var atlas = new AtlasTexture();
+                    atlas.Atlas = btnTex;
+                    atlas.Region = new Rect2(c * frameW, r * frameH, frameW, frameH);
                     var rect = new TextureRect();
-                    rect.Texture = tex;
+                    rect.Texture = atlas;
                     rect.CustomMinimumSize = new Vector2(36, 36);
                     rect.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-                    iconBar.AddChild(rect);
-                    iconsLoaded++;
+                    rect.TextureFilter = TextureFilterEnum.Nearest;
+                    buttonBar.AddChild(rect);
+                    buttonsLoaded++;
                 }
             }
-            Log($"  UI icons loaded: {iconsLoaded}/{iconFiles.Length}");
+            Log($"  UI buttons loaded: {buttonsLoaded} frames from SBS sheet");
 
             // HP/MP orbs (reuse existing component)
             var orbs = new HpMpOrbs();
@@ -720,7 +729,7 @@ public partial class IsometricDemo : Node2D
             // Performance check
             Log($"  FPS: {Engine.GetFramesPerSecond()}");
 
-            LogPass(8, $"UI overlay: HUD + {iconsLoaded} icons + HP/MP orbs + 2x zoom");
+            LogPass(8, $"UI overlay: HUD + {buttonsLoaded} buttons + HP/MP orbs + 2x zoom");
         }
         catch (Exception e)
         {
@@ -836,6 +845,34 @@ public partial class IsometricDemo : Node2D
             GD.PrintErr($"  Failed to load image: {diskPath} (error: {err})");
             return null;
         }
+        return ImageTexture.CreateFromImage(img);
+    }
+
+    /// <summary>
+    /// Load a PNG and replace magenta (#FF00FF) with transparent. For ISS sprites.
+    /// </summary>
+    private static Texture2D LoadIssPng(string resPath)
+    {
+        var diskPath = ProjectSettings.GlobalizePath(resPath);
+        if (!FileAccess.FileExists(resPath) && !System.IO.File.Exists(diskPath))
+        {
+            GD.PrintErr($"  File not found: {diskPath}");
+            return null;
+        }
+        var img = new Image();
+        var err = img.Load(diskPath);
+        if (err != Error.Ok)
+        {
+            GD.PrintErr($"  Failed to load image: {diskPath} (error: {err})");
+            return null;
+        }
+        for (int y = 0; y < img.GetHeight(); y++)
+            for (int x = 0; x < img.GetWidth(); x++)
+            {
+                var c = img.GetPixel(x, y);
+                if (c.R8 >= 240 && c.G8 <= 15 && c.B8 >= 240)
+                    img.SetPixel(x, y, new Color(0, 0, 0, 0));
+            }
         return ImageTexture.CreateFromImage(img);
     }
 

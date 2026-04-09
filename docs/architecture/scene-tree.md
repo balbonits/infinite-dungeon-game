@@ -97,8 +97,10 @@ Dungeon (Node2D) [Dungeon.cs]
 - **TileSet:** Created programmatically in `Dungeon.cs._Ready()` -- see `docs/objects/tilemap.md` for full TileSet specification.
 - **Key TileSet properties:**
   - `tile_shape = TileSet.TILE_SHAPE_ISOMETRIC`
-  - `tile_size = Vector2i(64, 32)`
+  - `tile_size = Vector2i(64, 32)` -- matches ISS floor tile dimensions (64x32 isometric diamond)
+  - Wall blocks are 64x64 (isometric cube); floor tiles are 64x32
   - Physics layer 0 added for wall collision
+- **Tileset source:** Isometric Stone Soup (ISS) environment tiles in `assets/isometric/tiles/stone-soup/`. ISS defines the project-wide tile grid standard. See `docs/reference/game-development.md` Section 3 for full details.
 - See `docs/objects/tilemap.md` for tile types, collision polygons, and painting algorithm.
 
 **Entities (Node2D)**

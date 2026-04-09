@@ -511,6 +511,11 @@ The Phaser prototype used a fixed 1100x700 pixel game world with a grid backgrou
 // - Viewport: 1920 x 1080 (what's visible on screen)
 // - The TileMapLayer uses isometric coordinates
 
+// Tile dimensions (defined by the ISS environment tileset):
+// Floor tiles: 64x32 pixels (isometric diamond)
+// Wall blocks: 64x64 pixels (isometric cube)
+// TileMapLayer config: TileSize = Vector2I(64, 32), TileShape = Isometric
+
 // Isometric coordinate conversion:
 // In isometric view, the grid is rotated 45° and squashed vertically.
 // Grid position (5, 3) does NOT correspond to pixel position (5, 3).

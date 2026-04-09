@@ -69,6 +69,78 @@ public static class TestHelper
         GD.Print($"[SCREENSHOT] Saved: {path}");
     }
 
+    /// <summary>Load PNG and replace magenta (#FF00FF) with transparent. For ISS sprites.</summary>
+    public static Texture2D LoadIssPng(string resPath)
+    {
+        var diskPath = ProjectSettings.GlobalizePath(resPath);
+        if (!System.IO.File.Exists(diskPath)) { GD.PrintErr($"  File not found: {diskPath}"); return null; }
+        var img = new Image();
+        if (img.Load(diskPath) != Error.Ok) { GD.PrintErr($"  Failed to load: {diskPath}"); return null; }
+        for (int y = 0; y < img.GetHeight(); y++)
+            for (int x = 0; x < img.GetWidth(); x++)
+            {
+                var c = img.GetPixel(x, y);
+                if (c.R8 >= 240 && c.G8 <= 15 && c.B8 >= 240)
+                    img.SetPixel(x, y, new Color(0, 0, 0, 0));
+            }
+        return ImageTexture.CreateFromImage(img);
+    }
+
+    /// <summary>
+    /// Build a small isometric floor grid as a scale reference.
+    /// Returns the TileMapLayer positioned at the given screen location.
+    /// The floor texture is loaded via LoadIssPng to strip magenta.
+    /// </summary>
+    public static TileMapLayer CreateFloorGrid(Node parent, Vector2 position, int cols = 6, int rows = 4)
+    {
+        const int TileW = 64;
+        const int TileH = 32;
+        var tex = LoadIssPng("res://assets/isometric/tiles/stone-soup/floors/floor_rect_gray.png");
+        if (tex == null)
+        {
+            GD.PrintErr("[TestHelper] Could not load floor_rect_gray.png for grid");
+            return null;
+        }
+
+        var tileSet = new TileSet();
+        tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileSize = new Vector2I(TileW, TileH);
+
+        var source = new TileSetAtlasSource();
+        source.Texture = tex;
+        source.TextureRegionSize = new Vector2I(TileW, TileH);
+        int sourceId = tileSet.AddSource(source);
+
+        // The floor atlas is 192x64 = 3 cols x 2 rows of 64x32 tiles
+        int atlasCols = tex.GetWidth() / TileW;
+        int atlasRows = tex.GetHeight() / TileH;
+        for (int ax = 0; ax < atlasCols; ax++)
+            for (int ay = 0; ay < atlasRows; ay++)
+            {
+                var coords = new Vector2I(ax, ay);
+                if (!source.HasTile(coords))
+                    source.CreateTile(coords);
+            }
+
+        var map = new TileMapLayer();
+        map.TileSet = tileSet;
+        map.Position = position;
+
+        // Paint the grid, cycling through atlas tiles
+        int tileIdx = 0;
+        for (int x = 0; x < cols; x++)
+            for (int y = 0; y < rows; y++)
+            {
+                int ax = tileIdx % atlasCols;
+                int ay = (tileIdx / atlasCols) % atlasRows;
+                map.SetCell(new Vector2I(x, y), sourceId, new Vector2I(ax, ay));
+                tileIdx++;
+            }
+
+        parent.AddChild(map);
+        return map;
+    }
+
     public static void ShowFloatingText(Node parent, Vector2 worldPos, string text, Color color)
     {
         var label = new Label();

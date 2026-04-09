@@ -25,25 +25,6 @@ public partial class TestUI : Node2D
         hudPanel.GetNode<Label>("Content").Text = $"HP: {_hp}/{_maxHp} | MP: {_mp}/{_maxMp}\nLVL: 1 | XP: 0 | Floor: 1";
         ui.AddChild(hudPanel);
 
-        // Icon bar
-        var iconBar = new HBoxContainer();
-        iconBar.Position = new Vector2(12, 150);
-        ui.AddChild(iconBar);
-
-        string[] icons = { "Icon-sword.png", "Icon-potion.png", "Icon-potionmana.png", "Icon-coin.png", "Icon-gear.png", "Icon-axe.png", "Icon-sandglass.png" };
-        foreach (var iconFile in icons)
-        {
-            var tex = TestHelper.LoadPng("res://assets/isometric/ui/" + iconFile);
-            if (tex != null)
-            {
-                var rect = new TextureRect();
-                rect.Texture = tex;
-                rect.CustomMinimumSize = new Vector2(48, 48);
-                rect.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-                iconBar.AddChild(rect);
-            }
-        }
-
         // HP/MP orbs
         _orbs = new HpMpOrbs();
         _orbs.SetAnchorsPreset(Control.LayoutPreset.FullRect);

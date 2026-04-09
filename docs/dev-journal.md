@@ -723,4 +723,102 @@ Built a Lighthouse-equivalent for Godot:
 
 ---
 
+## Session 5 — Asset Pipeline, Grid System, Entity Framework (2026-04-09)
+
+### What We Built
+
+**Isometric Stone Soup (ISS) adoption — grid standard locked:**
+- Adopted ISS by Screaming Brain Studios as the game's tile grid standard: 64x32 floors, 64x64 wall blocks
+- Sorted ISS into `assets/isometric/tiles/stone-soup/` (49 floor themes, 43 wall block themes, 3 torches, 86 Tiled .tsx files)
+- Added `TestHelper.LoadIssPng()` — strips magenta (#FF00FF) transparency key from ISS sprites
+- Added `TestHelper.CreateFloorGrid()` — reusable ISS floor backdrop for any test scene
+
+**14 SBS asset packs sorted (819+ game assets):**
+- Downloaded and integrated: crates, doorways, walls, roads, pathways, floor tiles, autotiles, water, wall textures, town buildings, buttons, objects, tile toolkit, grid pack
+- All packs from Screaming Brain Studios (CC0) — sole source for all isometric environment/UI art
+- Renamed files: lowercase, underscores, stripped prefixes/suffixes
+- Large variants (2x) archived to `source/large-variants/` (gitignored)
+
+**Old asset replacement:**
+- Replaced all Dragosha objects (doors, crates, chests) + UI (buttons, arrows, icons) with SBS equivalents
+- Replaced rubberduck ground tiles with ISS floors
+- Kept: Clint Bellanger characters/creatures, Dragosha NPCs (characters — no SBS equivalent)
+- SBS crates now serve as the game's loot/prize containers (style consistency over variety)
+- Moved 32 old assets to `source/legacy/` for reference
+
+**Unified TestEntity.cs:**
+- Replaced separate TestCreature.cs + TestHero.cs with one unified viewer
+- Same animation/movement/display code for ALL entities
+- Creatures: 8x8 sheets, 5 animations (Stance, Walk[1-3], Attack[4-5], Hit, Dead)
+- Hero: 32x8 sheets, 7 animations, equipment layers
+- Fixed walk animation bug: was frames 1-4 (included attack), now frames 1-3
+
+**Entity Mechanics Framework (scripts/game/):**
+- Designed and built a unified entity system: 11 files, 6 systems
+- `EntityData` — single data model for ALL entities (player, enemy, NPC)
+- `EntityFactory` — creates pre-configured entities with correct defaults
+- `VitalSystem` — HP/MP management, death, revive, regeneration
+- `StatSystem` — STR/DEX/INT/VIT with diminishing returns, derived stats
+- `CombatSystem` — unified damage calc (same function for player→enemy AND enemy→player)
+- `EffectSystem` — status effects (poison, regen, buffs), tick-based processing
+- `ProgressionSystem` — XP, leveling (L² × 45 curve), stat/skill points
+- `SkillSystem` — skill execution, cooldowns, mana costs
+- All systems are static classes, pure C# (no Godot deps), fully xUnit testable
+
+**24 visual test commands + 5 category runners:**
+- `make test-creatures` — unified browser (Up/Down to switch)
+- `make test-floors/walls/doors/crates/roads/water/objects/town/items` — environment
+- `make test-buttons/ui` — UI elements
+- `make test-entity` — unified entity viewer with ISS grid scale reference
+- `make test-visual` — launches everything
+- Individual creature tests (`test-slime`, etc.) start browser on that creature
+
+**Documentation:**
+- `docs/architecture/entity-framework.md` — full framework spec
+- Updated: CREDITS.md (15 new SBS entries), tile-specs.md, sprite-specs.md, project-structure.md, AGENTS.md, dev-tracker.md, README.md
+
+### Key Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| SBS = sole source for all isometric tiles/textures | Style consistency > variety. One visual language. |
+| ISS defines the grid (64x32 floors, 64x64 walls) | Everything conforms to ISS dimensions. |
+| SBS crates replace chests | No SBS chest equivalent; crates fill the container role. |
+| No Blender pipeline | User wants ready-to-use PNGs only. No time for 3D workflows. |
+| Unified entity system | All entities share same mechanics. Only assets + hitboxes differ. |
+| CC-BY-SA is acceptable | Resizing sprites for grid fit is technical integration, not modification. |
+| Entity framework alongside GameCore.cs | New system lives in parallel. Old code kept for existing test compat. |
+
+### Test Counts
+
+| Type | Count | Status |
+|------|-------|--------|
+| Visual test scenes | 24 | All build-verified |
+| Category runners | 5 | Working |
+| Entity framework systems | 6 | Built, tests in progress |
+
+### What We Learned
+
+1. **Magenta (#FF00FF) is the ISS transparency key.** Every ISS sprite uses magenta backgrounds instead of alpha. `LoadIssPng()` strips it by scanning pixels — slow but fine for test scenes. For production, pre-process to alpha at build time.
+
+2. **ISS wall blocks are 64x64, not 64x32.** Walls are isometric cubes (base + vertical face). Floors are flat diamonds. Two separate TileMapLayers needed: FloorLayer (64x32) and WallLayer (64x64).
+
+3. **FLARE creature sprites use 8x8 grids (8 directions × 8 frames).** Walk = frames 1-3, NOT 1-4. Frame 4 is attack start. This caused a visible bug where walk animation included a sword swing.
+
+4. **Hero sprites use 32x8 grids (8 directions × 32 frames).** Much more animation variety: stance×4, run×8, melee×4, block×2, hit+die×6, cast×4, shoot×4.
+
+5. **SBS "small" floor/road packs are 128x64 (2x our grid), not 64x32.** These are overlay/decoration assets, not base tiles. Only ISS Stone Soup floors match the 64x32 base grid exactly.
+
+6. **SBS doorway sprites are sprite strips (384x96 = 6 frames at 64x96).** Each strip shows 6 arch shape variants, not animation frames. Materials: stone, brick, wood. Directions: SE, SW.
+
+7. **Static systems with EntityData-first parameters = clean, testable architecture.** No Godot dependencies means xUnit tests run instantly. Same `DealDamage(attacker, target)` call works for any entity type — symmetry proven by tests.
+
+8. **The diminishing returns formula `raw * (100 / (raw + 100))` is elegant.** At raw=100, effective=50. At raw=1000, effective=90.9. Asymptotically approaches 100 but never reaches it. Prevents stat inflation.
+
+9. **Parallel agent workflows dramatically speed up large tasks.** 3 agents built the entire entity framework (11 files, 6 systems) simultaneously. File sorting + code updates + doc updates also parallelized effectively.
+
+10. **Asset consistency matters more than asset variety.** The user's strong preference for one art source (SBS) over mixing styles from different artists is a core design principle. It extends to everything: tiles, objects, UI, future assets.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*

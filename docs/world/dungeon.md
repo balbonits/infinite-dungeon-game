@@ -56,6 +56,57 @@ Each floor contains:
 - Safe spots at entrance and exit (see below)
 - Possible special rooms (see Special Room Types below)
 
+### Tile System
+
+All dungeon environment art uses the **Isometric Stone Soup (ISS)** tileset by Screaming Brain Studios (CC0 license), located at `assets/isometric/tiles/stone-soup/`.
+
+#### Tile Dimensions
+
+| Tile Type | Size (px) | Shape | Notes |
+|-----------|-----------|-------|-------|
+| Floor tile | 64x32 | Isometric diamond | Standard 2:1 isometric ratio |
+| Wall block | 64x64 | Isometric cube | Full block and half block variants available, plus top-face overlays |
+
+The Godot TileMap tile size is **64x32** (isometric).
+
+#### Floor Size in Tiles
+
+The floor size spec ("3-4x the viewport in each dimension") translates to approximately:
+
+- **Width:** 90-120 tiles (at 64px per tile horizontally)
+- **Height:** 180-240 tiles (at 32px per tile vertically)
+
+These are rough estimates. The exact tile count depends on the final viewport resolution, but the floor should feel large enough for meaningful exploration across 5-8 rooms.
+
+#### Zone Visual Themes
+
+Each dungeon zone maps to an ISS wall sheet + floor sheet pair, giving each 10-floor zone a distinct visual identity. ISS provides 43 wall theme sheets and 49 floor theme sheets.
+
+| Zone | Floors | Wall Theme | Floor Theme |
+|------|--------|------------|-------------|
+| Zone 1 | 1-10 | TBD | TBD |
+| Zone 2 | 11-20 | TBD | TBD |
+| Zone 3 | 21-30 | TBD | TBD |
+| Zone N | (N-1)*10+1 - N*10 | TBD | TBD |
+
+Theme assignments will be finalized after reviewing the full ISS sheet catalog. The goal: each zone should feel visually distinct and progressively darker/more hostile to reinforce the magicule density gradient described in The Living Dungeon section.
+
+#### Transparency
+
+ISS sprites use magenta (`#FF00FF`) backgrounds as a transparency key. The import pipeline must strip this color to transparent.
+
+#### Lighting
+
+ISS includes 3 torch sprites (including an animated variant). Torches provide ambient environmental detail and can reinforce the dungeon's atmosphere. Torch placement rules are TBD.
+
+#### Map Prototyping
+
+ISS ships with Tiled `.tsx` files that can be used for rapid level prototyping before the procedural generation pipeline is built.
+
+#### Superseded Assets
+
+The previous `cave_atlas.png` (1024x1024 irregular atlas) is superseded by ISS. All new environment work must use ISS tiles at the dimensions specified above.
+
 ### Seeded Generation
 
 - Each floor has a seed that determines its layout

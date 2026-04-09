@@ -2,7 +2,7 @@
 
 Accumulated knowledge from building a 2D isometric dungeon crawler in Godot 4 + C#. This is a lookup reference for future sessions so previously researched patterns are not re-investigated. All entries reflect patterns that have been implemented and tested in this project.
 
-Last updated: Session 2d (2026-04-08).
+Last updated: 2026-04-09 (added ISS environment tileset section).
 
 ---
 
@@ -155,7 +155,55 @@ Always guard `GD.Load<Texture2D>()` with `ResourceLoader.Exists()` to avoid cras
 
 ---
 
-## 3. Combat and Formulas
+## 3. Isometric Stone Soup (ISS) Environment Tiles
+
+The primary environment tileset. ISS defines the game's tile grid standard -- all tilemaps, floor tiles, and wall blocks conform to its dimensions.
+
+### Source
+
+- **Author:** [Screaming Brain Studios](https://opengameart.org/users/screaming-brain-studios) — sole source for all isometric textures and tiles
+- **Pack:** Isometric Stone Soup
+- **License:** CC0 (public domain) -- no attribution required
+- **Origin:** Converted from Dungeon Crawl Stone Soup CC0 tiles into isometric format
+- **Location:** `assets/isometric/tiles/stone-soup/`
+
+### Tile Dimensions
+
+| Tile Type | Size (px) | Notes |
+|-----------|-----------|-------|
+| Floor tiles | 64x32 | Isometric diamond -- defines the TileMapLayer cell size |
+| Wall blocks (full) | 64x64 | Isometric cube, full-height block |
+| Wall blocks (half) | 64x64 | Half-height variant |
+| Wall top-face overlays | 64x64 | Overlay sprites for wall tops |
+
+These dimensions set the project-wide tile grid standard:
+- `TileMapLayer.TileSet.TileSize = Vector2I(64, 32)`
+- `TileMapLayer.TileSet.TileShape = TileSet.TileShapeIsometric`
+
+### Sheet Inventory
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| Wall block sheets | 43 | Full blocks, half blocks, top-face overlays |
+| Floor sheets | 49 | Stone, dirt, grass, water, and other floor variants |
+| Torch sprites | 3 | Wall-mounted torches for dungeon lighting |
+| **Total** | **95** | Sprite sheets |
+
+Comes with 86 Tiled `.tsx` files (tileset definitions for the Tiled map editor).
+
+### Transparency
+
+Sprite sheets use magenta (`#FF00FF`) backgrounds as a transparency key. When importing into Godot, either:
+- Strip magenta and export with alpha in an image editor, or
+- Use a shader/import setting to treat `#FF00FF` as transparent
+
+### Relationship to DCSS Tiles (Section 2)
+
+ISS covers **environment** art: walls, floors, decorations. The DCSS tile packs (Section 2) cover **creatures, items, and effects**. ISS replaces the old `cave_atlas.png` placeholder, which does not conform to the 64x32 grid standard.
+
+---
+
+## 4. Combat and Formulas
 
 All formulas from the specs, implemented in `GameCore.cs` and validated by 51 unit tests.
 
@@ -224,7 +272,7 @@ All values scaled by floor difficulty multiplier at runtime.
 
 ---
 
-## 4. UI Patterns Learned
+## 5. UI Patterns Learned
 
 Patterns validated in the 36-step demo with styled dark-fantasy windows, HP/MP orbs, and visual effects.
 
@@ -301,7 +349,7 @@ Property mapping: `BgColor` = `background-color`, `BorderColor` = `border-color`
 
 ---
 
-## 5. Testing Approaches
+## 6. Testing Approaches
 
 Dual framework strategy: xUnit for pure logic, GdUnit4 for Godot scene tests.
 
@@ -358,7 +406,7 @@ Requires Screen Recording permission. Used for evidence documentation, not autom
 
 ---
 
-## 6. Performance Patterns
+## 7. Performance Patterns
 
 Patterns applied during the Session 2c performance audit. All validated with tests passing after changes.
 
@@ -467,7 +515,7 @@ One pass, zero allocations. Applies everywhere you clean up child nodes: clearin
 
 ---
 
-## 7. Architecture Lessons
+## 8. Architecture Lessons
 
 Insights from the Session 2d architecture audit comparing demo code against 6 spec docs.
 

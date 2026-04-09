@@ -8,6 +8,43 @@ All player, enemy, and effect sprites used in the dungeon. The prototype uses Po
 
 Three entity types are rendered as Polygon2D diamonds: the player (light blue), enemies (green/yellow/red by tier), and slash effects (gold rectangle). No external sprite image files are needed. Future milestone: replace Polygon2D nodes with AnimatedSprite2D using hand-drawn or AI-generated sprite sheets.
 
+## Tile Grid Standard
+
+This section is the **authoritative reference** for the game's tile dimensions. All environment art must conform to these specifications.
+
+### Source Tileset
+
+**[Screaming Brain Studios](https://opengameart.org/users/screaming-brain-studios)** is the sole source for all isometric textures and tiles in this project. All packs are CC0 licensed.
+
+The primary environment tileset is **Isometric Stone Soup (ISS)**, located at `assets/isometric/tiles/stone-soup/`. The ISS collection includes 43 wall theme sheets, 49 floor theme sheets, and 3 torch sprites (including an animated variant). It also ships with Tiled `.tsx` files for map prototyping. Any future isometric environment art (new biomes, props, terrain) must come from the SBS catalog first.
+
+### Tile Dimensions
+
+| Tile Type | Width (px) | Height (px) | Aspect Ratio | Description |
+|-----------|-----------|-------------|--------------|-------------|
+| Floor tile | 64 | 32 | 2:1 | Isometric diamond — the base grid unit |
+| Wall block | 64 | 64 | 1:1 | Isometric cube — full block, half block, and top-face overlay variants |
+
+**Isometric ratio:** 2:1 (width:height). This is the standard isometric diamond ratio. A 64x32 floor tile produces the classic isometric diamond when rendered.
+
+**TileMap tile size:** 64x32 (set in Godot's TileMap node). This defines the grid spacing for all tile placement.
+
+### Transparency
+
+ISS sprites use a magenta background (`#FF00FF`) as a transparency key. The asset import pipeline must replace this color with full transparency (alpha = 0).
+
+### Conformance Rule
+
+All future environment assets (floors, walls, decorations, overlays) **must** conform to the 64x32 / 64x64 tile grid. Assets that do not fit the ISS grid cannot be used for dungeon environment art.
+
+The previous `cave_atlas.png` (1024x1024 irregular atlas) is superseded by ISS and is no longer the standard.
+
+### Relationship to Entity Sprites
+
+The collision dimensions documented below (player body 12px radius, enemy body 10px radius, attack range 78px radius) are **world-space physics values**, not tile-relative measurements. They do not change with the tile grid adoption. Entities move freely in world space; the tile grid governs only the environment (floors, walls, decorations).
+
+---
+
 ## Design
 
 ### Player Sprite
