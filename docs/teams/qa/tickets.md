@@ -6,7 +6,7 @@
 
 | ID | Title | Status | What To Review |
 |----|-------|--------|---------------|
-| *review* | Review each SPEC ticket as Design completes it | Ongoing | Check completeness, edge cases, contradictions, testability |
+| *review* | Review each SPEC ticket as Design completes it | Done | All 26 specs reviewed and locked |
 
 ## Planned (unlocks when implementation starts)
 

@@ -28,13 +28,17 @@ The player does not need to aim or click to attack — proximity triggers combat
 
 ### Damage Formula
 
-Currently simple and linear:
+**P1 (prototype parity):** Placeholder formula — no stats system yet:
 ```
 playerDamage = 12 + floor(level * 1.5)
 enemyDamage = 3 + dangerTier  (tier 1–3)
 ```
 
-This will evolve to incorporate stats (STR for melee, DEX for ranged, INT for spells) once the stat system is wired in.
+**P2+ (after stats system is implemented):** Replaced by the STR-based formula from [stats.md](stats.md):
+```
+total_melee_damage = (base_weapon_damage + flat_melee_bonus) * (1 + percent_melee_boost / 100)
+```
+Where `flat_melee_bonus = effective_str * 1.5` and `percent_melee_boost = effective_str * 0.8%`. See stats.md for full formula and value tables. The transition happens when P2-02 (stats system) is implemented.
 
 ### Attack Cooldown
 
