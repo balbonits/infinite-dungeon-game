@@ -92,7 +92,7 @@ Keyboard layout mirrors the PS1 diamond: W on top (△), A left (□), D right (
 | PS1 | Keyboard | Action |
 |-----|----------|--------|
 | L1 tap | Q | Cycle target to previous enemy |
-| R1 tap | R | Cycle target to next enemy |
+| R1 tap | E | Cycle target to next enemy |
 
 **Targeting behavior:**
 - **Default (no cycling):** Attacks hit based on the active **target priority setting** (defaults to nearest enemy)
@@ -123,10 +123,10 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 | L1 hold + ○ | Q hold + D | Slot 2 |
 | L1 hold + □ | Q hold + A | Slot 3 |
 | L1 hold + △ | Q hold + W | Slot 4 |
-| R1 hold + ✕ | R hold + S | Slot 5 |
-| R1 hold + ○ | R hold + D | Slot 6 |
-| R1 hold + □ | R hold + A | Slot 7 |
-| R1 hold + △ | R hold + W | Slot 8 |
+| R1 hold + ✕ | E hold + S | Slot 5 |
+| R1 hold + ○ | E hold + D | Slot 6 |
+| R1 hold + □ | E hold + A | Slot 7 |
+| R1 hold + △ | E hold + W | Slot 8 |
 
 **Tap vs Hold distinction:**
 - L1/R1 **tapped** (pressed and released < 200ms) = cycle target
@@ -149,7 +149,7 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 | Select | P | Open panel window (cycles: Inventory → Skills → Stats → Menu) |
 | Start | Esc | Pause game |
 
-**Select panel (P key):** A tabbed window. When open, L1/R1 (Q/R) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, assigns shortcuts, and accesses the main menu.
+**Select panel (P key):** A tabbed window. When open, L1/R1 (Q/E) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, assigns shortcuts, and accesses the main menu.
 
 ---
 
@@ -158,7 +158,7 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 ```
 Left hand (actions):              Right hand (movement):
 
-[Q]  [W]  [R]                          [↑]
+[Q]  [W]  [E]                          [↑]
  L1   △    R1                        [←][↓][→]
                                     
 [A]  [S]  [D]
@@ -168,7 +168,7 @@ Left hand (actions):              Right hand (movement):
 [Esc]      = Start (pause)
 ```
 
-The WASD diamond mirrors the PS1 face button diamond exactly. Q and R sit on either side as the bumpers. P for Select keeps it out of the action area.
+The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on either side as the bumpers — mirrors the QWE row naturally. P for Select keeps it out of the action area.
 
 ---
 
@@ -185,7 +185,7 @@ The WASD diamond mirrors the PS1 face button diamond exactly. Q and R sit on eit
 | `action_square` | A | Square (□) | Basic attack / Assignable |
 | `action_triangle` | W | Triangle (△) | Map toggle / Assignable |
 | `shoulder_left` | Q | L1 | Target cycle / Shortcut modifier |
-| `shoulder_right` | R | R1 | Target cycle / Shortcut modifier |
+| `shoulder_right` | E | R1 | Target cycle / Shortcut modifier |
 | `select` | P | Select | Open panel window |
 | `start` | Esc | Start | Pause |
 
@@ -193,7 +193,7 @@ The WASD diamond mirrors the PS1 face button diamond exactly. Q and R sit on eit
 
 ### Context-Dependent Input
 
-| Context | ✕ (S) | ○ (D) | □ (A) | △ (W) | L1 (Q) | R1 (R) |
+| Context | ✕ (S) | ○ (D) | □ (A) | △ (W) | L1 (Q) | R1 (E) |
 |---------|-------|-------|-------|-------|--------|--------|
 | **Dungeon** | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Map toggle / Shortcut | Cycle target / Hold: shortcuts 1-4 | Cycle target / Hold: shortcuts 5-8 |
 | **Menus/Panels** | Confirm | Cancel / Close | — | — | Previous tab | Next tab |
