@@ -35,6 +35,47 @@ e2e-visual: build ## Run E2E visual capture test (screenshots + video)
 
 test-all: test e2e ## Run all tests (unit + E2E)
 
+iso: build ## Run isometric asset demo (validates rendering)
+	@$(GODOT) --path . --main-scene res://scenes/iso_demo.tscn &
+
+# ─── Modular Asset Tests ────────────────────────────────────────────────────
+
+test-slime: build ## View slime sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_slime.tscn &
+
+test-skeleton: build ## View skeleton sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_skeleton.tscn &
+
+test-goblin: build ## View goblin sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_goblin.tscn &
+
+test-zombie: build ## View zombie sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_zombie.tscn &
+
+test-ogre: build ## View ogre sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_ogre.tscn &
+
+test-werewolf: build ## View werewolf sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_werewolf.tscn &
+
+test-elemental: build ## View elemental sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_elemental.tscn &
+
+test-magician: build ## View magician sprite sheet
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_magician.tscn &
+
+test-hero: build ## View hero with toggleable equipment layers
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_hero.tscn &
+
+test-tilemap: build ## View isometric tilemap rendering
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_tilemap.tscn &
+
+test-combat: build ## View combat effects (slash, damage, hit/die)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_combat.tscn &
+
+test-ui: build ## View UI elements (HUD, icons, HP/MP orbs)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_ui.tscn &
+
 # ─── Utilities ───────────────────────────────────────────────────────────────
 
 kill: ## Kill all running Godot processes
