@@ -2,22 +2,76 @@
 
 ## Summary
 
-**A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler built with Godot 4 and C# (.NET 8+). Isometric 2D perspective (Diablo 1 style), desktop native (macOS primary). Inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
+**A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler built with Godot 4 and C# (.NET 8+). Isometric 2D perspective, desktop native (macOS primary). A "dumb hack n slash" with complex character building — simple combat, deep theorycrafting.
 
 ## Design Philosophy
 
-- **Multiple save slots** — players can have multiple characters to try different classes and builds. Each character has one save with permanent progression.
-- **Death has consequences** — penalties scale with depth but are never full permadeath
-- **Infinite depth** — the dungeon descends forever with escalating difficulty. All floors are procedurally generated with scripted placement rules (boss rooms placed far from stairs/safe spots, rooms have sensible variety and themes). No hand-crafted floors.
-- **Isometric 2D** — classic 2:1 diamond-tile perspective, dark fantasy atmosphere
-- **Desktop native** — runs as a native Godot application, no browser dependency
-- **Docs first, code later** — every system is designed and documented before implementation
+- **"Dumb hack n slash, complex character building"** — simple moment-to-moment gameplay, deep metagaming
+- **Session feel** — casual enough for 15-30 minute sessions, addicting enough to lose 4+ hours
+- **Multiple save slots (10)** — try different classes and builds
+- **Death has consequences** — penalties scale with depth, no save on quit, get to a safe spot or lose progress
+- **Infinite depth** — the dungeon descends forever with zone-based difficulty scaling
+- **No level cap** — infinite leveling with diminishing returns
+- **PS1 controller baseline** — works with ~12 buttons, scales to modern controllers and keyboards
+- **Docs first, code later** — every system is specified before implementation
 
 ## Inspiration
 
-- **Diablo 1** — dark dungeon atmosphere, town hub, real-time combat, loot-driven progression
-- **Roguelike elements** — procedural generation, meaningful death penalties, risk/reward balance
-- **Learning project** — a front-end web developer's first game, built with Godot 4
+- **Azure Dreams** — dungeon loop, town progression feel
+- **Diablo 1** — compact town hub (Tristram), atmosphere, simple satisfying loot
+- **Diablo 2** — item affix system, build diversity, metagaming culture, map overlay, HP/MP orbs
+
+## MVP Definition
+
+The MVP is a playable single-session dungeon crawler with the core loop: **move → fight → loot → level → die → restart.**
+
+### MVP Includes (P1 + P2)
+
+| System | Scope |
+|--------|-------|
+| **Movement** | Arrow keys, isometric transform, wall collision |
+| **Combat** | Face button attack, nearest-target auto-targeting, attack cooldown, slash effect |
+| **Enemies** | 3 danger tiers, chase AI, contact damage, respawning |
+| **Spawning** | Edge spawning, soft cap, respawn timers |
+| **Leveling** | Quadratic XP curve, floor-scaling enemy XP, multi-reward level-up, milestones |
+| **Stats** | 4-stat system (STR/DEX/STA/INT) with diminishing returns |
+| **Classes** | 3 classes with per-level bonuses, milestone scaling, free stat allocation |
+| **Death** | Multi-step death screen, EXP loss, backpack item loss, gold buyout, Sacrificial Idol |
+| **Save/Load** | 10 slots, auto-save triggers, verbose JSON, export/import |
+| **HUD** | HP/MP orbs (Diablo-style), XP bar, stats display, floor indicator |
+| **Controls** | PS1 baseline: arrows move, WASD actions, Q/E bumpers, P select, Esc menu |
+
+### MVP Does NOT Include
+
+| System | Deferred To |
+|--------|-------------|
+| Skill trees (active abilities) | P3 |
+| Equipment / affix system | P3 |
+| Procedural dungeon generation | P4 |
+| Floor caching / descent | P4 |
+| Town hub + NPCs | P4 |
+| Backpack / Bank UI | P5 |
+| Loot drops / Blacksmith | P5 |
+| Target cycling (L1/R1) | P2+ |
+| Shortcut system (L1/R1 hold) | P3+ |
+| Map overlay | P2+ |
+| Visual effects (hitstop, knockback) | P6 |
+| Audio / Music | P6 |
+| Sprite art (uses placeholder shapes) | P6 |
+| Gamepad / Mouse / Touch input | Deferred |
+| Rested XP | P2 |
+
+### MVP Success Criteria
+
+- [ ] Player can move in 8 isometric directions with arrow keys
+- [ ] Player can attack enemies by pressing face buttons (WASD)
+- [ ] Enemies spawn, chase, deal contact damage, and respawn
+- [ ] Killing enemies awards XP, leveling up increases stats
+- [ ] Death triggers a multi-step death screen with penalty choices
+- [ ] Game state saves automatically at safe moments
+- [ ] 3 classes feel mechanically distinct (different stat growth)
+- [ ] A 15-minute play session feels satisfying and complete
+- [ ] A new player understands the controls without explanation
 
 ## Migration Context
 
@@ -29,18 +83,6 @@ The game began as a single-file Phaser 3 browser prototype (`index.html`, ~450 l
 - **Desktop native** platform (replacing browser)
 - **Scene/node architecture** (replacing single-file monolith)
 
-All game design documentation in `docs/` is engine-agnostic and carries over. Architecture docs have been updated for Godot.
-
 ## Current State
 
-Documentation and planning phase. All game systems are being specified in detail before any code is written. The Phaser prototype established the core gameplay loop:
-
-- Movement (WASD / arrow keys)
-- Auto-targeting combat with slash effects
-- Enemy spawning with 3 danger tiers + chase AI
-- HUD overlay (HP, XP, level, floor)
-- Basic death/restart screen
-- XP and leveling system
-
-These systems will be reimplemented in Godot with identical mechanics and values.
-
+All 26 spec tickets are complete. All game systems are fully designed and documented. The project is transitioning from docs-only to implementation phase. Next step: SETUP-02 (create C# project files).

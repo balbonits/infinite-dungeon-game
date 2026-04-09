@@ -10,47 +10,113 @@ This protocol is active. All AI-generated code in this project must follow this 
 
 ## Design
 
-### The Cycle: Read → Plan → Test → Implement → Verify → Stop
+### Dev Ticket Cycle
 
-Every task follows this sequence. Do not skip steps. Do not reorder.
+Every ticket follows this git-based workflow. Each ticket gets its own branch. Do not skip steps.
 
-**1. Read**
-- Read the relevant spec doc in `docs/` before touching anything
-- If the task references a game system, read the system doc AND the object doc
-- If you're modifying code, read the existing code first
-- If you're unsure which doc applies, ask
+```
+create branch → research → plan → verify plan (research bot cross-check)
+→ update plan → write tests (if possible/needed) → code → verify
+→ run tests (if any) → run/verify build → update docs
+→ commit (checkpoint if partial) → push (squash checkpoints) → delete branch
+```
 
-**2. Plan**
-- State what you will do in 1-3 sentences
-- List the files you will touch
-- Confirm the plan matches the spec — if it doesn't, stop and ask
+**Step-by-step:**
+
+**1. Create Branch**
+- Branch from `main`: `git checkout -b TICKET-ID` (e.g., `P1-04d`)
+- One branch per ticket. No multi-ticket branches.
+
+**2. Research**
+- Read the relevant spec doc(s) in `docs/`
+- Read the existing code if modifying
+- Spin up researcher agent to cross-reference best practices, code patterns, edge cases
+- Check if a RES-* ticket exists for this area — if so, complete it first
+
+**3. Plan**
+- Enter plan mode
+- State what you will do, list files to touch, confirm plan matches spec
 - For tasks touching multiple files, describe the order of changes
-- Keep plans minimal — the spec already has the details
 
-**3. Test First**
-- Reference the relevant test cases from `docs/testing/manual-tests.md`
-- If automated tests exist for the system, reference those from `docs/testing/automated-tests.md`
-- If a test case doesn't exist for the requested change, write one BEFORE writing implementation code
-- The test defines "done" — nothing else does
+**4. Verify Plan (Research Bot Cross-Check)**
+- Researcher agent reviews the plan against industry patterns and known pitfalls
+- Flag anything that contradicts best practices or has known edge cases
+- Update plan based on findings
 
-**4. Implement**
-- Write the minimum code that passes the tests and satisfies the spec
-- Follow [C# conventions](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_style_guide.html) and the project's naming rules (see AGENTS.md §6)
+**5. Write Tests (if possible/needed)**
+- Reference test cases from `docs/testing/manual-tests.md` and `docs/testing/automated-tests.md`
+- If a test case doesn't exist, write one BEFORE implementation
+- The test defines "done"
+
+**6. Code**
+- Write the minimum code that passes tests and satisfies the spec
+- Follow [C# conventions](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_style_guide.html) and project naming rules (see AGENTS.md §6)
 - One responsibility per script, one purpose per function
 - Use static typing everywhere (C# enforces this)
 - Prefer composition (child nodes) over monolithic scripts
 
-**5. Verify**
-- Run the tests if possible
-- If you cannot run them (e.g., manual tests), describe the EXACT steps to verify
-- List what should be true after the change
-- Check: does the change modify ONLY what the task asked for? If not, revert the extras.
+**7. Verify**
+- Run tests if possible. If manual, describe EXACT verification steps.
+- Check: does the change modify ONLY what the ticket asked for?
 
-**6. Stop**
-- Do not continue to the next task
+**8. Run Tests / Verify Build**
+- `dotnet test` for automated tests
+- `dotnet build` to verify clean compilation
+- Manual playtest if the ticket affects gameplay
+- **Capture visual evidence** for E2E validation (see below)
+
+**9. Update Docs**
+- Update any spec docs affected by implementation decisions
+- Update dev-tracker ticket status
+
+**10. Commit & Push**
+- Commit as checkpoints during partial work (small, descriptive messages)
+- On completion: squash all checkpoint commits into one clean commit
+- Push to remote, create PR if needed
+- Delete the feature branch after merge
+
+**11. Stop**
+- Do not continue to the next ticket
 - Do not "clean up" nearby code
 - Do not add "while I'm here" improvements
 - Wait for user direction
+
+### Visual Test Evidence (Screenshots & Recordings)
+
+Every ticket that affects gameplay or UI must include visual evidence for E2E validation. This serves as a living reference of what the game looks like at each stage.
+
+**When to capture:**
+- New visual feature (movement, combat, HUD, death screen, etc.)
+- Changed behavior that's visually verifiable
+- Bug fix that affects what the player sees
+
+**What to capture:**
+
+| Type | Format | When |
+|------|--------|------|
+| Screenshot | PNG | Static UI, HUD layout, menu screens, tile rendering |
+| Screen recording | MP4/GIF | Movement, combat, animations, transitions, game feel |
+
+**Where to store:**
+```
+docs/evidence/
+├── P1-04d/              ← one folder per ticket
+│   ├── movement-8dir.mp4
+│   ├── wall-collision.png
+│   └── notes.md         ← brief description of what each file shows
+├── P1-07b/
+│   ├── attack-basic.mp4
+│   └── slash-effect.png
+└── ...
+```
+
+**Rules:**
+- Evidence folder named by ticket ID
+- Include a `notes.md` with a one-liner per file describing what it validates
+- For new features: capture the first working version (baseline)
+- For changes to existing features: capture before AND after (or just after if no prior baseline)
+- Keep files small — trim recordings to the relevant 5-15 seconds
+- Evidence is committed with the ticket's branch and included in the squashed commit
 
 ### Three-Tier Boundary System
 
