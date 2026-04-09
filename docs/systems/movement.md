@@ -2,7 +2,7 @@
 
 ## Summary
 
-The player moves in 8 directions using WASD or arrow keys. Input is transformed through an isometric projection matrix so that pressing "up" moves the player diagonally up-left in screen space (into the screen in isometric perspective, like Diablo 1). Movement uses Godot's CharacterBody2D with `MoveAndSlide()` for built-in wall collision and sliding.
+The player moves in 8 directions using arrow keys. Input is transformed through an isometric projection matrix so that pressing "up" moves the player diagonally up-right in screen space (into the screen in isometric perspective, like Diablo 1). Movement uses Godot's CharacterBody2D with `MoveAndSlide()` for built-in wall collision and sliding. WASD is reserved for action buttons (see [controls.md](../ui/controls.md)).
 
 ## Current State
 

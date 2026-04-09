@@ -146,10 +146,22 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 
 | PS1 | Keyboard | Action |
 |-----|----------|--------|
-| Select | P | Open panel window (cycles: Inventory → Skills → Stats → Menu) |
-| Start | Esc | Pause game |
+| Select | P | Open panel window (cycles: Inventory → Skills → Stats). Pauses game while open. |
+| Start | Esc | Main menu / Pause. Pauses game. |
 
-**Select panel (P key):** A tabbed window. When open, L1/R1 (Q/E) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, assigns shortcuts, and accesses the main menu.
+**Select panel (P key):** A tabbed window. When open, L1/R1 (Q/E) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, and assigns shortcuts.
+
+**Both Select and Start pause the game.** Old-school style — opening any system menu freezes gameplay. Esc opens the main menu directly (pause, settings, save, quit). P opens the panel window (Inventory/Skills/Stats). Both pause. Closing either unpauses.
+
+**Direct panel shortcuts (unbound by default):**
+
+| Action | Default Key | Description |
+|--------|------------|-------------|
+| `panel_inventory` | Unbound | Open Inventory tab directly |
+| `panel_skills` | Unbound | Open Skills tab directly |
+| `panel_stats` | Unbound | Open Stats tab directly |
+
+Players can bind these in Settings for quick access without cycling through P. These are optional convenience bindings — the P cycle and Esc menu are always available.
 
 ---
 
@@ -186,8 +198,11 @@ The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on eit
 | `action_triangle` | W | Triangle (△) | Map toggle / Assignable |
 | `shoulder_left` | Q | L1 | Target cycle / Shortcut modifier |
 | `shoulder_right` | E | R1 | Target cycle / Shortcut modifier |
-| `select` | P | Select | Open panel window |
-| `start` | Esc | Start | Pause |
+| `select` | P | Select | Open panel window (Inventory/Skills/Stats) |
+| `start` | Esc | Start | Main menu / Pause |
+| `panel_inventory` | Unbound | — | Direct open Inventory (bindable) |
+| `panel_skills` | Unbound | — | Direct open Skills (bindable) |
+| `panel_stats` | Unbound | — | Direct open Stats (bindable) |
 
 ---
 
@@ -217,14 +232,14 @@ All key bindings listed above are **defaults** — the industry-standard startin
 
 **P1 implements (basic systems):**
 - Arrow key movement with isometric transform
-- Z key basic attack on nearest enemy (auto-target by proximity)
+- Face button (S) basic attack on current target
 - Esc to pause / restart from death screen
 - Input Map in project.godot with all actions defined
 
 **P2+ implements (as systems come online):**
 - L1/R1 target cycling with visual indicator + priority setting
 - L1/R1 hold shortcut system (needs skills/items to assign)
-- Tab → Select panel with tabbed UI
+- P → Select panel with tabbed UI
 - Shortcut assignment interface
 - Gamepad support via Input Map (same actions, add joypad events)
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-The player is a CharacterBody2D with isometric movement, auto-targeting melee combat, and a following camera. Movement input (WASD / arrow keys) is transformed through an isometric matrix to produce Diablo-style directional movement. The player automatically attacks the nearest enemy within a 78px radius on a 0.42s cooldown.
+The player is a CharacterBody2D with isometric movement, button-press combat with auto-targeting, and a following camera. Movement input (arrow keys) is transformed through an isometric matrix to produce Diablo-style directional movement. The player attacks the current target when face buttons (WASD) are pressed, within a 78px radius on a 0.42s cooldown. See [controls.md](../ui/controls.md) for the full control scheme.
 
 ## Current State
 
