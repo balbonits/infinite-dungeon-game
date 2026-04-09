@@ -17,6 +17,19 @@ public partial class IsometricDemo : Node2D
     private const float MoveSpeed = 150f;
     private const float AnimFps = 8f;
 
+    // ── Isometric entity scaling ─────────────────────────────────────────────
+    // ISS floor tiles are 64x32. Entities must be scaled down from their raw
+    // sprite sheet frame size to fit proportionally on the tile grid.
+    //
+    //   Creature sheets: 1024x1024, 8x8 grid  -> 128x128 per frame
+    //   Hero sheets:     2048x1024, 32x8 grid  -> 64x128 per frame
+    //
+    // Target: humanoid occupies ~40px width on a 64px-wide tile (62.5%).
+    //   Creature scale = 40 / 128 = 0.3125
+    //   Hero     scale = 40 / 64  = 0.625
+    private const float CreatureScale = 0.3125f;
+    private const float HeroScale = 0.625f;
+
     private static readonly string AssetBase = "res://assets/isometric/";
     // Absolute path for direct file loading (bypasses Godot import system)
     private static readonly string AssetDisk = ProjectSettings.GlobalizePath(AssetBase);
@@ -375,15 +388,22 @@ public partial class IsometricDemo : Node2D
             Log($"  Sheet: {tex.GetWidth()}x{tex.GetHeight()}");
             Log($"  Frame: {frameW}x{frameH} ({hframes}x{vframes} grid)");
 
-            // Place skeleton on the iso floor
+            // Place skeleton on the iso floor, scaled to fit the tile grid.
+            // Raw frame is 128x128; at CreatureScale (0.3125) it renders ~40x40px
+            // which fits comfortably on a 64x32 floor diamond.
             var sprite = new Sprite2D();
             sprite.Texture = tex;
             sprite.Hframes = hframes;
             sprite.Vframes = vframes;
             sprite.TextureFilter = TextureFilterEnum.Nearest;
-            // Place at center of floor
+            sprite.Scale = new Vector2(CreatureScale, CreatureScale);
+            // Place at center of floor, offset up so feet sit on the tile
             if (_floorMap != null)
-                sprite.Position = _floorMap.MapToLocal(new Vector2I(RoomW / 2, RoomH / 2));
+            {
+                var tileCenter = _floorMap.MapToLocal(new Vector2I(RoomW / 2, RoomH / 2));
+                float scaledFrameH = frameH * CreatureScale;
+                sprite.Position = tileCenter - new Vector2(0, scaledFrameH * 0.4f);
+            }
             else
                 sprite.Position = new Vector2(200, 100);
 
@@ -396,8 +416,8 @@ public partial class IsometricDemo : Node2D
             _animFrame = 0;
             _animTimer = 0;
 
-            Log($"  Skeleton placed at {sprite.Position}, animating walk (frames 1-4, dir 0)");
-            LogPass(3, $"Skeleton animation: {frameW}x{frameH} frames, {AnimFps}fps walk cycle");
+            Log($"  Skeleton placed at {sprite.Position}, scale {CreatureScale:F3}x, animating walk (frames 1-4, dir 0)");
+            LogPass(3, $"Skeleton animation: {frameW}x{frameH} frames scaled to {frameW * CreatureScale:F0}x{frameH * CreatureScale:F0}px, {AnimFps}fps");
         }
         catch (Exception e)
         {
@@ -447,9 +467,16 @@ public partial class IsometricDemo : Node2D
             string[] layerNames = { "clothes", "steel_armor", "longsword" };
             var layers = new List<Sprite2D>();
             int hframes = 32, vframes = 8;
+            // Hero frames are 64x128. At HeroScale (0.625) they render ~40x80px,
+            // proportional to creatures on the 64x32 tile grid.
             Vector2 pos;
             if (_floorMap != null)
-                pos = _floorMap.MapToLocal(new Vector2I(RoomW / 2, RoomH / 2));
+            {
+                var tileCenter = _floorMap.MapToLocal(new Vector2I(RoomW / 2, RoomH / 2));
+                // Offset up so the hero's feet sit on the tile (assume 128px frame height)
+                float scaledH = 128f * HeroScale;
+                pos = tileCenter - new Vector2(0, scaledH * 0.4f);
+            }
             else
                 pos = new Vector2(200, 100);
 
@@ -468,6 +495,7 @@ public partial class IsometricDemo : Node2D
                 sprite.Hframes = hframes;
                 sprite.Vframes = vframes;
                 sprite.TextureFilter = TextureFilterEnum.Nearest;
+                sprite.Scale = new Vector2(HeroScale, HeroScale);
                 sprite.Position = pos;
                 sprite.Frame = 0;
                 _entityLayer.AddChild(sprite);
@@ -475,7 +503,7 @@ public partial class IsometricDemo : Node2D
 
                 int frameW = tex.GetWidth() / hframes;
                 int frameH = tex.GetHeight() / vframes;
-                Log($"  Layer '{name}': {tex.GetWidth()}x{tex.GetHeight()} -> {frameW}x{frameH} frames");
+                Log($"  Layer '{name}': {tex.GetWidth()}x{tex.GetHeight()} -> {frameW}x{frameH} frames (scaled {HeroScale:F3}x)");
             }
 
             // Track all layers for synced animation (walk = frames 4-11, direction 0)
@@ -509,7 +537,9 @@ public partial class IsometricDemo : Node2D
         try
         {
             int loaded = 0;
-            float spacing = 80;
+            // At CreatureScale, each creature renders ~40px wide. Use tighter
+            // spacing so the gallery fits on the floor grid.
+            float spacing = 50;
             float startX = -((CreatureNames.Length - 1) * spacing / 2);
             Vector2 basePos;
             if (_floorMap != null)
@@ -532,17 +562,21 @@ public partial class IsometricDemo : Node2D
                 sprite.Hframes = 8;
                 sprite.Vframes = 8;
                 sprite.TextureFilter = TextureFilterEnum.Nearest;
-                sprite.Position = basePos + new Vector2(startX + i * spacing, 0);
+                sprite.Scale = new Vector2(CreatureScale, CreatureScale);
+                // Offset up so feet sit on tile surface
+                int frameH = tex.GetHeight() / 8;
+                float scaledH = frameH * CreatureScale;
+                sprite.Position = basePos + new Vector2(startX + i * spacing, -scaledH * 0.4f);
                 sprite.Frame = 0;
                 _entityLayer.AddChild(sprite);
 
                 // Track for walk animation
                 _animEntities.Add(new AnimatedEntity(sprite, 8, 1, 4, 0));
 
-                // Label below
+                // Label below (at tile level, below the scaled sprite)
                 var label = new Label();
                 label.Text = $"{CreatureNames[i]} ({CreatureTiers[i]})";
-                label.Position = sprite.Position + new Vector2(-30, 60);
+                label.Position = sprite.Position + new Vector2(-30, scaledH * 0.6f + 4);
                 label.AddThemeColorOverride("font_color", Colors.White);
                 label.AddThemeFontSizeOverride("font_size", 10);
                 _entityLayer.AddChild(label);
@@ -553,9 +587,9 @@ public partial class IsometricDemo : Node2D
             _animFrame = 0;
             _animTimer = 0;
 
-            Log($"  {loaded}/{CreatureNames.Length} creatures loaded and animating");
+            Log($"  {loaded}/{CreatureNames.Length} creatures loaded and animating (scale {CreatureScale:F3}x)");
             Log($"  FPS: {Engine.GetFramesPerSecond()}");
-            LogPass(6, $"Enemy gallery: {loaded} creatures animating simultaneously");
+            LogPass(6, $"Enemy gallery: {loaded} creatures at {CreatureScale:F3}x scale, animating simultaneously");
         }
         catch (Exception e)
         {
@@ -588,10 +622,13 @@ public partial class IsometricDemo : Node2D
 
             Vector2 heroStart;
             Vector2 skelPos;
+            // Vertical offsets for foot placement on tiles
+            float heroOffY = 128f * HeroScale * 0.4f;
+            float skelOffY = 128f * CreatureScale * 0.4f;
             if (_floorMap != null)
             {
-                heroStart = _floorMap.MapToLocal(new Vector2I(2, RoomH / 2));
-                skelPos = _floorMap.MapToLocal(new Vector2I(RoomW - 3, RoomH / 2));
+                heroStart = _floorMap.MapToLocal(new Vector2I(2, RoomH / 2)) - new Vector2(0, heroOffY);
+                skelPos = _floorMap.MapToLocal(new Vector2I(RoomW - 3, RoomH / 2)) - new Vector2(0, skelOffY);
             }
             else
             {
@@ -604,6 +641,7 @@ public partial class IsometricDemo : Node2D
             hero.Hframes = 32;
             hero.Vframes = 8;
             hero.TextureFilter = TextureFilterEnum.Nearest;
+            hero.Scale = new Vector2(HeroScale, HeroScale);
             hero.Position = heroStart;
             hero.Frame = 4; // run frame, direction 0
             _entityLayer.AddChild(hero);
@@ -613,6 +651,7 @@ public partial class IsometricDemo : Node2D
             skel.Hframes = 8;
             skel.Vframes = 8;
             skel.TextureFilter = TextureFilterEnum.Nearest;
+            skel.Scale = new Vector2(CreatureScale, CreatureScale);
             skel.Position = skelPos;
             skel.Frame = 0; // stance
             _entityLayer.AddChild(skel);
@@ -622,9 +661,9 @@ public partial class IsometricDemo : Node2D
             _animFrame = 0;
             _animTimer = 0;
 
-            // Movement
+            // Movement — stop close to skeleton (scaled spacing)
             _moveTarget = hero;
-            _moveDestination = skelPos - new Vector2(40, 0);
+            _moveDestination = skelPos - new Vector2(25, 0);
             _isMoving = true;
 
             // Schedule combat effects after movement (~1.5s)

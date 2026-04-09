@@ -50,6 +50,11 @@ public class DrunkardWalkCarver
         }
     }
 
+    public void CarvePath(FloorData floor, RoomData from, RoomData to)
+    {
+        CarvePathBetween(floor, from.CenterX, from.CenterY, to.CenterX, to.CenterY);
+    }
+
     private void CarvePathBetween(FloorData floor, int startX, int startY, int targetX, int targetY)
     {
         int x = startX, y = startY;

@@ -821,4 +821,248 @@ Built a Lighthouse-equivalent for Godot:
 
 ---
 
+## Session 6 — Proc Gen Overhaul, Automap, Town Foundation (2026-04-09)
+
+### What We Built
+
+**Progressive floor sizing:**
+- Replaced fixed 100x200 floor grid with zone-stepped formula mirroring difficulty scaling
+- Zone 1 (floors 1-10): starts at 50x100, Zone 10 (floors 91-100): caps at 150x300
+- Formula: `zone_scale = 1.0 + (zone-1) * 0.25`, `intra_scale = 1.0 + step * 0.02`, `size = base * zone_scale * intra_scale`
+- BSP naturally produces fewer rooms on smaller grids — zone 1 gets 3-4 rooms, deep zones get 8+
+- `DungeonGenerator.CalculateFloorSize(floorNumber)` is a public static method for any system to query
+
+**IKEA guided layout:**
+- Replaced random BSP sibling corridors with nearest-neighbor chain pathing
+- Rooms are ordered: Entrance → Room A → Room B → ... → Exit
+- Corridors carved along chain order, creating a guided flow through the floor
+- Player CAN backtrack, but natural flow pushes forward (like IKEA showroom)
+- 15% loop chance still applies for optional alternate routes
+
+**Challenge room shortcut:**
+- One challenge room per non-boss floor, placed off the main path
+- Connected to an early room AND shortcuts to near-exit room
+- Grid-scan placement algorithm finds valid non-overlapping positions
+- `RoomKind.Challenge` added to enum
+- Scales room size with floor size: `clamp(width/5, 8, 16)`
+
+**Boss blocks exit:**
+- On every 10th floor, the exit room becomes the boss room
+- `RoomKind.Boss` replaces `RoomKind.Exit` on boss floors
+- Must defeat boss to descend — no separate boss room needed
+
+**Isometric wall rendering in dungeon test:**
+- Added wall block rendering (64x64 ISS cubes) to TestDungeonGen
+- Only renders "edge walls" (walls adjacent to at least one floor tile)
+- Single TileMapLayer with two atlas sources (floors 64x32 + walls 64x64) for correct isometric depth sorting
+- Uses brick_gray.png wall theme, row 0 (full blocks only, not overlays)
+
+**Exploration tracking (fog of war foundation):**
+- Added `bool[,] Explored` to FloorData, initialized to all false
+- `MarkExplored(x, y, radius)` marks circular area using distance check
+- `IsExplored(x, y)` queries explored state
+- Persists while floor is cached (10-floor LRU); purged floors reset exploration
+
+**Automap overlay system (in progress — parallel agent):**
+- D1-style wireframe overlay using Control._Draw() pattern
+- 3 modes via M key: Overlay → Full Map → Off
+- Color-coded: dim gold walls, bright yellow stairs, orange player, red/gold/orange room outlines
+- Per-tile fog of war (only explored tiles drawn on map)
+
+**Town scene + NPC foundation (in progress — parallel agent):**
+- Hand-designed ~30x30 isometric town layout with ISS tiles
+- 5 NPCs (Item Shop, Blacksmith, Guild, Teleporter, Banker) at fixed positions
+- Walk-up proximity detection (32px radius → panel appears, walk away → dismisses)
+- Item Shop UI as first functional NPC (uses existing GameCore.BuyItem/SellItem)
+
+**Input Map setup (in progress — parallel agent):**
+- All actions from controls.md wired in project.godot
+- New `map_toggle` action on M key
+- Arrow keys, WASD face buttons, Q/E shoulders, Esc start
+
+**Control scheme change:**
+- M key = Map cycle (overlay → full → off) — dedicated key outside PS1 baseline
+- Start (Esc) = Game window with all tabs/panels (absorbs old Select function)
+- △ (W) reverts to fully assignable face button
+
+### Key Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Progressive sizing over fixed grid | Early floors feel compact and tutorial-like; deep floors feel sprawling |
+| Zone-stepped + intra ramp (not smooth) | Mirrors difficulty scaling exactly — same jumps, same feel |
+| 1:2 width:height ratio (50x100 base) | Matches isometric projection; taller grids work better in diamond layout |
+| IKEA chain pathing over random BSP | Guided flow ensures player sees all rooms; prevents confusing dead ends |
+| Challenge room always present (not RNG) | Player choice is fight-or-skip, not find-or-miss |
+| Boss = exit room on 10th floors | Simpler, more dramatic — boss literally blocks your path |
+| D1 wireframe style over D2 sprite icons | Fits dark dungeon atmosphere; clean minimal look |
+| M key for map (not W/P) | Dedicated key avoids conflicts with face buttons and panel system |
+| Town is hand-designed (not proc gen) | Hub needs to feel like a real, consistent place |
+
+### Test Counts
+
+| Type | Count | Status |
+|------|-------|--------|
+| Unit tests | 267 | All passing |
+| New sizing tests | 7 | Floor 1 base, zone growth, intra ramp, zone jump, cap, generated match |
+| New challenge room tests | 3 | Appears on most floors, absent on boss, reachable from entrance |
+| New boss-blocks-exit test | 1 | Boss room exists, no separate exit on 10th floors |
+| Visual test floor cycle | 8 floors | 1/5/10/11/20/30/50/100 |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `scripts/game/dungeon/DungeonGenerator.cs` | Complete rewrite: progressive sizing, chain pathing, challenge room, boss=exit |
+| `scripts/game/dungeon/DungeonData.cs` | Added `RoomKind.Challenge`, `Explored` array, `MarkExplored()`, `IsExplored()` |
+| `scripts/game/dungeon/DrunkardWalkCarver.cs` | Added public `CarvePath()` for challenge room corridors |
+| `scripts/tests/TestDungeonGen.cs` | Progressive sizing, wall rendering, challenge room color, expanded floor cycle |
+| `tests/DungeonGeneratorTests.cs` | 11 new tests for sizing, chain pathing, challenge room, boss-blocks-exit |
+| `docs/world/dungeon.md` | Updated spec: progressive sizing formula, IKEA layout, challenge rooms, boss-blocks-exit |
+
+### What We Learned
+
+1. **Grid-scan beats random placement for tight spaces.** Challenge room random offset placement failed 50-75% on small floors. Scanning all valid positions then picking randomly got it to 95%+.
+
+2. **Nearest-neighbor chain produces intuitive room ordering.** The algorithm naturally visits nearby rooms first, creating a winding but logical path. No need for complex graph algorithms.
+
+3. **Diablo 1 automap uses pure DrawLine, not sprites.** D2 switched to pre-rendered tile icons (dc6 files). D1's approach is simpler and fits our aesthetic better.
+
+4. **Diablo 2 "transparency" was checkerboard dithering, not alpha.** Every other pixel deleted in a grid pattern. D2R added true alpha. We'll use true alpha since we have modern rendering.
+
+5. **Diablo 1 floors are exactly 40x40 tiles.** Fixed size, no scaling. Our progressive system (50x100 → 150x300) is an original design choice, not industry standard.
+
+6. **Wall sheets have alternating rows.** Even rows (0, 2, 4) = full 64x64 blocks. Odd rows (1, 3, 5) = top-face overlays. TestWalls.cs iterates `row += 2` to skip overlays.
+
+7. **Single TileMapLayer with multiple atlas sources is better than separate layers for isometric.** Two layers break Y-sort depth ordering. One layer with mixed sources sorts correctly by cell position.
+
+8. **Parallel agents can build independent features simultaneously.** Automap, town, and input map are independent tracks — no file conflicts, all buildable in parallel.
+
+---
+
+## Session 6b — Systems Build-out, Research, QA Audit (2026-04-09)
+
+### What We Built
+
+**Bank storage system:**
+- BankData class (50 starting slots, expandable +10 per expansion at 500*N^2 gold)
+- BankSystem: deposit/withdraw with stacking, expand, full checks
+- 15 tests covering deposit, withdraw, expand, cost scaling, edge cases
+
+**Backpack expansion system:**
+- BackpackSystem: expand inventory (+5 slots at 300*N^2 gold)
+- Added BackpackExpansions tracking to PlayerState
+- 9 tests covering expand, cost scaling, edge cases
+
+**Item generation and loot system:**
+- Extended ItemData with ItemLevel, Quality (Normal/Superior/Elite), Prefixes, Suffixes
+- AffixData class for prefix/suffix stat bonuses (tier 1-6)
+- ItemGenerator: GenerateEquipment, GenerateMaterial, GenerateConsumable, RollLootDrop, GenerateCrateLoot
+- Quality distribution scales with floor depth per items.md spec
+- Loot drops: Tier1=8%, Tier2=12%, Tier3=18% base + floor*0.1% (cap +5%)
+- 51 tests covering generation, distribution, scaling, edge cases
+
+**Creature sprite scaling fix:**
+- Calculated proper scale: creatures 0.3125x (128px frames → ~40px), heroes 0.625x (64px frames → ~40px)
+- Updated TestEntity.cs and IsometricDemo.cs with documented scale constants
+- Added vertical offset so feet sit on tile center, not sprite center
+
+**Controls spec update:**
+- M key for map cycle (overlay → full → off), dedicated key outside PS1 baseline
+- Start (Esc) absorbs Select's panel function — unified game window
+- △ (W) freed as assignable face button
+- All stale references cleaned across controls.md
+
+**Input Map wired:**
+- 12 actions defined in project.godot: movement, face buttons, shoulders, map_toggle (M), start (Esc)
+
+### Research Completed
+
+**Monster technical data structures:**
+- Diablo 1: ~15 fields per monster (HP range, AC, damage, resistances 0/75/immune, IntF for AI, XP)
+- Diablo 2 MonStats.txt: 50+ fields per monster, difficulty-specific stats, treasure class system, monster modifiers (Extra Fast, Fire Enchanted, etc.), pack composition
+- PoE: Normal/Magic/Rare/Unique hierarchy with stacking affixes, Bloodline/Nemesis mods
+- Roguelikes (Angband/NetHack/DCSS): template inheritance, hit dice, behavioral flags
+- Common universal fields: ID, HP, Damage, Defense, Speed, XP, Depth, Type
+
+**Monster world-building philosophy:**
+- Monster Hunter: biological taxonomy, behavioral tells, turf wars, ecological food chains
+- FromSoft: enemy placement as environmental storytelling, faction variants, bosses as fundamentally different encounters (not stat-inflated normals)
+- Hollow Knight: zone-exclusive creature families, Infection as state transformation, bosses as zone culminations
+- Hades: three-tier system (Normal/Armored/Infernal), biome-exclusive rosters, modifier stacking
+- Mutation systems: Pokemon regional forms, Hollow Knight infection, Diablo champion/unique modifiers
+
+**Key synthesis for our game:**
+- 5 classification axes: Species Family, Mutation Tier (0-3), Behavior Role, Element, Dungeon Role
+- The dungeon as intelligent breeder — creatures manufactured for purpose, not naturally evolved
+- Zone-exclusive families + mutation variants = exponential variety from small base roster
+- D4-style monster families: packs mix archetypes (swarm + tank + caster) from same family
+
+### QA Audit Results
+
+**Comprehensive code audit across all 29 source files and 17 test files.**
+
+| Severity | Count | Top Issues |
+|----------|-------|------------|
+| Critical | 5 | Dual system divergence, GetMeleeDamage double-counts BaseDamage, code ≠ spec formulas, effect tick bug, factory HP mismatch |
+| Important | 9 | Namespace inconsistency (15 files no namespace), data class style mix (fields vs properties), IsInsideAnyRoom O(n) in hot loop, static Random not thread-safe |
+| Minor | 6 | STA vs VIT naming, inconsistent return types, magic numbers, NpcPanel potion values ≠ ItemGenerator |
+| Recommendations | 6 | Retire GameCore.cs, add InventorySystem, spec-validating tests, overflow guards, injectable Random |
+
+**#1 priority: Retire GameCore.cs.** Nearly half of all findings trace to the dual-system architecture. Every new feature risks building on the wrong foundation.
+
+**#2 priority: Reconcile code with specs.** STR multiplier (0.5 vs 1.5), VIT bonus (3 vs 5), MaxMP formula — code and locked specs disagree.
+
+### Test Counts
+
+| Metric | Value |
+|--------|-------|
+| Total tests | 351 |
+| New this session | 75 (9 exploration + 15 bank + 9 backpack + 51 item gen + QA findings) |
+| All passing | Yes |
+| Build errors | 0 |
+
+### Files Created This Session
+
+| File | Purpose |
+|------|---------|
+| `scripts/game/ui/Automap.cs` | D1-style wireframe map overlay with 3 modes |
+| `scripts/game/town/NpcData.cs` | NPC data model + NpcType enum |
+| `scripts/game/town/TownLayout.cs` | 30x30 hand-designed town layout |
+| `scripts/game/ui/NpcPanel.cs` | NPC interaction panel with shop UI |
+| `scripts/tests/TestTown2.cs` | Interactive town test scene |
+| `scenes/tests/test_town2.tscn` | Town scene file |
+| `scripts/game/inventory/BankData.cs` | Bank storage data class |
+| `scripts/game/inventory/BankSystem.cs` | Deposit/withdraw/expand logic |
+| `scripts/game/inventory/BackpackSystem.cs` | Backpack expansion logic |
+| `scripts/game/inventory/AffixData.cs` | Item affix data class |
+| `scripts/game/inventory/ItemGenerator.cs` | Procedural item generation + loot tables |
+| `tests/BankTests.cs` | 15 bank tests |
+| `tests/BackpackTests.cs` | 9 backpack tests |
+| `tests/ItemGeneratorTests.cs` | 51 item generation tests |
+
+### What We Learned
+
+1. **Two parallel systems = half the findings.** The #1 architectural debt is GameCore.cs coexisting with the entity framework. Divergent formulas, inconsistent data models, tests that validate the wrong values.
+
+2. **GetMeleeDamage double-counts BaseDamage.** TotalDamage already includes BaseDamage, but GetMeleeDamage adds it again. Player does 12 extra damage at level 1. Easy to miss because tests validate the buggy code.
+
+3. **Code formulas diverge from locked specs.** STR multiplier is 0.5 in StatSystem but 1.5 in stats.md. VIT bonus is ×3 in code but ×5 in spec. Either code or spec must be authoritative — not both.
+
+4. **EffectSystem's single-tick-per-frame is a time-bomb.** A lag spike causes poison to underapply. Use `while` instead of `if` to drain accumulated ticks.
+
+5. **Factory HP doesn't match StatSystem.** EntityFactory hardcodes MaxHP=108, but StatSystem.GetMaxHP returns 123 for the same entity. The factory should call RecalculateDerived after creation.
+
+6. **Grid-scan placement is reliable for tight spaces.** Challenge room grid-scan hits 95%+ vs random's 25-55%.
+
+7. **Monster taxonomy needs 5 axes.** Species Family, Mutation Tier, Behavior Role, Element, Dungeon Role. The dungeon-as-breeder framing makes all 5 narratively coherent.
+
+8. **Zone-exclusive creature families are the key to replayability.** Every 10 floors should feel like a different game. Hollow Knight and Hades prove this works.
+
+9. **Monster families > random encounters.** D4's pack composition (swarm + tank + caster from same family) creates tactical encounters. Random individual spawns feel generic.
+
+10. **NpcPanel potion values don't match ItemGenerator.** Shop sells 30HP potions at 50g, generator creates 50HP potions at 25g. Need single source of truth for item definitions.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*

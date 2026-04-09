@@ -29,6 +29,15 @@
     <Compile Include="../scripts/game/dungeon/FloorCache.cs" Link="dungeon/FloorCache.cs" />
   </ItemGroup>
 
+  <!-- Include inventory system files — no Godot dependency -->
+  <ItemGroup>
+    <Compile Include="../scripts/game/inventory/AffixData.cs" Link="inventory/AffixData.cs" />
+    <Compile Include="../scripts/game/inventory/ItemGenerator.cs" Link="inventory/ItemGenerator.cs" />
+    <Compile Include="../scripts/game/inventory/BankData.cs" Link="inventory/BankData.cs" />
+    <Compile Include="../scripts/game/inventory/BankSystem.cs" Link="inventory/BankSystem.cs" />
+    <Compile Include="../scripts/game/inventory/BackpackSystem.cs" Link="inventory/BackpackSystem.cs" />
+  </ItemGroup>
+
   <!-- Include entity framework files — no Godot dependency -->
   <ItemGroup>
     <Compile Include="../scripts/game/entities/EntityData.cs" Link="entities/EntityData.cs" />

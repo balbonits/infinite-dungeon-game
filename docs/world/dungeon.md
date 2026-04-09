@@ -45,7 +45,41 @@ Three techniques combined for structured-but-organic layouts:
    - Removes jagged artifacts, creates natural cave-like edges
    - Runs after BSP + drunkard's walk are complete
 
-**Floor size:** ~3-4x the viewport in each dimension. Floors are larger than one screen — the camera follows the player and scrolls. This gives room for exploration without floors feeling empty.
+**Floor size** scales with depth using a zone-stepped formula with intra-zone ramp (mirroring the difficulty scaling):
+
+```
+zone = ceil(floor_number / 10)
+intra_step = (floor_number - 1) % 10
+zone_scale = 1.0 + (zone - 1) * 0.25
+intra_scale = 1.0 + intra_step * 0.02
+size_scale = zone_scale * intra_scale
+width = clamp(round(50 * size_scale), 50, 150)
+height = clamp(round(100 * size_scale), 100, 300)
+```
+
+Constants: BASE_WIDTH=50, BASE_HEIGHT=100, MAX_WIDTH=150, MAX_HEIGHT=300
+
+| Floor | Zone | Scale | Size (WxH) | Feel |
+|-------|------|-------|------------|------|
+| 1 | 1 | 1.00x | 50x100 | Compact tutorial |
+| 10 | 1 | 1.18x | 59x118 | Moderate |
+| 11 | 2 | 1.25x | 63x125 | Zone jump |
+| 20 | 2 | 1.48x | 74x148 | Getting big |
+| 50 | 5 | 2.18x | 109x218 | Large |
+| 100 | 10 | 3.23x | 150x300 | Max (capped) |
+
+Floors are larger than one screen — the camera follows the player and scrolls.
+
+### Floor Pathing (IKEA Layout)
+
+Rooms are connected as a semi-linear chain from entrance to exit using nearest-neighbor traversal. BSP generates room positions, then rooms are ordered into a guided path:
+
+Entrance → Room A → Room B → Room C → ... → Exit
+
+- Corridors connect rooms in chain order (not BSP sibling pairs)
+- The exit is always the last room in the chain
+- Optional loop corridors (15% chance) still apply for minor alternative routes
+- Player CAN backtrack, but the natural corridor flow guides them forward
 
 **Room count per floor:** 5-8 rooms (BSP generates this range naturally). Includes entrance room, exit room, and 3-6 combat/exploration rooms.
 
@@ -71,12 +105,7 @@ The Godot TileMap tile size is **64x32** (isometric).
 
 #### Floor Size in Tiles
 
-The floor size spec ("3-4x the viewport in each dimension") translates to approximately:
-
-- **Width:** 90-120 tiles (at 64px per tile horizontally)
-- **Height:** 180-240 tiles (at 32px per tile vertically)
-
-These are rough estimates. The exact tile count depends on the final viewport resolution, but the floor should feel large enough for meaningful exploration across 5-8 rooms.
+Floor size in tiles matches the progressive formula above — width and height values are tile counts. At floor 1 the dungeon is 50x100 tiles; at floor 100 it caps at 150x300 tiles. The floor should feel large enough for meaningful exploration across 5-8 rooms, with deeper floors offering significantly more space to fill with enemies and rooms.
 
 #### Zone Visual Themes
 
@@ -174,10 +203,20 @@ All monster stats (HP, damage, speed) are multiplied by `total_multiplier`.
 
 - Floor 10, 20, 30, etc. are **boss floors**
 - Single boss enemy with significantly higher stats (3x the floor's normal monster stats)
-- Boss must be defeated to access the staircase to the next zone
+- The boss spawns in the exit room, blocking the staircase down. The boss must be defeated to descend.
 - First kill drops **rare crafting materials** (one-time reward per boss per character)
 - First kill grants **5x XP bonus** (see [leveling.md](../systems/leveling.md))
 - Revisiting a cleared boss floor spawns normal enemies, no boss
+
+#### Challenge Rooms (Shortcut)
+
+- One challenge room spawns on every non-boss floor (always present, not RNG)
+- Positioned off the main path, connected to an early room in the chain (room 2 or 3)
+- Contains a second corridor shortcut that connects to the second-to-last room in the chain
+- Inside: a single boss-level creature with stats scaled to **player level** (not floor level)
+- Defeating the creature grants bonus rewards proportional to creature difficulty
+- The shortcut corridor is blocked until the creature is defeated
+- The player choice is fight-or-skip, not find-or-miss
 
 #### Treasure Rooms
 
@@ -277,5 +316,5 @@ This gradient creates a natural hard ceiling for the infinite dungeon. It's not 
 | Generation algorithm | Hybrid: BSP (macro) + Drunkard's Walk (corridors) + Cellular Automata (smoothing) |
 | Difficulty scaling | Zone-based: 10-floor zones, gentle intra-zone ramp, steep inter-zone jumps |
 | Special floor types | Boss (every 10th), treasure (~5% chance), safe (entrance/exit only). No puzzles. |
-| Floor size | 3-4x viewport in each dimension (scrolling camera) |
+| Floor size | Progressive: 50x100 at floor 1, scaling to 150x300 cap via zone-stepped formula |
 | Teleport from town | Yes — Level Teleporter NPC in town accesses previously visited floors |

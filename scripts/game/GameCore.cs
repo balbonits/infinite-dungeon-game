@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 public enum ItemType { Weapon, Armor, Accessory, Consumable, Material }
 public enum EquipSlot { MainHand, OffHand, Head, Body, Legs, Feet, Ring, None }
+public enum ItemQuality { Normal, Superior, Elite }
 public enum MonsterTier { Tier1 = 1, Tier2 = 2, Tier3 = 3 }
 public enum TargetPriority { Nearest, Strongest, Tankiest, Weakest, Bosses }
 public enum GameLocation { Town, Dungeon }
@@ -31,6 +32,7 @@ public class PlayerState
     public Dictionary<EquipSlot, ItemData> Equipment = new();
     public List<ItemData> Inventory = new();
     public int InventorySize = 25;
+    public int BackpackExpansions = 0;
     public bool IsDead = false;
     public StatusEffect Status = StatusEffect.None;
     public int PoisonTicksLeft = 0;
@@ -83,6 +85,10 @@ public class ItemData
     public bool Stackable;
     public int StackCount = 1;
     public string Description;
+    public int ItemLevel;
+    public ItemQuality Quality = ItemQuality.Normal;
+    public List<AffixData> Prefixes = new();
+    public List<AffixData> Suffixes = new();
 }
 
 public class MonsterData

@@ -34,6 +34,23 @@ public partial class TestEntity : Node2D
         public bool HasLayers;
     }
 
+    // ── Isometric tile scaling constants ─────────────────────────────────────
+    // ISS floor tiles are 64x32. A humanoid entity should occupy roughly
+    // 60-80% of a tile's width (38-48px) and stand slightly taller than one
+    // tile height (48-64px). Frame sizes differ between creatures and heroes:
+    //
+    //   Creature sheets: 1024x1024, 8x8 grid  -> 128x128 per frame
+    //   Hero sheets:     2048x1024, 32x8 grid  -> 64x128 per frame
+    //
+    // Target on-tile width ~40px for humanoids:
+    //   Creature GridScale = 40 / 128 = 0.3125  (renders at ~40x40 px)
+    //   Hero     GridScale = 40 / 64  = 0.625   (renders at ~40x80 px)
+    //
+    // Heroes are narrower per-frame (64px wide) so they need a higher scale
+    // factor to reach the same on-screen width as creatures.
+    private const float CreatureGridScale = 0.3125f;
+    private const float HeroGridScale = 0.625f;
+
     // ── Creature anims (8 cols: stance, walk×3, attack×2, hit, dead) ────────
     private static readonly AnimDef[] CreatureAnims = {
         new("Stance", 0),
@@ -172,7 +189,7 @@ public partial class TestEntity : Node2D
                     SpritePaths = new[] { creatureDir + file },
                     Hframes = 8, Vframes = 8,
                     Anims = CreatureAnims,
-                    MainScale = 2f, GridScale = 0.4f,
+                    MainScale = 2f, GridScale = CreatureGridScale,
                     HasLayers = false,
                 });
             }
@@ -186,7 +203,7 @@ public partial class TestEntity : Node2D
             SpritePaths = BuildHeroPaths(false),
             Hframes = 32, Vframes = 8,
             Anims = HeroAnims,
-            MainScale = 3f, GridScale = 0.5f,
+            MainScale = 3f, GridScale = HeroGridScale,
             HasLayers = true,
         });
 
@@ -195,7 +212,7 @@ public partial class TestEntity : Node2D
             SpritePaths = BuildHeroPaths(true),
             Hframes = 32, Vframes = 8,
             Anims = HeroAnims,
-            MainScale = 3f, GridScale = 0.5f,
+            MainScale = 3f, GridScale = HeroGridScale,
             HasLayers = true,
         });
 
@@ -245,7 +262,9 @@ public partial class TestEntity : Node2D
             AddChild(main);
             _mainSprites.Add(main);
 
-            // Grid-scale sprite
+            // Grid-scale sprite — positioned so feet align with the tile center.
+            // Sprite2D origin is at the frame center. Shifting up by ~40% of the
+            // scaled frame height places the character's feet on the tile diamond.
             var grid = new Sprite2D();
             grid.Texture = tex;
             grid.Hframes = cfg.Hframes;
@@ -256,7 +275,10 @@ public partial class TestEntity : Node2D
             if (_floorGrid != null)
             {
                 var tilePos = _floorGrid.MapToLocal(new Vector2I(3, 2));
-                grid.Position = _floorGrid.Position + tilePos - new Vector2(0, 30);
+                float frameH = tex.GetHeight() / (float)cfg.Vframes;
+                float scaledH = frameH * cfg.GridScale;
+                // Offset upward by ~40% of scaled height so feet sit on tile
+                grid.Position = _floorGrid.Position + tilePos - new Vector2(0, scaledH * 0.4f);
             }
             AddChild(grid);
             _gridSprites.Add(grid);

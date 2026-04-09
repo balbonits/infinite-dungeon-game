@@ -25,7 +25,7 @@ The game must be fully playable with a PS1 DualShock:
                    □   ○
                      ✕
     
-         Select    Start
+                  Start
 ```
 
 If it works with these inputs, it works on any controller and any keyboard.
@@ -77,7 +77,7 @@ MoveAndSlide();
 | ✕ (Cross) | S | Basic attack on current target | Confirm / Select | Yes |
 | ○ (Circle) | D | Basic attack (alt) | Cancel / Back / Close | Yes |
 | □ (Square) | A | Basic attack (alt) | — | Yes |
-| △ (Triangle) | W | Map overlay toggle | — | Yes |
+| △ (Triangle) | W | Basic attack (alt) | — | Yes |
 
 Keyboard layout mirrors the PS1 diamond: W on top (△), A left (□), D right (○), S bottom (✕).
 
@@ -136,7 +136,7 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 **Shortcut rules:**
 - 8 slots total (4 per bumper)
 - One assignment per slot — consumable item, active skill, or innate skill
-- Assigned via the Select panel (Inventory/Skills tabs)
+- Assigned via the game window (Inventory/Skills tabs)
 - Empty slots do nothing when pressed
 - Diablo 2 style — simple, one-to-one mapping. No Fallout-style multi-assignment.
 
@@ -146,12 +146,13 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 
 | PS1 | Keyboard | Action |
 |-----|----------|--------|
-| Select | P | Open panel window (cycles: Inventory → Skills → Stats). Pauses game while open. |
-| Start | Esc | Main menu / Pause. Pauses game. |
+| Start | Esc | Game window (Inventory / Skills / Stats / Pause / Settings). Pauses game. |
+| — | M | Map overlay (cycles: Overlay → Full Map → Off). Does NOT pause game. |
+| ~~Select~~ | ~~P~~ | ~~Removed. Merged into Start (Esc).~~ |
 
-**Select panel (P key):** A tabbed window. When open, L1/R1 (Q/E) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, and assigns shortcuts.
+**Game window (Esc):** A tabbed window containing all panels: Inventory, Skills, Stats, Pause, and Settings. When open, L1/R1 (Q/E) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, assigns shortcuts, and accesses pause/settings. Opening the game window pauses gameplay. Closing it unpauses.
 
-**Both Select and Start pause the game.** Old-school style — opening any system menu freezes gameplay. Esc opens the main menu directly (pause, settings, save, quit). P opens the panel window (Inventory/Skills/Stats). Both pause. Closing either unpauses.
+**Map overlay (M key):** Cycles through three states: Overlay (translucent map on top of gameplay) → Full Map (opaque, centered) → Off. Does not pause the game in any mode. This is a dedicated key outside the PS1 baseline — not context-dependent.
 
 **Direct panel shortcuts (unbound by default):**
 
@@ -161,7 +162,7 @@ Player selects a mode in Settings. L1/R1 cycling follows that priority order. Ca
 | `panel_skills` | Unbound | Open Skills tab directly |
 | `panel_stats` | Unbound | Open Stats tab directly |
 
-Players can bind these in Settings for quick access without cycling through P. These are optional convenience bindings — the P cycle and Esc menu are always available.
+Players can bind these in Settings for quick access without cycling through tabs. These are optional convenience bindings — the Esc game window with tab cycling is always available.
 
 ---
 
@@ -176,11 +177,11 @@ Left hand (actions):              Right hand (movement):
 [A]  [S]  [D]
  □    ✕    ○
 
-[P]        = Select (panel window)
-[Esc]      = Start (pause)
+[M]        = Map overlay (cycle)
+[Esc]      = Start (game window / pause)
 ```
 
-The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on either side as the bumpers — mirrors the QWE row naturally. P for Select keeps it out of the action area.
+The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on either side as the bumpers — mirrors the QWE row naturally. M for Map is a dedicated key outside the action area.
 
 ---
 
@@ -195,11 +196,11 @@ The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on eit
 | `action_cross` | S | Cross (✕) | Basic attack / Confirm |
 | `action_circle` | D | Circle (○) | Basic attack / Cancel |
 | `action_square` | A | Square (□) | Basic attack / Assignable |
-| `action_triangle` | W | Triangle (△) | Map toggle / Assignable |
+| `action_triangle` | W | Triangle (△) | Assignable face button |
 | `shoulder_left` | Q | L1 | Target cycle / Shortcut modifier |
 | `shoulder_right` | E | R1 | Target cycle / Shortcut modifier |
-| `select` | P | Select | Open panel window (Inventory/Skills/Stats) |
-| `start` | Esc | Start | Main menu / Pause |
+| `start` | Esc | Start | Game window (Inventory/Skills/Stats/Pause/Settings) |
+| `map_toggle` | M | — | Map overlay cycle |
 | `panel_inventory` | Unbound | — | Direct open Inventory (bindable) |
 | `panel_skills` | Unbound | — | Direct open Skills (bindable) |
 | `panel_stats` | Unbound | — | Direct open Stats (bindable) |
@@ -210,7 +211,7 @@ The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on eit
 
 | Context | ✕ (S) | ○ (D) | □ (A) | △ (W) | L1 (Q) | R1 (E) |
 |---------|-------|-------|-------|-------|--------|--------|
-| **Dungeon** | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Map toggle / Shortcut | Cycle target / Hold: shortcuts 1-4 | Cycle target / Hold: shortcuts 5-8 |
+| **Dungeon** | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Cycle target / Hold: shortcuts 1-4 | Cycle target / Hold: shortcuts 5-8 |
 | **Menus/Panels** | Confirm | Cancel / Close | — | — | Previous tab | Next tab |
 | **NPC proximity** | Open NPC panel | Close NPC panel | — | — | — | — |
 | **Death screen** | Confirm choice | — | — | — | — | — |
@@ -239,7 +240,7 @@ All key bindings listed above are **defaults** — the industry-standard startin
 **P2+ implements (as systems come online):**
 - L1/R1 target cycling with visual indicator + priority setting
 - L1/R1 hold shortcut system (needs skills/items to assign)
-- P → Select panel with tabbed UI
+- Esc → Game window with tabbed UI (Inventory/Skills/Stats/Pause/Settings)
 - Shortcut assignment interface
 - Gamepad support via Input Map (same actions, add joypad events)
 
@@ -263,5 +264,7 @@ Pointer-to-move and virtual joystick are deferred. When implemented, pointer pos
 | Target selection | L1/R1 cycles, configurable priority mode (nearest/strongest/etc.) |
 | Shortcut system | 8 slots via L1/R1 hold + face buttons, Diablo 2 style |
 | Controller baseline | PS1 DualShock (~12 buttons) |
-| Panel system | Select button opens tabbed window (Inventory/Skills/Stats/Menu) |
+| Panel system | Start (Esc) opens game window with all tabs (Inventory/Skills/Stats/Pause/Settings) |
 | Key rebinding | Supported. All bindings are defaults — player can rebind any action in Settings. |
+| Map toggle key | M (dedicated key outside PS1 baseline). Triangle (W) freed for combat. |
+| Select button | Removed. Start (Esc) handles all panels + pause. |

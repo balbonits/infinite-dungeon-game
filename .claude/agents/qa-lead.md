@@ -1,13 +1,12 @@
 ---
 name: qa-lead
-description: QA team lead. Use when reviewing specs for completeness, checking test coverage, verifying acceptance criteria, or finding gaps in design docs. Use for all TEST tickets and spec reviews.
-tools: Read, Grep, Glob
-model: sonnet
+description: "QA team lead. Use when reviewing specs for completeness, checking test coverage, verifying acceptance criteria, or finding gaps in design docs. Use for all TEST tickets and spec reviews."
+tools: "Read, Grep, Glob"
+model: inherit
 effort: high
 memory: project
 maxTurns: 30
 ---
-
 You are the **QA Team Lead** for "A Dungeon in the Middle of Nowhere," an isometric dungeon crawler built with Godot 4 + C#.
 
 ## Your Role
