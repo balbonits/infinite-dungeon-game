@@ -2,172 +2,251 @@
 
 ## Summary
 
-The game supports keyboard and gamepad input for movement. Combat is fully automatic (auto-targets nearest enemy in range). Mouse/touch movement is deferred for the Godot version. All input is mapped through Godot's Input Map system for unified handling.
+PS1 DualShock controller as the MVP baseline. Arrow keys for movement, face buttons for combat actions, L1/R1 for target cycling and shortcut modifiers. Designed so the game works with ~12 inputs, then scales cleanly to modern controllers and full keyboards.
+
+**Core philosophy:** "Dumb hack n slash" — mash buttons to attack, bump shoulders to switch targets. Zero learning curve for new players.
 
 ## Current State
 
-Migrating from Phaser 3 prototype to Godot 4:
-- **Keyboard:** WASD and arrow keys for movement (both mapped to the same Input Map actions)
-- **Combat:** fully automatic (no input required -- auto-targets nearest enemy)
-- **Death restart:** R key via `_UnhandledInput(InputEvent)`, or click Restart button
-- **Mouse/touch movement:** deferred (was click/tap-to-move in Phaser prototype)
-- **Gamepad:** deferred but trivial to add via Input Map
+**Spec status: LOCKED.**
+
+Redesigned from the Phaser prototype's WASD + auto-attack scheme. New control system uses arrow keys for movement, face buttons for combat, and a PS1-baseline button count.
 
 ## Design
 
-### Keyboard Input
+### PS1 Controller Baseline
 
-All keyboard input is handled through Godot's **Input Map** system (Project > Project Settings > Input Map). Named actions are defined once; any number of physical keys can be bound to each action.
+The game must be fully playable with a PS1 DualShock:
 
-#### Input Map Actions
+```
+                L1          R1
+    
+         D-pad       △
+                   □   ○
+                     ✕
+    
+         Select    Start
+```
 
-| Action Name | Primary Key | Secondary Key | Purpose |
-|-------------|-------------|---------------|---------|
-| `move_up` | W | Up Arrow | Move player upward (screen space) |
-| `move_down` | S | Down Arrow | Move player downward (screen space) |
-| `move_left` | A | Left Arrow | Move player leftward (screen space) |
-| `move_right` | D | Right Arrow | Move player rightward (screen space) |
+If it works with these inputs, it works on any controller and any keyboard.
 
-No separate handling for WASD vs. arrow keys is needed. The Input Map unifies both key sets into the same actions.
+---
 
-#### Reading Movement Input
+### Movement
 
-Movement direction is read as a single normalized vector each physics frame:
+| Input | PS1 | Keyboard | Action |
+|-------|-----|----------|--------|
+| D-pad / Left stick | D-pad | Arrow keys | 8-directional isometric movement (190 px/s) |
+
+Movement uses Godot's Input Map system. Arrow keys map to `move_up`, `move_down`, `move_left`, `move_right` actions. WASD is **not** mapped to movement — those keys are reserved for the action button area.
+
+#### Isometric Transform
+
+Raw keyboard input is screen-space. A `Transform2D` matrix converts to isometric world directions:
 
 ```csharp
+private static readonly Transform2D IsoTransform = new Transform2D(
+    new Vector2(1, 0.5f),    // screen-right → iso-southeast
+    new Vector2(-1, 0.5f),   // screen-down → iso-southwest
+    Vector2.Zero
+);
+
 Vector2 rawInput = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+Vector2 worldDir = (IsoTransform * rawInput).Normalized();
+Velocity = worldDir * MoveSpeed;
+MoveAndSlide();
 ```
 
-This returns a `Vector2` where:
-- `x` ranges from -1 (left) to +1 (right)
-- `y` ranges from -1 (up) to +1 (down)
-- Diagonals are automatically normalized (magnitude <= 1.0), so diagonal movement is never faster than cardinal movement
-- Returns `Vector2.ZERO` when no keys are pressed
+| Key(s) | Screen Direction | Isometric Direction | Visual Result |
+|--------|-----------------|-------------------|---------------|
+| Up Arrow | Screen up | Northeast | Player moves up-right |
+| Down Arrow | Screen down | Southwest | Player moves down-left |
+| Left Arrow | Screen left | Northwest | Player moves up-left |
+| Right Arrow | Screen right | Southeast | Player moves down-right |
+| Up + Right | Screen up-right | East | Player moves pure right |
+| Up + Left | Screen up-left | North | Player moves pure up |
+| Down + Right | Screen down-right | South | Player moves pure down |
+| Down + Left | Screen down-left | West | Player moves pure left |
 
-#### Death Screen Input
+---
 
-The death/restart screen uses `_UnhandledInput(InputEvent)` rather than polling in `_PhysicsProcess`:
+### Face Buttons — Combat Actions
 
-```csharp
-public override void _UnhandledInput(InputEvent @event)
-{
-    if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.R)
-    {
-        RestartGame();
-    }
-}
+| PS1 | Keyboard | Default Action | Context: Menus | Assignable? |
+|-----|----------|---------------|---------------|-------------|
+| ✕ (Cross) | S | Basic attack on current target | Confirm / Select | Yes |
+| ○ (Circle) | D | Basic attack (alt) | Cancel / Back / Close | Yes |
+| □ (Square) | A | Basic attack (alt) | — | Yes |
+| △ (Triangle) | W | Map overlay toggle | — | Yes |
+
+Keyboard layout mirrors the PS1 diamond: W on top (△), A left (□), D right (○), S bottom (✕).
+
+**Default behavior:** All face buttons perform **basic attack** until the player assigns something else via the shortcut system. A new player can mash any face button to fight — zero learning curve. As they unlock skills and items, they assign them to replace the defaults.
+
+**Context switching:** ✕ and ○ change behavior in menus (Confirm/Cancel). In the dungeon, they're combat buttons. NPC proximity + ✕ opens the NPC panel; ○ closes it.
+
+---
+
+### Target Cycling — L1/R1 Tap
+
+| PS1 | Keyboard | Action |
+|-----|----------|--------|
+| L1 tap | Q | Cycle target to previous enemy |
+| R1 tap | R | Cycle target to next enemy |
+
+**Targeting behavior:**
+- **Default (no cycling):** Attacks hit based on the active **target priority setting** (defaults to nearest enemy)
+- **After L1/R1 tap:** A target indicator (highlight ring) appears on the selected enemy
+- Attacks focus on the locked target until it dies, moves out of range, or player cycles again
+- When the targeted enemy dies, targeting reverts to priority-based auto-selection
+- Cycling order follows the current target priority mode
+
+**Target priority setting (configurable in Settings):**
+
+| Priority Mode | Description | Default? |
+|--------------|-------------|----------|
+| Nearest | Closest enemies first | Yes |
+| Strongest | Highest damage enemies first | |
+| Tankiest | Highest HP enemies first | |
+| Bosses | Boss enemies first, then nearest | |
+| Weakest | Lowest HP enemies first (finish off wounded) | |
+
+Player selects a mode in Settings. L1/R1 cycling follows that priority order. Can be changed anytime.
+
+---
+
+### Shortcuts — L1/R1 Hold + Face Button
+
+| Combo | Keyboard | Shortcut Slot |
+|-------|----------|--------------|
+| L1 hold + ✕ | Q hold + S | Slot 1 |
+| L1 hold + ○ | Q hold + D | Slot 2 |
+| L1 hold + □ | Q hold + A | Slot 3 |
+| L1 hold + △ | Q hold + W | Slot 4 |
+| R1 hold + ✕ | R hold + S | Slot 5 |
+| R1 hold + ○ | R hold + D | Slot 6 |
+| R1 hold + □ | R hold + A | Slot 7 |
+| R1 hold + △ | R hold + W | Slot 8 |
+
+**Tap vs Hold distinction:**
+- L1/R1 **tapped** (pressed and released < 200ms) = cycle target
+- L1/R1 **held** (pressed > 200ms) = modifier for shortcut slots
+- Visual: when L1/R1 is held, a small shortcut bar appears on-screen showing the 4 assigned slots
+
+**Shortcut rules:**
+- 8 slots total (4 per bumper)
+- One assignment per slot — consumable item, active skill, or innate skill
+- Assigned via the Select panel (Inventory/Skills tabs)
+- Empty slots do nothing when pressed
+- Diablo 2 style — simple, one-to-one mapping. No Fallout-style multi-assignment.
+
+---
+
+### System Buttons
+
+| PS1 | Keyboard | Action |
+|-----|----------|--------|
+| Select | P | Open panel window (cycles: Inventory → Skills → Stats → Menu) |
+| Start | Esc | Pause game |
+
+**Select panel (P key):** A tabbed window. When open, L1/R1 (Q/R) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, assigns shortcuts, and accesses the main menu.
+
+---
+
+### Keyboard Layout (TKL)
+
+```
+Left hand (actions):              Right hand (movement):
+
+[Q]  [W]  [R]                          [↑]
+ L1   △    R1                        [←][↓][→]
+                                    
+[A]  [S]  [D]
+ □    ✕    ○
+
+[P]        = Select (panel window)
+[Esc]      = Start (pause)
 ```
 
-This ensures:
-- R key only triggers restart when no other UI element has consumed the input
-- Works regardless of focus state
-- Does not conflict with any other input handling
+The WASD diamond mirrors the PS1 face button diamond exactly. Q and R sit on either side as the bumpers. P for Select keeps it out of the action area.
 
-### Isometric Input Mapping
+---
 
-Raw keyboard input is in **screen space** (up/down/left/right as seen on the monitor). The game world uses an isometric projection, so screen-space input must be transformed to isometric world space before being applied to the player's velocity.
+### Input Map (project.godot)
 
-#### Screen-to-Isometric Transform
+| Action Name | Key 1 | Key 2 (gamepad) | Purpose |
+|-------------|-------|-----------------|---------|
+| `move_up` | Up Arrow | D-pad Up / Left Stick Up | Movement |
+| `move_down` | Down Arrow | D-pad Down / Left Stick Down | Movement |
+| `move_left` | Left Arrow | D-pad Left / Left Stick Left | Movement |
+| `move_right` | Right Arrow | D-pad Right / Left Stick Right | Movement |
+| `action_cross` | S | Cross (✕) | Basic attack / Confirm |
+| `action_circle` | D | Circle (○) | Basic attack / Cancel |
+| `action_square` | A | Square (□) | Basic attack / Assignable |
+| `action_triangle` | W | Triangle (△) | Map toggle / Assignable |
+| `shoulder_left` | Q | L1 | Target cycle / Shortcut modifier |
+| `shoulder_right` | R | R1 | Target cycle / Shortcut modifier |
+| `select` | P | Select | Open panel window |
+| `start` | Esc | Start | Pause |
 
-A `Transform2D` matrix converts screen-space directions to isometric world directions:
+---
 
-```csharp
-var isoTransform = new Transform2D(new Vector2(1, 0.5f), new Vector2(-1, 0.5f), Vector2.Zero);
-Vector2 worldDirection = (isoTransform * rawInput).Normalized();
-Velocity = worldDirection * MoveSpeed;
-```
+### Context-Dependent Input
 
-#### Directional Mapping (what the player sees)
+| Context | ✕ (S) | ○ (D) | □ (A) | △ (W) | L1 (Q) | R1 (R) |
+|---------|-------|-------|-------|-------|--------|--------|
+| **Dungeon** | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Map toggle / Shortcut | Cycle target / Hold: shortcuts 1-4 | Cycle target / Hold: shortcuts 5-8 |
+| **Menus/Panels** | Confirm | Cancel / Close | — | — | Previous tab | Next tab |
+| **NPC proximity** | Open NPC panel | Close NPC panel | — | — | — | — |
+| **Death screen** | Confirm choice | — | — | — | — | — |
 
-| Key Pressed | Screen Direction | Isometric World Direction | Visual Result |
-|-------------|------------------|---------------------------|---------------|
-| W (or Up Arrow) | Screen up | Northeast | Player moves up-right |
-| S (or Down Arrow) | Screen down | Southwest | Player moves down-left |
-| A (or Left Arrow) | Screen left | Northwest | Player moves up-left |
-| D (or Right Arrow) | Screen right | Southeast | Player moves down-right |
-| W + D | Screen up-right | East | Player moves pure right |
-| W + A | Screen up-left | North | Player moves pure up |
-| S + D | Screen down-right | South | Player moves pure down |
-| S + A | Screen down-left | West | Player moves pure left |
+---
 
-See `docs/systems/movement.md` for the full transform explanation and math derivation.
+### Key Rebinding
+
+All key bindings listed above are **defaults** — the industry-standard starting layout. Players can rebind any action in the Settings menu. Godot's Input Map system supports runtime rebinding natively.
+
+**Rebinding rules:**
+- Any action can be rebound to any key
+- Multiple keys can map to the same action (alternates)
+- Conflicts are warned but allowed (player's choice)
+- Reset to defaults option available
+- Rebindings are saved per profile (persisted in settings file, not the save slot)
+
+### P1 Implementation Scope
+
+**P1 implements (basic systems):**
+- Arrow key movement with isometric transform
+- Z key basic attack on nearest enemy (auto-target by proximity)
+- Esc to pause / restart from death screen
+- Input Map in project.godot with all actions defined
+
+**P2+ implements (as systems come online):**
+- L1/R1 target cycling with visual indicator + priority setting
+- L1/R1 hold shortcut system (needs skills/items to assign)
+- Tab → Select panel with tabbed UI
+- Shortcut assignment interface
+- Gamepad support via Input Map (same actions, add joypad events)
+
+---
+
+### Gamepad Support (Deferred)
+
+Adding gamepad is trivial — add joypad events to the same Input Map actions. No code changes needed. `Input.GetVector()` and `Input.IsActionJustPressed()` read both keyboard and gamepad inputs automatically.
 
 ### Mouse / Touch (Deferred)
 
-Mouse/touch pointer-to-move is **deferred** for the Godot version.
+Pointer-to-move and virtual joystick are deferred. When implemented, pointer position uses `GetGlobalMousePosition()` (world-space, no iso conversion needed).
 
-In the Phaser prototype, click/tap-and-hold moved the player toward the pointer position with a 12px dead zone. Implementing this in Godot requires:
-- Screen-to-isometric coordinate conversion (pointer position is in screen space)
-- `GetGlobalMousePosition()` returns world-space coordinates, but the isometric transform must be accounted for
-- Dead zone logic to prevent jitter when the pointer is near the player
+## Resolved Questions
 
-This will be added as a separate feature after core keyboard movement is solid.
-
-### Gamepad (Deferred)
-
-Godot has native gamepad support through the same Input Map system used for keyboard.
-
-#### Adding Gamepad Support
-
-1. Open Project > Project Settings > Input Map
-2. For each `move_*` action, click "+" and add a Joypad Axis event:
-   - `move_left`: Left stick left (axis 0, negative)
-   - `move_right`: Left stick right (axis 0, positive)
-   - `move_up`: Left stick up (axis 1, negative)
-   - `move_down`: Left stick down (axis 1, positive)
-3. No code changes needed -- `Input.GetVector()` automatically reads joypad axes
-
-#### Planned Gamepad Mapping
-
-| Input | Action |
-|-------|--------|
-| Left stick | Movement (via Input Map actions) |
-| A button (Xbox) / Cross (PlayStation) | Future: manual attack |
-| Start / Options | Future: pause menu |
-
-Godot auto-detects gamepad connection and disconnection. No setup code is needed. The `Input.GetVector()` call already used for keyboard will seamlessly read gamepad axes once the Input Map entries are added.
-
-### Virtual Joystick (Deferred)
-
-For mobile/touch devices, a virtual joystick overlay is planned:
-- Thumb-controlled movement joystick (left side of screen)
-- Large attack button (right side of screen)
-- Auto-detect mobile via touch capability
-- Implementation: custom `TouchScreenButton` nodes or a lightweight joystick addon
-
-### Input Priority (Godot)
-
-In the current implementation, there are no priority conflicts because only keyboard input is active:
-
-1. **Keyboard / Gamepad:** Both handled simultaneously via Input Map. If both are providing input, their values combine (this is Godot's default behavior with `Input.GetVector()`). Since the result is normalized, combined input never exceeds speed 1.0.
-2. **Mouse / Touch:** Deferred. When implemented, pointer movement will likely override keyboard (matching the Phaser prototype behavior where pointer-down overrode WASD).
-3. **UI Input:** Death screen restart (R key) is handled via `_UnhandledInput()`, which only fires if no UI Control node consumed the event first. This prevents accidental restarts while interacting with future UI elements.
-
-### Comparison to Phaser Prototype
-
-| Aspect | Phaser 3 | Godot 4 |
-|--------|----------|---------|
-| Key binding | `createCursorKeys()` + `addKeys("W,A,S,D")` | Input Map (project settings) |
-| Reading input | Poll `isDown` each frame | `Input.GetVector()` returns normalized direction |
-| Normalization | Manual `Vector2.normalize().scale(190)` | `GetVector()` auto-normalizes; multiply by speed |
-| Pointer move | `pointer.worldX/Y` relative to player | Deferred |
-| Gamepad | Not implemented | Native via Input Map (deferred) |
-| Death restart | `keyboard.once("keydown-R")` | `_UnhandledInput()` checking `Key.R` |
-| Isometric transform | Not needed (top-down) | `Transform2D` matrix conversion required |
-
-## Implementation Notes
-
-- Input Map actions should be set up in `project.godot` or via Project Settings before any movement code runs
-- The `Input.GetVector()` call handles dead zones for analog stick input automatically (default dead zone: 0.5)
-- Adjust dead zone per-action in Input Map settings if gamepad feels unresponsive
-- Movement speed (190 px/s) is applied after normalization: `Velocity = worldDirection * 190.0f`
-- Player movement code lives in `_PhysicsProcess(double delta)` for deterministic physics behavior
-
-## Open Questions
-
-- Should the virtual joystick be always visible or appear on touch?
-- How should inventory and menus be navigated on mobile?
-- Should there be customizable key bindings (rebinding UI)?
-- How does gamepad input map to menu navigation?
-- Should pointer-to-move use the isometric grid or raw world position?
-- What dead zone value feels best for gamepad analog sticks?
+| Question | Decision |
+|----------|----------|
+| Primary movement input | Arrow keys (not WASD) |
+| WASD purpose | Reserved for action buttons (not movement) |
+| Attack input | Face button press (not automatic proximity) |
+| Target selection | L1/R1 cycles, configurable priority mode (nearest/strongest/etc.) |
+| Shortcut system | 8 slots via L1/R1 hold + face buttons, Diablo 2 style |
+| Controller baseline | PS1 DualShock (~12 buttons) |
+| Panel system | Select button opens tabbed window (Inventory/Skills/Stats/Menu) |
+| Key rebinding | Supported. All bindings are defaults — player can rebind any action in Settings. |

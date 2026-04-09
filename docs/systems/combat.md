@@ -2,7 +2,7 @@
 
 ## Summary
 
-Real-time auto-targeting combat. The player automatically attacks the nearest enemy within range, with a cooldown between attacks.
+Real-time button-press combat with target cycling. The player presses face buttons to attack the current target. L1/R1 cycles through nearby enemies based on a configurable priority mode (nearest, strongest, tankiest, bosses, weakest). Default target is nearest enemy within range.
 
 ## Current State
 
@@ -16,15 +16,38 @@ Implemented in the prototype:
 
 ## Design
 
-### Auto-Targeting
+### Attack Input
 
-The combat system is intentionally simple: "easy targeting." Each frame (during `tryAutoAttack()`):
+Combat is triggered by **face button presses** (✕/○/□/△ on PS1, Z/X/A/S on keyboard). All face buttons default to basic attack. The player mashes a button to attack — no aiming required.
+
+See [controls.md](../ui/controls.md) for the full control scheme and shortcut system.
+
+### Targeting
+
+Target selection uses a **priority-based system** with optional manual cycling:
+
+**Default (no cycling):** The target is selected automatically based on the active priority mode.
+**After L1/R1 tap:** A visual indicator locks onto the selected enemy. Attacks focus on that target.
+**Target dies:** Lock clears, reverts to priority-based auto-selection.
+
+**Target priority modes (configurable in Settings):**
+
+| Mode | Behavior | Default? |
+|------|----------|----------|
+| Nearest | Closest enemy within range | Yes |
+| Strongest | Highest damage enemy | |
+| Tankiest | Highest HP enemy | |
+| Bosses | Boss enemies first, then nearest | |
+| Weakest | Lowest HP enemy (finish off wounded) | |
+
+### Attack Flow
+
+Each physics frame when a face button is held/pressed:
 1. Check if the attack cooldown has elapsed
-2. Find the nearest active enemy within range
-3. If found, deal damage and show the slash effect
-4. If the enemy's HP drops to 0, defeat it
-
-The player does not need to aim or click to attack — proximity triggers combat automatically.
+2. Find the current target (locked target if cycling, else priority-based)
+3. If target is in range, deal damage and show slash effect
+4. If the enemy's HP drops to 0, defeat it and clear target lock
+5. Reset attack cooldown
 
 ### Damage Formula
 
