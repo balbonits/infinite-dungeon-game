@@ -264,7 +264,6 @@ The game saves automatically at these moments (unchanged from the original desig
 | Inventory change | After backpack/bank modifications complete | Preserve item acquisitions |
 | Death and respawn | After the respawn process completes and HP is restored | Preserve respawn state |
 | Town entry/exit | After the transition between town and dungeon completes | Preserve location state |
-| Quit (if enabled) | When the player quits the game via main menu | Preserve mid-session progress (toggle in Settings) |
 
 **Implementation pattern:**
 ```csharp
@@ -454,30 +453,11 @@ private void BackupExistingSave()
 - On web exports (HTML5), `user://` maps to IndexedDB via Emscripten's virtual filesystem. The same `FileAccess` API works, but data persistence depends on browser storage policies.
 - Base64 encoding uses `System.Convert.ToBase64String()` and `System.Convert.FromBase64String()` from the .NET standard library -- no Godot-specific utility needed.
 
-### Save on Quit (Settings Toggle)
+### No Save on Quit
 
-**Setting:** `save_on_quit` — toggle in Settings. **Default: OFF.**
+There is **no save on quit**. If the player exits the game (quit, crash, power loss), they lose all progress since the last auto-save trigger. The game only saves at safe moments: level-up, floor transitions, town entry, death respawn, and inventory changes.
 
-When enabled, quitting the game triggers an auto-save. When the player re-opens their game, they resume at the **last safe point** — either town or the last dungeon safe spot (floor entrance/exit) they touched.
-
-**Behavior:**
-
-| Setting | On Quit | On Reload |
-|---------|---------|-----------|
-| Save on Quit: OFF | No save on quit. Progress since last auto-save trigger is lost. | Player loads from last auto-save (level-up, floor transition, death, town, etc.) |
-| Save on Quit: ON | Saves current state, but sets respawn location to last safe point. | Player spawns at last safe point (town or floor entrance/exit). NOT mid-room. |
-
-**Why last safe point, not exact position:**
-- Prevents save-scumming mid-combat (quit when about to die, reload with full HP)
-- Consistent with the dungeon's lore — the dungeon doesn't freeze when you leave, it resets around the safe spots
-- Safe spots are always nearby (floor entrance + exit), so lost progress is minimal
-- Town is always a safe point
-
-**Save data on quit stores:**
-- All character progress (stats, XP, gold, skills, inventory) — current values
-- `respawn_location`: "town" or `{ floor: N, position: "entrance" | "exit" }` — the last safe spot touched
-- Floor cache is preserved (up to 10 floors)
-- Current floor layout is NOT preserved if player was mid-room (regenerated on re-entry)
+**Want to keep your progress? Get to a safe spot.** The dungeon doesn't care why you left.
 
 ## Resolved Questions
 
@@ -488,5 +468,5 @@ When enabled, quitting the game triggers an auto-save. When the player re-opens 
 | Cloud save | Deferred. Not MVP scope. Local-only for now. |
 | Save versioning | Automatic migration (pattern defined above). Never force-reset. |
 | Auto-save feedback | Silent with brief icon flash (small save icon appears for ~0.5s). No text popup. |
-| Save on quit | Toggle in Settings. Default OFF. Saves on quit but respawns at last safe point (town or floor entrance/exit), not mid-room. |
+| Save on quit | No. Quit = lose progress since last auto-save. Get to a safe spot. |
 | Backup rotation | Single backup per slot (`slot_N_backup.json`). Overwritten on each new backup. |
