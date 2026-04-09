@@ -10,7 +10,9 @@ config_version=5
 [application]
 
 config/name="A Dungeon in the Middle of Nowhere"
+run/main_scene="res://scenes/hello_world.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.svg"
 
 [display]
 
@@ -20,9 +22,9 @@ window/size/mode=2
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[editor_plugins]
+[dotnet]
 
-enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+project/assembly_name="DungeonGame"
 
 [rendering]
 

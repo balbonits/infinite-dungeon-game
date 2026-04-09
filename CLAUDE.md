@@ -18,9 +18,9 @@ For development progress tracking, see [docs/dev-tracker.md](docs/dev-tracker.md
 
 ## Current Mode
 
-**Docs and specs only.** No code until the user explicitly says otherwise. All work should be writing, completing, or refining documentation in `docs/`. Do not create C# files, scenes, or any game code.
+**Implementation active.** All 26 specs are locked. Code is being written. Follow the dev ticket cycle in [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md).
 
-**Language migration in progress:** The project has switched from GDScript to C# (.NET 8+). All docs are being updated to reflect the new stack. See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
+**Stack:** Godot 4 + C# (.NET 8+). See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
 
 ## AI Teams
 

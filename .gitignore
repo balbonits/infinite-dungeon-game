@@ -1,6 +1,12 @@
 # Godot
 .godot/
 export/
+*.import
+
+# .NET / C#
+bin/
+obj/
+*.csproj.old
 
 # macOS
 .DS_Store
