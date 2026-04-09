@@ -81,6 +81,38 @@ create branch → research → plan → verify plan (research bot cross-check)
 - Do not add "while I'm here" improvements
 - Wait for user direction
 
+### Debug Tools
+
+A suite of toggleable debug overlays for development and testing. All tools render on a dedicated CanvasLayer above the game but below menus.
+
+**Tools:**
+
+| Tool | What It Shows |
+|------|--------------|
+| **Performance overlay** | FPS, entity count, current floor, player position |
+| **Input visualizer** | Active keys/buttons, D-pad state, bumper state, face button presses — real-time display of what inputs the game is receiving |
+| **Collision shapes** | Renders all CollisionShape2D outlines (player, enemies, walls, attack range, hit areas) |
+| **Game state inspector** | Live values: HP/MaxHP, Mana, XP, Level, Floor, attack cooldown, active buffs |
+| **Entity inspector** | Tap/hover an enemy to see its HP, tier, speed, target status, distance to player |
+
+**Controls:**
+- **F3** = master toggle (all debug tools on/off)
+- Individual tools can be toggled in a debug submenu (F3 then cycle)
+
+**Visibility flag:**
+- Debug tools have a global `debug_visible` flag
+- When `debug_visible = false`, ALL debug overlays are hidden — even if F3 was toggled on
+- This is used when capturing screenshots/recordings for visual evidence — disable debug overlays so captures show the clean game
+- Setting persisted in a dev config file (not the player save)
+
+**Implementation:**
+- **Use existing packages/addons first** — check Godot Asset Library and NuGet for debug overlay tools before building custom. Only build what isn't available.
+- Separate CanvasLayer (layer 90 — above game, below UI layer 100)
+- Each tool is a Control node that can be individually shown/hidden
+- Debug tools are **compiled out of release builds** (wrapped in `#if DEBUG` or equivalent)
+- No performance impact when disabled
+- See RES-28 for package research
+
 ### Visual Test Evidence (Screenshots & Recordings)
 
 Every ticket that affects gameplay or UI must include visual evidence for E2E validation. This serves as a living reference of what the game looks like at each stage.

@@ -176,12 +176,17 @@ All handled by `@devops-lead`.
 | P1-10d | Wire HUD and DeathScreen into UILayer | To Do | P1-10a |
 | P1-10e | Run full 33-case manual test pass (MT-001 through MT-033) | To Do | P1-10d |
 
-**P1-11 — Debug Overlay**
+**P1-11 — Debug Tools**
 
 | ID | Title | Status | Deps |
 |----|-------|--------|------|
 | P1-11a | Create debug overlay (FPS, entity count, floor, player pos) | To Do | P1-10e |
-| P1-11b | Toggle debug overlay with a hotkey (F3 or backtick) | To Do | P1-11a |
+| P1-11b | Add input visualizer overlay (shows active keys/buttons, D-pad state, bumper state) | To Do | P1-11a |
+| P1-11c | Add collision shape visualizer (toggle collision shape rendering) | To Do | P1-11a |
+| P1-11d | Add game state inspector (live stat values, XP, cooldown timers) | To Do | P1-11a |
+| P1-11e | Add entity inspector (tap enemy to see HP, tier, speed, target status) | To Do | P1-11a |
+| P1-11f | Toggle all debug tools with a master hotkey (F3) | To Do | P1-11a |
+| P1-11g | Implement debug tool visibility flag (disable from view and screen recordings) | To Do | P1-11f |
 
 ### P2 — Core Systems (18 sub-tickets)
 
@@ -444,6 +449,7 @@ Research tickets run in parallel via researcher agent. Findings feed back into s
 | RES-25 | Roguelike edge cases: seed reproducibility, RNG fairness testing | To Do | P4-01, dungeon.md |
 | RES-26 | Performance profiling patterns for Godot 4 C# (GC pressure, allocations) | To Do | P6-03, all code |
 | RES-27 | Accessibility in ARPGs: colorblind modes, input assist, UI scaling | To Do | P6, hud.md, color-system.md |
+| RES-28 | Godot 4 debug overlay packages/addons (input visualizer, perf monitor, collision viewer) | To Do | P1-11 |
 
 ---
 
