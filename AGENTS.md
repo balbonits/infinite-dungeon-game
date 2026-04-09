@@ -75,7 +75,7 @@ Follow this cycle for every task. Do not skip steps.
 
 One task = one focused change = one commit. Prefer small, reviewable diffs over large batches.
 
-See [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md) for the full workflow reference.
+See [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md) for the full workflow reference.
 
 ### 3. Development Principles
 
@@ -220,8 +220,9 @@ dungeon-web-game/
 ├── README.md / CHANGELOG.md       — Project docs
 ├── archive/phaser-prototype/      — Original Phaser 3 code (preserved)
 ├── docs/                          — Game design documentation
-│   ├── overview.md / best-practices.md / dev-tracker.md
+│   ├── overview.md / dev-tracker.md / dev-journal.md
 │   ├── architecture/              — Tech stack, setup guide, project structure, scene tree, autoloads, signals
+│   ├── conventions/               — Code patterns, agile process, AI workflow, teams
 │   ├── objects/                   — Player, enemies, tilemap, effects specs
 │   ├── assets/                    — Tile, sprite, UI theme specs
 │   ├── systems/                   — Stats, classes, combat, leveling, death, save, movement, spawning, camera
@@ -297,7 +298,7 @@ See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for ful
 
 **Pre-commit hook:** `.githooks/pre-commit` runs `dotnet format --verify-no-changes` on staged `.cs` files. Activated by `make setup`.
 
-See [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md) for the full automation reference.
+See [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md) for the full automation reference.
 
 ---
 
@@ -362,17 +363,26 @@ Safe scene with NPCs: Item Shop, Blacksmith, Adventure Guild, Level Teleporter, 
 ```text
 docs/
 ├── overview.md                — Project vision and design philosophy
-├── best-practices.md          — Development guidelines and workflow
+├── dev-tracker.md             — Master ticket list and dependency graph
+├── dev-journal.md             — Running session log
 ├── architecture/
 │   ├── tech-stack.md          — Godot 4 stack details
-│   ├── godot-basics.md        — Godot concepts for web devs
 │   ├── project-structure.md   — File organization and naming
 │   ├── scene-tree.md          — Complete node hierarchy for every scene
 │   ├── autoloads.md           — GameState + EventBus singleton design
 │   ├── signals.md             — Signal flow between all systems
-│   ├── game-dev-concepts.md   — Game dev fundamentals (C#)
 │   ├── setup-guide.md         — .NET SDK, Godot .NET, VS Code setup
 │   └── analytics.md           — Opt-in telemetry, bug reporting, feedback (offline-first)
+├── conventions/
+│   ├── code.md                — Code patterns, naming, quality standards
+│   ├── agile.md               — Dev process, tickets, scope discipline
+│   ├── ai-workflow.md         — Dev ticket cycle protocol
+│   └── teams.md               — AI team structure and ownership
+├── reference/
+│   ├── godot-basics.md        — Godot concepts for web devs
+│   ├── game-dev-concepts.md   — Game dev fundamentals (C#)
+│   ├── game-development.md    — Research journal (accumulated learnings)
+│   └── subagent-research.md   — AI agent design research
 ├── objects/
 │   ├── player.md              — Player node, script, movement, attack
 │   ├── enemies.md             — Enemy tiers, AI, damage
@@ -417,17 +427,17 @@ docs/
 
 ## Current State
 
-**Phase: Documentation & Planning (docs only — no code until all relevant specs are locked)**
+**Phase: Implementation active.** All 26 specs are locked. Code is being written.
 
-All game systems are being specified in exhaustive detail before any code is written. No implementation begins until the user explicitly says so. The original Phaser prototype is archived in `archive/phaser-prototype/` for reference.
+Stack: Godot 4.6 + C# (.NET 8+). Learning demo with 46-step automated showcase covering all core mechanics and UI patterns. 51 unit tests + 40 E2E assertions passing.
 
-**Current mode:** Docs and specs only. Do not write C#, create scenes, or modify any files outside `docs/`. Writing tests, autoloads, scenes, or any game code is out of scope until the user changes this directive. Language migration from GDScript to C# is in progress — all docs are being updated to reflect the new stack.
+**Current mode:** Implementation. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md). SETUP tickets partially complete (02a, 02b, 04a done). P1 tickets next.
 
 ## Priorities
 
-1. **Complete all spec gaps** — see [docs/dev-tracker.md](docs/dev-tracker.md) "Spec Gaps" section for the full list
-2. Lock every system doc (resolve all open questions, fill deferred sections)
-3. Only after all relevant specs are locked: implement per the dev tracker phases
+1. **Complete SETUP tickets** — see [docs/dev-tracker.md](docs/dev-tracker.md) for remaining SETUP items
+2. **P1 tickets** — Core gameplay loop (GameState autoload, tilemap, player, enemies, combat, HUD, death screen)
+3. **P2+ tickets** — Systems depth (leveling, stats, classes, save/load, death flow)
 
 ---
 
@@ -441,5 +451,6 @@ When helping:
 - **Tests before code.** Write or reference the test cases before writing the implementation.
 - **Verify your work.** Run tests or describe exact manual verification steps. Passing tests are the definition of "done."
 - **Prefer "X over Y"** framing over "don't do X" when explaining tradeoffs — positive guidance is clearer than prohibitions.
-- See [docs/best-practices.md](docs/best-practices.md) for full development guidelines
-- See [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md) for the detailed AI workflow protocol
+- See [docs/conventions/code.md](docs/conventions/code.md) for code patterns, naming, and quality standards
+- See [docs/conventions/agile.md](docs/conventions/agile.md) for dev process, scope discipline, and ticket workflow
+- See [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md) for the detailed AI workflow protocol

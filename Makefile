@@ -24,8 +24,16 @@ run-headless: build ## Build and run headless (auto-quits, for CI/testing)
 import: ## Run Godot import (required after adding new assets/scenes)
 	@$(GODOT) --headless --import --quit 2>&1
 
-test: build ## Run all automated tests (dotnet test)
-	@dotnet test 2>&1 || echo "No test project configured yet."
+test: ## Run unit tests (xUnit, no Godot needed)
+	@cd tests && dotnet test --verbosity minimal 2>&1
+
+e2e: build ## Run E2E demo test (headless Godot, console assertion)
+	@bash tests/e2e_demo_test.sh
+
+e2e-visual: build ## Run E2E visual capture test (screenshots + video)
+	@bash tests/e2e_visual_test.sh
+
+test-all: test e2e ## Run all tests (unit + E2E)
 
 # ─── Utilities ───────────────────────────────────────────────────────────────
 

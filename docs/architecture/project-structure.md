@@ -36,13 +36,25 @@ dungeon-web-game/
 │           └── code-map.md                — Phaser code walkthrough (archived)
 ├── docs/                                  — Game design documentation
 │   ├── overview.md                        — Project vision and design philosophy
-│   ├── best-practices.md                  — Development guidelines and workflow
+│   ├── best-practices.md                  — Redirect to conventions/ (deprecated)
 │   ├── architecture/                      — Technical architecture
 │   │   ├── tech-stack.md                  — Godot 4 stack, window config, migration table
-│   │   ├── godot-basics.md                — Godot 4 concepts for web developers
 │   │   ├── project-structure.md           — This file (directory layout, naming conventions)
-│   │   ├── game-dev-concepts.md           — Game dev fundamentals mapped to web dev
+│   │   ├── scene-tree.md                  — Complete node hierarchy for every scene
+│   │   ├── autoloads.md                   — GameState + EventBus singleton design
+│   │   ├── signals.md                     — Signal flow between all systems
+│   │   ├── setup-guide.md                 — .NET SDK, Godot .NET, VS Code setup
 │   │   └── analytics.md                  — Opt-in telemetry, bug reporting, feedback (offline-first)
+│   ├── conventions/                       — Development process and standards
+│   │   ├── code.md                        — Code patterns, naming, quality standards
+│   │   ├── agile.md                       — Dev process, tickets, scope discipline
+│   │   ├── ai-workflow.md                 — Dev ticket cycle protocol
+│   │   └── teams.md                       — AI team structure and ownership
+│   ├── reference/                         — Learning materials and research
+│   │   ├── godot-basics.md                — Godot 4 concepts for web developers
+│   │   ├── game-dev-concepts.md           — Game dev fundamentals mapped to web dev
+│   │   ├── game-development.md            — Research journal (accumulated learnings)
+│   │   └── subagent-research.md           — AI agent design research
 │   ├── objects/                           — Game entity specifications
 │   ├── assets/                            — Asset specifications
 │   ├── systems/                           — Game systems design
@@ -130,7 +142,7 @@ dungeon-web-game/
 |------|---------|---------|
 | `archive/phaser-prototype/index.html` | Original Phaser 3 prototype | The complete single-file game that started the project. Preserved as reference for the migration. Contains: HTML structure, CSS theme, Phaser game loop, player movement, enemy AI, auto-attack combat, HUD overlay, death screen. 451 lines total. |
 | `archive/phaser-prototype/docs/` | Archived Phaser-specific docs | Documentation that was specific to the Phaser 3 / single-file approach. Moved here because it's no longer applicable to the Godot version, but valuable for understanding original design decisions. |
-| `archive/phaser-prototype/docs/phaser-basics.md` | Phaser 3 concepts reference | Archived. Explained Phaser-specific APIs (Scene lifecycle, physics groups, tweens). Replaced by `docs/architecture/godot-basics.md`. |
+| `archive/phaser-prototype/docs/phaser-basics.md` | Phaser 3 concepts reference | Archived. Explained Phaser-specific APIs (Scene lifecycle, physics groups, tweens). Replaced by `docs/reference/godot-basics.md`. |
 | `archive/phaser-prototype/docs/single-file.md` | Single-file rationale | Archived. Explained why everything was in one HTML file. No longer applicable — Godot uses multiple files by design. |
 | `archive/phaser-prototype/docs/code-map.md` | Phaser code walkthrough | Archived. Line-by-line annotation of `index.html`. Useful for understanding what needs to be migrated but not for ongoing development. |
 
@@ -141,11 +153,11 @@ dungeon-web-game/
 | Path | Purpose | Details |
 |------|---------|---------|
 | `docs/overview.md` | Project vision | Design philosophy, inspiration (Diablo 1), core principles (persistent character, meaningful death, infinite depth). Engine-agnostic — focuses on what the game IS, not how it's built. |
-| `docs/best-practices.md` | Development workflow | How to propose changes, testing checklist, code review process. Updated for Godot workflow (scene-based, not single-file). |
+| `docs/best-practices.md` | Development workflow | Deprecated redirect. Content moved to `docs/conventions/code.md` and `docs/conventions/agile.md`. |
 | `docs/architecture/tech-stack.md` | Technology decisions | Godot 4 stack table, window configuration, what we avoid, migration comparison from Phaser. The "why" behind every technology choice. |
-| `docs/architecture/godot-basics.md` | Godot for web devs | Bridge document mapping web concepts (DOM, CSS, events, components) to Godot equivalents (scene tree, Inspector, signals, scenes). Essential reading for a front-end developer learning Godot. |
+| `docs/reference/godot-basics.md` | Godot for web devs | Bridge document mapping web concepts (DOM, CSS, events, components) to Godot equivalents (scene tree, Inspector, signals, scenes). Essential reading for a front-end developer learning Godot. |
 | `docs/architecture/project-structure.md` | This file | Directory layout, naming conventions, file purposes. The "map" of the codebase. |
-| `docs/architecture/game-dev-concepts.md` | Game dev fundamentals | Game loop, delta time, collision, state management — explained through web dev analogies with C# examples. |
+| `docs/reference/game-dev-concepts.md` | Game dev fundamentals | Game loop, delta time, collision, state management — explained through web dev analogies with C# examples. |
 | `docs/systems/*.md` | Game system specs | Detailed specifications for stats, classes, combat, leveling, death penalties, save system. Engine-agnostic where possible — describe what the system does, not how it's implemented. |
 | `docs/world/*.md` | World design specs | Dungeon structure, town hub, monster types. Describes the game world and its rules. |
 | `docs/inventory/*.md` | Inventory system specs | Backpack, bank, item definitions. Describes storage and loot mechanics. |

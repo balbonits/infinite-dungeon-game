@@ -64,7 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - `AGENTS.md` — added section 10 (Development Automation), updated project structure tree
-- `docs/architecture/ai-workflow.md` — replaced Open Questions with Automation section
+- `docs/conventions/ai-workflow.md` — replaced Open Questions with Automation section (moved from architecture/)
 - `docs/systems/stats.md` — closed 4 open questions (hybrid allocation, soft diminishing returns, no caps, fixed backpack)
 - `docs/systems/classes.md` — closed 4 open questions (scaling bonuses, design-now-build-later skills, class-locked skills, class-locked gear)
 - `docs/systems/leveling.md` — closed 2 open questions (linear-polynomial hybrid XP, no level cap)

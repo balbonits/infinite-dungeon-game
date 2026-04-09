@@ -18,7 +18,7 @@ For development progress tracking, see [docs/dev-tracker.md](docs/dev-tracker.md
 
 ## Current Mode
 
-**Implementation active.** All 26 specs are locked. Code is being written. Follow the dev ticket cycle in [docs/architecture/ai-workflow.md](docs/architecture/ai-workflow.md).
+**Implementation active.** All 26 specs are locked. Code is being written. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md).
 
 **Stack:** Godot 4 + C# (.NET 8+). See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
 

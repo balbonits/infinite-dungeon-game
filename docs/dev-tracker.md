@@ -84,11 +84,11 @@ All handled by `@devops-lead`.
 | ID | Title | Pri | Status | Deps |
 |----|-------|-----|--------|------|
 | SETUP-01 | Install dev environment | P1 | Done | — |
-| SETUP-02a | Generate .csproj via Godot editor | P0 | To Do | SETUP-01 |
-| SETUP-02b | Create .sln and verify dotnet build | P0 | To Do | SETUP-02a |
+| SETUP-02a | Generate .csproj via Godot editor | P0 | Done | SETUP-01 |
+| SETUP-02b | Create .sln and verify dotnet build | P0 | Done | SETUP-02a |
 | SETUP-02c | Add NuGet packages (gdUnit4, xunit, MessagePack) | P1 | To Do | SETUP-02b |
 | SETUP-03 | Remove GUT addon and GDScript test files | P1 | To Do | SETUP-02a |
-| SETUP-04a | Update project.godot for .NET runtime | P0 | To Do | SETUP-02a |
+| SETUP-04a | Update project.godot for .NET runtime | P0 | Done | SETUP-02a |
 | SETUP-04b | Define Input Map actions in project.godot | P1 | To Do | SETUP-04a |
 | SETUP-05 | Update Makefile for C# (dotnet build/test/run) | P1 | To Do | SETUP-02b |
 | SETUP-06 | Update CI workflow and pre-commit hook for C# | P2 | To Do | SETUP-05 |
@@ -482,10 +482,12 @@ Research tickets run in parallel via researcher agent. Findings feed back into s
 ```
 ALL SPECS DONE ✓
 
-SETUP-01 ✓ → SETUP-02 → SETUP-03
+SETUP-01 ✓ → SETUP-02a ✓ → SETUP-02b ✓ → SETUP-02c → SETUP-03
                   │
-                  ├→ SETUP-04 → SETUP-07
+                  ├→ SETUP-04a ✓ → SETUP-04b
                   └→ SETUP-05 → SETUP-06
+
+SETUP-02c + SETUP-04a ✓ → SETUP-07
 
 SETUP-07 → P1-01 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 ─┐
               │                                                │
@@ -506,10 +508,10 @@ P5-01 → P5-04 (blacksmith crafting)
 ### Critical Path (longest chain)
 
 ```
-SETUP-02 → SETUP-04 → SETUP-07 → P1-01 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-10
+SETUP-02c → SETUP-07 → P1-01 → P1-03 → P1-04 → P1-05 → P1-06 → P1-07 → P1-10
 ```
 
-**SETUP-02 is the single blocker.** Everything starts there.
+**SETUP-02a/02b/04a are done** (from demo sessions). Next blockers: SETUP-02c (NuGet packages), SETUP-03 (remove GUT), SETUP-05 (Makefile lint/format targets), then SETUP-07 (sanity tests) unblocks all P1 work.
 
 ### Implementation Priority (Basic Systems First)
 
@@ -586,11 +588,11 @@ All 26 spec tickets are complete. Every system has a locked spec document. See t
 
 - **Description:** Let Godot generate the C# project files, then add NuGet references.
 - **Acceptance Criteria:**
-  - [ ] `DungeonGame.csproj` exists with `Godot.NET.Sdk`, targeting net8.0+
-  - [ ] `DungeonGame.sln` exists
-  - [ ] NuGet packages added: gdUnit4.api, gdUnit4.test.adapter, xunit, MessagePack, ObjectPool
-  - [ ] `dotnet build` succeeds
-- **Status:** To Do
+  - [x] `DungeonGame.csproj` exists with `Godot.NET.Sdk`, targeting net8.0+ *(Done — Session 1, Godot.NET.Sdk/4.6.2)*
+  - [x] `DungeonGame.sln` exists *(Done — Session 1)*
+  - [ ] NuGet packages added: gdUnit4.api, gdUnit4.test.adapter, xunit, MessagePack, ObjectPool *(Partial — xunit in tests/DungeonGame.Tests.csproj, others not yet added)*
+  - [x] `dotnet build` succeeds *(Done — Session 1)*
+- **Status:** SETUP-02a Done, SETUP-02b Done, SETUP-02c To Do
 - **Deps:** SETUP-01
 
 #### SETUP-03: Remove GUT and GDScript test files
@@ -607,10 +609,10 @@ All 26 spec tickets are complete. Every system has a locked spec document. See t
 
 - **Description:** Update project config for C# support and new input map.
 - **Acceptance Criteria:**
-  - [ ] `config/features` includes `"C#"`
-  - [ ] Autoload entries point to `.cs` files
-  - [ ] Input map entries present (move_up/down/left/right, restart)
-- **Status:** To Do
+  - [x] `config/features` includes `"C#"` *(Done — Session 1, .NET runtime active)*
+  - [ ] Autoload entries point to `.cs` files *(Blocked — autoloads not yet created, see P1-01/P1-02)*
+  - [ ] Input map entries present (move_up/down/left/right, restart) *(Blocked — controls spec in progress)*
+- **Status:** SETUP-04a Done, SETUP-04b To Do
 - **Deps:** SETUP-02
 
 #### SETUP-05: Update Makefile for C#

@@ -20,3 +20,13 @@ __pycache__/
 *.swp
 *.swo
 *~
+
+# Test output
+tests/bin/
+tests/obj/
+tests/TestResults/
+
+# Visual evidence captures (screenshots & recordings)
+docs/evidence/**/demo_screenshot_*.png
+docs/evidence/**/demo_recording_*.mov
+docs/evidence/**/frame_*.png
