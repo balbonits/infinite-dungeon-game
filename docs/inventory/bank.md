@@ -2,9 +2,11 @@
 
 ## Summary
 
-The bank is safe, permanent storage accessible only from town. Items in the bank are never lost on death. Starts with 15 slots.
+The bank is safe, permanent storage accessible only from town. Items in the bank are never lost on death. Starts with 50 slots, expandable.
 
 ## Current State
+
+**Spec status: LOCKED.**
 
 Not yet implemented. The prototype has no inventory system.
 
@@ -12,10 +14,10 @@ Not yet implemented. The prototype has no inventory system.
 
 ### Core Rules
 
-- **Starting slots:** 15
+- **Starting slots:** 50
 - **Safe on death:** bank items are never at risk
-- **Town-only access:** players must be in town to deposit or withdraw
-- **Expansion:** additional slots can be purchased (mechanism TBD)
+- **Town-only access:** players must be in town to deposit or withdraw. No dungeon access.
+- **Expansion:** additional slots can be purchased from the Banker NPC with gold
 
 ### Purpose
 
@@ -32,13 +34,35 @@ The bank provides a counterbalance to the backpack's risk:
 
 ### Slot Expansion
 
-Details TBD. Possible approaches:
-- Purchase from the Banker NPC with gold
-- Unlock through progression milestones
+- Purchased from the Banker NPC with gold
+- Cost scales with current bank size (each expansion costs more than the last)
+- Expansion adds 10 slots per purchase
+- No hard cap — infinite expansion fits the infinite dungeon theme, tempered by escalating cost
 
-## Open Questions
+| Expansion # | New Total | Gold Cost |
+|------------|-----------|-----------|
+| 1 | 60 | 500 |
+| 2 | 70 | 1,500 |
+| 3 | 80 | 3,000 |
+| 4 | 90 | 5,000 |
+| N | 50 + N*10 | `500 * N^2` |
 
-- Should the bank be accessible from the dungeon via a consumable item?
-- What's the maximum number of bank slots?
-- Should bank tabs or categories exist for organization?
-- Can the bank hold gold, or is gold always "on person"?
+*Costs are starting values — subject to balancing.*
+
+### Backpack vs. Bank
+
+| Feature | Backpack | Bank |
+|---------|----------|------|
+| Starting slots | 25 | 50 |
+| Accessible from | Anywhere | Town only |
+| At risk on death | Yes | No |
+| Expansion | Yes | Yes |
+
+## Resolved Questions
+
+| Question | Decision |
+|----------|----------|
+| Bank from dungeon? | No — town-only. Encourages return trips. |
+| Max bank slots? | No hard cap. Expansion cost escalates. |
+| Bank tabs/categories? | No — single flat list. Keep it simple. |
+| Gold in bank? | No — gold is always on person. Gold is spent on death mitigation, so it must be accessible. |

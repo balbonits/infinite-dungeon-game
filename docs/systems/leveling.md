@@ -8,6 +8,8 @@ All formulas in this doc are intended to be **player-facing** — published so t
 
 ## Current State
 
+**Spec status: LOCKED.** All leveling formulas (XP curve, enemy XP, rested XP, milestone rewards) are defined and locked. Subject to tuning during playtesting — the formulas themselves won't change, but constants (like the XP multiplier 45) may be adjusted.
+
 Prototype uses placeholder linear formula (`level * 90`). This doc specifies the redesigned system based on research across 50+ games (Diablo 1-4, PoE, WoW, RuneScape, Hades, Dead Cells, D&D 5e, etc.).
 
 ## EXP Lore
@@ -153,11 +155,23 @@ hp_restore_on_levelup = 18               (flat)
 
 These are replaced by the formulas above.
 
-## Open Questions
+### Boss XP
 
-- Exact constant `C` in the XP curve (45) needs playtesting to feel right — may need tuning
-- Should the floor multiplier be linear (current) or polynomial?
-- How do milestone rewards interact with the skill system? (Extra skill points from milestone levels)
-- Should the XP bar show "rested bonus remaining" numerically or just visually?
-- How does XP interact with the Mage's spell scroll learning system? (Does casting scrolls give XP?)
-- Should boss kills give a large one-time XP bonus separate from the per-kill formula?
+Boss enemies (every 10th floor) give a one-time XP bonus on first kill:
+
+```
+boss_xp(floor) = base_xp(tier_3) * floor_multiplier(floor) * 5
+```
+
+This is a one-time reward per boss per character. Revisiting a boss floor after the first kill spawns no boss.
+
+## Resolved Questions
+
+| Question | Decision |
+|----------|----------|
+| XP constant (45) | Locked at 45. Tunable during playtesting, but the quadratic shape is final. |
+| Floor multiplier shape | Linear (locked). `1 + (floor - 1) * 0.5` |
+| Milestone/skill interaction | Every 10th level grants +1 bonus skill point (3 total). See [classes.md](classes.md). |
+| Rested XP display | Subtle bar color change (shimmer/glow) + tooltip showing remaining pool. |
+| Spell scroll XP | Deferred to spell acquisition spec (SPEC-03). |
+| Boss XP | Yes — 5x highest tier enemy XP for that floor, one-time per boss. |

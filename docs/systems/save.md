@@ -2,9 +2,11 @@
 
 ## Summary
 
-Game state is saved to a local JSON file automatically at key moments. Players can export/import saves as Base64 strings for backup and sharing.
+Game state is saved to local JSON files automatically at key moments. 10 independent save slots, one character per slot. Players can export/import saves as Base64 strings for backup and sharing.
 
 ## Current State
+
+**Spec status: LOCKED.** Save slot count, schema, auto-save behavior, and export/import are defined and locked.
 
 Save/export functionality is referenced in the project design but not yet implemented in the Godot prototype. The design below covers the full specification, ported from the Phaser prototype's `localStorage` approach to Godot's `FileAccess` API.
 
@@ -15,7 +17,8 @@ Save/export functionality is referenced in the project design but not yet implem
 | Property | Phaser (Old) | Godot (New) |
 |----------|-------------|-------------|
 | API | `localStorage.setItem()` / `localStorage.getItem()` | `FileAccess.Open()` / `file.StoreString()` |
-| Key / Path | `dungeonGame_save` (localStorage key) | `user://save_data.json` (file path) |
+| Key / Path | `dungeonGame_save` (localStorage key) | `user://saves/slot_N.json` (N = 1-10) |
+| Slots | 1 (browser storage) | 10 independent character slots |
 | Format | JSON string | JSON string (pretty-printed with tabs) |
 | Location | Browser storage (per-origin) | OS-specific app data directory |
 
@@ -29,21 +32,79 @@ Save/export functionality is referenced in the project design but not yet implem
 
 The exact directory name is derived from the `application/config/name` value in `project.godot`. Godot creates this directory automatically on first write.
 
+### Save Slots
+
+**10 independent save slots.** Each slot holds one character with its own class, stats, inventory, and dungeon progress. Slots are fully independent — deleting one does not affect others.
+
+- File per slot: `user://saves/slot_1.json` through `user://saves/slot_10.json`
+- Backup per slot: `user://saves/slot_N_backup.json` (single rolling backup)
+- Estimated size per slot: 50-250KB (verbose JSON). 10 slots = 2.5MB max. Trivial.
+
 ### Save Data Structure
 
-The save captures all persistent state. The structure is a dictionary serialized as JSON:
+The save captures **all** persistent state. Verbose format for fast loading — no deferred reads or lazy loading needed.
 
 ```json
 {
-    "version": 1,
+    "version": 2,
+    "slot": 1,
     "character": {
+        "name": "Player Name",
+        "class": "warrior",
         "level": 1,
         "xp": 0,
         "hp": 100,
-        "max_hp": 100
+        "max_hp": 100,
+        "mana": 60,
+        "max_mana": 60,
+        "stats": {
+            "str": 8,
+            "dex": 6,
+            "sta": 7,
+            "int": 5
+        },
+        "free_stat_points": 0,
+        "free_skill_points": 0,
+        "deepest_floor": 1,
+        "gold": 0,
+        "rested_xp_pool": 0,
+        "last_logout": "2026-04-08T12:00:00Z"
+    },
+    "skills": {
+        "base_skills": {
+            "unarmed": { "level": 0, "xp": 0 },
+            "bladed": { "level": 0, "xp": 0 }
+        },
+        "specific_skills": {
+            "punch": { "level": 0, "xp": 0 },
+            "slash": { "level": 0, "xp": 0 }
+        },
+        "innate_skills": {
+            "haste": { "level": 0, "xp": 0 },
+            "sense": { "level": 0, "xp": 0 },
+            "fortify": { "level": 0, "xp": 0 }
+        }
+    },
+    "inventory": {
+        "backpack": [],
+        "bank": [],
+        "equipment": {
+            "head": null,
+            "body": null,
+            "neck": null,
+            "rings": [null, null, null, null, null, null, null, null, null, null],
+            "arms": null,
+            "legs": null,
+            "feet": null,
+            "main_hand": null,
+            "off_hand": null,
+            "ammo": null
+        }
     },
     "dungeon": {
-        "floor_number": 1
+        "floor_number": 1,
+        "floor_cache": [],
+        "boss_kills": []
     }
 }
 ```
@@ -52,25 +113,30 @@ The save captures all persistent state. The structure is a dictionary serialized
 
 | Field | Type | Default | Purpose |
 |-------|------|---------|---------|
-| `version` | int | 1 | Save format version for future migration |
+| `version` | int | 2 | Save format version for migration |
+| `slot` | int | 1-10 | Which save slot this belongs to |
+| `character.name` | string | "" | Player-chosen character name |
+| `character.class` | string | "" | "warrior", "ranger", or "mage" |
 | `character.level` | int | 1 | Player level |
 | `character.xp` | int | 0 | Current XP toward next level |
 | `character.hp` | int | 100 | Current hit points |
-| `character.max_hp` | int | 100 | Maximum hit points (100 + level * 8) |
+| `character.max_hp` | int | 100 | Maximum hit points |
+| `character.mana` | int | varies | Current mana (class base: W:60, R:100, M:200) |
+| `character.max_mana` | int | varies | Maximum mana |
+| `character.stats` | dict | base+class | STR, DEX, STA, INT raw values |
+| `character.free_stat_points` | int | 0 | Unallocated stat points |
+| `character.free_skill_points` | int | 0 | Unallocated skill points |
+| `character.deepest_floor` | int | 1 | Highest floor reached (records + Level Teleporter) |
+| `character.gold` | int | 0 | Currency |
+| `character.rested_xp_pool` | int | 0 | Remaining rested XP bonus pool |
+| `character.last_logout` | string | ISO-8601 | Timestamp for rested XP calculation |
+| `skills.*` | dict | per-skill | Level and XP for every skill |
+| `inventory.backpack` | array | [] | Items in backpack (at risk on death) |
+| `inventory.bank` | array | [] | Items in bank (safe, town-only) |
+| `inventory.equipment` | dict | all null | Currently equipped items per slot |
 | `dungeon.floor_number` | int | 1 | Current dungeon floor |
-
-**Future fields (planned, not yet in schema):**
-
-| Field | Type | Purpose |
-|-------|------|---------|
-| `character.class` | String | Character class ("warrior", "rogue", "mage") |
-| `character.stats` | Dictionary | STR, DEX, INT, VIT, LCK values |
-| `character.gold` | int | Currency |
-| `character.deepest_floor` | int | Highest floor reached (for records) |
-| `inventory.backpack` | Array | Backpack item list |
-| `inventory.bank` | Array | Bank storage item list |
-| `inventory.special` | Array | Special items (Sacrificial Idol, etc.) |
-| `dungeon.floor_cache` | Array | Up to 10 cached floor seeds + layouts |
+| `dungeon.floor_cache` | array | [] | Up to 10 cached floor seeds + layouts |
+| `dungeon.boss_kills` | array | [] | List of boss floor numbers killed (first-kill tracking) |
 
 ### Save API
 
@@ -387,11 +453,13 @@ private void BackupExistingSave()
 - On web exports (HTML5), `user://` maps to IndexedDB via Emscripten's virtual filesystem. The same `FileAccess` API works, but data persistence depends on browser storage policies.
 - Base64 encoding uses `System.Convert.ToBase64String()` and `System.Convert.FromBase64String()` from the .NET standard library -- no Godot-specific utility needed.
 
-## Open Questions
+## Resolved Questions
 
-- Should there be multiple save slots, or is one permanent character the rule?
-- How large can the save data get with 10 cached floors? Is `user://` file storage sufficient for large saves?
-- Should cloud save be a future goal (e.g., Steam Cloud, custom backend), or is local-only the design intent?
-- How should save versioning work as the game evolves -- automatic migration (as shown) or force-reset on breaking changes?
-- Should auto-save show a brief UI indicator ("Game saved") or be completely silent?
-- Should the backup file (`save_data_backup.json`) be rotated (keep last N backups) or just one?
+| Question | Decision |
+|----------|----------|
+| Save slots | 10 independent character slots. One character per slot. |
+| Save data size | ~50-250KB per slot. 10 slots = 2.5MB max. Trivial for any platform. |
+| Cloud save | Deferred. Not MVP scope. Local-only for now. |
+| Save versioning | Automatic migration (pattern defined above). Never force-reset. |
+| Auto-save feedback | Silent with brief icon flash (small save icon appears for ~0.5s). No text popup. |
+| Backup rotation | Single backup per slot (`slot_N_backup.json`). Overwritten on each new backup. |

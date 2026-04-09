@@ -6,6 +6,8 @@ The backpack is the player's carried inventory. Items in the backpack are at ris
 
 ## Current State
 
+**Spec status: LOCKED.**
+
 Not yet implemented. The prototype has no inventory system.
 
 ## Design
@@ -17,11 +19,15 @@ Not yet implemented. The prototype has no inventory system.
 - **Always accessible:** the backpack can be opened anywhere (dungeon or town)
 - **Expansion:** additional slots can be purchased or earned (mechanism TBD)
 
+### Inventory Lore
+
+The backpack uses a "magical pocket dimension" mechanic common to fantasy settings. It simply exists — there is no in-world explanation for how it works. It just is.
+
 ### Backpack vs. Bank
 
 | Feature | Backpack | Bank |
 |---------|----------|------|
-| Starting slots | 25 | 15 |
+| Starting slots | 25 | 50 |
 | Accessible from | Anywhere | Town only |
 | At risk on death | Yes | No |
 | Expansion | Yes | Yes |
@@ -39,14 +45,36 @@ Items are selected randomly. The Sacrificial Idol (if present in the backpack) n
 
 ### Slot Expansion
 
-Details TBD. Possible approaches:
-- Purchase additional slots from a town NPC
-- Earn slots through achievements or milestones
-- Find slot-expanding items in the dungeon
+- Purchased from the Item Shop NPC in town with gold
+- Cost scales with current backpack size (each expansion costs more)
+- Expansion adds 5 slots per purchase
+- No hard cap
 
-## Open Questions
+| Expansion # | New Total | Gold Cost |
+|------------|-----------|-----------|
+| 1 | 30 | 300 |
+| 2 | 35 | 900 |
+| 3 | 40 | 1,800 |
+| N | 25 + N*5 | `300 * N^2` |
 
-- Should the backpack have a weight system in addition to slot limits?
-- Can items be stacked (e.g., 10 potions in one slot)?
-- Should there be a "protected" slot that's immune to death penalties?
-- What's the maximum number of slots the backpack can expand to?
+*Costs are starting values — subject to balancing.*
+
+### Item Stacking
+
+Consumables and materials stack within a single slot. Equipment does not stack (1 per slot).
+
+| Item Type | Stackable | Max Stack |
+|-----------|-----------|-----------|
+| Equipment | No | 1 |
+| Consumables | Yes | 99 |
+| Materials | Yes | 99 |
+| Special | No | 1 |
+
+## Resolved Questions
+
+| Question | Decision |
+|----------|----------|
+| Weight system? | No. Slot-based only. Keep it simple. |
+| Item stacking? | Yes — consumables and materials stack to 99. Equipment does not stack. |
+| Protected slot? | No. All backpack slots are at risk. Use the bank or Sacrificial Idol for protection. |
+| Max slots? | No hard cap. Expansion cost escalates. |

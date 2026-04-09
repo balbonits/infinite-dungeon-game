@@ -6,6 +6,8 @@ An infinitely descending dungeon with procedurally generated floors. Each floor 
 
 ## Current State
 
+**Spec status: LOCKED.** Generation algorithm, difficulty scaling, and special room types are defined and locked.
+
 The prototype has a single floor with spawning enemies. There is no floor generation, descent, or caching system yet.
 
 ## Design
@@ -19,11 +21,40 @@ The prototype has a single floor with spawning enemies. There is no floor genera
 
 ### Floor Generation
 
-Each floor is procedurally generated:
+Each floor is procedurally generated using a **hybrid algorithm**:
+
+#### Generation Algorithm
+
+Three techniques combined for structured-but-organic layouts:
+
+1. **Binary Space Partitioning (BSP)** — Macro structure
+   - Recursively subdivide the floor into rectangular regions
+   - Place rooms within each leaf partition
+   - Guarantees predictable room count and connectivity
+   - Produces clear room-corridor structure
+
+2. **Drunkard's Walk** — Corridor generation
+   - Random walk agents carve corridors between BSP rooms
+   - Creates winding, organic connectors (not straight lines)
+   - Multiple agents for natural branching paths
+   - Produces occasional loops (alternative routes through the floor)
+
+3. **Cellular Automata** — Smoothing pass
+   - Apply 2-3 iterations of smoothing to polish edges
+   - Rule: tile becomes wall if 5+ of 8 neighbors are walls (Moore neighborhood)
+   - Removes jagged artifacts, creates natural cave-like edges
+   - Runs after BSP + drunkard's walk are complete
+
+**Floor size:** ~3-4x the viewport in each dimension. Floors are larger than one screen — the camera follows the player and scrolls. This gives room for exploration without floors feeling empty.
+
+**Room count per floor:** 5-8 rooms (BSP generates this range naturally). Includes entrance room, exit room, and 3-6 combat/exploration rooms.
+
+Each floor contains:
 - Floor layout (walls, obstacles, open areas)
 - Enemy spawn points and types
 - Entrance point (from above) and exit point (to below)
 - Safe spots at entrance and exit (see below)
+- Possible special rooms (see Special Room Types below)
 
 ### Seeded Generation
 
@@ -44,6 +75,77 @@ Each floor is procedurally generated:
 - Visual indicator: glowing crystal or similar landmark
 - Function as auto-checkpoints — the last safe spot touched is the respawn point on death
 - No enemies spawn within a radius of safe spots
+
+### Floor Difficulty Scaling
+
+Difficulty uses a **zone-based system** with steep inter-zone jumps and gentle intra-zone ramps. Floors are grouped into zones of 10.
+
+#### Zone Structure
+
+| Zone | Floors | Feel |
+|------|--------|------|
+| Zone 1 | 1–10 | Tutorial. Learn the basics. |
+| Zone 2 | 11–20 | Real challenge begins. |
+| Zone 3 | 21–30 | Gear and build start mattering. |
+| Zone N | (N-1)*10+1 – N*10 | Increasingly demanding. |
+
+#### Scaling Formula
+
+```
+zone = ceil(floor_number / 10)
+zone_multiplier = 1.0 + (zone - 1) * 0.5
+intra_zone_step = (floor_number - 1) % 10
+intra_zone_multiplier = 1.0 + (intra_zone_step * 0.05)
+total_multiplier = zone_multiplier * intra_zone_multiplier
+```
+
+All monster stats (HP, damage, speed) are multiplied by `total_multiplier`.
+
+**Example progression:**
+
+| Floor | Zone | Zone Mult | Intra Mult | Total Mult |
+|-------|------|-----------|------------|------------|
+| 1 | 1 | 1.0x | 1.00x | 1.00x |
+| 5 | 1 | 1.0x | 1.20x | 1.20x |
+| 10 | 1 | 1.0x | 1.45x | 1.45x |
+| 11 | 2 | 1.5x | 1.00x | 1.50x (steep jump!) |
+| 15 | 2 | 1.5x | 1.20x | 1.80x |
+| 20 | 2 | 1.5x | 1.45x | 2.18x |
+| 21 | 3 | 2.0x | 1.00x | 2.00x (steep jump!) |
+| 50 | 5 | 3.0x | 1.45x | 4.35x |
+| 100 | 10 | 5.5x | 1.45x | 7.98x |
+
+**Design intent:** Within a zone, difficulty ramps gently (~5% per floor). Between zones, a steep ~40-50% stat jump creates clear walls. Players must farm, gear up, and optimize before pushing into the next zone. Bosses on every 10th floor gate the zone transition.
+
+### Special Room Types
+
+#### Boss Rooms (Every 10th Floor)
+
+- Floor 10, 20, 30, etc. are **boss floors**
+- Single boss enemy with significantly higher stats (3x the floor's normal monster stats)
+- Boss must be defeated to access the staircase to the next zone
+- First kill drops **rare crafting materials** (one-time reward per boss per character)
+- First kill grants **5x XP bonus** (see [leveling.md](../systems/leveling.md))
+- Revisiting a cleared boss floor spawns normal enemies, no boss
+
+#### Treasure Rooms
+
+- **~5% spawn chance** per non-boss floor (roughly 1 every 20 floors)
+- Contains a material chest with crafting materials — no enemies
+- Treasure room materials are floor-appropriate (higher floors = better materials)
+- Indicated by a distinct visual cue at the room entrance (e.g., glowing doorway)
+- Single chest, single pickup — no repeated farming of the same treasure room
+
+#### Safe Rooms
+
+- Located at floor **entrance and exit only** (no mid-floor safe rooms)
+- Shallow breathing room: HP regeneration ticks slightly faster, no full heal
+- No enemies spawn within the safe room radius
+- Visual indicator: glowing crystal or landmark
+- Function as auto-checkpoints — last safe spot touched = death respawn point
+- **Not generous.** Players should struggle through floors. The only way to "dominate" is being overleveled and overgeared.
+
+**No puzzle rooms.** The dungeon is a hack-and-slash zone — complexity lives in character building, not mid-dungeon mechanics.
 
 ### Monster Respawning
 
@@ -117,10 +219,12 @@ This gradient creates a natural hard ceiling for the infinite dungeon. It's not 
 
 ---
 
-## Open Questions
+## Resolved Questions
 
-- What procedural generation algorithm should be used for floor layouts?
-- How should floor difficulty scaling work (linear, exponential, stepped)?
-- Should some floors have special properties (boss floors, treasure rooms)?
-- How large should each floor be relative to the current game viewport?
-- Should the player be able to teleport to previously visited floors from town?
+| Question | Decision |
+|----------|----------|
+| Generation algorithm | Hybrid: BSP (macro) + Drunkard's Walk (corridors) + Cellular Automata (smoothing) |
+| Difficulty scaling | Zone-based: 10-floor zones, gentle intra-zone ramp, steep inter-zone jumps |
+| Special floor types | Boss (every 10th), treasure (~5% chance), safe (entrance/exit only). No puzzles. |
+| Floor size | 3-4x viewport in each dimension (scrolling camera) |
+| Teleport from town | Yes — Level Teleporter NPC in town accesses previously visited floors |

@@ -8,7 +8,9 @@ Inspired by Project Zomboid's hierarchical skill system, adapted for infinite pr
 
 ## Current State
 
-Design phase. All three class skill trees (Warrior, Ranger, Mage) are defined. Individual skill details (scaling, cooldowns, formulas) are pending.
+**Spec status: LOCKED.** Skill hierarchy, leveling model, passive bonus formulas, and skill XP system are defined. All three class skill trees are designed with full skill lists. Individual skill tuning numbers (exact cooldowns, damage values, ranges) are implementation-phase balancing — the formulas and structure are locked.
+
+
 
 ## Skill System Design
 
@@ -40,6 +42,107 @@ Both paths feed progression simultaneously.
 - **Gating** — specific skills require at least level 1 in the parent base skill
 
 **Specific skills** are the actionable abilities used in combat. Each level improves the skill's stats (damage, cooldown, range, duration, etc.). Exact per-level scaling is defined per skill (future task).
+
+### Base Skill Passive Bonus Formula
+
+Every base skill provides a passive bonus that scales with its level. All base skills use the same formula structure, with a class-appropriate multiplier:
+
+```
+passive_bonus(skill_level) = skill_level * base_multiplier * (100 / (skill_level + 100))
+```
+
+This reuses the same diminishing returns curve as stats (see [stats.md](stats.md), K = 100). Early levels give strong returns; deep investment still helps but with decreasing gains.
+
+**Base multiplier by bonus type:**
+
+| Bonus Type | Multiplier | Example at Skill Level 10 | Example at Skill Level 50 |
+|-----------|-----------|--------------------------|--------------------------|
+| Damage % | 1.5 | +13.6% | +50.0% |
+| Attack speed % | 0.8 | +7.3% | +26.7% |
+| Defense % | 1.2 | +10.9% | +40.0% |
+| Chance % (crit, dodge, block) | 0.5 | +4.5% | +16.7% |
+| Regen / utility | 0.3 | +2.7% | +10.0% |
+
+**Example — Warrior Bladed base skill at level 25:**
+- Passive damage bonus: `25 * 1.5 * (100 / 125)` = **30.0%** bonus bladed weapon damage
+- Passive crit chance: `25 * 0.5 * (100 / 125)` = **10.0%** bladed crit chance
+
+These bonuses are always active while the skill is at that level — no activation needed.
+
+### Skill XP System
+
+Skills gain XP through two simultaneous paths:
+
+#### Use-Based XP
+
+Every time a skill is used in combat, it earns XP toward that skill's next level.
+
+```
+skill_xp_per_use(skill) = base_xp_per_use * floor_multiplier
+```
+
+| Skill Type | Base XP Per Use |
+|-----------|----------------|
+| Base skill (passive — levels when any child specific skill is used) | 5 |
+| Specific skill (active ability) | 10 |
+| Innate skill (per second while active) | 2 |
+
+`floor_multiplier` = same as enemy XP floor multiplier from [leveling.md](leveling.md): `1 + (floor - 1) * 0.5`
+
+Using deeper-floor skills earns more skill XP, keeping skill leveling relevant at all stages.
+
+#### Skill Point Allocation
+
+On level-up, the player receives skill points (2 per level, 3 at milestones). Each point can be allocated to any base or specific skill to grant a flat XP boost:
+
+```
+xp_from_skill_point = 50 * (1 + target_skill_level * 0.1)
+```
+
+This scales with the target skill's current level — points invested in higher-level skills give proportionally more XP, preventing "one point = one level" at any stage.
+
+#### Skill Level-Up Formula
+
+```
+skill_xp_to_next_level(skill_level) = floor(skill_level^2 * 20)
+```
+
+Same quadratic shape as character XP but with a smaller constant (20 vs 45), so skill levels come faster than character levels.
+
+| Skill Level | XP Required |
+|-------------|------------|
+| 0 → 1 | 0 (instant — all skills start available) |
+| 1 → 2 | 20 |
+| 5 → 6 | 500 |
+| 10 → 11 | 2,000 |
+| 25 → 26 | 12,500 |
+| 50 → 51 | 50,000 |
+
+### Weapon Equipment Requirements
+
+**Weapon-type base skills require a matching weapon equipped to use their specific skills.**
+
+| Base Skill | Required Equipment |
+|-----------|-------------------|
+| Unarmed | No weapon equipped (or fists) |
+| Bladed | Sword, axe, or dagger in main hand |
+| Blunt | Club, hammer, or mace in main hand |
+| Polearms | Spear, halberd, or staff in main hand |
+| Shields | Shield in off hand |
+| Drawn | Bow or crossbow in main hand |
+| Thrown | Throwing weapon in main hand |
+| Firearms | Firearm in main hand |
+| Melee (Ranger) | Defensive offhand weapon equipped |
+
+**Mind/Instinct/Arcane/Conduit skills have no weapon requirement** — they are mental/magical and work regardless of equipment.
+
+**Base skill passive bonuses are always active** even without the matching weapon — they represent general proficiency. Only the specific skills (active abilities) require the weapon.
+
+### Specific Skill Unlock Rules
+
+**All specific skills under a base skill unlock at base level 1.** Higher base levels do NOT unlock additional specific skills. The full roster is available immediately once the player puts their first point into the base skill.
+
+**Design rationale:** This encourages breadth of experimentation. Players can try all abilities early and discover which ones fit their build. Depth comes from leveling individual specific skills higher, not from gating access.
 
 ### Infinite Leveling
 
@@ -374,12 +477,14 @@ Push the nervous system beyond safe limits — massive power at bodily cost. The
 
 ---
 
-## Open Questions
+## Resolved Questions
 
-- What are the exact passive bonuses per base skill level? (e.g., +X% damage per level of Unarmed)
-- How does diminishing returns apply to skill levels vs stat levels?
-- How are skills leveled — through use (swing a sword to level Bladed) or XP/point allocation, or both?
-- What are the cooldowns, ranges, and scaling formulas for each specific skill?
-- Should higher base skill levels unlock *additional* specific skills beyond level 1, or do all specific skills unlock at level 1?
-- How do weapon-type base skills interact with equipped weapons? (e.g., must you have a sword equipped to use Bladed skills?)
-- Mage spell acquisition system — spell books vs scroll osmosis learning (needs dedicated doc, crosses into items/inventory)
+| Question | Decision |
+|----------|----------|
+| Passive bonuses per level? | Universal formula: `skill_level * multiplier * (100 / (skill_level + 100))`. Same DR curve as stats. |
+| Diminishing returns? | Same K=100 curve as character stats. Consistent across all systems. |
+| How are skills leveled? | Both: use-based XP (automatic) + skill point allocation (manual). Simultaneous paths. |
+| Specific skill cooldowns/ranges? | Defined during implementation phase. Structure and formulas are locked; tuning numbers are not. |
+| Unlock more skills at higher base? | No. All specific skills unlock at base level 1. Depth from leveling, not gating. |
+| Weapon requirements? | Specific skills require matching weapon. Base passive bonuses are always active. |
+| Mage spell acquisition? | Defined in [magic.md](magic.md) — spell books (direct) and scroll osmosis (learn by repeated use). |
