@@ -23,53 +23,78 @@
 
 ## MVP Definition
 
-The MVP is a playable single-session dungeon crawler with the core loop: **move → fight → loot → level → die → restart.**
+The MVP is a playable dungeon crawler with the core loop: **move → fight → level → die → restart.** Built across SETUP + P1 + P2. Uses placeholder graphics (colored shapes). One static room. No items, no town, no procedural generation — those come later.
 
-### MVP Includes (P1 + P2)
+### MVP Scope: SETUP + P1 + P2 (56 sub-tickets)
 
-| System | Scope |
-|--------|-------|
-| **Movement** | Arrow keys, isometric transform, wall collision |
-| **Combat** | Face button attack, nearest-target auto-targeting, attack cooldown, slash effect |
-| **Enemies** | 3 danger tiers, chase AI, contact damage, respawning |
-| **Spawning** | Edge spawning, soft cap, respawn timers |
-| **Leveling** | Quadratic XP curve, floor-scaling enemy XP, multi-reward level-up, milestones |
-| **Stats** | 4-stat system (STR/DEX/STA/INT) with diminishing returns |
-| **Classes** | 3 classes with per-level bonuses, milestone scaling, free stat allocation |
-| **Death** | Multi-step death screen, EXP loss, backpack item loss, gold buyout, Sacrificial Idol |
-| **Save/Load** | 10 slots, auto-save triggers, verbose JSON, export/import |
-| **HUD** | HP/MP orbs (Diablo-style), XP bar, stats display, floor indicator |
-| **Controls** | PS1 baseline: arrows move, WASD actions, Q/E bumpers, P select, Esc menu |
+**SETUP (10 tickets) — Project scaffold:**
+
+| What | Details |
+|------|---------|
+| C# project | .csproj, .sln, NuGet packages, dotnet build works |
+| project.godot | .NET runtime, Input Map with all actions defined |
+| Makefile | C# targets (build, test, run) |
+| CI | Disabled until P1 complete, then re-enabled |
+| Sanity tests | xUnit hello world, GdUnit4 hello world |
+
+**P1 (28 tickets) — Prototype parity (single static room):**
+
+| System | What You Get |
+|--------|-------------|
+| **GameState** | Singleton with HP, XP, Level, Floor. TakeDamage, AwardXp, level-up logic. StatsChanged signal. |
+| **EventBus** | Signal bus for cross-system communication. |
+| **Tilemap** | One static dungeon room with floor tiles, walls, collision. |
+| **Movement** | Arrow key input → isometric transform → MoveAndSlide. 8-direction, 190 px/s. Camera follow with 2x zoom. |
+| **Enemies** | 3 danger tiers (green/yellow/red). Chase AI. Contact damage (700ms cooldown). TakeDamage/Die. |
+| **Spawning** | 10 initial enemies. Periodic spawn (2.8s, soft cap 14). Respawn on death (1.4s delay). Edge positions. |
+| **Combat** | Face button (WASD) attack. Nearest-enemy targeting. 420ms cooldown. Placeholder damage formula. Slash effect. Camera shake on hit. XP on kill. |
+| **HUD** | CanvasLayer overlay. Title, controls hint, stats line (HP/XP/LVL/Floor). Updates via signal. |
+| **Death screen** | Shows on HP=0. Restart via Esc. Resets GameState and reloads scene. |
+| **Main scene** | Wires everything: dungeon + player + enemies + HUD + death screen. Full 33-case manual test. |
+| **Debug tools** | FPS, entity count, input visualizer, collision viewer, state inspector. F3 toggle. Hideable for captures. |
+
+**P2 (18 tickets) — Core systems (replaces placeholders with real math):**
+
+| System | What You Get |
+|--------|-------------|
+| **Leveling** | Quadratic XP curve (`L^2 * 45`). Floor-scaling enemy XP. Multi-reward level-up (HP + stat points + skill points). Milestone bonuses every 10th level. Rested XP (offline accumulation, doubles kill XP). |
+| **Stats** | STR/DEX/STA/INT with diminishing returns (K=100). STR → melee damage. DEX → attack speed + dodge. STA → HP + regen. INT → mana + regen + efficiency. Replaces placeholder combat formula. |
+| **Classes** | Warrior/Ranger/Mage. Creation bonuses. Per-level auto stat bonuses. Milestone scaling every 25 levels. Free stat point allocation. Character creation screen. |
+| **Save/Load** | SaveManager autoload. 10-slot file structure. Auto-save triggers (level-up, floor, town, death). Validation + version migration. Base64 export/import. Save slot selection UI. |
+| **Death (full)** | Multi-step flow (destination → mitigations → summary → confirm). EXP loss formula. Backpack item loss. Gold buyout. Sacrificial Idol. Respawn destinations (town vs safe spot). |
 
 ### MVP Does NOT Include
 
-| System | Deferred To |
-|--------|-------------|
-| Skill trees (active abilities) | P3 |
-| Equipment / affix system | P3 |
-| Procedural dungeon generation | P4 |
-| Floor caching / descent | P4 |
-| Town hub + NPCs | P4 |
-| Backpack / Bank UI | P5 |
-| Loot drops / Blacksmith | P5 |
-| Target cycling (L1/R1) | P2+ |
-| Shortcut system (L1/R1 hold) | P3+ |
-| Map overlay | P2+ |
-| Visual effects (hitstop, knockback) | P6 |
-| Audio / Music | P6 |
-| Sprite art (uses placeholder shapes) | P6 |
-| Gamepad / Mouse / Touch input | Deferred |
-| Rested XP | P2 |
+| System | Deferred To | Why |
+|--------|-------------|-----|
+| Skill trees (active abilities) | P3 | Needs class system + UI |
+| Equipment / affix system | P3 | Needs stat system + item model |
+| Procedural dungeon generation | P4 | MVP uses single static room |
+| Floor caching / descent | P4 | Needs proc gen |
+| Town hub + NPCs | P4 | Needs main scene wiring + save |
+| Backpack / Bank UI | P5 | Needs death flow + town |
+| Loot drops / Blacksmith | P5 | Needs equipment system |
+| Target cycling (L1/R1) | P2+ | MVP uses nearest-enemy auto-target |
+| Shortcut system (L1/R1 hold) | P3+ | Needs skills/items to assign |
+| Map overlay | P4+ | Needs procedural floors |
+| Visual effects (hitstop, knockback) | P6 | Polish, not core |
+| Audio / Music | P6 | Polish, not core |
+| Sprite art | P6 | Placeholder shapes are functional |
+| Gamepad / Mouse / Touch | Deferred | Keyboard-first, add later via Input Map |
 
 ### MVP Success Criteria
 
 - [ ] Player can move in 8 isometric directions with arrow keys
 - [ ] Player can attack enemies by pressing face buttons (WASD)
-- [ ] Enemies spawn, chase, deal contact damage, and respawn
-- [ ] Killing enemies awards XP, leveling up increases stats
-- [ ] Death triggers a multi-step death screen with penalty choices
-- [ ] Game state saves automatically at safe moments
-- [ ] 3 classes feel mechanically distinct (different stat growth)
+- [ ] Enemies spawn from edges, chase player, deal contact damage, respawn after death
+- [ ] Killing enemies awards XP; leveling up grants HP + stat/skill points
+- [ ] 4-stat system (STR/DEX/STA/INT) affects combat with diminishing returns
+- [ ] 3 classes feel mechanically distinct (different auto-stat growth per level)
+- [ ] Death screen shows with penalty choices (EXP loss, gold buyout)
+- [ ] Game auto-saves at level-up, floor transition, and death — no save on quit
+- [ ] 10 save slots with character creation (pick name + class)
+- [ ] Debug tools toggle with F3 (FPS, input visualizer, collision shapes, state inspector)
+- [ ] All debug tools hideable for clean screenshot/recording captures
 - [ ] A 15-minute play session feels satisfying and complete
 - [ ] A new player understands the controls without explanation
 
