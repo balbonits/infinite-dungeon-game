@@ -1065,4 +1065,144 @@ Built a Lighthouse-equivalent for Godot:
 
 ---
 
+## Session 6c — Full Game Loop Build (2026-04-09)
+
+### What We Built
+
+The complete gameplay loop from app open to exit, built in 5 phases with parallel agents.
+
+**Phase 0: Infrastructure**
+- `SaveSystem.cs` (SaveSerializer) — pure C# serialization of full GameState to JSON (player stats, inventory, equipment, location, floor)
+- `SaveFileIO.cs` — Godot FileAccess wrapper for save/load to `user://saves/slot_N.json`
+- `SceneManager.cs` — autoload singleton with GoToMainMenu/Town/Dungeon/CharacterCreate
+- Registered SceneManager as autoload in project.godot, set main scene to MainMenu
+- 29 new tests for save round-trips, item serialization, equipment, affixes, error handling
+
+**Phase 1: Menu Layer**
+- `MainMenu.cs` + `MainMenu.tscn` — New Game / Load Game / Exit, styled with dark theme + gold accents
+- `CharacterCreate.cs` + `CharacterCreate.tscn` — name entry + stat preview + Begin Adventure
+- Load Game shows slot summary, routes to correct scene based on saved location
+
+**Phase 2: Player & HUD**
+- `PlayerController.cs` — CharacterBody2D with isometric Transform2D, Input Map actions, cyan diamond placeholder sprite
+- `GameplayHud.cs` — HP/MP orbs + floor label + gold counter + level/XP, updated from GameState each frame
+- `PauseMenu.cs` — ProcessMode.Always, Esc toggle, Resume/Save/Exit buttons
+
+**Phase 3: Town Scene**
+- `TownScene.cs` + `Town.tscn` — full gameplay town replacing test scene
+- PlayerController with camera follow, wall collision via tile checking
+- NPC proximity detection (48px) → NpcPanel with shop UI
+- Dungeon entrance with "Press S to enter" prompt → SceneManager.GoToDungeon(1)
+- HUD + PauseMenu integrated
+
+**Phase 4: Dungeon Scene**
+- `DungeonScene.cs` + `Dungeon.tscn` — full gameplay dungeon
+- Floor loading via FloorCache + DungeonGenerator, deterministic seeds
+- Tile rendering (ISS floor diamonds + edge wall blocks) copied from TestDungeonGen
+- PlayerController with wall collision, camera follow, exploration tracking
+- `EnemyEntity.cs` — tier-colored diamond enemies with HP bars, chase AI (6-tile aggro), melee attack (1.5s cooldown)
+- Combat: S key attacks nearest enemy within 78px, 0.42s cooldown, slash effect, floating damage
+- Enemy death: XP award, gold, loot roll via ItemGenerator, fade-out
+- Floor transitions: reaching Exit room → "Floor Complete!" → next floor
+- Boss floors: must kill boss to access exit
+- Town return: floor 1 entrance → "Press S to return to town"
+- Player death: "You Died" overlay → respawn in town
+- Automap integration: M key cycles, exploration tracking, player position
+
+### The Complete Game Loop
+
+```
+App Open → MainMenu (New Game / Load / Exit)
+  → New Game → CharacterCreate (name entry)
+    → Town (explore, talk to NPCs, buy from Item Shop)
+      → Walk to dungeon entrance → Press S
+        → Dungeon Floor 1 (fight enemies, gain XP/gold/loot)
+          → Reach exit → Floor 2
+            → Esc → Save → Exit to Menu
+              → Load Game → Resume on Floor 2
+                → Floor 1 entrance → Town
+                  → Esc → Save → Exit to Menu
+                    → Load → Resume in Town
+                      → Exit Game
+```
+
+Every step of this loop is now implemented in code.
+
+### Milestone Tracking
+
+| Milestone | Phase | Status |
+|-----------|-------|--------|
+| SaveSystem (29 tests) | 0 | Done |
+| SceneManager autoload | 0 | Done |
+| project.godot updated | 0 | Done |
+| MainMenu scene | 1 | Done |
+| CharacterCreate scene | 1 | Done |
+| PlayerController | 2 | Done |
+| GameplayHud | 2 | Done |
+| PauseMenu | 2 | Done |
+| Town gameplay scene | 3 | Done |
+| EnemyEntity | 4 | Done |
+| Dungeon gameplay scene | 4 | Done |
+| Full build verification | 5 | 380 tests, 0 errors |
+
+### Files Created (14 new files)
+
+| File | Purpose |
+|------|---------|
+| `scripts/game/SaveSystem.cs` | Pure C# save serialization |
+| `scripts/game/SaveFileIO.cs` | Godot file I/O wrapper |
+| `scripts/autoloads/SceneManager.cs` | Scene transition autoload |
+| `scripts/ui/MainMenu.cs` | Main menu UI |
+| `scenes/ui/MainMenu.tscn` | Main menu scene |
+| `scripts/ui/CharacterCreate.cs` | Character creation UI |
+| `scenes/ui/CharacterCreate.tscn` | Character creation scene |
+| `scripts/player/PlayerController.cs` | Isometric player controller |
+| `scripts/ui/GameplayHud.cs` | Gameplay HUD overlay |
+| `scripts/ui/PauseMenu.cs` | Pause menu with save/exit |
+| `scripts/town/TownScene.cs` | Town gameplay scene |
+| `scenes/Town.tscn` | Town scene file |
+| `scripts/dungeon/DungeonScene.cs` | Dungeon gameplay scene |
+| `scripts/dungeon/EnemyEntity.cs` | Enemy entity with AI/combat |
+| `scenes/Dungeon.tscn` | Dungeon scene file |
+| `tests/SaveSystemTests.cs` | 29 save/load tests |
+
+### Industry Comparison Results (from QA audit)
+
+**Overall readiness: 5.5/10.** Strong foundation (8/10 architecture, 7/10 dungeon gen) but gaps in combat depth (4/10), monster variety (2/10), item excitement (5/10).
+
+**Top 5 actions identified:**
+1. Spec damage types + resistances (Physical + Fire/Ice/Lightning)
+2. Spec unique/legendary items with build-altering effects
+3. Design monster behavior archetypes + modifier system
+4. Implement A* pathfinding (straight-line chase breaks in proc gen dungeons)
+5. Expand crit system + add defense layers
+
+### Test Counts
+
+| Metric | Value |
+|--------|-------|
+| Total tests | 380 |
+| New save tests | 29 |
+| All passing | Yes |
+| Build errors | 0 |
+| Game loop steps covered | 12/12 |
+
+### What We Learned
+
+1. **Parallel agent phasing works for large features.** 5 phases with dependency tracking, parallel where possible. No file conflicts because each agent had a clear scope.
+
+2. **GameCore.cs static GameState persists across scene changes.** Because it's a static class (not a Node), it survives Godot scene transitions naturally. Combined with SceneManager autoload, this gives us state persistence without complex serialization between scenes.
+
+3. **Tile-based wall collision is simpler than physics bodies for proc gen.** Rather than generating StaticBody2D for every wall tile (expensive), check FloorData.IsWall() after MoveAndSlide() and push back. Works for both town and dungeon.
+
+4. **Camera follow = reparent Camera2D to player.** Simplest approach: move the Camera2D node to be a child of PlayerController. Camera automatically follows without any code.
+
+5. **PauseMenu needs ProcessMode.Always.** When GetTree().Paused = true, only nodes with ProcessMode.Always continue to receive input. Without this, the pause menu can't unpause itself.
+
+6. **Deterministic dungeon seeds from floor number.** `floor * 31337 + 42` gives unique, reproducible layouts per floor. Save/load just stores the floor number; the layout regenerates identically.
+
+7. **The full game loop requires 14 new files.** Menu (4), player/HUD (3), town (2), dungeon (3), save (2). Each is relatively small (50-400 lines) because they compose existing systems rather than building new logic.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*

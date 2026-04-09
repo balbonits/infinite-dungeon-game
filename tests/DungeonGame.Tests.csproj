@@ -29,6 +29,11 @@
     <Compile Include="../scripts/game/dungeon/FloorCache.cs" Link="dungeon/FloorCache.cs" />
   </ItemGroup>
 
+  <!-- Include save system — pure C# serialization, no Godot dependency -->
+  <ItemGroup>
+    <Compile Include="../scripts/game/SaveSystem.cs" Link="SaveSystem.cs" />
+  </ItemGroup>
+
   <!-- Include inventory system files — no Godot dependency -->
   <ItemGroup>
     <Compile Include="../scripts/game/inventory/AffixData.cs" Link="inventory/AffixData.cs" />
