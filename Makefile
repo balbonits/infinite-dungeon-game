@@ -120,6 +120,9 @@ test-magician: build ## View magician
 test-sprite-align: build ## Sprite alignment debugger (WASD nudge, +/- scale, diamond frame)
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_sprite_align.tscn &
 
+test-sprite-frames: build ## Sprite animation frame inspector (sheet view, strip export)
+	@$(GODOT) --path . --main-scene res://scenes/tests/test_sprite_frames.tscn &
+
 test-hero: build ## View hero with toggleable equipment layers
 	@$(GODOT) --path . --main-scene res://scenes/tests/test_hero.tscn &
 
