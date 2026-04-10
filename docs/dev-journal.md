@@ -1422,4 +1422,70 @@ Replaced the 1183-line original tracker (pre-implementation roadmap from before 
 
 ---
 
+## Session 8 — Reset Decision (2026-04-10)
+
+### What Happened
+
+The user tested the game repeatedly and every time found fundamental visual issues that couldn't be fixed incrementally:
+- Floor tiles never rendered correctly (TileLayout was wrong — Stacked instead of DiamondDown)
+- Wall tiles clipped and overlapped wrong
+- Character sprites didn't load (wrong file paths, wrong folder structure)
+- UI windows positioned off-screen (GrowDirection gotcha, hardcoded pixels)
+- Enemy sprites didn't animate correctly
+- Collision was janky (manual tile-check pushback instead of TileMap physics)
+- Font loading crashed on every launch
+- The game menu opened broken every time
+
+Each fix revealed another bug underneath. The codebase accumulated 7,000+ lines of game scene code across 6 sessions of rapid parallel-agent development, but none of it was ever validated by actually playing the game and looking at the screen.
+
+### The Decision
+
+**Delete all code. Keep all documentation and assets. Start from scratch.**
+
+The user will learn game development themselves and rebuild, because:
+1. The AI kept patching symptoms instead of understanding the game engine
+2. Parallel agents built code that was never visually tested together
+3. Every "fix" introduced new bugs because the foundations were wrong
+4. The AI thought like a software engineer, not a game developer — building systems that pass unit tests but look broken on screen
+
+### What We Keep
+- `docs/` — all 80+ documentation files including the 22 learning docs in `docs/basics/`
+- `docs/decisions/` — 5 architecture decision records
+- `docs/design-pillars.md`, `docs/glossary.md`
+- `assets/` — all sprite sheets, tile sets, fonts, icons (819+ game assets, properly sorted)
+- `tests/` — the 480 unit tests and test infrastructure (pure C# logic is correct)
+- `AGENTS.md`, `CLAUDE.md` — AI instructions with post-task protocol
+
+### What We Delete
+- All Godot scene scripts (`scripts/dungeon/`, `scripts/town/`, `scripts/player/`, `scripts/ui/`)
+- All scene files (`scenes/Town.tscn`, `scenes/Dungeon.tscn`, `scenes/ui/`)
+- The game loop code that was never visually correct
+
+### What We Learned (The Hard Way)
+
+1. **Unit tests passing ≠ game working.** 480 tests passed. The game was broken. Tests validate math, not rendering. You can only validate rendering by LOOKING AT THE SCREEN.
+
+2. **Parallel agents are dangerous for visual code.** 3 agents building scenes simultaneously means nobody verifies that the pieces work together visually. Each agent's code compiles and passes tests, but the combined result is broken.
+
+3. **Never build faster than you can playtest.** We built 14 scene files in one session without playing the game once. Every one of them had visual bugs that compounded.
+
+4. **The AI doesn't understand game development yet.** Despite 22 learning docs, the AI still made fundamental mistakes: wrong TileLayout, wrong sprite paths, wrong collision approach, hardcoded UI positions. Reading about game dev is not the same as understanding it.
+
+5. **The user was right every time.** Every time the user said "this is broken," it was broken. Every time the AI said "it should work," it didn't. Trust the screen, not the code.
+
+6. **Start small, verify visually, then build.** The correct approach: render ONE tile correctly. Then ONE character on ONE tile. Then ONE room. Then movement. Then combat. Verify EACH step visually before adding the next. Not: build everything in parallel and hope it works.
+
+7. **Documentation is the lasting value.** The 22 game dev docs, 5 ADRs, design pillars, glossary, 26 game specs, and dev journal — this knowledge persists. The broken code doesn't. The next attempt starts with better understanding.
+
+### The Salvageable Work
+- `scripts/game/` — pure C# game logic (GameCore, entity framework, combat, stats, effects, progression, skills, inventory, bank, items, monsters, dungeon generation). This is engine-independent and correct.
+- `scripts/game/systems/` — elemental damage, crit system, resistances. Tested, works.
+- `scripts/game/monsters/` — archetypes, behavior, modifiers, spawner. Tested, works.
+- `scripts/game/dungeon/` — BSP, corridors, cellular automata, floor cache. Tested, works.
+- `tests/` — all 480 tests validate the logic layer correctly.
+
+The logic is sound. The rendering was not. The next build should use the tested logic layer but rebuild ALL Godot scene integration from scratch, one visual step at a time.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*
