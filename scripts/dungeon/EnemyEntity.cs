@@ -135,26 +135,43 @@ public partial class EnemyEntity : Node2D
 
         float dist = GlobalPosition.DistanceTo(player.GlobalPosition);
 
+        // Use archetype-based behavior from MonsterBehavior
+        float aggroRange = MonsterBehavior.GetAggroRange(_monsterData.Archetype);
+        float attackRange = MonsterBehavior.GetAttackRange(_monsterData.Archetype);
+        float speedMult = MonsterBehavior.GetSpeedMultiplier(_monsterData.Archetype);
+
+        // Apply modifier speed bonuses
+        float modSpeed = 1f;
+        foreach (var mod in _monsterData.Modifiers)
+            modSpeed *= MonsterModifiers.GetSpeedMultiplier(mod);
+
         // Chase if within aggro range
-        if (dist <= AggroRange && dist > MeleeRange)
+        if (dist <= aggroRange && dist > attackRange)
         {
-            float speed = _monsterData.Tier switch
+            float baseSpeed = _monsterData.Tier switch
             {
                 MonsterTier.Tier1 => Tier1Speed,
                 MonsterTier.Tier2 => Tier2Speed,
                 MonsterTier.Tier3 => Tier3Speed,
                 _ => Tier1Speed,
             };
+            float speed = baseSpeed * speedMult * modSpeed;
             var dir = (player.GlobalPosition - GlobalPosition).Normalized();
             Position += dir * speed * (float)delta;
             UpdateSpriteAnimation((float)delta, dir);
         }
 
-        // Attack if within melee range and cooldown is ready
-        if (dist <= MeleeRange && _attackTimer <= 0)
+        // Attack if within attack range and cooldown is ready
+        float cooldown = MonsterBehavior.GetAttackCooldown(_monsterData.Archetype);
+        if (dist <= attackRange && _attackTimer <= 0)
         {
-            int damage = GameSystems.MonsterAttackPlayer(_monsterData);
-            _attackTimer = AttackCooldown;
+            // Apply modifier damage bonuses
+            float modDamage = 1f;
+            foreach (var mod in _monsterData.Modifiers)
+                modDamage *= MonsterModifiers.GetDamageMultiplier(mod);
+
+            int damage = (int)(GameSystems.MonsterAttackPlayer(_monsterData) * modDamage);
+            _attackTimer = cooldown;
 
             // Show damage on player
             TestHelper.ShowFloatingText(

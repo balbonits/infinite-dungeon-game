@@ -415,6 +415,24 @@ public partial class DungeonScene : Node2D
         // Spawn via GameSystems
         var monsterData = GameSystems.SpawnMonster(name, tier, canPoison);
 
+        // Assign archetype from pack composition
+        var archetypes = new[] { MonsterArchetype.Melee, MonsterArchetype.Swarmer,
+                                  MonsterArchetype.Ranged, MonsterArchetype.Bruiser };
+        monsterData.Archetype = archetypes[rng.Next(archetypes.Length)];
+
+        // Roll rarity and apply modifiers
+        var rarity = MonsterSpawner.RollRarity(rng);
+        monsterData.Rarity = rarity;
+        float hpMult = MonsterSpawner.GetHPMultiplier(rarity);
+        monsterData.HP = (int)(monsterData.HP * hpMult);
+        monsterData.MaxHP = (int)(monsterData.MaxHP * hpMult);
+        monsterData.XPReward = (int)(monsterData.XPReward * MonsterSpawner.GetRewardMultiplier(rarity));
+        monsterData.GoldReward = (int)(monsterData.GoldReward * MonsterSpawner.GetRewardMultiplier(rarity));
+
+        int modCount = MonsterSpawner.GetModifierCount(rarity, (floorNumber - 1) / 10 + 1);
+        if (modCount > 0)
+            monsterData.Modifiers = MonsterModifiers.RollModifiers(modCount, rng);
+
         // Random position within room bounds (on floor tiles)
         int tileX = room.X + rng.Next(room.Width);
         int tileY = room.Y + rng.Next(room.Height);

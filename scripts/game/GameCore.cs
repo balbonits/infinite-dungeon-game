@@ -96,6 +96,8 @@ public class MonsterData
 {
     public string Name;
     public MonsterTier Tier;
+    public MonsterArchetype Archetype = MonsterArchetype.Melee;
+    public MonsterRarity Rarity = MonsterRarity.Normal;
     public int HP;
     public int MaxHP;
     public int Damage;
@@ -104,6 +106,7 @@ public class MonsterData
     public int GoldReward;
     public bool IsDead;
     public bool CanPoison;
+    public List<MonsterModifierType> Modifiers = new();
 }
 
 public class SkillData
