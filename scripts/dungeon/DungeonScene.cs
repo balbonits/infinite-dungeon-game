@@ -619,6 +619,28 @@ public partial class DungeonScene : Node2D
         // Slash effect
         TestHelper.ShowSlashEffect(this, nearest.GlobalPosition);
 
+        // Game feel: screen shake on hit (stronger for crits)
+        if (_camera != null)
+        {
+            float shakeIntensity = crit ? 4f : 2f;
+            var shakeTween = CreateTween();
+            for (int i = 0; i < 4; i++)
+            {
+                float decay = 1f - i / 4f;
+                float x = (float)GD.RandRange(-shakeIntensity, shakeIntensity) * decay;
+                float y = (float)GD.RandRange(-shakeIntensity, shakeIntensity) * decay;
+                shakeTween.TweenProperty(_camera, "offset", new Vector2(x, y), 0.03f);
+            }
+            shakeTween.TweenProperty(_camera, "offset", Vector2.Zero, 0.03f);
+        }
+
+        // Game feel: brief hit pause on crit (freeze frame)
+        if (crit)
+        {
+            Engine.TimeScale = 0.1;
+            GetTree().CreateTimer(0.05f, true, false, true).Timeout += () => Engine.TimeScale = 1.0;
+        }
+
         // Check if killed
         if (nearest.MonsterData.IsDead)
         {

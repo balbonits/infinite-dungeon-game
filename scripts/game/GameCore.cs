@@ -157,9 +157,17 @@ public static class GameSystems
 
     public static (int damage, bool crit) AttackMonster(MonsterData target)
     {
-        int damage = GameState.Player.TotalDamage;
-        bool crit = Rng.NextDouble() < 0.15;
-        if (crit) damage = (int)(damage * 1.5f);
+        int baseDamage = GameState.Player.TotalDamage;
+
+        // Get weapon type from equipped weapon (defaults to Unarmed)
+        WeaponType weaponType = WeaponType.Unarmed;
+        if (GameState.Player.Equipment.TryGetValue(EquipSlot.MainHand, out var weapon))
+            weaponType = weapon.WeaponType;
+
+        // Roll crit using the weapon's base crit chance (from CritSystem)
+        var critResult = CritSystem.RollCrit(baseDamage, weaponType, Rng);
+        int damage = critResult.FinalDamage;
+        bool crit = critResult.IsCrit;
 
         // Apply target defense: diminishing returns DR formula
         float reduction = target.Defense * (100f / (target.Defense + 100f));
