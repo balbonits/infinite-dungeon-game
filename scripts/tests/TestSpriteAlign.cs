@@ -66,6 +66,8 @@ public partial class TestSpriteAlign : Node2D
     private Camera2D _camera;
     private Label _infoLabel;
     private Label _controlsLabel;
+    private string _statusMessage = "";
+    private float _statusTimer;
 
     public override void _Ready()
     {
@@ -182,7 +184,8 @@ public partial class TestSpriteAlign : Node2D
             $"Scale: {_scale:F4}  Rendered: {renderedW:F0}x{renderedH:F0}px\n" +
             $"Offset: ({_offset.X:F0}, {_offset.Y:F0})\n" +
             $"Tile: {TileW}x{TileH}  Diamond: visible={_showDiamond}\n" +
-            $"Auto-anim: {(_autoAnimate ? "ON" : "OFF")}";
+            $"Auto-anim: {(_autoAnimate ? "ON" : "OFF")}" +
+            (_statusMessage.Length > 0 ? $"\n\n>> {_statusMessage}" : "");
     }
 
     public override void _Process(double delta)
@@ -199,6 +202,27 @@ public partial class TestSpriteAlign : Node2D
                 UpdateInfo();
             }
         }
+
+        if (_statusTimer > 0)
+        {
+            _statusTimer -= (float)delta;
+            if (_statusTimer <= 0)
+            {
+                _statusMessage = "";
+                UpdateInfo();
+            }
+        }
+    }
+
+    private void SaveScreenshot(string name)
+    {
+        var img = GetViewport().GetTexture().GetImage();
+        string dir = ProjectSettings.GlobalizePath("res://docs/evidence/sprite-align/");
+        if (!DirAccess.DirExistsAbsolute(dir))
+            DirAccess.MakeDirRecursiveAbsolute(dir);
+        string path = dir + name + ".png";
+        img.SavePng(path);
+        GD.Print($"[SCREENSHOT] Saved: {path}");
     }
 
     public override void _Draw()
@@ -322,9 +346,15 @@ public partial class TestSpriteAlign : Node2D
                 UpdateInfo(); QueueRedraw();
                 break;
 
-            // Screenshot
+            // Screenshot — saved with sprite name, direction, frame, offset, scale for reference
             case Key.F12:
-                TestHelper.CaptureScreenshot(this, $"sprite_align_{_sprites[_currentIdx].Name}");
+                var c = _sprites[_currentIdx];
+                string timestamp = Time.GetDatetimeStringFromSystem().Replace(":", "").Replace("-", "").Replace("T", "_");
+                string shotName = $"{c.Name}_dir{_currentRow}_f{_currentFrame}_s{_scale:F3}_x{_offset.X:F0}y{_offset.Y:F0}_{timestamp}";
+                SaveScreenshot(shotName);
+                _statusMessage = $"Saved: {shotName}.png";
+                _statusTimer = 2.0f;
+                UpdateInfo();
                 break;
 
             // Quit
