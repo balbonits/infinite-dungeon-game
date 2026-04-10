@@ -10,6 +10,9 @@ public class EntityData
     public string SpriteSheet;
     public string[] SpriteLayers;
 
+    // Resistances
+    public Resistances Resistances = new();
+
     // Vitals
     public int HP;
     public int MaxHP;

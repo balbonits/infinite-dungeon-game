@@ -57,6 +57,18 @@
     <Compile Include="../scripts/game/systems/EffectSystem.cs" Link="systems/EffectSystem.cs" />
     <Compile Include="../scripts/game/systems/ProgressionSystem.cs" Link="systems/ProgressionSystem.cs" />
     <Compile Include="../scripts/game/systems/SkillSystem.cs" Link="systems/SkillSystem.cs" />
+    <Compile Include="../scripts/game/systems/DamageType.cs" Link="systems/DamageType.cs" />
+    <Compile Include="../scripts/game/systems/Resistances.cs" Link="systems/Resistances.cs" />
+    <Compile Include="../scripts/game/systems/ElementalCombat.cs" Link="systems/ElementalCombat.cs" />
+    <Compile Include="../scripts/game/systems/CritSystem.cs" Link="systems/CritSystem.cs" />
+  </ItemGroup>
+
+  <!-- Include monster system files -->
+  <ItemGroup>
+    <Compile Include="../scripts/game/monsters/MonsterArchetype.cs" Link="monsters/MonsterArchetype.cs" />
+    <Compile Include="../scripts/game/monsters/MonsterBehavior.cs" Link="monsters/MonsterBehavior.cs" />
+    <Compile Include="../scripts/game/monsters/MonsterModifier.cs" Link="monsters/MonsterModifier.cs" />
+    <Compile Include="../scripts/game/monsters/MonsterSpawner.cs" Link="monsters/MonsterSpawner.cs" />
   </ItemGroup>
 
 </Project>

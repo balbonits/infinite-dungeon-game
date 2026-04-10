@@ -89,6 +89,7 @@ public class ItemData
     public ItemQuality Quality = ItemQuality.Normal;
     public List<AffixData> Prefixes = new();
     public List<AffixData> Suffixes = new();
+    public WeaponType WeaponType = WeaponType.Unarmed;
 }
 
 public class MonsterData
