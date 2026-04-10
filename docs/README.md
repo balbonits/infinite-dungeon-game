@@ -62,6 +62,50 @@ Master navigation for all project documentation. 60+ files across 11 directories
 | [dev-journal.md](dev-journal.md) | Running session log (append-only) |
 | [overview.md](overview.md) | Project vision and design philosophy |
 
+## Testing Pipeline
+
+### Universal Test Runner
+
+Any test scene can be run in 4 modes via the universal runner:
+
+```
+make t S=<scene> [F=--headless|--capture|--check]
+```
+
+| Flag | Mode | What It Does |
+| --- | --- | --- |
+| *(none)* | Windowed | Launch scene, watch it run |
+| `--headless` | Headless | Console output, auto-quits, CI-ready |
+| `--capture` | Capture | Screenshots at timed intervals + video recording |
+| `--check` | Regression | Headless + crash detection + evidence check |
+
+**Examples:**
+```
+make t S=test-game                    # watch game loop
+make t S=test-game F=--headless       # CI: 60 assertions
+make t S=test-hero F=--capture        # capture hero screenshots
+make t S=test-dungeon F=--check       # regression check
+```
+
+### Test Commands
+
+| Command | Type | What It Does |
+| --- | --- | --- |
+| `make test` | Unit | 480 xUnit tests (<1s, no Godot needed) |
+| `make test-game` | Integration | Windowed full game loop (16 phases, watchable) |
+| `make test-game-headless` | Integration (CI) | Headless game loop (60 assertions, auto-quits) |
+| `make test-game-capture` | Evidence | Screenshots + video of game loop |
+| `make test-game-check` | Regression | Headless + unit + evidence verification |
+| `make test-all` | Full Suite | Unit tests + headless game loop |
+
+### Game Loop Test (`test-game`)
+
+The full game loop E2E test exercises 16 phases:
+
+1. Init (reset, set player) → 2. Town shopping (buy potions) → 3. Enter dungeon (generate floor 1) → 4. Spawn enemies (rarity, modifiers) → 5. Combat (crit, elemental) → 6. Level check → 7. Floor transition (floor 2) → 8. Save → 9. Load → 10. Return to town → 11. Bank ops → 12. Backpack expand → 13. Town save → 14. Reload → 15. Systems validation (elemental, crit, monster AI, spawner) → 16. Summary
+
+Systems tested: GameState, GameSystems, DungeonGenerator, SaveSerializer, BankSystem, BackpackSystem, ElementalCombat, CritSystem, MonsterBehavior, MonsterSpawner, MonsterModifiers, ItemGenerator.
+
 ## Visual Test Scenes
 
 Run `make help` to see all targets, or use the category runners below.
@@ -128,6 +172,27 @@ Run `make help` to see all targets, or use the category runners below.
 | Scene | Purpose |
 | --- | --- |
 | `scenes/tests/test_entity.tscn` | Entity framework visual test (EntityData + systems) |
+
+**Dungeon Generation:**
+
+| Command | What it shows |
+| --- | --- |
+| `make test-dungeon` | Full proc gen pipeline (BSP + corridors + smoothing + automap) |
+| `make test-bsp` | BSP room partitioning |
+| `make test-drunkard` | Drunkard's walk corridor generation |
+| `make test-cellular` | Cellular automata smoothing |
+| `make test-procgen` | All proc gen scenes at once |
+
+**Game Scenes:**
+
+| Scene | Purpose |
+| --- | --- |
+| `scenes/ui/MainMenu.tscn` | Main menu (New Game / Load / Exit) |
+| `scenes/ui/CharacterCreate.tscn` | Character creation (name entry) |
+| `scenes/Town.tscn` | Town hub (5 NPCs, shop, dungeon entrance) |
+| `scenes/Dungeon.tscn` | Dungeon gameplay (combat, floor transitions) |
+| `scenes/tests/test_town2.tscn` | Town test scene (standalone, raw keys) |
+| `scenes/tests/test_game.tscn` | Full game loop E2E test (16 phases, 60 assertions) |
 
 ## Supporting
 
