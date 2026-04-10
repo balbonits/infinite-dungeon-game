@@ -20,18 +20,19 @@ public partial class PlayerController : CharacterBody2D
 
     public override void _Ready()
     {
-        // Placeholder visual: cyan diamond, 24x32px
+        // Placeholder visual: cyan diamond sized to fit isometric tile (64x32)
+        // ~60% of tile width = 38px wide, ~80% of tile height equivalent = 48px tall
         _sprite = new Polygon2D();
         _sprite.Polygon = new Vector2[] {
-            new(0, -16), new(12, 0), new(0, 16), new(-12, 0)
+            new(0, -24), new(19, 0), new(0, 24), new(-19, 0)
         };
         _sprite.Color = new Color(0.557f, 0.839f, 1.0f); // #8ed6ff
         AddChild(_sprite);
 
-        // Collision shape for MoveAndSlide physics
+        // Collision shape — radius ~1/3 tile width for smooth wall sliding
         var collision = new CollisionShape2D();
         var shape = new CircleShape2D();
-        shape.Radius = 10f;
+        shape.Radius = 20f;
         collision.Shape = shape;
         AddChild(collision);
     }

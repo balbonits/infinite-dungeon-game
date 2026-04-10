@@ -48,11 +48,12 @@ public partial class EnemyEntity : Node2D
             return;
         }
 
-        // Visual: colored diamond (20x28)
+        // Visual: colored diamond sized for isometric tile grid (64x32)
+        // ~50% tile width = 32px wide, ~70% equivalent = 40px tall
         _sprite = new Polygon2D();
         _sprite.Polygon = new Vector2[]
         {
-            new(0, -14), new(10, 0), new(0, 14), new(-10, 0)
+            new(0, -20), new(16, 0), new(0, 20), new(-16, 0)
         };
         _sprite.Color = _monsterData.Tier switch
         {
@@ -63,17 +64,17 @@ public partial class EnemyEntity : Node2D
         };
         AddChild(_sprite);
 
-        // HP bar background (dark)
+        // HP bar background (dark) — wide enough to be visible at 2x zoom
         _hpBarBg = new ColorRect();
-        _hpBarBg.Size = new Vector2(24, 3);
-        _hpBarBg.Position = new Vector2(-12, -20);
+        _hpBarBg.Size = new Vector2(40, 5);
+        _hpBarBg.Position = new Vector2(-20, -28);
         _hpBarBg.Color = new Color(0.15f, 0.15f, 0.15f, 0.8f);
         AddChild(_hpBarBg);
 
         // HP bar fill (red)
         _hpBarFill = new ColorRect();
-        _hpBarFill.Size = new Vector2(24, 3);
-        _hpBarFill.Position = new Vector2(-12, -20);
+        _hpBarFill.Size = new Vector2(40, 5);
+        _hpBarFill.Position = new Vector2(-20, -28);
         _hpBarFill.Color = new Color(0.85f, 0.2f, 0.2f);
         AddChild(_hpBarFill);
 
@@ -187,7 +188,7 @@ public partial class EnemyEntity : Node2D
     {
         if (_monsterData == null || _hpBarFill == null) return;
         float pct = Mathf.Clamp((float)_monsterData.HP / _monsterData.MaxHP, 0f, 1f);
-        _hpBarFill.Size = new Vector2(24 * pct, 3);
+        _hpBarFill.Size = new Vector2(40 * pct, 5);
     }
 
     private PlayerController FindPlayer()

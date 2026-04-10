@@ -35,6 +35,7 @@ public partial class GameplayHud : Control
 
         // Level and XP (top left)
         _levelLabel = CreateHudLabel(HorizontalAlignment.Left);
+        _levelLabel.SetAnchorsPreset(LayoutPreset.TopLeft);
         _levelLabel.Position = new Vector2(12, 12);
         AddChild(_levelLabel);
     }

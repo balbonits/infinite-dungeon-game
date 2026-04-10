@@ -202,7 +202,7 @@ public partial class TownScene : Node2D
             for (int i = 0; i < 12; i++)
             {
                 float angle = i * Mathf.Tau / 12;
-                points[i] = new Vector2(Mathf.Cos(angle) * 8, Mathf.Sin(angle) * 5);
+                points[i] = new Vector2(Mathf.Cos(angle) * 18, Mathf.Sin(angle) * 12);
             }
             marker.Polygon = points;
             marker.Color = typeColors.GetValueOrDefault(npc.Type, new Color(1, 1, 1));
@@ -214,9 +214,9 @@ public partial class TownScene : Node2D
             var label = new Label();
             label.Text = npc.Name;
             label.HorizontalAlignment = HorizontalAlignment.Center;
-            label.AddThemeFontSizeOverride("font_size", 10);
+            label.AddThemeFontSizeOverride("font_size", 13);
             label.AddThemeColorOverride("font_color", typeColors.GetValueOrDefault(npc.Type, new Color(1, 1, 1)));
-            label.Position = worldPos - new Vector2(40, 20);
+            label.Position = worldPos - new Vector2(50, 28);
             label.ZIndex = 100;
             AddChild(label);
 
@@ -239,7 +239,7 @@ public partial class TownScene : Node2D
         var marker = new Polygon2D();
         marker.Polygon = new Vector2[]
         {
-            new(0, -8), new(10, 0), new(0, 8), new(-10, 0)
+            new(0, -16), new(20, 0), new(0, 16), new(-20, 0)
         };
         marker.Color = new Color(0.9f, 0.2f, 0.2f);
         marker.Position = _entranceWorldPos;
