@@ -1205,4 +1205,99 @@ Every step of this loop is now implemented in code.
 
 ---
 
+## Session 6d — Gap Closure Research + System Prototyping (2026-04-09)
+
+### Research Completed (6 Deep Dives)
+
+**1. Elemental Damage Systems** — D2 (4 elements + physical, 0/75/immune resistance, difficulty penalties), PoE (5 types, armor formula vs flat resistance, penetration/exposure/conversion layers), LE (7 types, 75% cap, area-level penetration). Recommendation: 7 damage types (Physical + 6 elements) with floor-based resistance penalty (floor/2).
+
+**2. Monster AI + Pathfinding** — Godot 4 AStarGrid2D with native IsometricDown cell shape is the clear winner over NavMesh for proc gen tile grids. D4's 5 archetype system (Melee/Ranged/Bruiser/Swarmer/Support) with finite state machines. D2 modifier system (ExtraFast/StoneSkin/FireEnchanted/etc). Pack composition by room budget with family mixing.
+
+**3. Unique/Legendary Items** — D2 uniques (fixed stats, ~385 items), PoE uniques (build-enabling mechanics > stat sticks), LE Legendary Potential (merge unique + crafted). User chose: fixed effects, Blacksmith can't touch them. Target: 70-100 uniques. No set items.
+
+**4. Alternative Item Approaches (10 explored)** — Monster trophies, evolving items, synergy sets, conditional effects, sacrifice/transmutation, curse/blessing duality, procedural uniques, lore-bound items, socket abilities, corruption/blessing. Top 5 fits: Monster Trophies (perfect lore), Evolving Items (matches skill philosophy), Conditional Effects (casual+theorycrafter), Synergy Sets (10 ring slots), Sacrifice/Transmutation (extends Blacksmith).
+
+**5. Achievement Systems** — Hades prophecies (achievements = resource rewards), Isaac (achievements unlock content), WoW meta-achievements, Grim Dawn devotions (exploration = permanent power). Proposed: "The Fated Ledger" with 4 tiers (Chronicle/Trials/Whispers/Sagas), Insight Points for permanent bonuses, hybrid account/per-character scope.
+
+**6. Endgame Progression (11 systems)** — D3 Paragon, PoE Atlas, Hades Heat, LE Corruption, prestige/ascension, NG+, mastery systems, infinite scaling (GR/Delve/VS), power fantasy engineering, single-player seasons, adaptive dungeon intelligence. Top recommendations: Dungeon Pacts (voluntary difficulty), Magicule Attunement (post-cap passive tree), Dungeon Intelligence (adaptive AI Director), Zone Saturation (per-zone infinite scaling).
+
+### Key User Decisions Made
+
+| Decision | Choice |
+|----------|--------|
+| Elemental damage types | All 6 elements (Physical + Fire/Water/Air/Earth/Light/Dark = 7 total) |
+| Unique items | Fixed effects only — Blacksmith can't touch them |
+| Unique design philosophy | Mix of both: common = stat packages, rare = build-altering mechanics |
+| Skill system | Use-based leveling (like IRL), NOT PoE passive tree |
+
+### Systems Prototyped and Tested
+
+Built 3 new systems with 100 tests to validate before speccing:
+
+**Elemental Damage (4 files, 20 tests):**
+- `DamageType` enum: Physical, Fire, Water, Air, Earth, Light, Dark
+- `Resistances` class: per-element resistance, floor penalty (floor/2), -100 floor, 75% cap
+- `ElementalCombat`: calculates damage with type-specific mitigation, ambient dark DPS at depth 76+
+- Physical uses existing defense DR formula; elemental uses percentage resistance
+- Validated: floor scaling erosion, crit after resistance, min 1 damage, double damage at -100%
+
+**Crit System (1 file, 18 tests):**
+- `WeaponType` enum: 16 types (Dagger 8%, Rifle 9%, Club 3%, etc.)
+- `CritSystem`: per-weapon base crit, buildable multiplier (150% base), 75% chance cap
+- Formula: `baseCrit * (1 + increasedPercent/100) + flatBonus`, capped at 75%
+- Validated: all weapon types, statistical distribution over 50K rolls, multiplier stacking
+
+**Monster AI (4 files, 62 tests):**
+- `MonsterArchetype` enum: Melee, Ranged, Bruiser, Swarmer, Support
+- `MonsterBehavior`: finite state machine (Idle→Alert→Chase→Attack→Cooldown→Reposition/Retreat/Flee/Dead)
+- `MonsterModifiers`: 10 types (ExtraFast 1.33x speed, ExtraStrong 1.5x damage, StoneSkin 80 defense, etc.)
+- `MonsterSpawner`: room budget (area/12), rarity rolls (Normal 78%/Empowered 20%/Named 2%), archetype mix
+- Validated: all state transitions, swarmer skips alert, ranged repositions, dead from any state, modifier stacking, rarity distribution
+
+### Test Counts
+
+| Metric | Value |
+|--------|-------|
+| Total tests | 480 |
+| New this session | 100 (20 elemental + 18 crit + 62 monster) |
+| All passing | Yes |
+| Build errors | 0 |
+| Run time | <1 second |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `scripts/game/systems/DamageType.cs` | 7 damage type enum |
+| `scripts/game/systems/Resistances.cs` | Per-entity elemental resistances |
+| `scripts/game/systems/ElementalCombat.cs` | Elemental damage calculation |
+| `scripts/game/systems/CritSystem.cs` | Variable crit per weapon type |
+| `scripts/game/monsters/MonsterArchetype.cs` | 5 archetypes + AI states + rarity enums |
+| `scripts/game/monsters/MonsterBehavior.cs` | AI state machine logic |
+| `scripts/game/monsters/MonsterModifier.cs` | 10 modifier types + combined effects |
+| `scripts/game/monsters/MonsterSpawner.cs` | Room budget, rarity, pack composition |
+| `tests/ElementalCombatTests.cs` | 20 elemental tests |
+| `tests/CritSystemTests.cs` | 18 crit tests |
+| `tests/MonsterSystemTests.cs` | 62 monster tests |
+
+### What We Learned
+
+1. **Test before spec.** Building the system first and running 100 tests caught formula edge cases (negative resistance double-damage, crit after resistance ordering) that would have been wrong in a spec-only approach.
+
+2. **The floor penalty formula (floor/2) is elegant.** At floor 150, 75% resistance becomes 0%. At floor 200, it's -25%. This naturally creates the D2 Hell difficulty feel without discrete difficulty tiers.
+
+3. **Ambient dark DPS is the hard ceiling mechanic.** Starting at floor 76 with (floor-75)*2 DPS, floor 200 deals 250 raw dark DPS. Combined with floor-eroded dark resistance, this creates a survival gradient that no build can fully overcome — matching the magicule lore perfectly.
+
+4. **Per-weapon crit creates meaningful weapon choice.** Daggers (8%) vs Clubs (3%) validated statistically over 50K rolls. This alone creates a "crit build vs raw damage build" decision that didn't exist before.
+
+5. **Swarmer skipping alert state changes combat rhythm.** The state machine test proved that swarmers rush immediately while bruisers pause 0.5s. This single difference creates distinct encounter feelings from the same AI framework.
+
+6. **Monster modifier stacking is multiplicative.** ExtraFast + ExtraStrong = 1.33x speed AND 1.5x damage. This means Named monsters with 3 modifiers can be terrifying combinations — validated by the combined effects test.
+
+7. **Room budget of area/12 scales naturally with floor size.** A 12x12 room spawns 12 monsters. A 24x24 room spawns 48. Progressive floor sizing means deeper floors have bigger rooms with more monsters — no separate scaling needed.
+
+8. **The rarity distribution (78/20/2) matches D2's feel.** Validated over 50K rolls: Normal packs are the majority, Empowered are uncommon but frequent enough to notice, Named are rare enough to be exciting.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*
