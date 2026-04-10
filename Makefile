@@ -5,7 +5,7 @@ GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 TIMEOUT    := 15
 
-.PHONY: help setup build run run-headless test test-game test-game-headless import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
+.PHONY: help setup build run run-headless test test-game test-game-headless test-game-capture test-game-check import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,13 @@ test-game: build ## Run full game loop test (windowed, watchable)
 test-game-headless: build ## Run full game loop E2E test (headless, CI-ready)
 	@$(GODOT) --path . --headless scenes/tests/test_game.tscn 2>&1
 
-test-all: test e2e ## Run all tests (unit + E2E)
+test-game-capture: build ## Capture screenshots + video of the game loop test
+	@bash tests/e2e_game_capture.sh
+
+test-game-check: build ## Automated regression test (headless + unit + evidence check)
+	@bash tests/e2e_game_visual_test.sh
+
+test-all: test test-game-headless ## Run all tests (unit + full game loop)
 
 iso: build ## Run isometric asset demo (validates rendering)
 	@$(GODOT) --path . --main-scene res://scenes/iso_demo.tscn &
