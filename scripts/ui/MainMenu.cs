@@ -73,14 +73,25 @@ public partial class MainMenu : Control
         _saveInfoLabel.HorizontalAlignment = HorizontalAlignment.Center;
         btnBox.AddChild(_saveInfoLabel);
 
+        // Settings button
+        var settingsBtn = CreateStyledButton("Settings");
+        settingsBtn.Pressed += OnSettingsPressed;
+        btnBox.AddChild(settingsBtn);
+
         // Exit Game button
         var exitBtn = CreateStyledButton("Exit Game");
         exitBtn.Pressed += OnExitPressed;
         btnBox.AddChild(exitBtn);
 
+        // Settings panel (shared, hidden by default)
+        _settingsPanel = new SettingsPanel();
+        AddChild(_settingsPanel);
+
         // Update load button state based on save existence
         UpdateLoadButton();
     }
+
+    private SettingsPanel _settingsPanel;
 
     private void UpdateLoadButton()
     {
@@ -123,6 +134,11 @@ public partial class MainMenu : Control
             SceneManager.Instance.GoToDungeon(GameState.DungeonFloor);
         else
             SceneManager.Instance.GoToTown();
+    }
+
+    private void OnSettingsPressed()
+    {
+        _settingsPanel.Show();
     }
 
     private void OnExitPressed()

@@ -378,6 +378,8 @@ public partial class PauseMenu : Control
     // ═══════════════════════════════════════════════════
     // SETTINGS TAB
     // ═══════════════════════════════════════════════════
+    private SettingsPanel _settingsPanel;
+
     private Control BuildSettingsTab()
     {
         var tab = new MarginContainer();
@@ -386,33 +388,23 @@ public partial class PauseMenu : Control
         tab.AddThemeConstantOverride("margin_right", 8);
 
         var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 12);
+        vbox.AddThemeConstantOverride("separation", 16);
+        vbox.Alignment = BoxContainer.AlignmentMode.Center;
         tab.AddChild(vbox);
 
-        // Target priority
-        vbox.AddChild(MakeLabel("Target Priority", 14, TitleColor));
-        var priorityBox = new HBoxContainer();
-        priorityBox.AddThemeConstantOverride("separation", 8);
-        vbox.AddChild(priorityBox);
+        vbox.AddChild(MakeLabel("Audio, Gameplay, Display, and Controls", 13, MutedColor));
 
-        foreach (TargetPriority tp in System.Enum.GetValues<TargetPriority>())
+        var openBtn = MakeMenuButton("Open Settings");
+        openBtn.Pressed += () =>
         {
-            var btn = MakeSmallButton(tp.ToString());
-            var captured = tp;
-            btn.Pressed += () => {
-                GameState.Settings.TargetMode = captured;
-                _statusLabel.Text = $"Target priority: {captured}";
-            };
-            priorityBox.AddChild(btn);
-        }
-
-        // Music/SFX placeholders
-        vbox.AddChild(MakeLabel("Audio", 14, TitleColor));
-        vbox.AddChild(MakeLabel("  Music and SFX controls coming soon", 12, MutedColor));
-
-        // Controls
-        vbox.AddChild(MakeLabel("Controls", 14, TitleColor));
-        vbox.AddChild(MakeLabel("  Key rebinding coming soon", 12, MutedColor));
+            if (_settingsPanel == null)
+            {
+                _settingsPanel = new SettingsPanel();
+                GetTree().Root.AddChild(_settingsPanel);
+            }
+            _settingsPanel.Show();
+        };
+        vbox.AddChild(openBtn);
 
         return tab;
     }
