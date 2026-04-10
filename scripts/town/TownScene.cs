@@ -98,9 +98,11 @@ public partial class TownScene : Node2D
     {
         var floorTex = TestHelper.LoadIssPng("res://assets/isometric/tiles/stone-soup/floors/floor_pebble_brown.png");
         var wallTex = TestHelper.LoadIssPng("res://assets/isometric/tiles/stone-soup/walls/brick_brown.png");
+        GD.Print($"[TOWN] Floor texture: {(floorTex != null ? $"{floorTex.GetWidth()}x{floorTex.GetHeight()}" : "NULL")}");
+        GD.Print($"[TOWN] Wall texture: {(wallTex != null ? $"{wallTex.GetWidth()}x{wallTex.GetHeight()}" : "NULL")}");
         if (floorTex == null || wallTex == null)
         {
-            GD.PrintErr("[TOWN] Could not load floor or wall texture");
+            GD.PrintErr("[TOWN] Could not load floor or wall texture — tiles will not render!");
             return;
         }
 

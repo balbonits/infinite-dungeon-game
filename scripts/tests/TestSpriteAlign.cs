@@ -138,7 +138,7 @@ public partial class TestSpriteAlign : Node2D
             if (dir.CurrentIsDir())
             {
                 // Skip source, tiles directories
-                if (fileName == "source" || fileName == "tiles") continue;
+                if (fileName == "source") continue;
                 string subCat = category.Length > 0 ? $"{category}/{fileName}" : fileName;
                 ScanDir(fullPath, subCat);
             }
