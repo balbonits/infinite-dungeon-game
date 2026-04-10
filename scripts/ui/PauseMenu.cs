@@ -28,18 +28,23 @@ public partial class PauseMenu : Control
         ProcessMode = ProcessModeEnum.Always;
         Visible = false;
 
+        // THIS Control must fill the screen — children anchor relative to it
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        MouseFilter = MouseFilterEnum.Ignore;
+
         // Full-screen dark overlay
         var overlay = new ColorRect();
         overlay.Color = OverlayBg;
-        overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        overlay.MouseFilter = MouseFilterEnum.Stop; // block clicks to game world
+        overlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        overlay.MouseFilter = MouseFilterEnum.Stop;
         AddChild(overlay);
 
-        // Centered panel — use anchor offsets so it's truly centered on any viewport
+        // Centered panel — anchors at 50%/50%, offsets create the box
         var panel = new Panel();
-        panel.SetAnchorsPreset(LayoutPreset.Center);
-        panel.GrowHorizontal = GrowDirection.Both;
-        panel.GrowVertical = GrowDirection.Both;
+        panel.AnchorLeft = 0.5f;
+        panel.AnchorRight = 0.5f;
+        panel.AnchorTop = 0.5f;
+        panel.AnchorBottom = 0.5f;
         panel.OffsetLeft = -PanelWidth / 2;
         panel.OffsetRight = PanelWidth / 2;
         panel.OffsetTop = -PanelHeight / 2;
