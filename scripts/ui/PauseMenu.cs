@@ -35,11 +35,15 @@ public partial class PauseMenu : Control
         overlay.MouseFilter = MouseFilterEnum.Stop; // block clicks to game world
         AddChild(overlay);
 
-        // Centered panel
+        // Centered panel — use anchor offsets so it's truly centered on any viewport
         var panel = new Panel();
-        panel.Size = new Vector2(PanelWidth, PanelHeight);
-        panel.Position = new Vector2(-PanelWidth / 2, -PanelHeight / 2);
         panel.SetAnchorsPreset(LayoutPreset.Center);
+        panel.GrowHorizontal = GrowDirection.Both;
+        panel.GrowVertical = GrowDirection.Both;
+        panel.OffsetLeft = -PanelWidth / 2;
+        panel.OffsetRight = PanelWidth / 2;
+        panel.OffsetTop = -PanelHeight / 2;
+        panel.OffsetBottom = PanelHeight / 2;
 
         var style = new StyleBoxFlat();
         style.BgColor = PanelBg;
@@ -119,24 +123,16 @@ public partial class PauseMenu : Control
 
     private void OnSavePressed()
     {
-        // SaveSystem will be built by another agent.
-        // For now, show feedback. When SaveSystem exists, call:
-        // SaveSystem.SaveToSlot(1);
-        _statusLabel.Text = "Saved!";
+        bool ok = SaveSystem.SaveToSlot(1);
+        _statusLabel.Text = ok ? "Saved!" : "Save failed";
     }
 
     private void OnExitPressed()
     {
-        // Save first, then transition.
-        // SaveSystem.SaveToSlot(1);
-        // SceneManager.Instance.GoToMainMenu();
-
-        // Unpause before any scene change to avoid frozen tree
+        SaveSystem.SaveToSlot(1);
         GetTree().Paused = false;
         Visible = false;
-
-        // Fallback: quit to avoid a broken state until SceneManager is built
-        GD.Print("[PauseMenu] Exit to Menu requested. SceneManager not yet available.");
+        SceneManager.Instance.GoToMainMenu();
     }
 
     /// <summary>
