@@ -5,7 +5,7 @@ GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 TIMEOUT    := 15
 
-.PHONY: help setup build run run-headless test test-game test-game-headless test-game-capture test-game-check import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
+.PHONY: help setup build run run-headless test test-game test-game-headless test-game-capture test-game-check t import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,18 @@ test-game-check: build ## Automated regression test (headless + unit + evidence 
 	@bash tests/e2e_game_visual_test.sh
 
 test-all: test test-game-headless ## Run all tests (unit + full game loop)
+
+# ─── Universal Test Runner ─────────────────────────────────────────────────
+# Usage: make t S=<scene> [F=--headless|--capture|--check]
+# Examples:
+#   make t S=test-game                    # windowed (default)
+#   make t S=test-game F=--headless       # headless
+#   make t S=test-hero F=--capture        # capture hero screenshots
+#   make t S=test-dungeon F=--check       # regression check
+#   make t S=test-game F=--capture        # capture game loop
+
+t: build ## Universal: make t S=<scene> [F=--headless|--capture|--check]
+	@[ -z "$(S)" ] && echo "Usage: make t S=<scene-name> [F=--headless|--capture|--check]" && echo "Examples:" && echo "  make t S=test-game" && echo "  make t S=test-hero F=--capture" && echo "  make t S=test-dungeon F=--headless" && exit 1 || bash tests/run-test.sh $(S) $(F)
 
 iso: build ## Run isometric asset demo (validates rendering)
 	@$(GODOT) --path . --main-scene res://scenes/iso_demo.tscn &
