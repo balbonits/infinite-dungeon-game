@@ -36,9 +36,9 @@ public partial class TownScene : Node2D
         // Set game location
         GameState.Location = GameLocation.Town;
 
-        // Dark background
+        // Ground color background (matches floor tile edges so gaps aren't visible)
         var bg = new ColorRect();
-        bg.Color = new Color(0.08f, 0.08f, 0.1f);
+        bg.Color = new Color(0.15f, 0.12f, 0.08f); // dark brown matching pebble tiles
         bg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var bgLayer = new CanvasLayer { Layer = -1 };
         bgLayer.AddChild(bg);
@@ -108,6 +108,7 @@ public partial class TownScene : Node2D
 
         var tileSet = new TileSet();
         tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileLayout = TileSet.TileLayoutEnum.DiamondDown;
         tileSet.TileSize = new Vector2I(TileW, TileH);
 
         // Source 0: Floor tiles (64x32 isometric diamonds)

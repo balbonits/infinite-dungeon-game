@@ -54,9 +54,9 @@ public partial class DungeonScene : Node2D
     {
         GameState.Location = GameLocation.Dungeon;
 
-        // Dark background
+        // Ground color background (dark stone grey matching dungeon floor tiles)
         var bg = new ColorRect();
-        bg.Color = new Color(0.05f, 0.05f, 0.08f);
+        bg.Color = new Color(0.12f, 0.11f, 0.10f);
         bg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var bgLayer = new CanvasLayer { Layer = -1 };
         bgLayer.AddChild(bg);
@@ -278,6 +278,7 @@ public partial class DungeonScene : Node2D
 
         var tileSet = new TileSet();
         tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileLayout = TileSet.TileLayoutEnum.DiamondDown;
         tileSet.TileSize = new Vector2I(TileW, TileH);
 
         // Source 0: Floor tiles (64x32 isometric diamonds)
