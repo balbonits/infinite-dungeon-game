@@ -39,16 +39,15 @@ public partial class PauseMenu : Control
         overlay.MouseFilter = MouseFilterEnum.Stop;
         AddChild(overlay);
 
-        // Centered panel — anchors at 50%/50%, offsets create the box
+        // CenterContainer fills the screen and centers its child automatically
+        var center = new CenterContainer();
+        center.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        center.MouseFilter = MouseFilterEnum.Ignore;
+        AddChild(center);
+
+        // Centered panel — CenterContainer keeps it at CustomMinimumSize, centered
         var panel = new Panel();
-        panel.AnchorLeft = 0.5f;
-        panel.AnchorRight = 0.5f;
-        panel.AnchorTop = 0.5f;
-        panel.AnchorBottom = 0.5f;
-        panel.OffsetLeft = -PanelWidth / 2;
-        panel.OffsetRight = PanelWidth / 2;
-        panel.OffsetTop = -PanelHeight / 2;
-        panel.OffsetBottom = PanelHeight / 2;
+        panel.CustomMinimumSize = new Vector2(PanelWidth, PanelHeight);
 
         var style = new StyleBoxFlat();
         style.BgColor = PanelBg;
@@ -56,7 +55,7 @@ public partial class PauseMenu : Control
         style.SetBorderWidthAll(2);
         style.SetCornerRadiusAll(6);
         panel.AddThemeStyleboxOverride("panel", style);
-        AddChild(panel);
+        center.AddChild(panel);
 
         // Use MarginContainer for responsive internal layout
         var margin = new MarginContainer();
