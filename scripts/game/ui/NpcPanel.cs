@@ -70,13 +70,8 @@ public partial class NpcPanel : Control
         _nameLabel.AddThemeColorOverride("font_color", TitleColor);
         _nameLabel.AddThemeFontSizeOverride("font_size", 18);
         _nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        string fontPath = "res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf";
-        if (ResourceLoader.Exists(fontPath))
-        {
-            var titleFont = ResourceLoader.Load<Font>(fontPath);
-            if (titleFont != null)
-                _nameLabel.AddThemeFontOverride("font", titleFont);
-        }
+        // Custom font removed — Godot default font works reliably
+        // TinyRPG font requires `make import` to build cache, too fragile for runtime
         layout.AddChild(_nameLabel);
 
         // Greeting text

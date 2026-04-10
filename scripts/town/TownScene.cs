@@ -168,8 +168,10 @@ public partial class TownScene : Node2D
         AddChild(_tileMap);
 
         // Paint floor tiles
+        GD.Print($"[TOWN] Floor atlas: {floorCols} cols x {floorRows} rows = {floorCols * floorRows} variants");
         int floorVariants = floorCols * floorRows;
         int floorIdx = 0;
+        int floorCount = 0;
         for (int x = 0; x < _townData.Width; x++)
         {
             for (int y = 0; y < _townData.Height; y++)
@@ -180,9 +182,11 @@ public partial class TownScene : Node2D
                     int ay = (floorIdx / floorCols) % floorRows;
                     _tileMap.SetCell(new Vector2I(x, y), floorSrcId, new Vector2I(ax, ay));
                     floorIdx = (floorIdx + 1) % floorVariants;
+                    floorCount++;
                 }
             }
         }
+        GD.Print($"[TOWN] Painted {floorCount} floor tiles, {_townData.Width * _townData.Height} total cells");
 
         // Paint wall blocks
         int wallIdx = 0;

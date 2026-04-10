@@ -30,6 +30,7 @@ public partial class PauseMenu : Control
     private VBoxContainer _equipList;
     private Label _statsContent;
     private Label _skillsContent;
+    private Label _inventoryHeader;
 
     public override void _Ready()
     {
@@ -146,9 +147,8 @@ public partial class PauseMenu : Control
         vbox.AddThemeConstantOverride("separation", 4);
         tab.AddChild(vbox);
 
-        var header = MakeLabel($"Backpack (0/{GameState.Player.InventorySize})", 14, TitleColor);
-        header.Name = "Header";
-        vbox.AddChild(header);
+        _inventoryHeader = MakeLabel($"Backpack (0/{GameState.Player.InventorySize})", 14, TitleColor);
+        vbox.AddChild(_inventoryHeader);
 
         var scroll = new ScrollContainer();
         scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -167,8 +167,8 @@ public partial class PauseMenu : Control
         foreach (var c in _inventoryList.GetChildren()) c.QueueFree();
 
         var p = GameState.Player;
-        var header = _tabs.GetChild(0).GetNode<Label>("Header") as Label;
-        if (header != null) header.Text = $"Backpack ({p.Inventory.Count}/{p.InventorySize})";
+        if (_inventoryHeader != null)
+            _inventoryHeader.Text = $"Backpack ({p.Inventory.Count}/{p.InventorySize})";
 
         if (p.Inventory.Count == 0)
         {
