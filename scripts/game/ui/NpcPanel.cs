@@ -70,9 +70,13 @@ public partial class NpcPanel : Control
         _nameLabel.AddThemeColorOverride("font_color", TitleColor);
         _nameLabel.AddThemeFontSizeOverride("font_size", 18);
         _nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        var titleFont = ResourceLoader.Load<Font>("res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf");
-        if (titleFont != null)
-            _nameLabel.AddThemeFontOverride("font", titleFont);
+        string fontPath = "res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf";
+        if (ResourceLoader.Exists(fontPath))
+        {
+            var titleFont = ResourceLoader.Load<Font>(fontPath);
+            if (titleFont != null)
+                _nameLabel.AddThemeFontOverride("font", titleFont);
+        }
         layout.AddChild(_nameLabel);
 
         // Greeting text

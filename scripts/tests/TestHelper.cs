@@ -37,7 +37,8 @@ public static class TestHelper
         titleLabel.Text = title;
         titleLabel.Position = new Vector2(12, 12);
         titleLabel.AddThemeColorOverride("font_color", new Color(0.78f, 0.67f, 0.43f, 0.9f));
-        var titleFont = ResourceLoader.Load<Font>("res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf");
+        string fontPath = "res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf";
+        Font titleFont = ResourceLoader.Exists(fontPath) ? ResourceLoader.Load<Font>(fontPath) : null;
         if (titleFont != null)
             titleLabel.AddThemeFontOverride("font", titleFont);
         titleLabel.AddThemeFontSizeOverride("font_size", 15);

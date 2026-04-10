@@ -3,6 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>DungeonGame</RootNamespace>
+    <NoWarn>CS8632</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="tests/**" />

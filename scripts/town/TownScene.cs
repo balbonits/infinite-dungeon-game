@@ -356,6 +356,8 @@ public partial class TownScene : Node2D
     /// NPC within proximity range, or hide it if none are nearby.
     /// Same logic as TestTown2.
     /// </summary>
+    private NpcData _nearbyNpc;
+
     private void CheckNpcProximity()
     {
         if (_player == null) return;
@@ -374,14 +376,28 @@ public partial class TownScene : Node2D
             }
         }
 
-        if (nearestNpc != null)
+        _nearbyNpc = nearestNpc;
+
+        if (nearestNpc != null && !_npcPanel.Visible)
         {
-            _npcPanel.ShowNpc(nearestNpc);
+            // Show prompt — don't open panel until player presses interact
+            _entrancePrompt.Text = $"Press S to talk to {nearestNpc.Name}";
+            _entrancePrompt.Visible = true;
+
+            if (Input.IsActionJustPressed("action_cross"))
+                _npcPanel.ShowNpc(nearestNpc);
         }
-        else
+        else if (nearestNpc == null)
         {
+            // Walked away — hide panel and prompt
+            if (_npcPanel.Visible)
+                _npcPanel.Hide();
+            if (_entrancePrompt.Visible && !_entrancePrompt.Text.Contains("dungeon"))
+                _entrancePrompt.Visible = false;
+        }
+        // Close panel on Circle (D key)
+        if (_npcPanel.Visible && Input.IsActionJustPressed("action_circle"))
             _npcPanel.Hide();
-        }
     }
 
     /// <summary>
