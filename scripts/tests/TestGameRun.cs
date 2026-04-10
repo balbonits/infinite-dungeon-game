@@ -29,21 +29,271 @@ public partial class TestGameRun : Node2D
     private FloorData _floor1;
     private FloorData _floor2;
 
+    // Visual components (windowed mode only)
+    private bool _isHeadless;
+    private RichTextLabel _logLabel;
+    private Label _phaseLabel;
+    private Label _statsLabel;
+    private TileMapLayer _tileMap;
+    private Node2D _entityLayer;
+    private Camera2D _camera;
+
     public override void _Ready()
     {
-        _rng = new Random(42); // deterministic seed for reproducibility
+        _rng = new Random(42);
+        _isHeadless = DisplayServer.GetName() == "headless";
+
+        if (!_isHeadless)
+            SetupVisuals();
 
         SetupSteps();
 
         _stepIndex = 0;
-        _timer = 0.05f;
 
-        // Headless: run instantly
-        if (DisplayServer.GetName() == "headless")
+        if (_isHeadless)
         {
+            _timer = 0.0f;
             for (int i = 0; i < _steps.Count; i++)
                 _steps[i] = (0.0f, _steps[i].action);
         }
+        else
+        {
+            _timer = 0.8f;
+            for (int i = 0; i < _steps.Count; i++)
+                _steps[i] = (0.5f, _steps[i].action);
+        }
+    }
+
+    private void SetupVisuals()
+    {
+        // Dark background
+        var bg = new ColorRect();
+        bg.Color = new Color(0.05f, 0.05f, 0.08f);
+        bg.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        var bgLayer = new CanvasLayer { Layer = -1 };
+        bgLayer.AddChild(bg);
+        AddChild(bgLayer);
+
+        // Camera for dungeon view (right side of screen)
+        _camera = GetNodeOrNull<Camera2D>("Camera2D");
+        if (_camera == null)
+        {
+            _camera = new Camera2D();
+            AddChild(_camera);
+        }
+        _camera.Zoom = new Vector2(1.0f, 1.0f);
+        _camera.Position = new Vector2(400, 200);
+
+        // Entity layer for enemies/player markers
+        _entityLayer = new Node2D();
+        _entityLayer.ZIndex = 10;
+        AddChild(_entityLayer);
+
+        // UI overlay
+        var ui = new CanvasLayer { Layer = 20 };
+        AddChild(ui);
+
+        // Phase title (top center)
+        _phaseLabel = new Label();
+        _phaseLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        _phaseLabel.SetAnchorsPreset(Control.LayoutPreset.CenterTop);
+        _phaseLabel.Position = new Vector2(-200, 8);
+        _phaseLabel.Size = new Vector2(400, 40);
+        _phaseLabel.AddThemeColorOverride("font_color", new Color("#f5c86b"));
+        _phaseLabel.AddThemeFontSizeOverride("font_size", 20);
+        ui.AddChild(_phaseLabel);
+
+        // Scrolling log panel (left side)
+        var logPanel = new PanelContainer();
+        logPanel.Position = new Vector2(12, 50);
+        logPanel.Size = new Vector2(460, 700);
+        var logStyle = new StyleBoxFlat();
+        logStyle.BgColor = new Color(0.06f, 0.07f, 0.1f, 0.92f);
+        logStyle.BorderColor = new Color(0.961f, 0.784f, 0.420f, 0.25f);
+        logStyle.SetBorderWidthAll(1);
+        logStyle.SetCornerRadiusAll(6);
+        logStyle.SetContentMarginAll(8);
+        logPanel.AddThemeStyleboxOverride("panel", logStyle);
+        ui.AddChild(logPanel);
+
+        _logLabel = new RichTextLabel();
+        _logLabel.BbcodeEnabled = true;
+        _logLabel.ScrollFollowing = true;
+        _logLabel.FitContent = false;
+        _logLabel.AddThemeColorOverride("default_color", new Color("#b6bfdb"));
+        _logLabel.AddThemeFontSizeOverride("normal_font_size", 11);
+        logPanel.AddChild(_logLabel);
+
+        // Stats bar (bottom)
+        _statsLabel = new Label();
+        _statsLabel.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
+        _statsLabel.Position = new Vector2(-300, -30);
+        _statsLabel.Size = new Vector2(600, 25);
+        _statsLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        _statsLabel.AddThemeColorOverride("font_color", new Color("#ecf0ff"));
+        _statsLabel.AddThemeFontSizeOverride("font_size", 13);
+        ui.AddChild(_statsLabel);
+
+        // Hint label
+        var hint = new Label();
+        hint.Text = "Esc to quit";
+        hint.Position = new Vector2(12, 760);
+        hint.AddThemeColorOverride("font_color", new Color(1, 1, 1, 0.3f));
+        hint.AddThemeFontSizeOverride("font_size", 11);
+        ui.AddChild(hint);
+    }
+
+    private void RenderFloor(FloorData floor)
+    {
+        if (_isHeadless) return;
+
+        // Clear previous
+        _tileMap?.QueueFree();
+        foreach (var child in _entityLayer.GetChildren())
+            child.QueueFree();
+
+        // Load textures
+        var floorTex = TestHelper.LoadIssPng("res://assets/isometric/tiles/stone-soup/floors/floor_rect_gray.png");
+        var wallTex = TestHelper.LoadIssPng("res://assets/isometric/tiles/stone-soup/walls/brick_gray.png");
+        if (floorTex == null || wallTex == null) return;
+
+        var tileSet = new TileSet();
+        tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileSize = new Vector2I(64, 32);
+
+        // Floor source
+        var floorSrc = new TileSetAtlasSource();
+        floorSrc.Texture = floorTex;
+        floorSrc.TextureRegionSize = new Vector2I(64, 32);
+        int floorSrcId = tileSet.AddSource(floorSrc);
+        int fCols = floorTex.GetWidth() / 64;
+        int fRows = floorTex.GetHeight() / 32;
+        for (int ax = 0; ax < fCols; ax++)
+            for (int ay = 0; ay < fRows; ay++)
+                if (!floorSrc.HasTile(new Vector2I(ax, ay)))
+                    floorSrc.CreateTile(new Vector2I(ax, ay));
+
+        // Wall source
+        var wallSrc = new TileSetAtlasSource();
+        wallSrc.Texture = wallTex;
+        wallSrc.TextureRegionSize = new Vector2I(64, 64);
+        int wallSrcId = tileSet.AddSource(wallSrc);
+        int wCols = wallTex.GetWidth() / 64;
+        int wRows = wallTex.GetHeight() / 64;
+        for (int ax = 0; ax < wCols; ax++)
+            for (int ay = 0; ay < wRows; ay++)
+                if (!wallSrc.HasTile(new Vector2I(ax, ay)))
+                    wallSrc.CreateTile(new Vector2I(ax, ay));
+
+        _tileMap = new TileMapLayer();
+        _tileMap.TileSet = tileSet;
+        _tileMap.YSortEnabled = true;
+        AddChild(_tileMap);
+        MoveChild(_tileMap, 0);
+
+        int fi = 0, fv = fCols * fRows;
+        int wi = 0, wv = wCols;
+        for (int x = 0; x < floor.Width; x++)
+        {
+            for (int y = 0; y < floor.Height; y++)
+            {
+                if (floor.Tiles[x, y] == TileType.Floor)
+                {
+                    _tileMap.SetCell(new Vector2I(x, y), floorSrcId, new Vector2I(fi % fCols, (fi / fCols) % fRows));
+                    fi = (fi + 1) % fv;
+                }
+                else if (floor.IsFloor(x - 1, y) || floor.IsFloor(x + 1, y) || floor.IsFloor(x, y - 1) || floor.IsFloor(x, y + 1))
+                {
+                    _tileMap.SetCell(new Vector2I(x, y), wallSrcId, new Vector2I(wi % wv, 0));
+                    wi = (wi + 1) % wv;
+                }
+            }
+        }
+
+        // Center camera on entrance
+        var entrance = floor.Rooms.FirstOrDefault(r => r.Kind == RoomKind.Entrance);
+        if (entrance != null && _tileMap != null)
+        {
+            _camera.Position = _tileMap.MapToLocal(new Vector2I(entrance.CenterX, entrance.CenterY));
+            _camera.Zoom = new Vector2(0.7f, 0.7f);
+        }
+
+        // Room labels
+        foreach (var room in floor.Rooms)
+        {
+            var worldPos = _tileMap.MapToLocal(new Vector2I(room.CenterX, room.CenterY));
+            var lbl = new Label();
+            lbl.Text = room.Kind.ToString();
+            lbl.HorizontalAlignment = HorizontalAlignment.Center;
+            lbl.AddThemeFontSizeOverride("font_size", 10);
+            lbl.Position = worldPos - new Vector2(30, 8);
+            lbl.ZIndex = 15;
+            Color c = room.Kind switch
+            {
+                RoomKind.Entrance => new Color(0.3f, 0.9f, 0.4f),
+                RoomKind.Exit => new Color(0.9f, 0.3f, 0.3f),
+                RoomKind.Boss => new Color(0.9f, 0.2f, 0.9f),
+                RoomKind.Treasure => new Color(1.0f, 0.85f, 0.2f),
+                RoomKind.Challenge => new Color(1.0f, 0.5f, 0.0f),
+                _ => new Color(0.7f, 0.7f, 0.8f)
+            };
+            lbl.AddThemeColorOverride("font_color", c);
+            _entityLayer.AddChild(lbl);
+        }
+    }
+
+    private void SpawnEnemyMarker(string name, int x, int y, MonsterRarity rarity)
+    {
+        if (_isHeadless || _tileMap == null) return;
+        var worldPos = _tileMap.MapToLocal(new Vector2I(x, y));
+        var marker = new Polygon2D();
+        marker.Polygon = new Vector2[] { new(0, -8), new(6, 0), new(0, 8), new(-6, 0) };
+        marker.Color = rarity switch
+        {
+            MonsterRarity.Empowered => new Color("#ffde66"),
+            MonsterRarity.Named => new Color("#ff6f6f"),
+            _ => new Color("#6bff89")
+        };
+        marker.Position = worldPos;
+        marker.ZIndex = 12;
+        _entityLayer.AddChild(marker);
+
+        var lbl = new Label();
+        lbl.Text = name;
+        lbl.AddThemeFontSizeOverride("font_size", 9);
+        lbl.AddThemeColorOverride("font_color", marker.Color);
+        lbl.Position = worldPos + new Vector2(-20, -18);
+        lbl.ZIndex = 15;
+        _entityLayer.AddChild(lbl);
+    }
+
+    private void ShowFloatingDamage(int damage, bool crit)
+    {
+        if (_isHeadless || _tileMap == null) return;
+        var lbl = new Label();
+        lbl.Text = crit ? $"{damage}!" : $"{damage}";
+        lbl.AddThemeFontSizeOverride("font_size", crit ? 16 : 12);
+        lbl.AddThemeColorOverride("font_color", crit ? new Color("#f5c86b") : new Color("#ffffff"));
+        lbl.Position = _camera.Position + new Vector2(_rng.Next(-40, 40), _rng.Next(-30, 10));
+        lbl.ZIndex = 20;
+        _entityLayer.AddChild(lbl);
+        var tw = CreateTween();
+        tw.TweenProperty(lbl, "position:y", lbl.Position.Y - 30, 0.4f);
+        tw.Parallel().TweenProperty(lbl, "modulate:a", 0.0f, 0.4f);
+        tw.TweenCallback(Callable.From(lbl.QueueFree));
+    }
+
+    private void UpdateVisualStats()
+    {
+        if (_isHeadless) return;
+        var p = GameState.Player;
+        _statsLabel.Text = $"{p.Name} Lv.{p.Level}  HP:{p.HP}/{p.MaxHP}  MP:{p.MP}/{p.MaxMP}  Gold:{p.Gold}  XP:{p.XP}  Kills:{_totalKills}";
+    }
+
+    private void SetPhase(string phase)
+    {
+        if (_isHeadless) return;
+        _phaseLabel.Text = phase;
     }
 
     public override void _Process(double delta)
@@ -74,9 +324,17 @@ public partial class TestGameRun : Node2D
             else
             {
                 _complete = true;
-                GetTree().Quit(0);
+                // Only auto-quit in headless mode; in windowed mode, show summary and wait for Esc
+                if (DisplayServer.GetName() == "headless")
+                    GetTree().Quit(0);
             }
         }
+    }
+
+    public override void _UnhandledInput(InputEvent ev)
+    {
+        if (_complete && ev is InputEventKey key && key.Pressed && key.Keycode == Key.Escape)
+            GetTree().Quit(0);
     }
 
     // ==================== LOGGING & ASSERTIONS ====================
@@ -84,6 +342,23 @@ public partial class TestGameRun : Node2D
     private void Log(string msg)
     {
         GD.Print($"[TEST-GAME] {msg}");
+        if (!_isHeadless && _logLabel != null)
+        {
+            // Color-code different message types
+            if (msg.StartsWith("---"))
+                _logLabel.AppendText($"[color=#f5c86b]{msg}[/color]\n");
+            else if (msg.StartsWith("==="))
+                _logLabel.AppendText($"[color=#ff9340][b]{msg}[/b][/color]\n");
+            else if (msg.Contains("CRIT"))
+                _logLabel.AppendText($"[color=#ffde66]{msg}[/color]\n");
+            else if (msg.Contains("FAIL"))
+                _logLabel.AppendText($"[color=#ff6f6f]{msg}[/color]\n");
+            else if (msg.Contains("Killed") || msg.Contains("LEVEL UP"))
+                _logLabel.AppendText($"[color=#6bff89]{msg}[/color]\n");
+            else
+                _logLabel.AppendText($"{msg}\n");
+        }
+        UpdateVisualStats();
     }
 
     private void Assert(bool condition, string label)
@@ -106,12 +381,14 @@ public partial class TestGameRun : Node2D
         // ── Phase 1: INIT ──
         Step(0.05f, () =>
         {
+            SetPhase("FULL GAME LOOP TEST");
             Log("=== FULL GAME LOOP TEST ===");
             Log("");
         });
 
         Step(0.05f, () =>
         {
+            SetPhase("Phase 1: INIT");
             Log("--- Phase 1: INIT ---");
             GameState.Reset();
             GameState.Player.Name = "TestHero";
@@ -132,6 +409,7 @@ public partial class TestGameRun : Node2D
         Step(0.05f, () =>
         {
             Log("");
+            SetPhase("Phase 2: TOWN — SHOPPING");
             Log("--- Phase 2: TOWN — NPC SHOPPING ---");
             GameState.Location = GameLocation.Town;
             Log("Entered Town");
@@ -164,12 +442,16 @@ public partial class TestGameRun : Node2D
         Step(0.05f, () =>
         {
             Log("");
+            SetPhase("Phase 3: ENTER DUNGEON");
             Log("--- Phase 3: ENTER DUNGEON ---");
             GameState.Location = GameLocation.Dungeon;
             GameState.DungeonFloor = 1;
 
             var gen = new DungeonGenerator();
             _floor1 = gen.Generate(seed: 12345, floorNumber: 1);
+
+            // Render the dungeon floor visually
+            RenderFloor(_floor1);
 
             var (expectedW, expectedH) = DungeonGenerator.CalculateFloorSize(1);
             Log($"Entered Dungeon Floor 1, size {_floor1.Width}x{_floor1.Height}, {_floor1.Rooms.Count} rooms");

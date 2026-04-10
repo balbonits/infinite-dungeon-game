@@ -36,3 +36,25 @@ Active now: `@design-lead`, `@qa-lead`, `@devops-lead`
 4. **Tests before code.** Write or reference test cases before writing implementation.
 5. **Docs are the source of truth.** If code and docs disagree, one needs updating.
 6. **Specs before code.** Every system must be fully specified in `docs/` before implementation begins. No exceptions.
+
+## Post-Task Protocol
+
+After any code change, before committing:
+
+1. **Test:** Run `make test` — all tests must pass
+2. **Docs:** Update the relevant spec in `docs/` if game behavior changed
+3. **Journal:** Add what changed to `docs/dev-journal.md` under today's session
+4. **Changelog:** Add a summary line to `CHANGELOG.md`
+5. **Counts:** Update test counts in docs if tests were added/removed
+6. **Commit:** Use conventional format: `type(scope): description`
+   - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+   - Examples: `feat(combat): add elemental damage system`, `docs(journal): session 6d entry`
+
+This protocol is non-negotiable. Do not commit without completing these steps.
+
+## Documentation Maintenance
+
+- **Never hardcode volatile numbers** in AGENTS.md or CLAUDE.md (test counts, file counts, step counts). Reference commands instead: "Run `make test` for current count."
+- **Journal first, then commit.** The dev journal entry must exist before the git commit.
+- **CHANGELOG.md must stay current.** Every commit that changes behavior gets a changelog entry.
+- **New systems need docs.** If you create a new system (new .cs files with game logic), create a corresponding spec in `docs/systems/` or `docs/world/`.

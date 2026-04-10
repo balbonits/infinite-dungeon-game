@@ -33,8 +33,8 @@ e2e: build ## Run E2E demo test (headless Godot, console assertion)
 e2e-visual: build ## Run E2E visual capture test (screenshots + video)
 	@bash tests/e2e_visual_test.sh
 
-test-game: build ## Run full game loop test (windowed, watchable)
-	@$(GODOT) --path . scenes/tests/test_game.tscn &
+test-game: build ## Launch the actual game (play through the full loop)
+	@$(GODOT) --path . &
 
 test-game-headless: build ## Run full game loop E2E test (headless, CI-ready)
 	@$(GODOT) --path . --headless scenes/tests/test_game.tscn 2>&1

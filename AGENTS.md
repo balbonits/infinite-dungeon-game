@@ -428,17 +428,24 @@ docs/
 
 ## Current State
 
-**Phase: Implementation active.** All 26 specs are locked. Code is being written.
+**Phase: Implementation active.** Specs are locked. Full game loop implemented (menu → town → dungeon → combat → save/load).
 
-Stack: Godot 4.6 + C# (.NET 8+). Learning demo with 46-step automated showcase covering all core mechanics and UI patterns. 219 unit tests + 40 E2E assertions passing. Unified entity framework (EntityData + 6 systems) replaces separate PlayerState/MonsterData.
+**Stack:** Godot 4.6 + C# (.NET 8+). Unified entity framework (EntityData + 9 systems). Elemental damage, crit system, monster AI with archetypes and modifiers.
 
-**Current mode:** Implementation. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md). SETUP tickets partially complete (02a, 02b, 04a done). P1 tickets next.
+**Dynamic state** (do not hardcode numbers here — they go stale):
+- Test count: run `make test` or `dotnet test tests/DungeonGame.Tests.csproj`
+- Game loop test: run `make test-game-headless` (60 assertions, 16 phases)
+- Recent work: run `git log --oneline -10`
+- Ticket status: see [docs/dev-tracker.md](docs/dev-tracker.md)
+- Session history: see [docs/dev-journal.md](docs/dev-journal.md)
+
+**Current mode:** Implementation. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md).
 
 ## Priorities
 
-1. **Complete SETUP tickets** — see [docs/dev-tracker.md](docs/dev-tracker.md) for remaining SETUP items
-2. **P1 tickets** — Core gameplay loop (GameState autoload, tilemap, player, enemies, combat, HUD, death screen)
-3. **P2+ tickets** — Systems depth (leveling, stats, classes, save/load, death flow)
+1. **Close gaps** — Elemental damage integration, monster variety, unique items, pathfinding
+2. **Polish game loop** — Death flow, equipment UI, skill UI, full combat with all systems
+3. **Content** — Monster families per zone, unique item definitions, achievement system
 
 ---
 
