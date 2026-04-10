@@ -1379,4 +1379,47 @@ The pattern is: **scene + mode = test**. Any scene can be run in any mode. The m
 
 ---
 
+## Session 7 — Knowledgebase, Tracker Rewrite, Bug Fixes (2026-04-10)
+
+### What We Built
+
+**Game dev knowledgebase (22 docs in docs/basics/):**
+Built a permanent reference library covering sprites, collision, tilemaps, rendering, UI, camera, game feel, state machines, ARPG design, visual feedback, audio, save systems, pathfinding, procedural generation, performance, debugging, Godot TileSet, animation, shaders, patterns, difficulty, and playtesting. Each doc has: Why This Matters, Core Concepts, Godot 4 C# Implementation, Common Mistakes, Checklist, Sources.
+
+**Complete dev tracker rewrite:**
+Replaced the 1183-line original tracker (pre-implementation roadmap from before coding started) with a reality-based tracker. New structure: What's Built (done), What's Partial (bugs), What's Not Built (to do) with clear milestones: Playable Alpha → Feature Complete → Endgame → Polish → Ship.
+
+**Bug fixes this session:**
+- Pause menu centering (CenterContainer pattern)
+- Font loading errors (ResourceLoader.Exists guard)
+- NPC panel auto-open → requires button press
+- Game menu tabs (Inventory, Equipment, Stats, Skills, Settings, Game)
+- Settings panel (audio, gameplay, display, controls)
+- Responsive UI (containers replace hardcoded positions)
+- Test-game launches real game (not test harness)
+- Sprite align tool (sidebar UI, save system, auto-scan)
+
+**Sprite alignment tools:**
+- `tool-sprite-align`: sidebar with category dropdown, sprite list, scale/offset spinboxes, save button, auto-scan filesystem
+- `tool-sprite-frames`: sheet view, frame inspector, animation strip export
+
+### Key Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| 22 docs not 39 | Cut 17 that overlapped with existing docs/reference/ |
+| CenterContainer for all centering | GrowDirection gotcha makes manual anchors unreliable |
+| New tracker from scratch | Old tracker was pre-implementation; 90% of statuses were wrong |
+| Milestone-based organization | Playable Alpha → Feature Complete → Endgame → Polish → Ship |
+
+### What We Learned
+
+1. **We were coding like software engineers, not game developers.** The knowledgebase exists because every visual bug traced to not knowing game dev fundamentals.
+2. **Play the game, look at the screen.** The #1 debugging rule from debugging-games.md. We kept reading code instead of looking at what rendered.
+3. **CenterContainer > manual anchors.** Godot's GrowDirection gotcha (GitHub #86004) means programmatic centering fails silently. CenterContainer just works.
+4. **The old tracker was fiction.** 90% of tickets were "To Do" but the work was done — just not via the ticket system. Starting fresh with reality-based tracking.
+5. **ResourceLoader.Exists before Load.** Font loading crashed because the import cache was stale. Always check existence first.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*
