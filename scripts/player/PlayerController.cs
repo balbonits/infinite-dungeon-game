@@ -74,6 +74,10 @@ public partial class PlayerController : CharacterBody2D
         shape.Radius = 16f;
         collision.Shape = shape;
         AddChild(collision);
+
+        // Collision layers: player is on layer 2, detects walls (layer 1)
+        CollisionLayer = 2;
+        CollisionMask = 1;
     }
 
     public override void _PhysicsProcess(double delta)

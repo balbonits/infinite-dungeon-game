@@ -298,6 +298,26 @@ public partial class DungeonScene : Node2D
             }
         int wallBlockVariants = wallCols;
 
+        // Add physics layer for wall collision (layer 1 = walls)
+        tileSet.AddPhysicsLayer();
+        tileSet.SetPhysicsLayerCollisionLayer(0, 1); // walls on layer 1
+        tileSet.SetPhysicsLayerCollisionMask(0, 0);  // walls don't detect anything
+
+        // Add collision polygon to wall tiles (isometric diamond shape)
+        for (int ax = 0; ax < wallCols; ax++)
+            for (int ay = 0; ay < wallSheetRows; ay++)
+            {
+                var tileData = wallSource.GetTileData(new Vector2I(ax, ay), 0);
+                if (tileData != null)
+                {
+                    tileData.AddCollisionPolygon(0);
+                    tileData.SetCollisionPolygonPoints(0, 0, new Vector2[] {
+                        new(0, -TileH / 2f), new(TileW / 2f, 0),
+                        new(0, TileH / 2f), new(-TileW / 2f, 0)
+                    });
+                }
+            }
+
         _tileMap = new TileMapLayer();
         _tileMap.TileSet = tileSet;
         _tileMap.YSortEnabled = true;
@@ -447,61 +467,8 @@ public partial class DungeonScene : Node2D
     {
         if (_player == null || _tileMap == null || _floor == null) return;
 
-        // Wall collision: same approach as TownScene
-        var tileCoords = _player.GetTilePosition(_tileMap);
-
-        bool onWall = false;
-        if (tileCoords.X < 0 || tileCoords.X >= _floor.Width ||
-            tileCoords.Y < 0 || tileCoords.Y >= _floor.Height)
-        {
-            onWall = true;
-        }
-        else if (_floor.IsWall(tileCoords.X, tileCoords.Y))
-        {
-            onWall = true;
-        }
-
-        if (onWall)
-        {
-            var pos = _tileMap.ToLocal(_player.GlobalPosition);
-            var currentTile = _tileMap.LocalToMap(pos);
-
-            // Find nearest floor tile from neighbors
-            var entranceRoom = _floor.Rooms.Find(r => r.Kind == RoomKind.Entrance);
-            Vector2I fallback = entranceRoom != null
-                ? new Vector2I(entranceRoom.CenterX, entranceRoom.CenterY)
-                : new Vector2I(_floor.Width / 2, _floor.Height / 2);
-
-            Vector2I bestTile = fallback;
-            float bestDist = float.MaxValue;
-
-            Vector2I[] neighbors = {
-                currentTile + new Vector2I(1, 0),
-                currentTile + new Vector2I(-1, 0),
-                currentTile + new Vector2I(0, 1),
-                currentTile + new Vector2I(0, -1),
-                currentTile + new Vector2I(1, 1),
-                currentTile + new Vector2I(-1, -1),
-                currentTile + new Vector2I(1, -1),
-                currentTile + new Vector2I(-1, 1),
-            };
-
-            foreach (var n in neighbors)
-            {
-                if (_floor.IsFloor(n.X, n.Y))
-                {
-                    var nWorld = _tileMap.MapToLocal(n);
-                    float dist = pos.DistanceTo(nWorld);
-                    if (dist < bestDist)
-                    {
-                        bestDist = dist;
-                        bestTile = n;
-                    }
-                }
-            }
-
-            _player.GlobalPosition = _tileMap.ToGlobal(_tileMap.MapToLocal(bestTile));
-        }
+        // Wall collision is now handled by TileMap physics layers + MoveAndSlide
+        // (see FIX-02: TileSet has physics layer on wall tiles, player has mask=1)
     }
 
     // ==================== FRAME UPDATE ====================

@@ -143,6 +143,25 @@ public partial class TownScene : Node2D
             }
         int wallBlockVariants = wallCols;
 
+        // Add physics layer for wall collision
+        tileSet.AddPhysicsLayer();
+        tileSet.SetPhysicsLayerCollisionLayer(0, 1);
+        tileSet.SetPhysicsLayerCollisionMask(0, 0);
+
+        for (int ax = 0; ax < wallCols; ax++)
+            for (int ay = 0; ay < wallSheetRows; ay++)
+            {
+                var tileData = wallSource.GetTileData(new Vector2I(ax, ay), 0);
+                if (tileData != null)
+                {
+                    tileData.AddCollisionPolygon(0);
+                    tileData.SetCollisionPolygonPoints(0, 0, new Vector2[] {
+                        new(0, -TileH / 2f), new(TileW / 2f, 0),
+                        new(0, TileH / 2f), new(-TileW / 2f, 0)
+                    });
+                }
+            }
+
         _tileMap = new TileMapLayer();
         _tileMap.TileSet = tileSet;
         _tileMap.YSortEnabled = true;
@@ -283,67 +302,8 @@ public partial class TownScene : Node2D
         _camera.Position = Vector2.Zero; // camera sits at player origin
     }
 
-    public override void _PhysicsProcess(double delta)
-    {
-        if (_player == null || _tileMap == null) return;
-
-        // Wall collision: after PlayerController moves via MoveAndSlide,
-        // check if the new position is on a wall tile and push back.
-        // This follows the same tile-check approach as TestTown2.
-        var tileCoords = _player.GetTilePosition(_tileMap);
-
-        bool onWall = false;
-        if (tileCoords.X < 0 || tileCoords.X >= _townData.Width ||
-            tileCoords.Y < 0 || tileCoords.Y >= _townData.Height)
-        {
-            onWall = true;
-        }
-        else if (_townData.Tiles[tileCoords.X, tileCoords.Y] != TownTile.Floor)
-        {
-            onWall = true;
-        }
-
-        if (onWall)
-        {
-            // Revert to the nearest floor tile center.
-            // Find the last known good tile by checking the 4 cardinal neighbors.
-            var pos = _tileMap.ToLocal(_player.GlobalPosition);
-            var currentTile = _tileMap.LocalToMap(pos);
-
-            // Try to nudge back by checking surrounding tiles
-            Vector2I bestTile = new Vector2I(_townData.SpawnX, _townData.SpawnY);
-            float bestDist = float.MaxValue;
-
-            Vector2I[] neighbors = {
-                currentTile + new Vector2I(1, 0),
-                currentTile + new Vector2I(-1, 0),
-                currentTile + new Vector2I(0, 1),
-                currentTile + new Vector2I(0, -1),
-                currentTile + new Vector2I(1, 1),
-                currentTile + new Vector2I(-1, -1),
-                currentTile + new Vector2I(1, -1),
-                currentTile + new Vector2I(-1, 1),
-            };
-
-            foreach (var n in neighbors)
-            {
-                if (n.X >= 0 && n.X < _townData.Width &&
-                    n.Y >= 0 && n.Y < _townData.Height &&
-                    _townData.Tiles[n.X, n.Y] == TownTile.Floor)
-                {
-                    var nWorld = _tileMap.MapToLocal(n);
-                    float dist = pos.DistanceTo(nWorld);
-                    if (dist < bestDist)
-                    {
-                        bestDist = dist;
-                        bestTile = n;
-                    }
-                }
-            }
-
-            _player.GlobalPosition = _tileMap.ToGlobal(_tileMap.MapToLocal(bestTile));
-        }
-    }
+    // Wall collision is handled by TileMap physics layers + MoveAndSlide (FIX-02)
+    // No manual _PhysicsProcess wall checking needed.
 
     public override void _Process(double delta)
     {
