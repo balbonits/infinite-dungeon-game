@@ -4,6 +4,14 @@ Master navigation for all project documentation. 60+ files across 11 directories
 
 ---
 
+## Game Dev Fundamentals (read before coding)
+
+| Doc | Purpose |
+| --- | --- |
+| [basics/README.md](basics/README.md) | 22 learning docs: sprites, collision, tilemap, UI, camera, game feel, state machines, ARPG design, audio, save, pathfinding, shaders, Godot patterns, and more |
+
+---
+
 ## For AI Sessions (read first)
 
 | Doc | Purpose |

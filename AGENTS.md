@@ -40,6 +40,15 @@ This project uses specialized AI team leads defined in `.claude/agents/`. Each t
 
 ## Core Rules
 
+### 0. Learn Game Dev First
+
+Before implementing any visual, physics, or UI code, check [docs/basics/](docs/basics/) for the relevant fundamentals doc. These cover the patterns and pitfalls that cause real bugs in our game. Key docs:
+- Touching sprites? → [sprites-and-animation.md](docs/basics/sprites-and-animation.md)
+- Touching collision? → [collision-and-physics.md](docs/basics/collision-and-physics.md)
+- Touching tiles? → [tilemap-and-isometric.md](docs/basics/tilemap-and-isometric.md)
+- Touching UI? → [ui-design.md](docs/basics/ui-design.md)
+- Adding effects? → [game-feel.md](docs/basics/game-feel.md)
+
 ### 1. Scope Discipline (READ THIS FIRST)
 
 **This project is micromanaged. AI must stay strictly within the scope of the current task.**
