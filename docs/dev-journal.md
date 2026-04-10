@@ -1300,4 +1300,83 @@ Built 3 new systems with 100 tests to validate before speccing:
 
 ---
 
+## Session 6e — Universal Test Runner + Full E2E Pipeline (2026-04-09)
+
+### What We Built
+
+**Full game loop E2E test (`TestGameRun.cs`):**
+- 16-phase automated test running the complete game loop: init → town → shop → dungeon → combat → floor transitions → save/load → bank → backpack → systems validation → summary
+- 60 assertions validating every system: GameState, GameSystems, DungeonGenerator, SaveSerializer, BankSystem, BackpackSystem, ElementalCombat, CritSystem, MonsterBehavior, MonsterSpawner, MonsterModifiers, ItemGenerator
+- Runs headless in ~3 seconds, auto-quits, logs everything with `[TEST-GAME]` prefix
+- E2E shell script greps 22 phase markers for CI validation
+
+**Universal test runner (`tests/run-test.sh`):**
+- Single entry point for ALL test scenes with 4 modes via flags
+- Auto-resolves scene paths (handles dashes, underscores, `test_` prefixes)
+- Lists available scenes on error
+- Works with ANY scene, not just test-game
+
+**Screenshot + video capture pipeline:**
+- `--capture` flag: timed screenshots at key moments (2s, 5s, 10s, 15s, 20s) + 20s video recording
+- Evidence saved to `docs/evidence/<scene-name>/` with timestamps
+- Uses macOS `screencapture` — no dependencies
+
+**Regression testing:**
+- `--check` flag: headless run + crash/exception detection + evidence artifact verification
+- Scene-specific checks (test-game gets 6 extra assertions for game loop phases)
+
+### The Universal Test Command
+
+```
+make t S=<scene> [F=--flag]
+```
+
+| Flag | Mode | What It Does |
+|------|------|-------------|
+| *(none)* | Windowed | Launch scene, watch it run |
+| `--headless` | Headless | Console output, auto-quits, CI-ready |
+| `--capture` | Capture | Screenshots at timed intervals + video |
+| `--check` | Regression | Headless + crash detection + evidence check |
+
+**Examples that now work on ANY test scene:**
+```
+make t S=test-game                    # watch game loop
+make t S=test-game F=--headless       # CI: 60 assertions
+make t S=test-game F=--capture        # screenshots + video
+make t S=test-game F=--check          # full regression
+make t S=test-hero F=--capture        # capture hero viewer
+make t S=test-dungeon F=--headless    # headless dungeon gen
+make t S=test-hero F=--check          # check hero doesn't crash
+```
+
+### Why This Matters
+
+**This is a major architectural pattern.** Instead of writing separate capture/check/headless scripts for each test scene (which we were doing — `e2e_demo_test.sh`, `e2e_visual_test.sh`, `e2e_game_test.sh`, `e2e_game_capture.sh`, `e2e_game_visual_test.sh`), one universal runner handles everything. Adding a new test scene requires ZERO testing infrastructure — `run-test.sh` discovers it automatically.
+
+The pattern is: **scene + mode = test**. Any scene can be run in any mode. The modes are orthogonal to the content. This scales to 100 test scenes without 100 shell scripts.
+
+### Full Testing Suite
+
+| Command | Type | Duration | Assertions |
+|---------|------|----------|------------|
+| `make test` | Unit (xUnit) | <1s | 480 tests |
+| `make t S=test-game F=--headless` | Integration | ~3s | 60 assertions |
+| `make t S=test-game F=--capture` | Evidence gen | ~50s | 5 screenshots + video |
+| `make t S=test-game F=--check` | Regression | ~5s | Crash + phase + evidence |
+| `make test-all` | Full CI | ~5s | 480 unit + 60 E2E |
+
+### What We Learned
+
+1. **Scene + mode = test is the right abstraction.** Separating "what to test" (scene) from "how to test" (mode) eliminates per-scene test boilerplate. One script, infinite scenes.
+
+2. **Auto-resolving scene paths prevents typos.** `run-test.sh` tries `test-hero`, `test_hero`, `hero`, and lists available scenes on failure. No memorizing exact filenames.
+
+3. **Evidence directories per scene keep artifacts organized.** `docs/evidence/test-game/`, `docs/evidence/test-hero/` — each scene's screenshots and videos are isolated.
+
+4. **The `--check` mode is the real CI workhorse.** It catches: crashes (grep for SCRIPT ERROR), unhandled exceptions, missing evidence (run `--capture` first), AND scene-specific assertions. One command validates everything.
+
+5. **Headless Godot is a legitimate CI tool.** The full game loop runs in 3 seconds headless with zero visual rendering. This is faster than most web app E2E suites.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*
