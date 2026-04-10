@@ -11,7 +11,7 @@ echo "=== E2E Full Game Loop Test ==="
 echo "Running test-game in headless mode..."
 
 # Run the test and capture output
-OUTPUT=$( make test-game 2>&1 || true )
+OUTPUT=$( make test-game-headless 2>&1 || true )
 
 echo ""
 echo "--- Checking assertions ---"

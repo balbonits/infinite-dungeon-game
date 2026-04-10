@@ -5,7 +5,7 @@ GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 TIMEOUT    := 15
 
-.PHONY: help setup build run run-headless test test-game test-game-visual import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
+.PHONY: help setup build run run-headless test test-game test-game-headless import kill clean status verify doctor test-bsp test-drunkard test-cellular test-dungeon test-procgen
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -33,11 +33,11 @@ e2e: build ## Run E2E demo test (headless Godot, console assertion)
 e2e-visual: build ## Run E2E visual capture test (screenshots + video)
 	@bash tests/e2e_visual_test.sh
 
-test-game: build ## Run full game loop E2E test (headless, all systems)
-	@$(GODOT) --path . --headless scenes/tests/test_game.tscn 2>&1
-
-test-game-visual: build ## Run full game loop test (windowed, watchable)
+test-game: build ## Run full game loop test (windowed, watchable)
 	@$(GODOT) --path . scenes/tests/test_game.tscn &
+
+test-game-headless: build ## Run full game loop E2E test (headless, CI-ready)
+	@$(GODOT) --path . --headless scenes/tests/test_game.tscn 2>&1
 
 test-all: test e2e ## Run all tests (unit + E2E)
 
