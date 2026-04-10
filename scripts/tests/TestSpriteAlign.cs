@@ -92,6 +92,7 @@ public partial class TestSpriteAlign : Node2D
         // The sprite
         _sprite = new Sprite2D();
         _sprite.TextureFilter = TextureFilterEnum.Nearest;
+        _sprite.ZIndex = 5;
         AddChild(_sprite);
 
         // Load saved alignments
@@ -568,7 +569,7 @@ public partial class TestSpriteAlign : Node2D
             DrawIsoDiamond(0, 0, new Color("#f5c86b"));
         }
 
-        // Crosshair
+        // Crosshair at tile center
         DrawLine(new Vector2(-8, 0), new Vector2(8, 0), new Color(1, 0, 0, 0.5f), 1);
         DrawLine(new Vector2(0, -8), new Vector2(0, 8), new Color(0, 1, 0, 0.5f), 1);
     }
