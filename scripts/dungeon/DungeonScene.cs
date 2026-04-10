@@ -90,9 +90,13 @@ public partial class DungeonScene : Node2D
         _floorAnnounce.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, 0.8f));
         _floorAnnounce.AddThemeConstantOverride("shadow_offset_x", 2);
         _floorAnnounce.AddThemeConstantOverride("shadow_offset_y", 2);
-        _floorAnnounce.SetAnchorsPreset(Control.LayoutPreset.Center);
-        _floorAnnounce.Position = new Vector2(-100, -20);
-        _floorAnnounce.Size = new Vector2(200, 40);
+        _floorAnnounce.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.Center);
+        _floorAnnounce.GrowHorizontal = Control.GrowDirection.Both;
+        _floorAnnounce.GrowVertical = Control.GrowDirection.Both;
+        _floorAnnounce.OffsetLeft = -200;
+        _floorAnnounce.OffsetRight = 200;
+        _floorAnnounce.OffsetTop = -25;
+        _floorAnnounce.OffsetBottom = 25;
         _floorAnnounce.Visible = false;
         uiLayer.AddChild(_floorAnnounce);
 
@@ -105,9 +109,12 @@ public partial class DungeonScene : Node2D
         _entrancePrompt.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, 0.8f));
         _entrancePrompt.AddThemeConstantOverride("shadow_offset_x", 1);
         _entrancePrompt.AddThemeConstantOverride("shadow_offset_y", 1);
-        _entrancePrompt.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
-        _entrancePrompt.Position = new Vector2(-100, -50);
-        _entrancePrompt.Size = new Vector2(200, 24);
+        _entrancePrompt.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom);
+        _entrancePrompt.GrowHorizontal = Control.GrowDirection.Both;
+        _entrancePrompt.OffsetLeft = -150;
+        _entrancePrompt.OffsetRight = 150;
+        _entrancePrompt.OffsetTop = -50;
+        _entrancePrompt.OffsetBottom = -26;
         _entrancePrompt.Visible = false;
         uiLayer.AddChild(_entrancePrompt);
 

@@ -29,14 +29,21 @@ public partial class NpcPanel : Control
     {
         Visible = false;
 
-        // Anchor to right side of screen
-        SetAnchorsPreset(LayoutPreset.TopRight);
-        Position = new Vector2(-PanelWidth - 20, 20);
-        Size = new Vector2(PanelWidth, PanelHeight);
+        // Anchor to right side — responsive: 20px from right edge, 20px from top
+        AnchorLeft = 1.0f;
+        AnchorRight = 1.0f;
+        AnchorTop = 0.0f;
+        AnchorBottom = 0.0f;
+        OffsetLeft = -PanelWidth - 20;
+        OffsetRight = -20;
+        OffsetTop = 20;
+        OffsetBottom = 20 + PanelHeight;
+        GrowHorizontal = GrowDirection.Begin;
+        GrowVertical = GrowDirection.End;
 
-        // Panel background
+        // Panel background — fills this Control
         _panel = new Panel();
-        _panel.Size = new Vector2(PanelWidth, PanelHeight);
+        _panel.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         var style = new StyleBoxFlat();
         style.BgColor = PanelBg;
         style.BorderColor = BorderColor;
@@ -45,41 +52,48 @@ public partial class NpcPanel : Control
         _panel.AddThemeStyleboxOverride("panel", style);
         AddChild(_panel);
 
+        // Use a MarginContainer + VBox for responsive internal layout
+        var margin = new MarginContainer();
+        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        margin.AddThemeConstantOverride("margin_left", 16);
+        margin.AddThemeConstantOverride("margin_right", 16);
+        margin.AddThemeConstantOverride("margin_top", 12);
+        margin.AddThemeConstantOverride("margin_bottom", 12);
+        _panel.AddChild(margin);
+
+        var layout = new VBoxContainer();
+        layout.AddThemeConstantOverride("separation", 8);
+        margin.AddChild(layout);
+
         // NPC name
         _nameLabel = new Label();
-        _nameLabel.Position = new Vector2(16, 12);
-        _nameLabel.Size = new Vector2(PanelWidth - 32, 24);
         _nameLabel.AddThemeColorOverride("font_color", TitleColor);
         _nameLabel.AddThemeFontSizeOverride("font_size", 18);
         _nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
         var titleFont = ResourceLoader.Load<Font>("res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf");
         if (titleFont != null)
             _nameLabel.AddThemeFontOverride("font", titleFont);
-        _panel.AddChild(_nameLabel);
+        layout.AddChild(_nameLabel);
 
         // Greeting text
         _greetingLabel = new Label();
-        _greetingLabel.Position = new Vector2(16, 42);
-        _greetingLabel.Size = new Vector2(PanelWidth - 32, 40);
         _greetingLabel.AddThemeColorOverride("font_color", BodyColor);
         _greetingLabel.AddThemeFontSizeOverride("font_size", 12);
         _greetingLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _panel.AddChild(_greetingLabel);
+        layout.AddChild(_greetingLabel);
 
-        // Button container
+        // Button container (expands to fill remaining space)
         _buttonContainer = new VBoxContainer();
-        _buttonContainer.Position = new Vector2(16, 90);
-        _buttonContainer.Size = new Vector2(PanelWidth - 32, 200);
-        _panel.AddChild(_buttonContainer);
+        _buttonContainer.SizeFlagsVertical = SizeFlags.ExpandFill;
+        _buttonContainer.AddThemeConstantOverride("separation", 4);
+        layout.AddChild(_buttonContainer);
 
-        // Feedback label (buy/sell results)
+        // Feedback label (buy/sell results) at bottom
         _feedbackLabel = new Label();
-        _feedbackLabel.Position = new Vector2(16, PanelHeight - 36);
-        _feedbackLabel.Size = new Vector2(PanelWidth - 32, 24);
         _feedbackLabel.AddThemeColorOverride("font_color", GoldColor);
         _feedbackLabel.AddThemeFontSizeOverride("font_size", 11);
         _feedbackLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _panel.AddChild(_feedbackLabel);
+        layout.AddChild(_feedbackLabel);
     }
 
     public void ShowNpc(NpcData npc)

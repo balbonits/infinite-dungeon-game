@@ -53,25 +53,40 @@ public partial class PauseMenu : Control
         panel.AddThemeStyleboxOverride("panel", style);
         AddChild(panel);
 
+        // Use MarginContainer for responsive internal layout
+        var margin = new MarginContainer();
+        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        margin.AddThemeConstantOverride("margin_left", 24);
+        margin.AddThemeConstantOverride("margin_right", 24);
+        margin.AddThemeConstantOverride("margin_top", 16);
+        margin.AddThemeConstantOverride("margin_bottom", 16);
+        panel.AddChild(margin);
+
+        var layout = new VBoxContainer();
+        layout.AddThemeConstantOverride("separation", 12);
+        layout.Alignment = BoxContainer.AlignmentMode.Center;
+        margin.AddChild(layout);
+
         // Title: "PAUSED"
         var titleLabel = new Label();
         titleLabel.Text = "PAUSED";
-        titleLabel.Position = new Vector2(0, 16);
-        titleLabel.Size = new Vector2(PanelWidth, 28);
         titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
         titleLabel.AddThemeColorOverride("font_color", TitleColor);
         titleLabel.AddThemeFontSizeOverride("font_size", 20);
         var titleFont = ResourceLoader.Load<Font>("res://assets/fonts/extracted/TinyRPG-BrilliantStrength.ttf");
         if (titleFont != null)
             titleLabel.AddThemeFontOverride("font", titleFont);
-        panel.AddChild(titleLabel);
+        layout.AddChild(titleLabel);
+
+        // Spacer
+        var spacer = new Control();
+        spacer.CustomMinimumSize = new Vector2(0, 8);
+        layout.AddChild(spacer);
 
         // Button container
         var buttonBox = new VBoxContainer();
-        buttonBox.Position = new Vector2(30, 60);
-        buttonBox.Size = new Vector2(PanelWidth - 60, PanelHeight - 80);
         buttonBox.AddThemeConstantOverride("separation", 12);
-        panel.AddChild(buttonBox);
+        layout.AddChild(buttonBox);
 
         // Resume button
         var resumeBtn = CreateMenuButton("Resume");
@@ -90,12 +105,10 @@ public partial class PauseMenu : Control
 
         // Status feedback label (shows "Saved!" etc.)
         _statusLabel = new Label();
-        _statusLabel.Position = new Vector2(0, PanelHeight - 36);
-        _statusLabel.Size = new Vector2(PanelWidth, 24);
         _statusLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _statusLabel.AddThemeColorOverride("font_color", TitleColor);
         _statusLabel.AddThemeFontSizeOverride("font_size", 12);
-        panel.AddChild(_statusLabel);
+        layout.AddChild(_statusLabel);
     }
 
     public override void _UnhandledInput(InputEvent ev)

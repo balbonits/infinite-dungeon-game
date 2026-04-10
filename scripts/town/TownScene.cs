@@ -78,9 +78,12 @@ public partial class TownScene : Node2D
         _entrancePrompt.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, 0.8f));
         _entrancePrompt.AddThemeConstantOverride("shadow_offset_x", 1);
         _entrancePrompt.AddThemeConstantOverride("shadow_offset_y", 1);
-        _entrancePrompt.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
-        _entrancePrompt.Position = new Vector2(-100, -50);
-        _entrancePrompt.Size = new Vector2(200, 24);
+        _entrancePrompt.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom);
+        _entrancePrompt.GrowHorizontal = Control.GrowDirection.Both;
+        _entrancePrompt.OffsetLeft = -150;
+        _entrancePrompt.OffsetRight = 150;
+        _entrancePrompt.OffsetTop = -50;
+        _entrancePrompt.OffsetBottom = -26;
         _entrancePrompt.Visible = false;
         uiLayer.AddChild(_entrancePrompt);
 

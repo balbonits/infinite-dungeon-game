@@ -2,9 +2,8 @@ using Godot;
 
 /// <summary>
 /// Gameplay HUD overlay. Renders HP/MP orbs, floor indicator,
-/// gold counter, and level/XP display. Lives on a CanvasLayer
-/// so it stays fixed on screen regardless of camera position.
-/// Mouse input passes through to the game world.
+/// gold counter, and level/XP display. Uses responsive anchors
+/// and margins — no hardcoded pixel positions.
 /// </summary>
 public partial class GameplayHud : Control
 {
@@ -15,29 +14,41 @@ public partial class GameplayHud : Control
 
     public override void _Ready()
     {
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         MouseFilter = MouseFilterEnum.Ignore;
 
-        // HP/MP orbs at bottom corners (self-positioning via viewport size)
+        // HP/MP orbs (self-positioning via viewport size in _Draw)
         _orbs = new HpMpOrbs();
         AddChild(_orbs);
 
-        // Floor number (top center)
-        _floorLabel = CreateHudLabel(HorizontalAlignment.Center);
-        _floorLabel.SetAnchorsPreset(LayoutPreset.CenterTop);
-        _floorLabel.Position = new Vector2(0, 12);
-        AddChild(_floorLabel);
+        // Top bar: MarginContainer with HBoxContainer for responsive layout
+        var topMargin = new MarginContainer();
+        topMargin.SetAnchorsAndOffsetsPreset(LayoutPreset.TopWide);
+        topMargin.OffsetBottom = 40;
+        topMargin.AddThemeConstantOverride("margin_left", 16);
+        topMargin.AddThemeConstantOverride("margin_right", 16);
+        topMargin.AddThemeConstantOverride("margin_top", 10);
+        topMargin.MouseFilter = MouseFilterEnum.Ignore;
+        AddChild(topMargin);
 
-        // Gold counter (top right)
-        _goldLabel = CreateHudLabel(HorizontalAlignment.Right);
-        _goldLabel.SetAnchorsPreset(LayoutPreset.TopRight);
-        _goldLabel.Position = new Vector2(-12, 12);
-        AddChild(_goldLabel);
+        var topBar = new HBoxContainer();
+        topBar.MouseFilter = MouseFilterEnum.Ignore;
+        topMargin.AddChild(topBar);
 
-        // Level and XP (top left)
+        // Level/XP (left)
         _levelLabel = CreateHudLabel(HorizontalAlignment.Left);
-        _levelLabel.SetAnchorsPreset(LayoutPreset.TopLeft);
-        _levelLabel.Position = new Vector2(12, 12);
-        AddChild(_levelLabel);
+        _levelLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        topBar.AddChild(_levelLabel);
+
+        // Floor (center)
+        _floorLabel = CreateHudLabel(HorizontalAlignment.Center);
+        _floorLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        topBar.AddChild(_floorLabel);
+
+        // Gold (right)
+        _goldLabel = CreateHudLabel(HorizontalAlignment.Right);
+        _goldLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        topBar.AddChild(_goldLabel);
     }
 
     public override void _Process(double delta)
@@ -50,15 +61,12 @@ public partial class GameplayHud : Control
         _levelLabel.Text = $"Lv.{p.Level}  XP:{p.XP}/{p.XPToNextLevel}";
     }
 
-    /// <summary>
-    /// Create a HUD label with the standard ink-white color, text shadow,
-    /// and 14px font size from docs/ui/hud.md.
-    /// </summary>
     private Label CreateHudLabel(HorizontalAlignment align)
     {
         var label = new Label();
         label.HorizontalAlignment = align;
-        label.AddThemeColorOverride("font_color", new Color("#ecf0ff"));     // ink white
+        label.MouseFilter = MouseFilterEnum.Ignore;
+        label.AddThemeColorOverride("font_color", new Color("#ecf0ff"));
         label.AddThemeFontSizeOverride("font_size", 14);
         label.AddThemeColorOverride("font_shadow_color", new Color(0, 0, 0, 0.8f));
         label.AddThemeConstantOverride("shadow_offset_x", 1);
