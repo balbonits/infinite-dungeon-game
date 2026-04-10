@@ -42,9 +42,17 @@ public partial class EnemyEntity : Node2D
 
     public MonsterData MonsterData => _monsterData;
 
-    public void Init(MonsterData data)
+    private AStarGrid2D _astar;
+    private TileMapLayer _tileMapRef;
+    private Vector2[] _path;
+    private int _pathIndex;
+    private float _pathTimer;
+
+    public void Init(MonsterData data, AStarGrid2D astar = null, TileMapLayer tileMap = null)
     {
         _monsterData = data;
+        _astar = astar;
+        _tileMapRef = tileMap;
     }
 
     public override void _Ready()
@@ -156,9 +164,57 @@ public partial class EnemyEntity : Node2D
                 _ => Tier1Speed,
             };
             float speed = baseSpeed * speedMult * modSpeed;
-            var dir = (player.GlobalPosition - GlobalPosition).Normalized();
-            Position += dir * speed * (float)delta;
-            UpdateSpriteAnimation((float)delta, dir);
+
+            Vector2 moveDir;
+
+            // Use A* pathfinding if available (see docs/basics/pathfinding.md)
+            if (_astar != null && _tileMapRef != null)
+            {
+                _pathTimer -= (float)delta;
+                if (_pathTimer <= 0 || _path == null)
+                {
+                    _pathTimer = 0.3f + (float)GD.RandRange(0, 0.15); // Stagger
+                    var myTile = _tileMapRef.LocalToMap(_tileMapRef.ToLocal(GlobalPosition));
+                    var playerTile = _tileMapRef.LocalToMap(_tileMapRef.ToLocal(player.GlobalPosition));
+
+                    // Clamp to grid bounds
+                    myTile = new Vector2I(
+                        Mathf.Clamp(myTile.X, 0, _astar.Region.Size.X - 1),
+                        Mathf.Clamp(myTile.Y, 0, _astar.Region.Size.Y - 1));
+                    playerTile = new Vector2I(
+                        Mathf.Clamp(playerTile.X, 0, _astar.Region.Size.X - 1),
+                        Mathf.Clamp(playerTile.Y, 0, _astar.Region.Size.Y - 1));
+
+                    if (!_astar.IsPointSolid(myTile) && !_astar.IsPointSolid(playerTile))
+                    {
+                        _path = _astar.GetPointPath(myTile, playerTile);
+                        _pathIndex = 1; // Skip first point (current position)
+                    }
+                }
+
+                if (_path != null && _pathIndex < _path.Length)
+                {
+                    var targetWorld = _tileMapRef.ToGlobal(_tileMapRef.MapToLocal(
+                        new Vector2I((int)_path[_pathIndex].X, (int)_path[_pathIndex].Y)));
+                    moveDir = (targetWorld - GlobalPosition).Normalized();
+
+                    if (GlobalPosition.DistanceTo(targetWorld) < 8)
+                        _pathIndex++;
+                }
+                else
+                {
+                    // Fallback: straight-line
+                    moveDir = (player.GlobalPosition - GlobalPosition).Normalized();
+                }
+            }
+            else
+            {
+                // No pathfinding: straight-line chase
+                moveDir = (player.GlobalPosition - GlobalPosition).Normalized();
+            }
+
+            Position += moveDir * speed * (float)delta;
+            UpdateSpriteAnimation((float)delta, moveDir);
         }
 
         // Attack if within attack range and cooldown is ready

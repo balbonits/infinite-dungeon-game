@@ -28,6 +28,7 @@ public partial class DungeonScene : Node2D
     private FloorCache _floorCache;
     private TileMapLayer _tileMap;
     private FloorData _floor;
+    private AStarGrid2D _astar;
     private PlayerController _player;
     private Node2D _entityContainer;
     private DungeonGame.Automap _automap;
@@ -152,6 +153,20 @@ public partial class DungeonScene : Node2D
 
         // Build tilemap
         BuildTileMap();
+
+        // Build A* pathfinding grid from floor data (see docs/basics/pathfinding.md)
+        _astar = new AStarGrid2D();
+        _astar.Region = new Rect2I(0, 0, _floor.Width, _floor.Height);
+        _astar.CellSize = new Vector2(TileW, TileH);
+        _astar.CellShape = AStarGrid2D.CellShapeEnum.IsometricDown;
+        _astar.DiagonalMode = AStarGrid2D.DiagonalModeEnum.OnlyIfNoObstacles;
+        _astar.JumpingEnabled = true;
+        _astar.Update();
+
+        for (int x = 0; x < _floor.Width; x++)
+            for (int y = 0; y < _floor.Height; y++)
+                if (_floor.IsWall(x, y))
+                    _astar.SetPointSolid(new Vector2I(x, y), true);
 
         // Find special rooms
         _exitRoom = null;
@@ -446,7 +461,7 @@ public partial class DungeonScene : Node2D
         var worldPos = _tileMap.MapToLocal(new Vector2I(tileX, tileY));
 
         var enemy = new EnemyEntity();
-        enemy.Init(monsterData);
+        enemy.Init(monsterData, _astar, _tileMap);
         enemy.Position = worldPos;
         enemy.ZIndex = 15;
         _entityContainer.AddChild(enemy);
@@ -461,6 +476,8 @@ public partial class DungeonScene : Node2D
         string name = bossNames[rng.Next(bossNames.Length)];
 
         var monsterData = GameSystems.SpawnMonster(name, MonsterTier.Tier3);
+        monsterData.Archetype = MonsterArchetype.Bruiser;
+        monsterData.Rarity = MonsterRarity.Named;
 
         // 3x HP multiplier for boss
         monsterData.HP *= 3;
@@ -471,7 +488,7 @@ public partial class DungeonScene : Node2D
         var worldPos = _tileMap.MapToLocal(new Vector2I(room.CenterX, room.CenterY));
 
         var enemy = new EnemyEntity();
-        enemy.Init(monsterData);
+        enemy.Init(monsterData, _astar, _tileMap);
         enemy.Position = worldPos;
         enemy.ZIndex = 15;
         _entityContainer.AddChild(enemy);
