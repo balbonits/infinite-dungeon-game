@@ -164,16 +164,24 @@ public partial class TestSpriteAlign : Node2D
     {
         if (cat.StartsWith("characters")) return 32;
         if (cat.Contains("creatures")) return 8;
-        if (cat.StartsWith("enemies")) return 8;
+        if (cat.StartsWith("enemies") && !cat.Contains("detailed")) return 8;
         if (cat.StartsWith("npcs") && !cat.Contains("parts")) return 8;
-        return 1; // single sprite (objects, walls, ui)
+        // Tiles: detect from common ISS/SBS sheet sizes
+        if (cat.Contains("tiles") || cat.Contains("floors") || cat.Contains("walls"))
+        {
+            // ISS floor sheets are typically 256x64 (4x2 at 64x32) or similar
+            // ISS wall sheets are 512x128 (8x2 at 64x64)
+            // Return 1 — we'll show individual tiles via _currentFrame stepping
+            return 1;
+        }
+        return 1;
     }
 
     private int GuessVframes(string cat, string name)
     {
         if (cat.StartsWith("characters")) return 8;
         if (cat.Contains("creatures")) return 8;
-        if (cat.StartsWith("enemies")) return 8;
+        if (cat.StartsWith("enemies") && !cat.Contains("detailed")) return 8;
         if (cat.StartsWith("npcs") && !cat.Contains("parts")) return 8;
         return 1;
     }
@@ -183,6 +191,9 @@ public partial class TestSpriteAlign : Node2D
         if (cat.StartsWith("characters")) return 0.625f;
         if (cat.Contains("creatures")) return 0.3125f;
         if (cat.StartsWith("enemies")) return 0.3125f;
+        // Tiles should render at 1:1 scale (64x32 tiles match the 64x32 diamond)
+        if (cat.Contains("tiles") || cat.Contains("floors") || cat.Contains("walls"))
+            return 1.0f;
         return 0.5f;
     }
 
@@ -405,9 +416,55 @@ public partial class TestSpriteAlign : Node2D
         if (tex != null)
         {
             _sprite.Texture = tex;
-            _sprite.Hframes = entry.Hframes;
-            _sprite.Vframes = entry.Vframes;
+
+            int hf = entry.Hframes;
+            int vf = entry.Vframes;
+
+            // Auto-detect tile sheet grid if marked as single frame
+            if (hf == 1 && vf == 1 && tex.GetWidth() > 64)
+            {
+                string cat = entry.Category;
+                if (cat.Contains("wall") || cat.Contains("Wall"))
+                {
+                    // Wall blocks: 64x64 cells
+                    hf = tex.GetWidth() / 64;
+                    vf = tex.GetHeight() / 64;
+                }
+                else if (cat.Contains("floor") || cat.Contains("Floor"))
+                {
+                    // Floor tiles: 64x32 cells
+                    hf = tex.GetWidth() / 64;
+                    vf = tex.GetHeight() / 32;
+                }
+                else if (cat.Contains("autotile") || cat.Contains("128x64"))
+                {
+                    // SBS autotiles: 128x64 cells
+                    hf = tex.GetWidth() / 128;
+                    vf = tex.GetHeight() / 64;
+                }
+                else
+                {
+                    // Generic: try 64x32 first, then 64x64
+                    if (tex.GetWidth() % 64 == 0 && tex.GetHeight() % 32 == 0)
+                    {
+                        hf = tex.GetWidth() / 64;
+                        vf = tex.GetHeight() / 32;
+                    }
+                    else if (tex.GetWidth() % 64 == 0 && tex.GetHeight() % 64 == 0)
+                    {
+                        hf = tex.GetWidth() / 64;
+                        vf = tex.GetHeight() / 64;
+                    }
+                }
+                if (hf < 1) hf = 1;
+                if (vf < 1) vf = 1;
+            }
+
+            _sprite.Hframes = hf;
+            _sprite.Vframes = vf;
             _sprite.Visible = true;
+
+            GD.Print($"[SPRITE-ALIGN] Loaded: {entry.Path} ({tex.GetWidth()}x{tex.GetHeight()}) grid={hf}x{vf}");
         }
         else
         {
