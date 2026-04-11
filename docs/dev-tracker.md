@@ -42,15 +42,15 @@ Current state of the game. Updated as work completes. Run `make build` to verify
 | ID | Title | Status | Notes |
 |----|-------|--------|-------|
 | SYS-01 | Character class selection (Warrior/Ranger/Mage) | Done | ClassSelect screen with stat cards, skill previews, keyboard/mouse nav. Warrior=melee slash, Ranger=arrow projectile, Mage=magic bolt+staff fallback. |
-| SYS-02 | Skill definitions + use-based leveling | To Do | `AttackConfig` system exists (data-driven melee/projectile), but no skill trees, no skill XP, no skill UI. |
+| SYS-02 | Skill definitions + use-based leveling | Done | Full skill tree: 80+ skills across 3 classes, SkillDatabase, SkillTracker, use-based XP + skill points, passive bonuses, SkillTreeDialog UI in pause menu. |
 | SYS-03 | Death penalty flow (XP loss, item loss, buyout) | Done | Multi-step flow: XP loss, item loss chance, gold buyout option, Sacrificial Idol prevention. |
-| SYS-04 | Quest system (Adventure Guild radiant quests) | To Do | Guild Master NPC exists with placeholder service button. No quest logic. |
-| SYS-05 | Level Teleporter NPC | Partial | AscendDialog exists at stairs-up: return to town, go up one floor, select previous floor. Teleporter NPC in town has placeholder "Teleport" service button but no direct floor-select UI. |
-| SYS-06 | Blacksmith crafting UI | To Do | Blacksmith NPC exists in town with "Open Forge" service button. No crafting logic or UI -- shows "coming soon" toast. |
-| SYS-07 | Bank UI | To Do | Banker NPC exists in town with "Open Vault" service button. No bank logic or UI -- shows "coming soon" toast. |
-| SYS-08 | Unique items (70-100 fixed-effect items) | To Do | ItemDef system built, ItemDatabase has 8 starter items (potions, quivers, weapons). No unique/legendary items. |
-| SYS-09 | Achievement system (Fated Ledger) | To Do | Not started. |
-| SYS-10 | Monster families (zone-exclusive creature sets) | Partial | 7 species: Skeleton, Goblin, Bat, Wolf, Orc, Dark Mage, Spider. Per-species collision (SpeciesConfig/SpeciesDatabase). No zone exclusivity or family behavior yet. |
+| SYS-04 | Quest system (Adventure Guild radiant quests) | Done | QuestTracker with Kill/ClearFloor/DepthPush types, 3 active quests, scaling rewards, QuestPanel UI at Guild Master NPC, save/load. |
+| SYS-05 | Level Teleporter NPC | Done | TeleportDialog with floor selection, zone labels, wired to Teleporter NPC service button. |
+| SYS-06 | Blacksmith crafting UI | Done | BlacksmithWindow with Craft/Recycle tabs, AffixDatabase (28 affixes, tiers 1-4), deterministic affix application, gear recycling for gold. |
+| SYS-07 | Bank UI | Done | BankWindow with deposit/withdraw, 50 start slots, expansion purchasing (500*N^2), persistent save/load. |
+| SYS-08 | Items & affix system | Done | AffixDef/AffixDatabase, CraftableItem model, Crafting logic (max 3 prefix + 3 suffix), BaseQuality enum. Unique items catalog pending. |
+| SYS-09 | Achievement system (Fated Ledger) | Done | AchievementTracker with 30 achievements across 5 categories, counter-based tracking, gold/title rewards, FatedLedger UI in pause menu. |
+| SYS-10 | Monster families (zone-exclusive creature sets) | Done | Constants.Zones with 10-floor zone system, zone-gated species spawning. Zone 1: Skeleton+Bat, Zone 2: Goblin+Wolf, Zone 3: Orc+Spider, Zone 4: DarkMage mix, Zone 5+: all. |
 
 ---
 
@@ -182,7 +182,7 @@ These systems were implemented during visual-first development but were not part
 | Category | Count | Location |
 |----------|-------|----------|
 | Scene files (.tscn) | 8 | `scenes/` |
-| C# scripts | 37 | `scripts/` (includes autoloads/, ui/, logic/) |
+| C# scripts | 67 | `scripts/` (includes autoloads/, ui/, logic/) |
 | Input actions | 12 | `project.godot` [input] section |
 | Autoloads | 2 | GameState, EventBus |
 | Item definitions | 8 | `ItemDatabase.cs` |

@@ -142,6 +142,60 @@ public static class Strings
         public static string GoUpOneFloor(int floor) => $"Go to Floor {floor}";
     }
 
+    // --- Achievements ---
+    public static class Achievements
+    {
+        public const string Title = "FATED LEDGER";
+    }
+
+    // --- Quests ---
+    public static class Quests
+    {
+        public const string Title = "ADVENTURE GUILD";
+        public const string Claim = "Claim";
+        public const string NewQuests = "New Quests";
+    }
+
+    // --- Blacksmith ---
+    public static class Blacksmith
+    {
+        public const string Title = "BLACKSMITH";
+        public const string CraftTab = "Craft";
+        public const string RecycleTab = "Recycle";
+        public const string CraftHint = "Select an equipment item to add affixes.";
+        public const string RecycleHint = "Break down equipment for gold.";
+        public const string Recycle = "Recycle";
+        public const string NoCraftable = "No equipment in backpack to craft.";
+        public const string NoRecyclable = "No equipment to recycle.";
+    }
+
+    // --- Bank ---
+    public static class Bank
+    {
+        public const string Title = "BANK VAULT";
+        public const string Deposit = "Deposit";
+        public const string Withdraw = "Withdraw";
+        public const string Expand = "Expand Vault";
+        public const string Empty = "Bank is empty.";
+    }
+
+    // --- Skills ---
+    public static class Skills
+    {
+        public const string Title = "SKILL TREE";
+        public const string SelectSkill = "Select a skill to view details.";
+        public static string PointsAvailable(int points) => $"Skill Points: {points}";
+    }
+
+    // --- Teleport ---
+    public static class Teleport
+    {
+        public const string Title = "TELEPORTER";
+        public const string Subtitle = "Select a previously visited floor.";
+        public const string Teleporting = "Teleporting...";
+        public const string NoFloorsVisited = "No dungeon floors visited yet.";
+    }
+
     // --- General UI ---
     public static class General
     {

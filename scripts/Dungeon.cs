@@ -16,13 +16,14 @@ public partial class Dungeon : Node2D
     private Node2D _stairsDownNode = null!;
     private Node2D _stairsUpNode = null!;
 
-    private int _roomWidth;
-    private int _roomHeight;
+    private int _mapWidth;
+    private int _mapHeight;
     private Vector2I _stairsDownPosition;
     private Vector2I _stairsUpPosition;
     private int _floorSourceBaseId;
     private int _wallSourceId;
     private int _floorSourceCount;
+    private FloorGenerator? _floorGen;
 
     public override void _Ready()
     {
@@ -42,25 +43,7 @@ public partial class Dungeon : Node2D
         for (int i = 0; i < Constants.Spawning.InitialEnemies; i++)
             SpawnEnemy();
 
-        // Create stairs objects with collision
-        _stairsDownNode = CreateStairsObject(Strings.Floor.StairsDown, UiTheme.Colors.Accent,
-            Constants.Assets.StairsDownTexture, true);
-        _stairsDownNode.GlobalPosition = _tileMap.MapToLocal(_stairsDownPosition);
-        _entities.AddChild(_stairsDownNode);
-
-        // Floor 1: always "Return to Town". Deeper floors: "Stairs Up"
-        int currentFloor = GameState.Instance.FloorNumber;
-        string upLabel = currentFloor <= 1
-            ? Strings.Ascend.ReturnToTown
-            : Strings.Floor.StairsUp;
-        Color upColor = currentFloor <= 1
-            ? UiTheme.Colors.Safe
-            : UiTheme.Colors.Muted;
-        GD.Print($"[Dungeon] Floor {currentFloor}, stairs up label: {upLabel}");
-        _stairsUpNode = CreateStairsObject(upLabel, upColor,
-            Constants.Assets.StairsUpTexture, false, isStairsUp: true);
-        _stairsUpNode.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
-        _entities.AddChild(_stairsUpNode);
+        PlaceStairs();
 
         // Set compass targets
         UpdateCompass();
@@ -116,6 +99,14 @@ public partial class Dungeon : Node2D
     {
         GameState.Instance.FloorNumber += 1;
 
+        // Track depth push quest
+        var depthQuest = GameState.Instance.Quests.RecordFloorReached(GameState.Instance.FloorNumber);
+        if (depthQuest != null)
+            Ui.Toast.Instance?.Success($"Quest ready: {depthQuest.Title}");
+
+        // Achievement: deepest floor
+        GameState.Instance.Achievements.SetCounter("deepest_floor", GameState.Instance.FloorNumber);
+
         // Clear all enemies
         foreach (Node child in _entities.GetChildren())
         {
@@ -139,23 +130,7 @@ public partial class Dungeon : Node2D
         // Recreate stairs with correct labels for the new floor
         _stairsDownNode.QueueFree();
         _stairsUpNode.QueueFree();
-
-        _stairsDownNode = CreateStairsObject(Strings.Floor.StairsDown, UiTheme.Colors.Accent,
-            Constants.Assets.StairsDownTexture, true);
-        _stairsDownNode.GlobalPosition = _tileMap.MapToLocal(_stairsDownPosition);
-        _entities.AddChild(_stairsDownNode);
-
-        int newFloor = GameState.Instance.FloorNumber;
-        string upLabel = newFloor <= 1
-            ? Strings.Ascend.ReturnToTown
-            : Strings.Floor.StairsUp;
-        Color upColor = newFloor <= 1
-            ? UiTheme.Colors.Safe
-            : UiTheme.Colors.Muted;
-        _stairsUpNode = CreateStairsObject(upLabel, upColor,
-            Constants.Assets.StairsUpTexture, false, isStairsUp: true);
-        _stairsUpNode.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
-        _entities.AddChild(_stairsUpNode);
+        PlaceStairs();
 
         UpdateCompass();
 
@@ -210,55 +185,55 @@ public partial class Dungeon : Node2D
 
     private void GenerateFloor()
     {
-        // Random room size — grows slightly with floor depth
-        int floorBonus = Mathf.Min(GameState.Instance.FloorNumber / Constants.FloorScaling.RoomGrowthPerFloors, Constants.FloorScaling.MaxRoomGrowth);
-        _roomWidth = (int)GD.RandRange(Constants.FloorScaling.MinRoomSize + floorBonus, Constants.FloorScaling.MaxRoomSize + floorBonus + 1);
-        _roomHeight = (int)GD.RandRange(Constants.FloorScaling.MinRoomSize + floorBonus, Constants.FloorScaling.MaxRoomSize + floorBonus + 1);
+        int floor = GameState.Instance.FloorNumber;
+        int seed = (int)(GD.Randi() ^ (uint)(floor * 7919));
 
-        // Paint the room
-        for (int col = 0; col < _roomWidth; col++)
+        _floorGen = new FloorGenerator(seed);
+        _floorGen.Generate(floor);
+
+        _mapWidth = _floorGen.Width;
+        _mapHeight = _floorGen.Height;
+
+        // Paint the grid onto the tilemap
+        for (int col = 0; col < _mapWidth; col++)
         {
-            for (int row = 0; row < _roomHeight; row++)
+            for (int row = 0; row < _mapHeight; row++)
             {
-                bool isBorder = col == 0 || col == _roomWidth - 1 ||
-                                row == 0 || row == _roomHeight - 1;
-
-                if (isBorder)
+                if (_floorGen.Grid[col, row] == FloorGenerator.Tile.Wall)
                 {
                     _tileMap.SetCell(new Vector2I(col, row), _wallSourceId, Constants.Tiles.AtlasCoords);
                 }
                 else
                 {
-                    // Random floor tile variation
                     int sourceId = _floorSourceBaseId + (int)(GD.Randi() % _floorSourceCount);
                     _tileMap.SetCell(new Vector2I(col, row), sourceId, Constants.Tiles.AtlasCoords);
                 }
             }
         }
 
-        // Place stairs with minimum margin from any wall (room for entities around stairs)
-        int wallMargin = Constants.FloorScaling.StairsWallMargin;
-        int centerCol = _roomWidth / 2;
-        int centerRow = _roomHeight / 2;
+        _stairsUpPosition = _floorGen.EntrancePos;
+        _stairsDownPosition = _floorGen.ExitPos;
+    }
 
-        if (GD.Randf() > 0.5f)
-        {
-            _stairsUpPosition = new Vector2I(
-                (int)GD.RandRange(wallMargin, centerCol - 2),
-                (int)GD.RandRange(wallMargin, centerRow - 2));
-            _stairsDownPosition = new Vector2I(
-                (int)GD.RandRange(centerCol + 2, _roomWidth - 1 - wallMargin),
-                (int)GD.RandRange(centerRow + 2, _roomHeight - 1 - wallMargin));
-        }
-        else
-        {
-            _stairsUpPosition = new Vector2I(
-                (int)GD.RandRange(centerCol + 2, _roomWidth - 1 - wallMargin),
-                (int)GD.RandRange(centerRow + 2, _roomHeight - 1 - wallMargin));
-            _stairsDownPosition = new Vector2I(
-                (int)GD.RandRange(wallMargin, centerCol - 2),
-                (int)GD.RandRange(wallMargin, centerRow - 2));
-        }
+    private void PlaceStairs()
+    {
+        int currentFloor = GameState.Instance.FloorNumber;
+
+        _stairsDownNode = CreateStairsObject(Strings.Floor.StairsDown, UiTheme.Colors.Accent,
+            Constants.Assets.StairsDownTexture, true);
+        _stairsDownNode.GlobalPosition = _tileMap.MapToLocal(_stairsDownPosition);
+        _entities.AddChild(_stairsDownNode);
+
+        string upLabel = currentFloor <= 1
+            ? Strings.Ascend.ReturnToTown
+            : Strings.Floor.StairsUp;
+        Color upColor = currentFloor <= 1
+            ? UiTheme.Colors.Safe
+            : UiTheme.Colors.Muted;
+        _stairsUpNode = CreateStairsObject(upLabel, upColor,
+            Constants.Assets.StairsUpTexture, false, isStairsUp: true);
+        _stairsUpNode.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
+        _entities.AddChild(_stairsUpNode);
     }
 
     private Node2D CreateStairsObject(string labelText, Color labelColor, string texturePath,
@@ -324,14 +299,14 @@ public partial class Dungeon : Node2D
     private void SpawnEnemy()
     {
         var player = GetTree().GetFirstNodeInGroup(Constants.Groups.Player) as Node2D;
-        Vector2 playerPos = player?.GlobalPosition ?? _tileMap.MapToLocal(new Vector2I(_roomWidth / 2, _roomHeight / 2));
+        Vector2 playerPos = player?.GlobalPosition ?? _tileMap.MapToLocal(new Vector2I(_mapWidth / 2, _mapHeight / 2));
 
         Vector2 spawnPos = Vector2.Zero;
         bool foundSafe = false;
 
         for (int attempt = 0; attempt < Constants.Spawning.MaxSpawnRetries; attempt++)
         {
-            spawnPos = GetRandomEdgePosition();
+            spawnPos = GetRandomFloorPosition();
             Vector2I tileCoord = _tileMap.LocalToMap(spawnPos);
 
             // Must be a floor tile, far from player, AND far from both staircases
@@ -372,44 +347,50 @@ public partial class Dungeon : Node2D
 
     private static int GetRandomAvailableSpecies()
     {
+        int floor = GameState.Instance.FloorNumber;
+        int[] zoneSpecies = Constants.Zones.GetZoneSpecies(floor);
+
+        // Filter to species with assets available
         var available = new System.Collections.Generic.List<int>();
-        for (int i = 0; i < Constants.Assets.EnemySpeciesRotations.Length; i++)
+        foreach (int species in zoneSpecies)
         {
-            string path = Constants.Assets.EnemySpeciesRotations[i] + "/south.png";
-            if (ResourceLoader.Exists(path))
-                available.Add(i);
+            if (species >= 0 && species < Constants.Assets.EnemySpeciesRotations.Length)
+            {
+                string path = Constants.Assets.EnemySpeciesRotations[species] + "/south.png";
+                if (ResourceLoader.Exists(path))
+                    available.Add(species);
+            }
         }
+
         return available.Count > 0
             ? available[(int)(GD.Randi() % available.Count)]
             : 0;
     }
 
-    private Vector2 GetRandomEdgePosition()
+    private Vector2 GetRandomFloorPosition()
     {
-        // Spawn inside walls — never on or near wall tiles
-        int margin = Constants.Spawning.SpawnWallMargin;
-        int edge = (int)(GD.Randi() % 4);
-        int spanW = _roomWidth - margin * 2;
-        int spanH = _roomHeight - margin * 2;
-        if (spanW < 1) spanW = 1;
-        if (spanH < 1) spanH = 1;
-
-        Vector2I coords = edge switch
+        // Pick a random floor tile from the generated layout
+        for (int attempt = 0; attempt < 50; attempt++)
         {
-            0 => new Vector2I(margin + (int)(GD.Randi() % spanW), margin),
-            1 => new Vector2I(_roomWidth - 1 - margin, margin + (int)(GD.Randi() % spanH)),
-            2 => new Vector2I(margin + (int)(GD.Randi() % spanW), _roomHeight - 1 - margin),
-            _ => new Vector2I(margin, margin + (int)(GD.Randi() % spanH)),
-        };
-
-        return _tileMap.MapToLocal(coords);
+            int x = (int)(GD.Randi() % _mapWidth);
+            int y = (int)(GD.Randi() % _mapHeight);
+            if (_floorGen != null && x > 0 && x < _mapWidth - 1 &&
+                y > 0 && y < _mapHeight - 1 &&
+                _floorGen.Grid[x, y] == FloorGenerator.Tile.Floor)
+            {
+                return _tileMap.MapToLocal(new Vector2I(x, y));
+            }
+        }
+        // Fallback to center
+        return _tileMap.MapToLocal(new Vector2I(_mapWidth / 2, _mapHeight / 2));
     }
 
     private bool IsFloorTile(Vector2I coords)
     {
-        // Floor tiles are inside the border (not row/col 0 or roomSize-1)
-        return coords.X > 0 && coords.X < _roomWidth - 1 &&
-               coords.Y > 0 && coords.Y < _roomHeight - 1;
+        if (coords.X <= 0 || coords.X >= _mapWidth - 1 ||
+            coords.Y <= 0 || coords.Y >= _mapHeight - 1)
+            return false;
+        return _floorGen != null && _floorGen.Grid[coords.X, coords.Y] == FloorGenerator.Tile.Floor;
     }
 
     private bool _floorWiped;
@@ -426,6 +407,12 @@ public partial class Dungeon : Node2D
 
     private async void OnEnemyDefeated(Vector2 position, int tier)
     {
+        // Track quest progress
+        int currentFloor = GameState.Instance.FloorNumber;
+        var completedQuest = GameState.Instance.Quests.RecordEnemyKill(currentFloor);
+        if (completedQuest != null)
+            Toast.Instance?.Success($"Quest ready: {completedQuest.Title}");
+
         // Wait before checking wipe — gives QueueFree time to process
         await ToSignal(GetTree().CreateTimer(0.1), "timeout");
         if (!IsInsideTree())
@@ -437,6 +424,12 @@ public partial class Dungeon : Node2D
         {
             _floorWiped = true;
             _spawnTimer.Stop();
+
+            // Track floor clear quest + achievement
+            var clearQuest = GameState.Instance.Quests.RecordFloorClear(GameState.Instance.FloorNumber);
+            if (clearQuest != null)
+                Toast.Instance?.Success($"Quest ready: {clearQuest.Title}");
+            GameState.Instance.Achievements.IncrementCounter("floor_wipes");
 
             // 3 second delay before showing wipe dialog
             await ToSignal(GetTree().CreateTimer(3.0), "timeout");

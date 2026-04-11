@@ -143,6 +143,34 @@ public static class Constants
         public static int GetMaxEnemyLevel(int floor) => floor + 2;
     }
 
+    // --- Zones (10-floor blocks with zone-exclusive species) ---
+    public static class Zones
+    {
+        public const int FloorsPerZone = 10;
+
+        /// <summary>Get the zone number for a floor (1-indexed).</summary>
+        public static int GetZone(int floor) => (floor - 1) / FloorsPerZone + 1;
+
+        /// <summary>Get species indices allowed on a given floor.</summary>
+        public static int[] GetZoneSpecies(int floor)
+        {
+            int zone = GetZone(floor);
+            return zone switch
+            {
+                1 => new[] { (int)EnemySpecies.Skeleton, (int)EnemySpecies.Bat },
+                2 => new[] { (int)EnemySpecies.Goblin, (int)EnemySpecies.Wolf },
+                3 => new[] { (int)EnemySpecies.Orc, (int)EnemySpecies.Spider },
+                4 => new[] { (int)EnemySpecies.DarkMage, (int)EnemySpecies.Skeleton, (int)EnemySpecies.Orc },
+                // Zone 5+: all species available, deeper = harder
+                _ => new[] {
+                    (int)EnemySpecies.Skeleton, (int)EnemySpecies.Goblin, (int)EnemySpecies.Bat,
+                    (int)EnemySpecies.Wolf, (int)EnemySpecies.Orc, (int)EnemySpecies.DarkMage,
+                    (int)EnemySpecies.Spider
+                },
+            };
+        }
+    }
+
     // --- XP / Leveling ---
     public static class Leveling
     {

@@ -210,7 +210,8 @@ public partial class Player : CharacterBody2D
 
             case TargetMode.SingleTarget:
                 // Damage is ALWAYS instant — melee or ranged, same thing
-                target.Call("TakeDamage", finalDamage);
+                if (target is IDamageable singleTarget)
+                    singleTarget.TakeDamage(finalDamage);
 
                 if (attack.IsProjectile)
                 {
@@ -261,7 +262,8 @@ public partial class Player : CharacterBody2D
             if (hitCount >= maxTargets)
                 break;
 
-            body.Call("TakeDamage", damage);
+            if (body is IDamageable dmg)
+                dmg.TakeDamage(damage);
             DrawSlash(body.GlobalPosition, effectColor);
             hitCount++;
         }
@@ -274,7 +276,8 @@ public partial class Player : CharacterBody2D
 
         for (int chain = 0; chain < attack.ChainCount && current != null; chain++)
         {
-            current.Call("TakeDamage", damage);
+            if (current is IDamageable chainTarget)
+                chainTarget.TakeDamage(damage);
             DrawSlash(current.GlobalPosition, attack.EffectColor);
             hit.Add(current);
 
