@@ -66,11 +66,14 @@ public partial class GameState : Node
         set
         {
             _floorNumber = value;
+            if (value > DeepestFloor)
+                DeepestFloor = value;
             EmitSignal(SignalName.StatsChanged);
         }
     }
 
     public bool IsDead { get; set; } = false;
+    public int DeepestFloor { get; set; } = 1;
     public PlayerClass SelectedClass { get; set; } = PlayerClass.Warrior;
     public Inventory PlayerInventory { get; set; } = new(25);
     public StatBlock Stats { get; private set; } = new();
@@ -92,6 +95,7 @@ public partial class GameState : Node
         Xp = 0;
         Level = 1;
         FloorNumber = 1;
+        DeepestFloor = 1;
         PlayerInventory = new Inventory(25);
         PlayerInventory.Gold = 100;
         Stats = new StatBlock();
@@ -114,9 +118,13 @@ public partial class GameState : Node
             // Apply class stat bonuses for this level
             Stats.ApplyClassLevelBonus(SelectedClass);
 
-            // Award skill points (2 per level, 3 at milestones every 25 levels)
-            int skillPointsAwarded = (Level % 25 == 0) ? 3 : 2;
-            Skills.SkillPoints += skillPointsAwarded;
+            // Spec (leveling.md): skill points — 2 per level, +1 extra at milestones (every 10th)
+            bool isMilestone = Level % 10 == 0;
+            Skills.SkillPoints += isMilestone ? 3 : 2;
+
+            // Spec (leveling.md): stat points — 3 per level, +2 extra at milestones (every 10th)
+            if (isMilestone)
+                Stats.FreePoints += 2; // bonus on top of the 3 from ApplyClassLevelBonus
 
             // Achievement counters
             Achievements.SetCounter("player_level", Level);
@@ -129,9 +137,11 @@ public partial class GameState : Node
             };
             Achievements.SetCounter(classCounter, Level);
 
-            // Recalculate MaxHp including STA bonus
+            // Recalculate MaxHp including STA bonus (spec: leveling.md)
             MaxHp = Constants.PlayerStats.GetMaxHp(Level) + Stats.BonusMaxHp;
-            Hp = Math.Min(MaxHp, Hp + Constants.PlayerStats.HealOnLevelUp);
+            // Spec: HP restore = floor(max_hp * 0.15)
+            int healAmount = (int)(MaxHp * Constants.PlayerStats.HealOnLevelUpPercent);
+            Hp = Math.Min(MaxHp, Hp + healAmount);
             xpToLevel = Constants.Leveling.GetXpToLevel(Level);
         }
     }

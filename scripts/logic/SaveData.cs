@@ -19,6 +19,7 @@ public record SaveData
     public int MaxHp { get; init; } = 100;
     public int Xp { get; init; }
     public int FloorNumber { get; init; } = 1;
+    public int DeepestFloor { get; init; } = 1;
 
     // Stats
     public int Str { get; init; }

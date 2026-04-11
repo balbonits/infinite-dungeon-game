@@ -141,16 +141,19 @@ public partial class Dungeon : Node2D
 
     private void SetupTileset()
     {
+        int zone = Constants.Zones.GetZone(GameState.Instance.FloorNumber);
+        var (floorPaths, wallPath) = Constants.Assets.GetZoneTheme(zone);
+
         var tileSet = new TileSet();
         tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
         tileSet.TileSize = Constants.Tiles.TileSize;
         tileSet.AddPhysicsLayer();
 
-        // Load all floor tile variations as separate atlas sources
+        // Load zone floor tile variations
         _floorSourceBaseId = -1;
         _floorSourceCount = 0;
 
-        foreach (string path in Constants.Assets.DungeonFloorTextures)
+        foreach (string path in floorPaths)
         {
             if (!ResourceLoader.Exists(path))
                 continue;
@@ -167,8 +170,26 @@ public partial class Dungeon : Node2D
             _floorSourceCount++;
         }
 
-        // Wall tile
-        Texture2D wallTexture = GD.Load<Texture2D>(Constants.Assets.DungeonWallTexture);
+        // Fallback to original dungeon tiles if zone tiles not found
+        if (_floorSourceCount == 0)
+        {
+            foreach (string path in Constants.Assets.DungeonFloorTextures)
+            {
+                if (!ResourceLoader.Exists(path)) continue;
+                Texture2D tex = GD.Load<Texture2D>(path);
+                var source = new TileSetAtlasSource();
+                source.Texture = tex;
+                source.TextureRegionSize = Constants.Tiles.TextureRegionSize;
+                source.CreateTile(Constants.Tiles.AtlasCoords);
+                int id = tileSet.AddSource(source);
+                if (_floorSourceBaseId < 0) _floorSourceBaseId = id;
+                _floorSourceCount++;
+            }
+        }
+
+        // Zone wall tile (with fallback)
+        string actualWallPath = ResourceLoader.Exists(wallPath) ? wallPath : Constants.Assets.DungeonWallTexture;
+        Texture2D wallTexture = GD.Load<Texture2D>(actualWallPath);
         var wallSource = new TileSetAtlasSource();
         wallSource.Texture = wallTexture;
         wallSource.TextureRegionSize = Constants.Tiles.TextureRegionSize;
@@ -194,20 +215,22 @@ public partial class Dungeon : Node2D
         _mapWidth = _floorGen.Width;
         _mapHeight = _floorGen.Height;
 
-        // Paint the grid onto the tilemap
+        // Paint the grid onto the tilemap.
+        // Walls are only placed as a 1-tile border around floor areas — not as solid blocks.
         for (int col = 0; col < _mapWidth; col++)
         {
             for (int row = 0; row < _mapHeight; row++)
             {
-                if (_floorGen.Grid[col, row] == FloorGenerator.Tile.Wall)
-                {
-                    _tileMap.SetCell(new Vector2I(col, row), _wallSourceId, Constants.Tiles.AtlasCoords);
-                }
-                else
+                if (_floorGen.Grid[col, row] == FloorGenerator.Tile.Floor)
                 {
                     int sourceId = _floorSourceBaseId + (int)(GD.Randi() % _floorSourceCount);
                     _tileMap.SetCell(new Vector2I(col, row), sourceId, Constants.Tiles.AtlasCoords);
                 }
+                else if (IsAdjacentToFloor(col, row))
+                {
+                    _tileMap.SetCell(new Vector2I(col, row), _wallSourceId, Constants.Tiles.AtlasCoords);
+                }
+                // else: leave empty (no tile) — avoids thick wall blocks
             }
         }
 
@@ -383,6 +406,21 @@ public partial class Dungeon : Node2D
         }
         // Fallback to center
         return _tileMap.MapToLocal(new Vector2I(_mapWidth / 2, _mapHeight / 2));
+    }
+
+    private bool IsAdjacentToFloor(int col, int row)
+    {
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                int nx = col + dx, ny = row + dy;
+                if (nx >= 0 && nx < _mapWidth && ny >= 0 && ny < _mapHeight
+                    && _floorGen!.Grid[nx, ny] == FloorGenerator.Tile.Floor)
+                    return true;
+            }
+        }
+        return false;
     }
 
     private bool IsFloorTile(Vector2I coords)
