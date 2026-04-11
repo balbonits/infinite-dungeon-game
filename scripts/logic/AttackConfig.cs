@@ -19,12 +19,25 @@ public record AttackConfig
     public float Cooldown { get; init; }
     public float DamageMultiplier { get; init; } = 1.0f;
 
+    // --- Targeting ---
+    public TargetMode TargetMode { get; init; } = TargetMode.SingleTarget;
+    public float AoeRadius { get; init; }
+    public int MaxTargets { get; init; } = 1;
+    public int ChainCount { get; init; } = 1;
+    public float ChainRange { get; init; }
+    public float LineWidth { get; init; } = 20.0f;
+    public float ConeAngle { get; init; } = 60.0f;
+    public float HomingTurnSpeed { get; init; } = 5.0f;
+
     // --- Projectile (null = instant melee hit) ---
     public bool IsProjectile { get; init; }
     public float ProjectileSpeed { get; init; }
     public string ProjectileTexture { get; init; } = "";
     public float ProjectileScale { get; init; } = 1.0f;
     public Color? ProjectileTint { get; init; }
+    public bool PiercesTargets { get; init; }
+    public int ForkCount { get; init; }
+    public int SplitCount { get; init; }
 
     // --- Visual feedback ---
     public VisualEffect Effect { get; init; } = VisualEffect.Slash;

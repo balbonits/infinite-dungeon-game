@@ -73,6 +73,7 @@ public partial class GameState : Node
     public bool IsDead { get; set; } = false;
     public PlayerClass SelectedClass { get; set; } = PlayerClass.Warrior;
     public Inventory PlayerInventory { get; private set; } = new(25);
+    public StatBlock Stats { get; private set; } = new();
 
     public override void _Ready()
     {
@@ -88,7 +89,8 @@ public partial class GameState : Node
         Level = 1;
         FloorNumber = 1;
         PlayerInventory = new Inventory(25);
-        PlayerInventory.Gold = 100; // Starting gold
+        PlayerInventory.Gold = 100;
+        Stats = new StatBlock();
     }
 
     public void AwardXp(int amount)
@@ -99,7 +101,12 @@ public partial class GameState : Node
         {
             Xp -= xpToLevel;
             Level += 1;
-            MaxHp = Constants.PlayerStats.GetMaxHp(Level);
+
+            // Apply class stat bonuses for this level
+            Stats.ApplyClassLevelBonus(SelectedClass);
+
+            // Recalculate MaxHp including STA bonus
+            MaxHp = Constants.PlayerStats.GetMaxHp(Level) + Stats.BonusMaxHp;
             Hp = Math.Min(MaxHp, Hp + Constants.PlayerStats.HealOnLevelUp);
             xpToLevel = Constants.Leveling.GetXpToLevel(Level);
         }

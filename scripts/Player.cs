@@ -156,27 +156,111 @@ public partial class Player : CharacterBody2D
     }
 
     /// <summary>
-    /// Unified attack execution. Reads an AttackConfig and either applies
-    /// instant damage (melee) or spawns a projectile (ranged). No class branching.
+    /// Unified attack execution. Reads AttackConfig's TargetMode and resolves
+    /// targets accordingly. No class or skill branching.
     /// </summary>
     private void ExecuteAttack(AttackConfig attack, Node2D target)
     {
+        var stats = GameState.Instance.Stats;
         int baseDamage = Constants.PlayerStats.GetDamage(GameState.Instance.Level);
-        int finalDamage = (int)(baseDamage * attack.DamageMultiplier);
-        _attackTimer = attack.Cooldown;
 
-        if (attack.IsProjectile)
+        // Apply stat bonuses based on attack type
+        float statBonus = attack.IsProjectile
+            ? stats.SpellDamageMultiplier  // INT affects ranged/spell damage
+            : 1.0f + stats.MeleePercentBoost / 100f;  // STR affects melee damage
+        float flatBonus = attack.IsProjectile ? 0 : stats.MeleeFlatBonus;
+
+        int finalDamage = (int)((baseDamage + flatBonus) * attack.DamageMultiplier * statBonus);
+
+        // DEX affects cooldown (attack speed)
+        _attackTimer = attack.Cooldown / stats.AttackSpeedMultiplier;
+
+        switch (attack.TargetMode)
         {
-            Projectile.Spawn(
-                GetParent(), GlobalPosition, target.GlobalPosition,
-                finalDamage, attack.ProjectileSpeed, attack.Range,
-                attack.ProjectileTexture, attack.ProjectileScale,
-                attack.ProjectileTint);
+            case TargetMode.Self:
+                // Buffs apply to caster — no target needed
+                break;
+
+            case TargetMode.SingleTarget:
+                if (attack.IsProjectile)
+                {
+                    Projectile.Spawn(
+                        GetParent(), GlobalPosition, target.GlobalPosition,
+                        finalDamage, attack.ProjectileSpeed, attack.Range,
+                        attack.ProjectileTexture, attack.ProjectileScale,
+                        attack.ProjectileTint, attack.PiercesTargets);
+                }
+                else
+                {
+                    target.Call("TakeDamage", finalDamage);
+                    DrawSlash(target.GlobalPosition, attack.EffectColor);
+                }
+                break;
+
+            case TargetMode.AreaOfEffect:
+                // Damage all enemies within AoeRadius of the target point
+                HitEnemiesInRadius(target.GlobalPosition, attack.AoeRadius,
+                    finalDamage, attack.MaxTargets, attack.EffectColor);
+                break;
+
+            case TargetMode.MultiTarget:
+                // Hit first target, then chain to nearby enemies
+                ExecuteChainAttack(target, finalDamage, attack);
+                break;
+
+            case TargetMode.PlayerCentricAoe:
+                // Damage all enemies within AoeRadius of the player
+                HitEnemiesInRadius(GlobalPosition, attack.AoeRadius,
+                    finalDamage, attack.MaxTargets, attack.EffectColor);
+                break;
         }
-        else
+    }
+
+    private void HitEnemiesInRadius(Vector2 center, float radius, int damage,
+        int maxTargets, Color effectColor)
+    {
+        int hitCount = 0;
+        foreach (Node2D body in _attackArea.GetOverlappingBodies())
         {
-            target.Call("TakeDamage", finalDamage);
-            DrawSlash(target.GlobalPosition, attack.EffectColor);
+            if (!body.IsInGroup(Constants.Groups.Enemies))
+                continue;
+            if (center.DistanceTo(body.GlobalPosition) > radius)
+                continue;
+            if (hitCount >= maxTargets)
+                break;
+
+            body.Call("TakeDamage", damage);
+            DrawSlash(body.GlobalPosition, effectColor);
+            hitCount++;
+        }
+    }
+
+    private void ExecuteChainAttack(Node2D firstTarget, int damage, AttackConfig attack)
+    {
+        var hit = new System.Collections.Generic.HashSet<Node2D>();
+        Node2D? current = firstTarget;
+
+        for (int chain = 0; chain < attack.ChainCount && current != null; chain++)
+        {
+            current.Call("TakeDamage", damage);
+            DrawSlash(current.GlobalPosition, attack.EffectColor);
+            hit.Add(current);
+
+            // Find nearest unhit enemy within chain range
+            Node2D? next = null;
+            float nearestDist = float.PositiveInfinity;
+            foreach (Node2D body in _attackArea.GetOverlappingBodies())
+            {
+                if (!body.IsInGroup(Constants.Groups.Enemies) || hit.Contains(body))
+                    continue;
+                float dist = current.GlobalPosition.DistanceTo(body.GlobalPosition);
+                if (dist <= attack.ChainRange && dist < nearestDist)
+                {
+                    nearestDist = dist;
+                    next = body;
+                }
+            }
+            current = next;
         }
     }
 

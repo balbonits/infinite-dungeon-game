@@ -2,13 +2,26 @@
 
 ## Summary
 
-A compact, static, walkable safe zone where players interact with NPCs, manage inventory, and prepare for dungeon runs. No combat in town. All NPCs available from game start. Inspired by Diablo 1's Tristram — purely functional, minimal walking.
+A compact, walkable safe zone — a frontier settlement founded beside a newly discovered infinite dungeon. The player is the first resident adventurer, and the NPCs are early settlers who came to support the expedition. No combat in town. All NPCs available from game start. Inspired by Diablo 1's Tristram — purely functional, minimal walking.
 
 ## Current State
 
 **Spec status: LOCKED (layout and scene flow).** Individual NPC specs (SPEC-01b-f) are separate tickets.
 
 Not yet implemented. The prototype only has the dungeon scene.
+
+## Lore
+
+The town is a **frontier settlement** — recently founded as an "adventurers' town" beside a newly discovered cave mouth that leads into an infinite dungeon. Nobody knows how deep it goes, what made it, or why it exists. The cave is natural, not man-made — something ancient and possibly alive.
+
+The player is the **first resident adventurer**, assigned to delve into the dungeon, establish a foothold, and study what lies below. Every NPC in town chose to be here. They left established lives to set up shop on the frontier, drawn by opportunity, curiosity, or duty. The buildings are freshly constructed, the roads are dirt, and the settlement smells of sawdust and ambition.
+
+**Key lore beats:**
+- The dungeon was discovered recently. No one has explored beyond the first few floors.
+- The town exists solely to support dungeon exploration. There is no other reason for it.
+- NPCs are pioneers, not established merchants. They are staking their livelihoods on the player's success.
+- The cave entrance is at the edge of town — a dark, natural opening in a rocky hillside.
+- As the player pushes deeper, the town may grow and attract new settlers (future feature — not in MVP).
 
 ## Design
 
@@ -18,7 +31,7 @@ Town is a separate scene that the player transitions to from the dungeon. It fun
 - No enemies, no combat
 - Walk around freely
 - Interact with NPCs by walking up to them
-- Static layout — town does not change or grow over time
+- Layout is static at launch, but designed to support future expansion as the player progresses deeper into the dungeon
 
 ### Layout
 
@@ -40,18 +53,18 @@ Compact walkable area. All 5 NPCs are within a few steps of center. The player s
 
 - **Center:** Open area, player spawns here when entering town
 - **NPCs:** Arranged in a loose ring around center, all facing inward
-- **Dungeon Entrance:** At the bottom/south edge of town — walk into it to enter the dungeon
+- **Dungeon Entrance:** At the bottom/south edge of town — a natural cave mouth in a rocky hillside, recently discovered, not man-made. Walk into it to enter the dungeon.
 - **Total size:** ~2x the viewport. Small enough to see most NPCs on screen at once.
 
 ### NPC List
 
-| NPC | Function | Spec Ticket |
-|-----|----------|-------------|
-| Item Shop | Buy consumables (Sacrificial Idol, potions, spell scrolls) | SPEC-01b |
-| Blacksmith | Craft affixes onto base items, recycle unwanted gear for materials | SPEC-01c |
-| Adventure Guild | View quests, achievements, or challenges | SPEC-01d |
-| Level Teleporter | Travel to previously visited dungeon floors | SPEC-01e |
-| Banker | Access bank storage (safe, permanent, town-only) | SPEC-01f |
+| NPC | Role | Function | Spec Ticket |
+|-----|------|----------|-------------|
+| Item Shop | Eager frontier merchant, came to supply the expedition | Buy consumables (Sacrificial Idol, potions, spell scrolls) | SPEC-01b |
+| Blacksmith | Rugged smith who hauled a forge to the frontier for monster materials | Craft affixes onto base items, recycle unwanted gear for materials | SPEC-01c |
+| Adventure Guild | Veteran explorer who organized the entire expedition | View quests, achievements, or challenges | SPEC-01d |
+| Level Teleporter | Scholarly mage drawn by the dungeon's magical signature | Travel to previously visited dungeon floors | SPEC-01e |
+| Banker | Practical security expert — frontier towns need vaults | Access bank storage (safe, permanent, town-only) | SPEC-01f |
 
 ### Interaction Model
 
@@ -63,8 +76,9 @@ Compact walkable area. All 5 NPCs are within a few steps of center. The player s
 
 ### NPC Personality
 
-NPCs are **functional with brief flavor text**. They are not dialogue-heavy characters.
+NPCs are **functional with brief flavor text**. They are not dialogue-heavy characters — but they are distinct people who chose to be here.
 - Each NPC has a short greeting line (1-2 sentences) that plays on interaction
+- Greetings reflect their frontier pioneer personalities — why they came, what they need from the player
 - Greeting may reference player progress (e.g., Blacksmith comments on your floor depth)
 - No dialogue trees, no branching conversations, no quests from NPCs (Guild handles quests)
 
@@ -179,4 +193,4 @@ Access bank storage and purchase bank expansions. See [bank.md](../inventory/ban
 | NPC dialogue/personality? | Minimal — functional with brief flavor text. No dialogue trees. |
 | Blacksmith risky upgrades? | Replaced by deterministic affix system. See [items.md](../inventory/items.md). |
 | Social elements? | None. Single-player game. |
-| Town growth? | No. Static layout. All NPCs from start. |
+| Town growth? | Static at launch (all NPCs from start). Future feature: town expands as player reaches deeper floors, attracting new settlers. Not in MVP scope. |

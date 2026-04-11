@@ -86,17 +86,20 @@ public partial class NpcPanel : Control
             Callable.From(() => OnServicePressed(capturedName)));
         _serviceButtons.AddChild(serviceBtn);
 
-        // Dismiss button
+        // Dismiss button (secondary/cancel style)
         var dismissBtn = new Button();
         dismissBtn.Text = Strings.Ui.Cancel;
         dismissBtn.CustomMinimumSize = new Vector2(200, 38);
         dismissBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        UiTheme.StyleButton(dismissBtn, UiTheme.FontSizes.Body);
+        UiTheme.StyleSecondaryButton(dismissBtn, UiTheme.FontSizes.Body);
         dismissBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Hide()));
         _serviceButtons.AddChild(dismissBtn);
 
         _overlay.Visible = true;
         _center.Visible = true;
+
+        // Auto-focus first button for keyboard nav
+        UiTheme.FocusFirstButton(_serviceButtons);
 
         // Fade in
         _center.Modulate = new Color(1, 1, 1, 0);
@@ -130,6 +133,15 @@ public partial class NpcPanel : Control
         {
             Toast.Instance?.Info($"{npcName}'s services coming soon.");
         }
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!_center.Visible)
+            return;
+
+        if (KeyboardNav.HandleInput(@event, _serviceButtons))
+            GetViewport().SetInputAsHandled();
     }
 
     private static string GetServiceLabel(string npcName)

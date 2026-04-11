@@ -360,8 +360,13 @@ public partial class Dungeon : Node2D
                coords.Y > 0 && coords.Y < _roomHeight - 1;
     }
 
+    private bool _floorWiped;
+
     private void OnSpawnTimerTimeout()
     {
+        if (_floorWiped)
+            return; // No spawning after floor wipe until player chooses
+
         int enemyCount = GetTree().GetNodesInGroup(Constants.Groups.Enemies).Count;
         if (enemyCount < Constants.Spawning.EnemySoftCap)
             SpawnEnemy();
@@ -369,8 +374,30 @@ public partial class Dungeon : Node2D
 
     private async void OnEnemyDefeated(Vector2 position, int tier)
     {
+        // Wait before checking wipe — gives QueueFree time to process
+        await ToSignal(GetTree().CreateTimer(0.1), "timeout");
+        if (!IsInsideTree())
+            return;
+
+        int remaining = GetTree().GetNodesInGroup(Constants.Groups.Enemies).Count;
+
+        if (remaining == 0 && !_floorWiped)
+        {
+            _floorWiped = true;
+            _spawnTimer.Stop();
+
+            // 3 second delay before showing wipe dialog
+            await ToSignal(GetTree().CreateTimer(3.0), "timeout");
+            if (IsInsideTree() && _floorWiped)
+            {
+                FloorWipeDialog.Instance?.ShowWipe();
+            }
+            return;
+        }
+
+        // Normal respawn if floor not wiped
         await ToSignal(GetTree().CreateTimer(Constants.Spawning.RespawnDelay), "timeout");
-        if (IsInsideTree())
+        if (IsInsideTree() && !_floorWiped)
             SpawnEnemy();
     }
 }

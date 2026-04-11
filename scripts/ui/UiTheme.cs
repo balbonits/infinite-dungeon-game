@@ -62,14 +62,88 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Applies standard game button styling to an existing Button node.</summary>
+    /// <summary>Applies standard (primary/confirm) button styling.</summary>
     public static void StyleButton(Button button, int fontSize = FontSizes.Button)
     {
         button.AddThemeColorOverride("font_color", Colors.BgDark);
+        button.AddThemeColorOverride("font_hover_color", Colors.BgDark);
+        button.AddThemeColorOverride("font_focus_color", Colors.BgDark);
         button.AddThemeFontSizeOverride("font_size", fontSize);
         button.AddThemeStyleboxOverride("normal", CreateButtonStyle(false));
         button.AddThemeStyleboxOverride("hover", CreateButtonStyle(true));
+        button.AddThemeStyleboxOverride("focus", CreateButtonFocusStyle());
         button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
+        button.FocusMode = Control.FocusModeEnum.All;
+    }
+
+    /// <summary>Danger/destructive action button (red tones).</summary>
+    public static void StyleDangerButton(Button button, int fontSize = FontSizes.Button)
+    {
+        button.AddThemeColorOverride("font_color", Colors.Ink);
+        button.AddThemeColorOverride("font_hover_color", Colors.Ink);
+        button.AddThemeColorOverride("font_focus_color", Colors.Ink);
+        button.AddThemeFontSizeOverride("font_size", fontSize);
+        button.AddThemeStyleboxOverride("normal", CreateColoredButtonStyle(Colors.Danger, false));
+        button.AddThemeStyleboxOverride("hover", CreateColoredButtonStyle(Colors.Danger, true));
+        button.AddThemeStyleboxOverride("focus", CreateColoredButtonStyle(Colors.Danger, true));
+        button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
+        button.FocusMode = Control.FocusModeEnum.All;
+    }
+
+    /// <summary>Secondary/cancel/neutral button (muted tones).</summary>
+    public static void StyleSecondaryButton(Button button, int fontSize = FontSizes.Button)
+    {
+        button.AddThemeColorOverride("font_color", Colors.Ink);
+        button.AddThemeColorOverride("font_hover_color", Colors.Ink);
+        button.AddThemeColorOverride("font_focus_color", Colors.Ink);
+        button.AddThemeFontSizeOverride("font_size", fontSize);
+        button.AddThemeStyleboxOverride("normal", CreateColoredButtonStyle(Colors.Muted, false));
+        button.AddThemeStyleboxOverride("hover", CreateColoredButtonStyle(Colors.Muted, true));
+        button.AddThemeStyleboxOverride("focus", CreateColoredButtonStyle(Colors.Muted, true));
+        button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
+        button.FocusMode = Control.FocusModeEnum.All;
+    }
+
+    private static StyleBoxFlat CreateColoredButtonStyle(Color baseColor, bool bright)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = bright ? new Color(baseColor, 0.9f) : new Color(baseColor, 0.7f);
+        style.BorderColor = bright ? baseColor : new Color(baseColor, 0.5f);
+        style.SetBorderWidthAll(bright ? 2 : 1);
+        style.SetCornerRadiusAll(6);
+        style.ContentMarginLeft = 16;
+        style.ContentMarginRight = 16;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
+    }
+
+    /// <summary>Creates a StyleBoxFlat for focused buttons — high contrast white border for visibility.</summary>
+    public static StyleBoxFlat CreateButtonFocusStyle()
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = Colors.Accent;
+        style.BorderColor = Colors.Ink;
+        style.SetBorderWidthAll(3);
+        style.SetCornerRadiusAll(6);
+        style.ContentMarginLeft = 16;
+        style.ContentMarginRight = 16;
+        style.ContentMarginTop = 8;
+        style.ContentMarginBottom = 8;
+        return style;
+    }
+
+    /// <summary>Grabs focus on the first button in a container. Call after adding buttons.</summary>
+    public static void FocusFirstButton(Control container)
+    {
+        foreach (Node child in container.GetChildren())
+        {
+            if (child is Button btn && !btn.Disabled)
+            {
+                btn.CallDeferred(Control.MethodName.GrabFocus);
+                return;
+            }
+        }
     }
 
     /// <summary>Applies standard label styling.</summary>

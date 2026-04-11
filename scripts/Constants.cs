@@ -154,10 +154,23 @@ public static class Constants
     // --- Town ---
     public static class Town
     {
-        public const int Width = 16;
-        public const int Height = 12;
+        public const int Width = 24;
+        public const int Height = 20;
         public const float NpcScale = 0.9f;
         public const float NpcCollisionRadius = 14.0f;
+    }
+
+    // --- Floor Wipe Rewards ---
+    public static class FloorWipe
+    {
+        public const int BonusGoldBase = 20;
+        public const int BonusGoldPerFloor = 10;
+        public const float BonusItemDropChance = 0.5f;
+        public const int BonusXpBase = 30;
+        public const int BonusXpPerFloor = 15;
+
+        public static int GetBonusGold(int floor) => BonusGoldBase + floor * BonusGoldPerFloor;
+        public static int GetBonusXp(int floor) => BonusXpBase + floor * BonusXpPerFloor;
     }
 
     // --- Tiles ---
@@ -238,6 +251,7 @@ public static class Constants
         // Town tiles
         public const string TownFloorTexture = "res://assets/tiles/town/town_floor.png";
         public const string TownWallTexture = "res://assets/tiles/town/town_wall.png";
+        public const string CaveEntranceTexture = "res://assets/tiles/town/cave_entrance.png";
 
         // Scenes
         public const string PlayerScene = "res://scenes/player.tscn";
