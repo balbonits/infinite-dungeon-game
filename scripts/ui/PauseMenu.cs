@@ -12,16 +12,22 @@ public partial class PauseMenu : Control
 
         var resumeButton = _buttonContainer.GetNode<Button>("ResumeButton");
         var statsButton = _buttonContainer.GetNode<Button>("StatsButton");
+        var skillsButton = _buttonContainer.GetNode<Button>("SkillsButton");
+        var ledgerButton = _buttonContainer.GetNode<Button>("LedgerButton");
         var mainMenuButton = _buttonContainer.GetNode<Button>("MainMenuButton");
         var quitButton = _buttonContainer.GetNode<Button>("QuitButton");
 
         resumeButton.FocusMode = FocusModeEnum.All;
         statsButton.FocusMode = FocusModeEnum.All;
+        skillsButton.FocusMode = FocusModeEnum.All;
+        ledgerButton.FocusMode = FocusModeEnum.All;
         mainMenuButton.FocusMode = FocusModeEnum.All;
         quitButton.FocusMode = FocusModeEnum.All;
 
         resumeButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnResumePressed));
         statsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnStatsPressed));
+        skillsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSkillsPressed));
+        ledgerButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnLedgerPressed));
         mainMenuButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnMainMenuPressed));
         quitButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnQuitPressed));
     }
@@ -57,6 +63,18 @@ public partial class PauseMenu : Control
     {
         Visible = false;
         StatAllocDialog.Instance?.Show();
+    }
+
+    private void OnSkillsPressed()
+    {
+        Visible = false;
+        SkillTreeDialog.Instance?.Show();
+    }
+
+    private void OnLedgerPressed()
+    {
+        Visible = false;
+        FatedLedger.Instance?.Show();
     }
 
     private void OnMainMenuPressed()

@@ -4,6 +4,99 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session — 2026-04-11
+
+### What Happened
+
+**Started from:** Phase 0+0.5 complete, Phase 1 partial (SYS-01 and SYS-03 done, rest pending/partial).
+
+**Ended with:** All Phase 1 systems complete + procedural floor generation + codebase hardening.
+
+### What We Built
+
+#### Codebase Audit & Hardening
+- Fixed unsafe `new Random()` → `Random.Shared` in DeathPenalty.cs
+- Added JSON deserialization error logging in SaveSystem
+- Added save data validation (bounds checking all fields on load)
+- Created `IDamageable` interface to replace unsafe `.Call("TakeDamage")` string dispatch
+- Replaced all `.Call()` in Player.cs with type-safe `is IDamageable` pattern matching
+- Extracted duplicated stairs creation logic in Dungeon.cs into `PlaceStairs()` method
+
+#### SYS-05: Level Teleporter NPC (completed partial)
+- Built `TeleportDialog.cs` — floor selection UI with zone labels
+- Wired Teleporter NPC service button to open the dialog
+- Added to main scene
+
+#### SYS-10: Monster Families (completed partial)
+- Added `Constants.Zones` with 10-floor zone system and species-to-zone mapping
+- Updated `Dungeon.GetRandomAvailableSpecies()` to use zone-gated species
+
+#### SYS-02: Skill System + Use-Based Leveling
+- `SkillDef.cs` — immutable skill definition record
+- `SkillState.cs` — mutable skill XP/level tracking with diminishing returns passive bonuses
+- `SkillDatabase.cs` — complete registry of 80+ skills for all 3 classes (Warrior: 7 base + 28 specific, Ranger: 7 base + 28 specific, Mage: 9 base + 36 specific)
+- `SkillTracker.cs` — manages all skill states, use-based XP, skill point allocation, passive bonuses
+- `SkillTreeDialog.cs` — hierarchical skill browser UI with allocation buttons
+- Integrated into GameState, SaveData, SaveSystem, ClassSelect, PauseMenu
+- Skill points awarded on level-up (2 per level, 3 at milestones)
+
+#### SYS-07: Bank System
+- `Bank.cs` — pure logic: 50 start slots, deposit/withdraw, expansion at 500*N^2
+- `BankWindow.cs` — two-column UI (bank | backpack), item transfer, expansion purchasing
+- Wired to Banker NPC service button
+- Full save/load support
+
+#### SYS-06 + SYS-08: Items & Crafting
+- `Affix.cs` — AffixDef record, AppliedAffix, AffixType/AffixCategory enums
+- `AffixDatabase.cs` — 28 affixes across 4 tiers (1/10/25/50+ item level gates)
+- `Crafting.cs` — deterministic affix application (max 3 prefix + 3 suffix), CraftableItem model, BaseQuality enum, recycling
+- `BlacksmithWindow.cs` — Craft/Recycle tab UI, wired to Blacksmith NPC
+
+#### SYS-04: Quest System
+- `QuestSystem.cs` — QuestDef/QuestState/QuestTracker, 3 quest types (Kill/ClearFloor/DepthPush), scaling rewards
+- `QuestPanel.cs` — quest list UI with progress, claim, and refresh buttons
+- Wired to Guild Master NPC and EventBus signals
+- Quest tracking: enemy kills, floor clears, floor descent all update quest progress
+- Full save/load support
+
+#### SYS-09: Achievement System (Fated Ledger)
+- `AchievementSystem.cs` — counter-based tracker, 30 achievements across 5 categories (Combat/Exploration/Progression/Economy/Mastery)
+- `FatedLedger.cs` — achievement browser UI with progress bars and unlock status
+- Counter updates wired to enemy kills, level-ups, floor descent, floor wipes
+- Gold rewards auto-applied on unlock with toast notifications
+- Full save/load support
+
+#### Procedural Floor Generation
+- `FloorGenerator.cs` — BSP room placement → Drunkard's Walk corridors → Cellular Automata smoothing
+- Floor size scales with depth (50x50 at floor 1, up to 150x150)
+- 5-8 rooms per floor, ordered into IKEA-path chain (nearest-neighbor)
+- Optional loop corridors (15% chance)
+- Integrated into Dungeon.cs, replacing the old single-rectangle generation
+
+### New Files Created (15 new scripts)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `scripts/logic/IDamageable.cs` | 10 | Type-safe damage interface |
+| `scripts/logic/SkillDef.cs` | 36 | Skill definition record |
+| `scripts/logic/SkillState.cs` | 80 | Skill XP/level tracking |
+| `scripts/logic/SkillDatabase.cs` | 230 | 80+ skill registry |
+| `scripts/logic/SkillTracker.cs` | 140 | Player skill manager |
+| `scripts/logic/Bank.cs` | 105 | Bank storage logic |
+| `scripts/logic/Affix.cs` | 40 | Affix data model |
+| `scripts/logic/AffixDatabase.cs` | 125 | 28 affix definitions |
+| `scripts/logic/Crafting.cs` | 105 | Blacksmith crafting logic |
+| `scripts/logic/QuestSystem.cs` | 200 | Quest tracking system |
+| `scripts/logic/AchievementSystem.cs` | 175 | Achievement tracking system |
+| `scripts/logic/FloorGenerator.cs` | 220 | Procedural dungeon generation |
+| `scripts/ui/TeleportDialog.cs` | 150 | Teleporter NPC UI |
+| `scripts/ui/SkillTreeDialog.cs` | 220 | Skill tree browser UI |
+| `scripts/ui/BankWindow.cs` | 230 | Bank deposit/withdraw UI |
+| `scripts/ui/BlacksmithWindow.cs` | 200 | Blacksmith crafting UI |
+| `scripts/ui/QuestPanel.cs` | 200 | Quest list UI |
+| `scripts/ui/FatedLedger.cs` | 200 | Achievement browser UI |
+
+---
+
 ## Session 1 — 2026-04-08
 
 ### What Happened

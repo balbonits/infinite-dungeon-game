@@ -129,6 +129,22 @@ public partial class NpcPanel : Control
             var shopItems = new System.Collections.Generic.List<ItemDef>(ItemDatabase.All);
             ShopWindow.Instance?.Open(shopItems);
         }
+        else if (npcName == Strings.Npcs.Teleporter)
+        {
+            TeleportDialog.Instance?.Show();
+        }
+        else if (npcName == Strings.Npcs.Banker)
+        {
+            BankWindow.Instance?.Open();
+        }
+        else if (npcName == Strings.Npcs.Blacksmith)
+        {
+            BlacksmithWindow.Instance?.Open();
+        }
+        else if (npcName == Strings.Npcs.GuildMaster)
+        {
+            QuestPanel.Instance?.Open();
+        }
         else
         {
             Toast.Instance?.Info($"{npcName}'s services coming soon.");

@@ -30,10 +30,36 @@ public record SaveData
     // Inventory
     public int Gold { get; init; } = 100;
     public SavedItemStack[] Items { get; init; } = System.Array.Empty<SavedItemStack>();
+
+    // Skills
+    public int SkillPoints { get; init; }
+    public SavedSkillState[] SkillStates { get; init; } = System.Array.Empty<SavedSkillState>();
+
+    // Bank
+    public SavedBankData? BankData { get; init; }
+
+    // Quests
+    public SavedQuestData? QuestData { get; init; }
+
+    // Achievements
+    public SavedAchievementData? AchievementData { get; init; }
 }
 
 public record SavedItemStack
 {
     public string ItemId { get; init; } = "";
     public int Count { get; init; } = 1;
+}
+
+public record SavedSkillState
+{
+    public string SkillId { get; init; } = "";
+    public int Level { get; init; }
+    public int Xp { get; init; }
+}
+
+public record SavedBankData
+{
+    public int ExpansionCount { get; init; }
+    public SavedItemStack[] Items { get; init; } = System.Array.Empty<SavedItemStack>();
 }

@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Phase 1 Complete — All Systems Built (2026-04-11)
+
+#### Added
+- Skill system: 80+ skills across 3 classes, use-based XP + skill point allocation, SkillTreeDialog UI
+- Bank system: 50 start slots, deposit/withdraw UI, expansion purchasing at 500*N^2
+- Blacksmith crafting: deterministic affix system (28 affixes, tiers 1-4), equipment recycling
+- Quest system: radiant quests (Kill/ClearFloor/DepthPush), 3 active quests, QuestPanel UI
+- Achievement system (Fated Ledger): 30 achievements, counter-based tracking, FatedLedger UI
+- Teleporter NPC floor-select UI with zone labels
+- Procedural floor generation: BSP rooms + Drunkard's Walk corridors + Cellular Automata smoothing
+- Zone-based monster families: zone-exclusive species spawning per 10-floor block
+- IDamageable interface for type-safe combat dispatch
+
+#### Fixed
+- Unsafe Random instance in DeathPenalty.cs → Random.Shared
+- Silent save deserialization failures now log errors
+- Save data validation prevents corrupted saves from creating impossible game states
+- Duplicated stairs creation logic extracted into shared method
+
 ### Session 10 — Full Prototype Build (2026-04-11)
 
 #### Added

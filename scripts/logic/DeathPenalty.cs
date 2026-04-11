@@ -85,7 +85,6 @@ public static class DeathPenalty
     /// </summary>
     public static void ApplyItemLoss(Inventory inventory, int itemsToLose)
     {
-        var random = new Random();
         int lost = 0;
 
         // Collect occupied slot indices
@@ -98,7 +97,7 @@ public static class DeathPenalty
 
         while (lost < itemsToLose && occupiedSlots.Count > 0)
         {
-            int pick = random.Next(occupiedSlots.Count);
+            int pick = Random.Shared.Next(occupiedSlots.Count);
             int slotIndex = occupiedSlots[pick];
             inventory.RemoveAt(slotIndex);
             occupiedSlots.RemoveAt(pick);

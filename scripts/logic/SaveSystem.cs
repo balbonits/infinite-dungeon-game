@@ -45,11 +45,17 @@ public static class SaveSystem
             FreePoints = gs.Stats.FreePoints,
             Gold = gs.PlayerInventory.Gold,
             Items = items.ToArray(),
+            SkillPoints = gs.Skills.SkillPoints,
+            SkillStates = gs.Skills.CaptureStates(),
+            BankData = gs.PlayerBank.CaptureState(),
+            QuestData = gs.Quests.CaptureState(),
+            AchievementData = gs.Achievements.CaptureState(),
         };
     }
 
     /// <summary>
     /// Restore game state from a SaveData record.
+    /// Validates all fields to prevent corrupted saves from creating impossible states.
     /// </summary>
     public static void RestoreState(Autoloads.GameState gs, SaveData data)
     {
@@ -57,27 +63,56 @@ public static class SaveSystem
         gs.IsDead = false;
 
         gs.Stats.Reset();
-        gs.Stats.Str = data.Str;
-        gs.Stats.Dex = data.Dex;
-        gs.Stats.Sta = data.Sta;
-        gs.Stats.Int = data.Int;
-        gs.Stats.FreePoints = data.FreePoints;
+        gs.Stats.Str = System.Math.Max(0, data.Str);
+        gs.Stats.Dex = System.Math.Max(0, data.Dex);
+        gs.Stats.Sta = System.Math.Max(0, data.Sta);
+        gs.Stats.Int = System.Math.Max(0, data.Int);
+        gs.Stats.FreePoints = System.Math.Max(0, data.FreePoints);
 
-        gs.MaxHp = data.MaxHp;
-        gs.Hp = data.Hp;
-        gs.Xp = data.Xp;
-        gs.Level = data.Level;
-        gs.FloorNumber = data.FloorNumber;
+        int level = System.Math.Max(1, data.Level);
+        int maxHp = System.Math.Max(1, data.MaxHp);
+        int hp = System.Math.Clamp(data.Hp, 1, maxHp);
+        int xp = System.Math.Max(0, data.Xp);
+        int floor = System.Math.Max(1, data.FloorNumber);
+
+        gs.MaxHp = maxHp;
+        gs.Hp = hp;
+        gs.Xp = xp;
+        gs.Level = level;
+        gs.FloorNumber = floor;
 
         gs.PlayerInventory = new Inventory(25);
-        gs.PlayerInventory.Gold = data.Gold;
+        gs.PlayerInventory.Gold = System.Math.Max(0, data.Gold);
 
         foreach (var savedItem in data.Items)
         {
             var itemDef = ItemDatabase.Get(savedItem.ItemId);
             if (itemDef != null)
-                gs.PlayerInventory.TryAdd(itemDef, savedItem.Count);
+                gs.PlayerInventory.TryAdd(itemDef, System.Math.Max(1, savedItem.Count));
         }
+
+        // Restore skills
+        gs.Skills = new SkillTracker(gs.SelectedClass);
+        gs.Skills.SkillPoints = System.Math.Max(0, data.SkillPoints);
+        if (data.SkillStates.Length > 0)
+            gs.Skills.RestoreStates(data.SkillStates);
+
+        // Restore bank
+        gs.PlayerBank = new Bank();
+        if (data.BankData != null)
+            gs.PlayerBank.RestoreState(data.BankData);
+
+        // Restore quests
+        gs.Quests = new QuestTracker();
+        if (data.QuestData != null)
+            gs.Quests.RestoreState(data.QuestData);
+        else
+            gs.Quests.GenerateQuests(floor);
+
+        // Restore achievements
+        gs.Achievements = new AchievementTracker();
+        if (data.AchievementData != null)
+            gs.Achievements.RestoreState(data.AchievementData);
     }
 
     public static string Serialize(SaveData data) => JsonSerializer.Serialize(data, JsonOptions);
@@ -88,8 +123,9 @@ public static class SaveSystem
         {
             return JsonSerializer.Deserialize<SaveData>(json, JsonOptions);
         }
-        catch
+        catch (JsonException ex)
         {
+            Godot.GD.PrintErr($"Save data corrupted: {ex.Message}");
             return null;
         }
     }

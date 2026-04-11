@@ -354,6 +354,7 @@ public partial class ClassSelect : Control
             return;
 
         GameState.Instance.SelectedClass = _selectedClass;
+        GameState.Instance.Skills = new SkillTracker(_selectedClass);
 
         var tween = CreateTween();
         tween.TweenProperty(this, "modulate:a", 0.0f, 0.4f);

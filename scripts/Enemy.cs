@@ -5,7 +5,7 @@ using DungeonGame.Ui;
 
 namespace DungeonGame.Scenes;
 
-public partial class Enemy : CharacterBody2D
+public partial class Enemy : CharacterBody2D, IDamageable
 {
     // Color gradient anchors: level gap -> color (cool=weak, warm=deadly)
     private static readonly (int gap, Color color)[] GradientAnchors =
@@ -132,7 +132,12 @@ public partial class Enemy : CharacterBody2D
                 }
             }
 
+            // Track achievement counters
+            GameState.Instance.Achievements.IncrementCounter("enemies_killed");
+            GameState.Instance.Achievements.IncrementCounter("gold_earned", gold);
+
             EventBus.Instance.EmitSignal(EventBus.SignalName.EnemyDefeated, GlobalPosition, Level);
+            GameState.Instance.CheckAchievements();
             QueueFree();
         }
         else

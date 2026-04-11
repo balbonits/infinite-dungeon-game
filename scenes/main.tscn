@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_script"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3_hud"]
@@ -14,6 +14,12 @@
 [ext_resource type="Script" path="res://scripts/ui/FloorWipeDialog.cs" id="13_wipe"]
 [ext_resource type="Script" path="res://scripts/ui/StatAllocDialog.cs" id="14_stats"]
 [ext_resource type="Script" path="res://scripts/ui/StairsCompass.cs" id="15_compass"]
+[ext_resource type="Script" path="res://scripts/ui/TeleportDialog.cs" id="16_teleport"]
+[ext_resource type="Script" path="res://scripts/ui/SkillTreeDialog.cs" id="17_skills"]
+[ext_resource type="Script" path="res://scripts/ui/BankWindow.cs" id="18_bank"]
+[ext_resource type="Script" path="res://scripts/ui/BlacksmithWindow.cs" id="19_blacksmith"]
+[ext_resource type="Script" path="res://scripts/ui/QuestPanel.cs" id="20_quests"]
+[ext_resource type="Script" path="res://scripts/ui/FatedLedger.cs" id="21_ledger"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_script")
@@ -132,3 +138,69 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("15_compass")
+
+[node name="TeleportDialog" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("16_teleport")
+
+[node name="SkillTreeDialog" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("17_skills")
+
+[node name="BankWindow" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("18_bank")
+
+[node name="BlacksmithWindow" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("19_blacksmith")
+
+[node name="QuestPanel" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("20_quests")
+
+[node name="FatedLedger" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("21_ledger")
