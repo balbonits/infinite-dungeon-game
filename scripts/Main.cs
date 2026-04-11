@@ -19,12 +19,13 @@ public partial class Main : Node
         Instance = this;
         _deathScreen = GetNode<Control>("UILayer/DeathScreen");
 
-        // Apply global theme to UILayer
+        // Apply global theme to all UI — set on each root Control so it cascades
+        var globalTheme = Ui.GlobalTheme.Create();
         var uiLayer = GetNode<CanvasLayer>("UILayer");
         foreach (Node child in uiLayer.GetChildren())
         {
             if (child is Control control)
-                control.Theme = Ui.GlobalTheme.Create();
+                control.Theme = globalTheme;
         }
 
         GameState.Instance.Connect(
@@ -42,12 +43,24 @@ public partial class Main : Node
     {
         var splash = new Ui.SplashScreen();
         splash.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        splash.Connect(Ui.SplashScreen.SignalName.ContinuePressed, Callable.From(() =>
+        splash.Theme = Ui.GlobalTheme.Create();
+
+        splash.Connect(Ui.SplashScreen.SignalName.NewGamePressed, Callable.From(() =>
         {
             splash.Visible = false;
             splash.QueueFree();
             ShowClassSelection();
         }));
+
+        splash.Connect(Ui.SplashScreen.SignalName.ContinuePressed, Callable.From(() =>
+        {
+            splash.Visible = false;
+            splash.QueueFree();
+            Autoloads.SaveManager.Instance.Load();
+            GetTree().Paused = false;
+            LoadTown();
+        }));
+
         GetNode<CanvasLayer>("UILayer").AddChild(splash);
         GetTree().Paused = true;
     }
@@ -63,11 +76,13 @@ public partial class Main : Node
     public void LoadTown()
     {
         SwapWorld(TownScene);
+        Autoloads.SaveManager.Instance?.Save();
     }
 
     public void LoadDungeon()
     {
         SwapWorld(DungeonScene);
+        Autoloads.SaveManager.Instance?.Save();
     }
 
     private void SwapWorld(PackedScene scene)

@@ -63,6 +63,7 @@ public partial class Player : CharacterBody2D
         }
 
         UpdateGracePeriod(delta);
+        HandleHpRegen(delta);
         HandleMovement();
         HandleAttack(delta);
     }
@@ -110,6 +111,25 @@ public partial class Player : CharacterBody2D
             _sprite.Modulate = ((int)(_graceTimer * 10) % 2 == 0)
                 ? new Color(1, 1, 1, Constants.PlayerStats.GraceFlickerAlpha)
                 : Colors.White;
+        }
+    }
+
+    private float _regenAccumulator;
+
+    private void HandleHpRegen(double delta)
+    {
+        float regen = GameState.Instance.Stats.HpRegen;
+        if (regen <= 0 || GameState.Instance.Hp >= GameState.Instance.MaxHp)
+            return;
+
+        _regenAccumulator += regen * (float)delta;
+        if (_regenAccumulator >= 1.0f)
+        {
+            int healAmount = (int)_regenAccumulator;
+            _regenAccumulator -= healAmount;
+            GameState.Instance.Hp = System.Math.Min(
+                GameState.Instance.MaxHp,
+                GameState.Instance.Hp + healAmount);
         }
     }
 
