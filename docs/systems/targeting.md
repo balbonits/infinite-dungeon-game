@@ -68,7 +68,7 @@ RangerArrowShot:
 
 Hits all enemies within a radius around a **point on the ground**. The point is determined by the attack's delivery method: projectile-based AoE detonates at the projectile's impact location; instant AoE uses the targeted enemy's position.
 
-**Use cases:** Fireball (projectile detonation), Quake (instant around target area), Inferno (sustained area), Void Zone (placed area), Flame Wall (line placed on ground).
+**Use cases:** Fireball (projectile detonation), Quake (instant around target area), Inferno (sustained area), Void Zone (placed area).
 
 **Behavior:**
 - Target selection: the initial aim point is the nearest enemy (or locked target). This determines where the projectile flies or where the instant effect centers.
@@ -337,6 +337,10 @@ Seeking Fireball (Mage Fire spell):
 These are modifiers that can apply to **any projectile-based attack** regardless of target mode. They modify what happens when a projectile hits a target or travels through the world. They are fields on `AttackConfig`, not separate target modes.
 
 A single projectile can have multiple behaviors active simultaneously (e.g., Pierce + Fork), though some combinations are redundant or nonsensical -- see the interaction table below.
+
+#### PiercesTargets (Pierce)
+
+**Type:** `bool` (default: `false`)
 
 When `true`, a projectile passes through enemies it hits instead of being consumed on the first hit. Each enemy in the projectile's path takes damage independently. The projectile continues until it reaches max `Range` or hits `MaxTargets` enemies.
 
@@ -728,20 +732,24 @@ These are planned extensions that do not affect the current spec. They are docum
 - `TargetTeam.Friendly` -- targets allies (self, NPCs, pets, familiars)
 - `TargetTeam.All` -- targets both (rare, for effects that hit everything in radius)
 
-The five `TargetMode` values remain unchanged. `TargetTeam` controls *which* entities are valid targets; `TargetMode` controls *how* they are selected. This keeps the two concerns orthogonal.
+The eight `TargetMode` values remain unchanged. `TargetTeam` controls *which* entities are valid targets; `TargetMode` controls *how* they are selected. This keeps the two concerns orthogonal.
 
-**Target cycling (L1/R1):** Deferred to P2+. When implemented, the "nearest enemy" selection in SingleTarget, AreaOfEffect, and MultiTarget will be overridden by the player's locked target. PlayerCentricAoe and Self are unaffected by target cycling.
+**Target cycling (L1/R1):** Deferred to P2+. When implemented, the "nearest enemy" selection in SingleTarget, AreaOfEffect, MultiTarget, Line, Cone, and Homing will be overridden by the player's locked target. PlayerCentricAoe and Self are unaffected by target cycling.
 
-**Cursor/ground targeting:** Some AreaOfEffect skills may eventually target a point on the ground chosen by the player (e.g., placing a Flame Wall) rather than auto-targeting the nearest enemy. This would add a `TargetPoint` variant to the aim-point resolution step. The AoE detonation logic itself does not change.
+**Cursor/ground targeting:** Some AreaOfEffect and Line skills may eventually target a point on the ground chosen by the player (e.g., placing a Flame Wall at a specific location) rather than auto-targeting the nearest enemy. This would add a `TargetPoint` variant to the aim-point resolution step. The damage resolution logic itself does not change.
 
 **Status effect application:** Currently `AttackConfig` only defines damage. Skills that apply debuffs (War Cry, Curse, Freeze) or buffs (Barrier, Battle Focus) will need a status effect system. The targeting system resolves *which entities are affected* -- the status effect system defines *what happens to them*. These are separate concerns.
 
+**Channeled attacks:** Line and Homing modes are natural candidates for channeled abilities (sustained beam, continuous tracking). A future `IsChanneled` flag and `ChannelDuration` field would allow the attack to fire continuously while the player holds the button, with per-tick damage instead of per-attack damage. The targeting resolution per tick is identical to the non-channeled version.
+
+**Projectile behavior stacking from equipment:** Fork, Split, and Pierce could eventually come from equipment affixes (e.g., a quiver that adds Pierce to all arrow attacks). The system already supports this -- the equipment modifier would set the corresponding field on the computed `AttackConfig` before the combat system reads it.
+
 ## Acceptance Criteria
 
+**Target Modes (core):**
 - [ ] Every `AttackConfig` has exactly one `TargetMode` -- no attack has ambiguous target resolution
 - [ ] Self-targeted skills apply effects to the caster without requiring a nearby enemy
 - [ ] SingleTarget selects the nearest enemy and damages exactly one target
-- [ ] SingleTarget + PiercesTargets damages multiple enemies in a line, capped by MaxTargets
 - [ ] AreaOfEffect damages all enemies within AoeRadius of the impact point, capped by MaxTargets
 - [ ] AreaOfEffect with IsProjectile detonates at the projectile's impact position
 - [ ] AreaOfEffect without IsProjectile detonates at the targeted enemy's position
@@ -749,17 +757,43 @@ The five `TargetMode` values remain unchanged. `TargetTeam` controls *which* ent
 - [ ] MultiTarget does not hit the same target twice in one chain
 - [ ] PlayerCentricAoe damages all enemies within AoeRadius of the caster, capped by MaxTargets
 - [ ] PlayerCentricAoe fires even with no enemies present (goes on cooldown, no damage applied)
+
+**Target Modes (new):**
+- [ ] Line damages all enemies in a rectangle corridor (Range x LineWidth) in the aim direction, capped by MaxTargets
+- [ ] Line with IsProjectile spawns a visual beam that travels the corridor length
+- [ ] Line without IsProjectile applies instant damage across the entire corridor
+- [ ] Cone damages all enemies within a cone (Range reach, ConeAngle spread) in the aim direction, capped by MaxTargets
+- [ ] Cone is always instant (no projectile)
+- [ ] ConeAngle is clamped to [1, 360] degrees
+- [ ] Homing spawns a projectile that tracks the target each physics frame, rotating by up to HomingTurnSpeed rad/s
+- [ ] Homing projectile stops tracking and flies straight when target dies
+- [ ] Homing + AoeRadius > 0 detonates as AoE on impact
+
+**Projectile Behaviors:**
+- [ ] PiercesTargets causes the projectile to pass through enemies and continue, up to MaxTargets
+- [ ] ForkCount > 0 causes the projectile to spawn 2 forked projectiles at +/-30 degrees on first hit
+- [ ] Forked projectiles inherit remaining Range, DamageMultiplier, and ProjectileSpeed
+- [ ] SplitCount > 0 causes the projectile to spawn N projectiles toward nearest distinct enemies on first hit
+- [ ] Split projectiles cannot split again (recursion prevention)
+- [ ] Fork/Split with no nearby valid targets still applies damage to the initial hit target
+- [ ] Pierce + Fork on the same projectile: original pierces through AND forks spawn
+
+**General:**
 - [ ] MaxTargets = 0 means unlimited targets
 - [ ] Attacks with no valid target (except PlayerCentricAoe and Self) do not fire and do not start cooldown
 - [ ] No class-specific or skill-specific branching in the target resolution code path
 
 ## Implementation Notes
 
-- The `TargetMode` enum and all targeting fields already exist on `AttackConfig` (see `scripts/logic/AttackConfig.cs` and `scripts/logic/TargetMode.cs`). No schema changes needed.
-- Target resolution should be a single method (e.g., `ResolveTargets(AttackConfig, Vector2 casterPosition, Node2D lockedTarget)`) that returns a list of targets. The combat system calls this once, then applies damage/effects to the returned list.
-- AoE circle queries can use Godot's `PhysicsDirectSpaceState2D.IntersectShape()` with a `CircleShape2D` at the desired position, or iterate `GetOverlappingBodies()` on a temporary Area2D. The former is preferred for one-shot queries.
+- The `TargetMode` enum (8 values) and all targeting fields already exist on `AttackConfig` (see `scripts/logic/AttackConfig.cs` and `scripts/logic/TargetMode.cs`). Line, Cone, and Homing are already in the enum. `PiercesTargets`, `ForkCount`, `SplitCount`, `LineWidth`, `ConeAngle`, and `HomingTurnSpeed` are already fields on `AttackConfig`. No schema changes needed.
+- Target resolution should be a single method (e.g., `ResolveTargets(AttackConfig, Vector2 casterPosition, Node2D lockedTarget)`) that returns a list of targets. The combat system calls this once, then applies damage/effects to the returned list. For Homing, the method returns the single tracked target; the projectile handles the tracking behavior.
+- **AoE circle queries:** Use Godot's `PhysicsDirectSpaceState2D.IntersectShape()` with a `CircleShape2D` at the desired position. Preferred for one-shot queries over `GetOverlappingBodies()`.
+- **Line rectangle queries:** Use `PhysicsDirectSpaceState2D.IntersectShape()` with a `RectangleShape2D` (size = Range x LineWidth), positioned at the midpoint of the corridor, rotated to the aim direction.
+- **Cone queries:** No built-in cone shape in Godot. Use a circle query at caster position with radius = Range, then filter results by checking if the angle from caster to each enemy is within ConeAngle/2 of the aim direction. Use `Vector2.AngleTo()` for the angle check.
+- **Homing projectile:** Extend the existing `Projectile` class with a homing mode. Each `_PhysicsProcess` frame, compute the angle to the target and rotate the velocity vector toward it by `HomingTurnSpeed * delta` radians. Use `Mathf.MoveToward` on the angle for smooth tracking.
+- **Fork/Split spawning:** When a projectile with ForkCount or SplitCount hits a target, it calls a factory method to spawn child projectiles. Child projectiles should carry a flag preventing further splits (for Split) or a decremented ForkCount (for Fork).
 - Chain visuals (MultiTarget) should use a line or arc drawn between consecutive targets, tinted to the attack's `EffectColor`, with a short tween (0.08-0.12s travel time per hop).
-- For PlayerCentricAoe, the AttackRange Area2D's collision shape can be temporarily resized to `AoeRadius` for the query, or a separate physics query can be used.
+- For PlayerCentricAoe, use a separate physics query at the caster's position with `AoeRadius`.
 
 ## Open Questions
 

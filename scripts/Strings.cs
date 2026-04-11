@@ -55,6 +55,8 @@ public static class Strings
     {
         public const string Subtitle = "The first to descend. The last to turn back.";
         public const string PressAnyKey = "Press any key to begin";
+        public const string NewGame = "New Game";
+        public const string Continue = "Continue";
     }
 
     // --- HUD ---

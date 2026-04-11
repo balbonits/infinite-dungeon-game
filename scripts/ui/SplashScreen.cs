@@ -1,13 +1,16 @@
 using Godot;
+using DungeonGame.Autoloads;
 
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Game splash/title screen. Shows game title, press any key to continue.
-/// Flow: Splash → Class Select → Town.
+/// Title screen. Shows game title, New Game and Continue buttons.
+/// Flow: Splash → New Game → Class Select → Town
+///       Splash → Continue → Load save → Town
 /// </summary>
 public partial class SplashScreen : Control
 {
+    [Signal] public delegate void NewGamePressedEventHandler();
     [Signal] public delegate void ContinuePressedEventHandler();
 
     private bool _ready;
@@ -16,7 +19,6 @@ public partial class SplashScreen : Control
     {
         ProcessMode = ProcessModeEnum.Always;
 
-        // Dark background
         var bg = new ColorRect();
         bg.Color = UiTheme.Colors.BgDark;
         bg.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -27,7 +29,7 @@ public partial class SplashScreen : Control
         AddChild(center);
 
         var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 20);
+        vbox.AddThemeConstantOverride("separation", 16);
         center.AddChild(vbox);
 
         // Game title
@@ -46,25 +48,49 @@ public partial class SplashScreen : Control
 
         // Spacer
         var spacer = new Control();
-        spacer.CustomMinimumSize = new Vector2(0, 40);
+        spacer.CustomMinimumSize = new Vector2(0, 30);
         vbox.AddChild(spacer);
 
-        // "Press any key" prompt (fades in/out)
-        var prompt = new Label();
-        prompt.Text = Strings.Splash.PressAnyKey;
-        UiTheme.StyleLabel(prompt, UiTheme.Colors.Ink, UiTheme.FontSizes.Button);
-        prompt.HorizontalAlignment = HorizontalAlignment.Center;
-        vbox.AddChild(prompt);
+        // Buttons
+        var btnBox = new VBoxContainer();
+        btnBox.AddThemeConstantOverride("separation", 10);
+        vbox.AddChild(btnBox);
 
-        // Pulse animation on prompt
-        var tween = CreateTween();
-        tween.SetLoops();
-        tween.TweenProperty(prompt, "modulate:a", 0.3f, 1.0f);
-        tween.TweenProperty(prompt, "modulate:a", 1.0f, 1.0f);
+        // Continue button (only if save exists)
+        if (SaveManager.Instance != null && SaveManager.Instance.HasSave())
+        {
+            var saveData = SaveManager.Instance.PeekSave();
+            string continueText = saveData != null
+                ? $"Continue (Lv.{saveData.Level} {saveData.SelectedClass}, Floor {saveData.FloorNumber})"
+                : Strings.Splash.Continue;
 
-        // Short delay before accepting input (prevents accidental skip)
-        var timer = GetTree().CreateTimer(0.5);
-        timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(() => _ready = true));
+            var continueBtn = new Button();
+            continueBtn.Text = continueText;
+            continueBtn.CustomMinimumSize = new Vector2(300, 44);
+            continueBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            continueBtn.FocusMode = FocusModeEnum.All;
+            continueBtn.Connect(BaseButton.SignalName.Pressed,
+                Callable.From(() => EmitSignal(SignalName.ContinuePressed)));
+            btnBox.AddChild(continueBtn);
+        }
+
+        // New Game button
+        var newGameBtn = new Button();
+        newGameBtn.Text = Strings.Splash.NewGame;
+        newGameBtn.CustomMinimumSize = new Vector2(300, 44);
+        newGameBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        newGameBtn.FocusMode = FocusModeEnum.All;
+        newGameBtn.Connect(BaseButton.SignalName.Pressed,
+            Callable.From(() => EmitSignal(SignalName.NewGamePressed)));
+        btnBox.AddChild(newGameBtn);
+
+        // Auto-focus first button after short delay
+        var timer = GetTree().CreateTimer(0.3);
+        timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(() =>
+        {
+            _ready = true;
+            UiTheme.FocusFirstButton(btnBox);
+        }));
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -72,10 +98,7 @@ public partial class SplashScreen : Control
         if (!_ready || !Visible)
             return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed)
-        {
-            EmitSignal(SignalName.ContinuePressed);
+        if (Visible && KeyboardNav.HandleInput(@event, this))
             GetViewport().SetInputAsHandled();
-        }
     }
 }

@@ -72,7 +72,7 @@ public partial class GameState : Node
 
     public bool IsDead { get; set; } = false;
     public PlayerClass SelectedClass { get; set; } = PlayerClass.Warrior;
-    public Inventory PlayerInventory { get; private set; } = new(25);
+    public Inventory PlayerInventory { get; set; } = new(25);
     public StatBlock Stats { get; private set; } = new();
 
     public override void _Ready()
