@@ -17,7 +17,7 @@ Not yet implemented. The prototype has no inventory system.
 - **Starting slots:** 25
 - **At risk on death:** items in the backpack can be lost as a death penalty (see [death.md](../systems/death.md))
 - **Always accessible:** the backpack can be opened anywhere (dungeon or town)
-- **Expansion:** additional slots can be purchased or earned (mechanism TBD)
+- **Expansion:** purchased from the Item Shop NPC in town for gold at `300 * N^2` per expansion (+5 slots each). See Slot Expansion section below.
 
 ### Inventory Lore
 
@@ -57,7 +57,7 @@ Items are selected randomly. The Sacrificial Idol (if present in the backpack) n
 | 3 | 40 | 1,800 |
 | N | 25 + N*5 | `300 * N^2` |
 
-*Costs are starting values — subject to balancing.*
+*Values are locked. Tunable during playtesting only — the formula `300 * N^2` and +5 slots per expansion are final.*
 
 ### Item Stacking
 

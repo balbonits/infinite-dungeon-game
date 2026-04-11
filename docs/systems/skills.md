@@ -41,7 +41,7 @@ Both paths feed progression simultaneously.
 - **Passive bonuses** that scale with level (e.g., Unarmed level 10 gives a passive unarmed damage bonus)
 - **Gating** — specific skills require at least level 1 in the parent base skill
 
-**Specific skills** are the actionable abilities used in combat. Each level improves the skill's stats (damage, cooldown, range, duration, etc.). Exact per-level scaling is defined per skill (future task).
+**Specific skills** are the actionable abilities used in combat. Each level improves the skill's stats (damage, cooldown, range, duration, etc.). Exact per-level scaling is implementation-phase balancing — the formula structure is locked.
 
 ### Base Skill Passive Bonus Formula
 
@@ -153,6 +153,8 @@ Every base skill and specific skill has **no level cap**. Consistent with the ga
 Class skills are strictly locked to their class. No skill sharing between classes. See [classes.md](classes.md) for class design.
 
 **Exception: Innate skills.** There is a universal Innate skill category (Haste, Sense, Fortify) available to all classes. These are species-level magicule abilities, not class skills. See [magic.md](magic.md) for full Innate skill design.
+
+**Innate skill UI:** Innate skills display in separate sub-panels per category (one sub-panel for each innate skill), distinct from the class skill tree panel. This prevents visual clutter and reinforces that innate skills are a separate system from class combat skills.
 
 ---
 

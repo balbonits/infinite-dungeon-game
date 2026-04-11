@@ -109,12 +109,13 @@ public class DamageFormulaTests
     }
 
     [Theory]
-    [InlineData(1, 90)]
+    [InlineData(1, 45)]
     [InlineData(2, 180)]
-    [InlineData(10, 900)]
+    [InlineData(10, 4500)]
     public void TestXpThreshold(int level, int expectedXp)
     {
-        int threshold = level * 90;
+        // Canonical formula: floor(level^2 * 45). See leveling.md.
+        int threshold = (int)Math.Floor(level * level * 45.0);
         Assert.Equal(expectedXp, threshold);
     }
 }

@@ -167,6 +167,57 @@ As the dungeon deepens, enemies should become more varied:
 - **Boss enemies** -- appear on milestone floors, unique mechanics
 - **Elemental variants** -- resist certain damage types
 
+### Enemy Tiers (P2 — 4-Tier System)
+
+Phase 2 replaces the 3-tier system with a 4-tier system. Tiers determine stat multipliers relative to floor base stats and spawn distribution.
+
+| Tier | Name | Spawn Rate | Stat Multiplier | Visual Indicator |
+|------|------|-----------|-----------------|------------------|
+| 1 | Fodder | 60% | 0.6x | Smaller, muted color |
+| 2 | Standard | 30% | 1.0x (baseline) | Normal size and color |
+| 3 | Elite | 8% | 1.8x | Glow effect, slightly larger |
+| 4 | Boss | 2% | 3.5x | Distinct silhouette, particle aura |
+
+**Stat calculation (P2):**
+
+```
+base_hp(floor) = floor_base_hp * tier_multiplier
+base_damage(floor) = floor_base_damage * tier_multiplier
+base_speed(floor) = floor_base_speed * speed_multiplier(tier)
+base_xp(floor) = floor_base_xp * xp_multiplier(tier)
+```
+
+Where `floor_base_*` is computed from the zone difficulty scaling formula (see dungeon.md), and `tier_multiplier` uses the values above.
+
+**Speed multiplier by tier** (separate from stat multiplier to prevent frustrating speed spikes):
+
+| Tier | Speed Multiplier |
+|------|-----------------|
+| Fodder | 0.8x |
+| Standard | 1.0x |
+| Elite | 1.2x |
+| Boss | 0.9x (slow but deadly) |
+
+**XP multiplier by tier:**
+
+| Tier | XP Multiplier |
+|------|--------------|
+| Fodder | 0.5x |
+| Standard | 1.0x |
+| Elite | 2.5x |
+| Boss | 5.0x |
+
+**Spawn distribution formula:**
+```
+roll = random(0.0, 1.0)
+if roll < 0.60: tier = Fodder
+elif roll < 0.90: tier = Standard
+elif roll < 0.98: tier = Elite
+else: tier = Boss (mini-boss, not floor boss)
+```
+
+Note: Tier 4 "Boss" in the spawn system refers to rare mini-boss encounters during normal gameplay, distinct from the floor boss that spawns on every 10th floor.
+
 ### Floor-Based Scaling
 
 Enemy stats should scale with floor depth:

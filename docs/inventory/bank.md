@@ -47,7 +47,7 @@ The bank provides a counterbalance to the backpack's risk:
 | 4 | 90 | 5,000 |
 | N | 50 + N*10 | `500 * N^2` |
 
-*Costs are starting values — subject to balancing.*
+*Values are locked. Tunable during playtesting only — the formula `500 * N^2` and +10 slots per expansion are final.*
 
 ### Backpack vs. Bank
 

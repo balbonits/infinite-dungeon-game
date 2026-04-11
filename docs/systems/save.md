@@ -383,7 +383,34 @@ public bool PasteSaveFromClipboard()
 
 ### Save File Versioning
 
-The `version` field in the save data enables forward migration:
+The `version` field in the save data enables forward migration.
+
+#### Current Implementation (v1)
+
+The prototype `SaveSerializer` serializes a flat `PlayerState`:
+
+```json
+{
+    "version": 1,
+    "character": {
+        "level": 1,
+        "xp": 0,
+        "hp": 100,
+        "max_hp": 100
+    },
+    "dungeon": {
+        "floor_number": 1
+    }
+}
+```
+
+This matches the Save API code shown above. Fields: level, xp, hp, max_hp, floor_number.
+
+#### Target Schema (v2 — post-P2)
+
+The full save schema shown at the top of this doc (with `character.class`, `skills`, `inventory.equipment`, `dungeon.boss_kills`, `rested_xp_pool`, etc.) is the target for Phase 2. It will be implemented incrementally as each P2 system comes online.
+
+#### Migration Code
 
 ```csharp
 private Godot.Collections.Dictionary MigrateSave(Godot.Collections.Dictionary data)
@@ -398,19 +425,21 @@ private Godot.Collections.Dictionary MigrateSave(Godot.Collections.Dictionary da
             var character = (Godot.Collections.Dictionary)data["character"];
             if (!character.ContainsKey("max_hp"))
             {
+                // Reconstruct max_hp from level using canonical formula:
+                // sum of floor(8 + L * 0.5) for L = 1..level, plus base 100
                 int level = character.ContainsKey("level") ? (int)character["level"] : 1;
-                character["max_hp"] = 100 + level * 8;
+                int maxHp = 100;
+                for (int l = 1; l <= level; l++)
+                    maxHp += (int)Math.Floor(8 + l * 0.5);
+                character["max_hp"] = maxHp;
             }
         }
         data["version"] = 1;
     }
 
-    // Future migrations:
-    // if (version < 2)
-    // {
-    //     ... add new fields, restructure, etc.
-    //     data["version"] = 2;
-    // }
+    // Version 1 -> 2: Full P2 schema (skills, inventory, stats, etc.)
+    // Implemented when P2 systems are built. Each system adds its fields
+    // with safe defaults during migration.
 
     return data;
 }
