@@ -6,7 +6,7 @@ Every `.tscn` scene in the game, with every node listed, every property value do
 
 ## Current State
 
-> **Design spec.** No scenes currently exist — all were deleted in the Session 8 fresh start. The node hierarchies below serve as the blueprint for reimplementation.
+> **Implemented.** All scenes below exist and are functional. Last verified against code as of Session 10+.
 
 ## Design
 
@@ -15,11 +15,13 @@ Every `.tscn` scene in the game, with every node listed, every property value do
 | Scene File | Root Type | Script | Instanced By |
 |------------|-----------|--------|--------------|
 | `scenes/main.tscn` | Node | `scripts/Main.cs` | Project entry point (run scene) |
-| `scenes/dungeon.tscn` | Node2D | `scripts/Dungeon.cs` | `main.tscn` (child instance) |
-| `scenes/player.tscn` | CharacterBody2D | `scripts/Player.cs` | `Dungeon.cs` at runtime via `Instantiate()` |
+| `scenes/town.tscn` | Node2D | `scripts/Town.cs` | `Main.cs` at runtime via `SwapWorld()` |
+| `scenes/dungeon.tscn` | Node2D | `scripts/Dungeon.cs` | `Main.cs` at runtime via `SwapWorld()` |
+| `scenes/player.tscn` | CharacterBody2D | `scripts/Player.cs` | `Town.cs` / `Dungeon.cs` at runtime via `Instantiate()` |
 | `scenes/enemy.tscn` | CharacterBody2D | `scripts/Enemy.cs` | `Dungeon.cs` at runtime via `Instantiate()` |
 | `scenes/hud.tscn` | Control | `scripts/ui/Hud.cs` | `main.tscn` (child instance under UILayer) |
 | `scenes/death_screen.tscn` | Control | `scripts/ui/DeathScreen.cs` | `main.tscn` (child instance under UILayer) |
+| `scenes/pause_menu.tscn` | Control | `scripts/ui/PauseMenu.cs` | `main.tscn` (child instance under UILayer) |
 
 ---
 
@@ -27,30 +29,41 @@ Every `.tscn` scene in the game, with every node listed, every property value do
 
 ```
 Main (Node) [Main.cs]
-├── Dungeon (instance of dungeon.tscn)
-└── UILayer (CanvasLayer, layer=10)
+└── UILayer (CanvasLayer, layer=100)
     ├── HUD (instance of hud.tscn)
-    └── DeathScreen (instance of death_screen.tscn, visible=false)
+    ├── DeathScreen (instance of death_screen.tscn, visible=false)
+    ├── PauseMenu (instance of pause_menu.tscn, visible=false)
+    ├── ScreenTransition (Control) [ScreenTransition.cs]
+    ├── DebugPanel (Control) [DebugPanel.cs, process_mode=ALWAYS]
+    ├── NpcPanel (Control) [NpcPanel.cs]
+    ├── Toast (Control) [Toast.cs]
+    ├── AscendDialog (Control) [AscendDialog.cs, process_mode=ALWAYS]
+    ├── DialogueBox (Control) [DialogueBox.cs, process_mode=ALWAYS]
+    └── ShopWindow (Control) [ShopWindow.cs, process_mode=ALWAYS]
 ```
+
+World scenes (Town or Dungeon) are **not** hardcoded children of Main. They are loaded dynamically by `Main.cs.SwapWorld()` and inserted as the first child (index 0) at runtime. At any given time, `_currentWorld` is either a Town or Dungeon instance.
+
+At startup, `Main.cs._Ready()` creates a `SplashScreen` (programmatic, added to UILayer), which transitions to `ClassSelect` (also programmatic), which then calls `Main.Instance.LoadTown()`.
 
 #### Node Details
 
 **Main (Node)**
 - **Type:** Node (the simplest possible root -- no transform, no rendering)
 - **Script:** `res://scripts/Main.cs`
-- **Why Node:** The root doesn't need spatial positioning or rendering. It exists purely to own the Dungeon and UI subtrees. Using Node instead of Node2D avoids an unnecessary transform and signals that this is a logical container, not a spatial entity.
-- **Responsibilities:** Connects to `GameState.PlayerDied` signal in `_Ready()`. When the signal fires, it tells `DeathScreen` to show and pauses the scene tree (`GetTree().Paused = true`).
-
-**Dungeon (Node2D)**
-- **Type:** Instance of `scenes/dungeon.tscn`
-- **Why instanced as child:** Dungeon is always present in the main scene. If the game later needs to swap dungeon layouts (e.g., town vs. dungeon), this child instance can be replaced.
-- See **dungeon.tscn** section below for full subtree.
+- **Static instance:** `Main.Instance` singleton pattern, set in `_Ready()`
+- **Responsibilities:**
+  - Connects to `GameState.PlayerDied` signal in `_Ready()`. When fired, shows DeathScreen and pauses the tree.
+  - Applies `GlobalTheme` to all Control children of UILayer.
+  - `LoadTown()` / `LoadDungeon()` swap the world child via `SwapWorld()`.
+  - Shows splash screen and class selection on first launch.
+- **No hardcoded Dungeon child.** Any existing "Dungeon" or "Town" child found in `_Ready()` is freed.
 
 **UILayer (CanvasLayer)**
 - **Type:** CanvasLayer
-- **Property:** `layer = 10`
-- **Why CanvasLayer:** CanvasLayer renders its children on a separate canvas that is unaffected by Camera2D zoom and position. The HUD and death screen must remain fixed on screen regardless of where the camera is in the dungeon.
-- **Why layer 10:** High layer number ensures UI draws on top of everything. Layers are ordered numerically -- the default world layer is 0, so 10 guarantees the UI is above any future CanvasLayer additions (e.g., a minimap at layer 5).
+- **Property:** `layer = 100`
+- **Why CanvasLayer:** CanvasLayer renders its children on a separate canvas that is unaffected by Camera2D zoom and position. The HUD and all overlays must remain fixed on screen regardless of where the camera is in the world.
+- **Why layer 100:** High layer number ensures UI draws on top of everything. Layers are ordered numerically -- the default world layer is 0, so 100 guarantees the UI is above any future CanvasLayer additions.
 - **No script:** UILayer is a pure organizational container.
 
 **HUD (Control)**
@@ -62,6 +75,69 @@ Main (Node) [Main.cs]
 - **Property:** `visible = false` (hidden until player dies)
 - See **death_screen.tscn** section below for full subtree.
 
+**PauseMenu (Control)**
+- **Type:** Instance of `scenes/pause_menu.tscn`
+- **Property:** `visible = false`, `process_mode = PROCESS_MODE_ALWAYS`
+- See **pause_menu.tscn** section below for full subtree.
+
+**ScreenTransition (Control)**
+- **Script:** `res://scripts/ui/ScreenTransition.cs`
+- Full-rect Control with `mouse_filter = IGNORE`. Builds its UI (overlay + labels) programmatically in `_Ready()`.
+- Singleton: `ScreenTransition.Instance`. Used for fade-to-black transitions between floors and town/dungeon swaps.
+
+**DebugPanel (Control)**
+- **Script:** `res://scripts/ui/DebugPanel.cs`
+- Full-rect Control, `process_mode = PROCESS_MODE_ALWAYS`. Toggled with F3. Shows HP, level, XP, floor, damage, enemy count, kill stats, session time.
+
+**NpcPanel (Control)**
+- **Script:** `res://scripts/ui/NpcPanel.cs`
+- Full-rect Control. Singleton: `NpcPanel.Instance`. Shows NPC name, greeting, and service button when player interacts with an NPC. Builds UI programmatically.
+
+**Toast (Control)**
+- **Script:** `res://scripts/ui/Toast.cs`
+- Full-rect Control. Singleton: `Toast.Instance`. Shows stacking toast notifications at bottom-center. Max 5 visible.
+
+**AscendDialog (Control)**
+- **Script:** `res://scripts/ui/AscendDialog.cs`
+- Full-rect Control, `process_mode = PROCESS_MODE_ALWAYS`. Singleton: `AscendDialog.Instance`. Modal dialog for stairs-up: return to town, go up one floor, or select a specific floor.
+
+**DialogueBox (Control)**
+- **Script:** `res://scripts/ui/DialogueBox.cs`
+- Full-rect Control, `process_mode = PROCESS_MODE_ALWAYS`. Singleton: `DialogueBox.Instance`. Visual novel-style typewriter dialogue with portraits. Advanced with S / Space / Enter.
+
+**ShopWindow (Control)**
+- **Script:** `res://scripts/ui/ShopWindow.cs`
+- Full-rect Control, `process_mode = PROCESS_MODE_ALWAYS`. Singleton: `ShopWindow.Instance`. JRPG-style buy/sell shop with two-panel layout (item list + description). Currently only the Shopkeeper NPC opens it.
+
+---
+
+### town.tscn
+
+```
+Town (Node2D) [Town.cs]
+├── TileMapLayer (isometric tileset, y_sort_enabled=true)
+└── Entities (Node2D, y_sort_enabled=true)
+    └── (Player instanced at runtime)
+    └── (NPCs instanced at runtime: Shopkeeper, Blacksmith, Guild Master, Teleporter, Banker)
+    └── (Dungeon entrance object created at runtime)
+```
+
+#### Node Details
+
+**Town (Node2D)**
+- **Type:** Node2D
+- **Script:** `res://scripts/Town.cs`
+- **Fixed size:** 16x12 tiles (defined in `Constants.Town.Width/Height`)
+- **Responsibilities:**
+  - Creates TileSet and paints the town grid programmatically (floor source 0, wall source 1)
+  - Spawns player at town center
+  - Spawns 5 NPCs at fixed tile positions (each is a `Npc` StaticBody2D created programmatically)
+  - Creates dungeon entrance at bottom of town (stairs sprite + label + trigger area)
+  - When player enters dungeon entrance trigger, plays ScreenTransition and calls `Main.Instance.LoadDungeon()`
+- **NPC layout:** Shopkeeper (4,3), Blacksmith (12,3), Guild Master (4,7), Teleporter (12,7), Banker (8,3)
+
+**TileMapLayer / Entities** -- same structure as dungeon.tscn (see below), but no SpawnTimer.
+
 ---
 
 ### dungeon.tscn
@@ -72,6 +148,7 @@ Dungeon (Node2D) [Dungeon.cs]
 ├── Entities (Node2D, y_sort_enabled=true)
 │   └── (Player instanced here at runtime)
 │   └── (Enemies instanced here at runtime)
+│   └── (StairsDown + StairsUp objects created at runtime)
 └── SpawnTimer (Timer, wait_time=2.8, autostart=true)
 ```
 
@@ -82,12 +159,16 @@ Dungeon (Node2D) [Dungeon.cs]
 - **Script:** `res://scripts/Dungeon.cs`
 - **Why Node2D:** Dungeon is a spatial container for all gameplay elements. Node2D provides a transform so the entire dungeon can be repositioned if needed (e.g., screen transitions).
 - **Responsibilities:**
-  - Creates the TileSet and paints tiles programmatically in `_Ready()`
-  - Instances the player scene and adds it to the Entities container
-  - Spawns initial enemies (10 on game start)
+  - Creates the TileSet and paints tiles programmatically in `_Ready()` via `SetupTileset()` + `GenerateFloor()`
+  - Proc-gen room: random size (18-30 base, grows with floor depth up to +6), random floor tile variations (4 textures), wall border
+  - Spawns player at the up-stairs position
+  - Spawns initial enemies (8 on game start, per `Constants.Spawning.InitialEnemies`)
+  - Creates stairs-down and stairs-up objects with collision bodies and trigger areas
   - Connects to `SpawnTimer.Timeout` for periodic enemy spawning
   - Connects to `EventBus.EnemyDefeated` to schedule respawn after 1.4s delay
   - Manages the enemy soft cap (max 14 active enemies)
+  - `PerformFloorDescent()` clears enemies and tiles, regenerates floor, repositions player and stairs
+  - Floor 1 stairs-up shows "Return to Town"; deeper floors show "STAIRS UP"
 
 **TileMapLayer**
 - **Type:** TileMapLayer
@@ -129,24 +210,27 @@ Dungeon (Node2D) [Dungeon.cs]
 ```
 Player (CharacterBody2D) [Player.cs]
 │   collision_layer = 2 (bit 1, binary: 0b10)
-│   collision_mask = 1 (bit 0, binary: 0b01)
-│   groups: ["player"]
+│   collision_mask = 5 (bits 0+2, binary: 0b101)
+│   motion_mode = FLOATING
+│   groups: ["player"] (added in _Ready)
 ├── CollisionShape2D
 │   └── shape: CircleShape2D(radius=12.0)
-├── Sprite (Polygon2D)
-│   └── color: Color(0.557, 0.839, 1.0, 1.0) = #8ed6ff
-│   └── polygon: PackedVector2Array[(0,-16), (12,0), (0,16), (-12,0)]
+├── Sprite (Sprite2D)
+│   └── texture: res://assets/characters/player/warrior/rotations/south.png
+│   └── texture_filter = NEAREST
+│   └── offset = Vector2(0, -30)
 ├── Camera2D
+│   └── zoom = Vector2(2, 2)
 │   └── position_smoothing_enabled = true
 │   └── position_smoothing_speed = 5.0
-│   └── zoom = Vector2(2, 2)
+│   └── process_callback = PHYSICS
 └── AttackRange (Area2D)
     │   collision_layer = 0 (detects, does not broadcast)
     │   collision_mask = 4 (bit 2, detects enemy layer)
     │   monitoring = true
     │   monitorable = false
     └── AttackShape (CollisionShape2D)
-        └── shape: CircleShape2D(radius=78.0)
+        └── shape: CircleShape2D(radius=78.0) — resized at runtime per class
 ```
 
 #### Node Details
@@ -155,53 +239,38 @@ Player (CharacterBody2D) [Player.cs]
 - **Type:** CharacterBody2D
 - **Script:** `res://scripts/Player.cs`
 - **Properties:**
-  - `collision_layer = 2` -- bit 1, identifies this body as "player" for other nodes querying layer 2
-  - `collision_mask = 1` -- bit 0, collides with wall/tile physics bodies on layer 1
-  - `motion_mode = MOTION_MODE_FLOATING` -- no gravity, free 2D movement in all directions
-- **Groups:** `["player"]` -- added in `_Ready()` or set in the scene editor. Used by enemies to find the player via `GetTree().GetFirstNodeInGroup("player")`.
-- **Why CharacterBody2D:** Provides `MoveAndSlide()` which handles wall collision response automatically. Unlike RigidBody2D, it doesn't simulate physics forces -- movement is entirely code-driven, matching the Phaser prototype's `setVelocity()` approach. Unlike StaticBody2D, it can move.
-- **Collision behavior:** The player collides with walls (mask bit 0) but does NOT collide with enemies (no mask bit 2). Enemies overlap the player and detect contact via their own Area2D. This is intentional: enemies should be able to crowd around the player without pushing them.
-- See `docs/objects/player.md` for full method pseudocode and movement system.
+  - `collision_layer = 2` -- bit 1, identifies this body as "player"
+  - `collision_mask = 5` -- bits 0+2 (binary 0b101), collides with walls (bit 0) and enemies (bit 2)
+  - `motion_mode = MOTION_MODE_FLOATING` (value 1) -- no gravity, free 2D movement
+- **Groups:** `["player"]` -- added in `_Ready()` via `AddToGroup(Constants.Groups.Player)`.
+- **Runtime init in `_Ready()`:** loads class attack config, resizes AttackShape to primary range, loads 8-directional sprites for selected class, connects to `GameState.StatsChanged`, starts 1.5s grace period.
+- **Movement:** Screen-space arrow keys (NOT isometric). Speed: 190 px/s. `DirectionalSprite.UpdateSprite()` swaps texture per frame.
+- **Combat:** Auto-attack polls `AttackRange.GetOverlappingBodies()` each physics frame. Uses `AttackConfig` for melee (instant + slash) or projectile (spawns `Projectile`). Mage has staff melee fallback.
 
 **CollisionShape2D**
-- **Type:** CollisionShape2D
 - **Shape:** `CircleShape2D` with `radius = 12.0`
-- **Why circle:** A circle approximates the diamond sprite shape for physics. It's simpler than a polygon collider and prevents snagging on tile corners. The 12px radius is slightly smaller than the sprite's 16px half-height to give a forgiving feel -- the player appears to barely squeeze past walls.
 - **Position:** `Vector2(0, 0)` (centered on the CharacterBody2D origin)
 
-**Sprite (Polygon2D)**
-- **Type:** Polygon2D
+**Sprite (Sprite2D)**
+- **Type:** Sprite2D (pixel art sprites, NOT Polygon2D)
 - **Properties:**
-  - `color = Color(0.557, 0.839, 1.0, 1.0)` -- equivalent to hex `#8ed6ff`, a light blue
-  - `polygon = PackedVector2Array[(0, -16), (12, 0), (0, 16), (-12, 0)]` -- diamond shape, 24px wide by 32px tall
-- **Why Polygon2D:** Placeholder for a future sprite. Polygon2D draws a filled polygon with a solid color, matching the Phaser prototype's `this.add.circle()` approach. When pixel art is ready, this node will be replaced with a Sprite2D or AnimatedSprite2D.
-- **Diamond dimensions:** 24px wide (±12 from center), 32px tall (±16 from center). This is slightly larger than the collision circle (radius 12) to make the sprite visually extend beyond the collision bounds, which feels natural in isometric view.
+  - `texture` -- default: warrior south-facing. Replaced at runtime with class-specific 8-directional rotations.
+  - `texture_filter = NEAREST` (value 0) -- pixel-perfect rendering
+  - `offset = Vector2(0, -30)` -- raises sprite above collision circle to align feet with tile surface
 
 **Camera2D**
-- **Type:** Camera2D
 - **Properties:**
-  - `position_smoothing_enabled = true` -- camera lerps toward the player instead of snapping, creating smooth follow
-  - `position_smoothing_speed = 5.0` -- interpolation speed; lower values = more lag behind player, higher values = more responsive. 5.0 provides a gentle follow that reduces jarring movement.
-  - `zoom = Vector2(2, 2)` -- 2x zoom on both axes. The viewport is 1920x1080 but the game world uses small pixel values (tiles are 64x32), so 2x zoom makes the world fill the screen appropriately.
-  - `enabled = true` (default) -- this is the active camera
-- **Why child of Player:** As a child of the Player CharacterBody2D, Camera2D automatically follows the player's position. No code is needed to update the camera position -- Godot's scene tree hierarchy handles it.
-- **Shake:** The camera shake effect tweens the `offset` property (not `position`), which temporarily displaces the view without affecting the camera's actual follow position. See `docs/objects/effects.md` for shake parameters.
+  - `zoom = Vector2(2, 2)`, `position_smoothing_enabled = true`, `position_smoothing_speed = 5.0`
+  - `process_callback = PHYSICS` (value 0) -- updates during physics step
 
 **AttackRange (Area2D)**
-- **Type:** Area2D
 - **Properties:**
-  - `collision_layer = 0` -- the attack range does not broadcast its own presence; nothing detects it
-  - `collision_mask = 4` -- bit 2, detects bodies on the enemy collision layer
-  - `monitoring = true` -- actively checks for overlapping bodies each physics frame
-  - `monitorable = false` -- other Area2D nodes cannot detect this area (performance optimization)
-- **Why Area2D:** Area2D is Godot's detection zone. Unlike CharacterBody2D, it doesn't participate in physics collision response -- bodies pass through it. It simply reports what bodies are overlapping. This is exactly what auto-attack needs: "which enemies are within 78px of the player?"
-- **Why not a signal-based approach:** The player script polls `GetOverlappingBodies()` each frame during `HandleAttack()` to find the nearest enemy. This is simpler and more predictable than reacting to `body_entered`/`body_exited` signals and maintaining a list, especially since the player needs the nearest enemy each frame, not just any enemy.
+  - `collision_layer = 0`, `collision_mask = 4` (detects enemies), `monitoring = true`, `monitorable = false`
+- **Runtime resize:** AttackShape radius set to class primary attack range (Warrior: 78, Ranger: 250, Mage: 200).
 
 **AttackShape (CollisionShape2D)**
-- **Type:** CollisionShape2D
-- **Shape:** `CircleShape2D` with `radius = 78.0`
-- **Why 78px:** This matches the Phaser prototype's `ATTACK_RANGE = 78` exactly. It defines the auto-attack detection radius. Any enemy whose collision shape overlaps this circle is a candidate for auto-attack.
-- **Position:** `Vector2(0, 0)` (centered on the AttackRange Area2D, which is centered on the Player)
+- **Shape:** `CircleShape2D` with `radius = 78.0` (scene default, resized at runtime per class)
+- **Position:** `Vector2(0, 0)`
 
 ---
 
@@ -210,14 +279,23 @@ Player (CharacterBody2D) [Player.cs]
 ```
 Enemy (CharacterBody2D) [Enemy.cs]
 │   collision_layer = 4 (bit 2, binary: 0b100)
-│   collision_mask = 1 (bit 0, binary: 0b001)
-│   groups: ["enemies"]
-│   [Export] DangerTier: int = 1
+│   collision_mask = 3 (bits 0+1, binary: 0b011)
+│   motion_mode = FLOATING
+│   groups: ["enemies"] (added in _Ready)
+│   [Export] Level: int = 1
+│   [Export] SpeciesIndex: int = 0 (Skeleton)
 ├── CollisionShape2D
 │   └── shape: CircleShape2D(radius=10.0)
-├── Sprite (Polygon2D)
-│   └── color: set in _ready() based on danger_tier
-│   └── polygon: PackedVector2Array[(0,-14), (10,0), (0,14), (-10,0)]
+├── Sprite (Sprite2D)
+│   └── texture: res://assets/characters/enemies/skeleton/rotations/south.png
+│   └── texture_filter = NEAREST
+│   └── scale = Vector2(0.7, 0.7)
+│   └── offset = Vector2(0, -26)
+├── LevelLabel (Label)
+│   └── text: "Lv.1" (set at runtime)
+│   └── position = Vector2(0, -56)
+│   └── horizontal_alignment = CENTER
+│   └── font_color = Color(1, 1, 1, 0.9), outline_size = 3, font_size = 11
 ├── HitArea (Area2D)
 │   │   collision_layer = 0 (does not broadcast)
 │   │   collision_mask = 2 (bit 1, detects player layer)
@@ -235,57 +313,48 @@ Enemy (CharacterBody2D) [Enemy.cs]
 - **Type:** CharacterBody2D
 - **Script:** `res://scripts/Enemy.cs`
 - **Properties:**
-  - `collision_layer = 4` -- bit 2, identifies this body as "enemy" for other nodes querying layer 4
-  - `collision_mask = 1` -- bit 0, collides with wall/tile physics bodies on layer 1
-  - `motion_mode = MOTION_MODE_FLOATING` -- no gravity, free 2D movement
+  - `collision_layer = 4` -- bit 2, identifies this body as "enemy"
+  - `collision_mask = 3` -- bits 0+1 (binary 0b011), collides with walls (bit 0) AND player (bit 1)
+  - `motion_mode = MOTION_MODE_FLOATING` (value 1) -- no gravity, free 2D movement
 - **Exported Properties:**
-  - `[Export] public int DangerTier { get; set; } = 1` -- exported so it can be set per-instance from `Dungeon.cs` before adding to the scene tree. Values 1-3 determine all enemy stats.
-- **Groups:** `["enemies"]` -- added in `_Ready()`. Used by the player's AttackRange to filter overlapping bodies, and by `GetTree().GetNodesInGroup("enemies")` for enemy counting.
-- **Why CharacterBody2D:** Same reasoning as the player -- `MoveAndSlide()` handles wall collision so enemies don't walk through walls. Enemies slide along walls when chasing the player at an angle.
-- **Collision behavior:** Enemies collide with walls (mask bit 0) but do NOT collide with the player (no mask bit 1) or other enemies (no mask bit 2). Enemies overlap freely with each other and the player. Contact with the player is detected by the HitArea Area2D, not physics collision.
-- See `docs/objects/enemies.md` for full method pseudocode and tier stats.
+  - `[Export] public int Level { get; set; } = 1` -- set by `Dungeon.SpawnEnemy()` based on floor scaling formula
+  - `[Export] public int SpeciesIndex { get; set; } = 0` -- indexes into `Constants.Assets.EnemySpeciesRotations` (0=Skeleton, 1=Goblin)
+- **Groups:** `["enemies"]` -- added in `_Ready()` via `AddToGroup()`.
+- **Runtime init in `_Ready()`:** computes HP/speed/damage/XP from level via `Constants.EnemyStats` formulas, loads species-specific 8-directional sprites, sets color based on level gap to player (gradient from grey through green/yellow/red), connects to `GameState.StatsChanged` to update color as player levels.
+- **Color system:** NOT tier-based. Uses a continuous 8-anchor gradient based on `enemy.Level - player.Level` gap: grey (-10), blue (-6), cyan (-3), green (0), yellow (+3), gold (+6), orange (+8), red (+10). Colors lerp between anchors.
+- **Despawn safety:** If enemy is >800px from player, it `QueueFree()`s.
+- **Signal connections use `Connect()`:** `_hitArea.Connect(Area2D.SignalName.BodyEntered, new Callable(this, MethodName.OnHitAreaBodyEntered))`. This is the project convention (not C# `+=` event syntax).
 
 **CollisionShape2D**
-- **Type:** CollisionShape2D
 - **Shape:** `CircleShape2D` with `radius = 10.0`
-- **Why radius 10:** Slightly smaller than the player's 12px radius. Enemies are visually smaller (diamond is 20x28 vs player's 24x32), and the smaller collision radius means they can navigate slightly tighter spaces, which feels natural for "swarming" enemies.
-- **Position:** `Vector2(0, 0)` (centered on the Enemy CharacterBody2D origin)
+- **Position:** `Vector2(0, 0)`
 
-**Sprite (Polygon2D)**
-- **Type:** Polygon2D
+**Sprite (Sprite2D)**
+- **Type:** Sprite2D (NOT Polygon2D -- pixel art sprites are in use)
 - **Properties:**
-  - `color` -- set dynamically in `_Ready()` based on `DangerTier`:
-    - Tier 1: `Color(0.420, 1.0, 0.537, 1.0)` = `#6bff89` (green)
-    - Tier 2: `Color(1.0, 0.871, 0.400, 1.0)` = `#ffde66` (yellow)
-    - Tier 3: `Color(1.0, 0.435, 0.435, 1.0)` = `#ff6f6f` (red)
-  - `polygon = PackedVector2Array[(0, -14), (10, 0), (0, 14), (-10, 0)]` -- diamond shape, 20px wide by 28px tall (smaller than player)
-- **Why dynamic color:** The same `enemy.tscn` scene is used for all three tiers. The `DangerTier` export property determines color at runtime, avoiding three nearly identical scene files.
+  - `texture_filter = NEAREST` (value 0) -- pixel-perfect rendering
+  - `scale = Vector2(0.7, 0.7)` -- enemies are 70% size of player sprites
+  - `offset = Vector2(0, -26)` -- raises sprite above collision circle
+- **Runtime behavior:** `DirectionalSprite.UpdateSprite()` swaps texture based on movement velocity. Modulate color set by `UpdateColor()` (level-gap gradient).
+
+**LevelLabel (Label)**
+- **Type:** Label -- shows "Lv.N" above the enemy
+- **Properties:**
+  - `position = Vector2(0, -56)`, centered horizontally (60px wide)
+  - `font_color = Color(1, 1, 1, 0.9)`, `outline_size = 3`, `font_size = 11`
+  - Modulate color matches the sprite color (updates with level gap gradient)
 
 **HitArea (Area2D)**
-- **Type:** Area2D
-- **Properties:**
-  - `collision_layer = 0` -- does not broadcast; nothing detects the HitArea itself
-  - `collision_mask = 2` -- bit 1, detects the player on layer 2
-  - `monitoring = true` -- actively checks for overlapping bodies
-  - `monitorable = false` -- other Area2D nodes cannot detect this area
-- **Why Area2D:** Detects when the player overlaps with the enemy's "hit zone." This replaces Phaser's `physics.add.overlap(player, enemies, callback)`. The Area2D emits `BodyEntered` when the player first enters and provides `GetOverlappingBodies()` for the cooldown re-check.
-- **Signal connections:**
-  - `BodyEntered += OnHitAreaBodyEntered;` -- triggers initial damage when player first enters the hit zone
-- **Why radius 15 (larger than collision shape):** The HitArea extends slightly beyond the enemy's physics body (radius 10). This creates a small "danger zone" around the enemy -- the player takes damage slightly before visually touching the enemy's body, which feels more threatening and reduces the frustration of pixel-perfect avoidance.
+- **Properties:** `collision_layer = 0`, `collision_mask = 2` (detects player), `monitoring = true`, `monitorable = false`
+- **Signal:** `BodyEntered` connected to `OnHitAreaBodyEntered` via `Connect()`. Respects player invincibility (`IsInvincible`).
+- **Damage:** Uses `DealDamageTo()` which checks player invincibility, calls `GameState.Instance.TakeDamage()`, triggers damage flash, spawns floating damage number.
 
 **HitShape (CollisionShape2D)**
-- **Type:** CollisionShape2D
-- **Shape:** `CircleShape2D` with `radius = 15.0`
-- **Position:** `Vector2(0, 0)` (centered on the HitArea Area2D)
+- **Shape:** `CircleShape2D` with `radius = 15.0` (slightly larger than body collision for a danger zone)
 
 **HitCooldownTimer (Timer)**
-- **Type:** Timer
-- **Properties:**
-  - `wait_time = 0.7` (seconds) -- matches Phaser's 700ms hit cooldown per enemy
-  - `one_shot = true` -- fires once and stops; must be manually restarted
-- **Why Timer node:** Enforces the 0.7-second cooldown between consecutive damage ticks from the same enemy. When the timer is running (not stopped), the enemy cannot deal damage. When it expires, the `Timeout` signal fires and the enemy re-checks if the player is still overlapping.
-- **Signal connection:** `Timeout += OnHitCooldownTimerTimeout;` -- on timeout, checks `_hitArea.GetOverlappingBodies()` for the player and deals damage again if still overlapping, then restarts the timer.
-- **Why one_shot:** The enemy should only deal damage when the player is actively overlapping. If the player leaves and re-enters, `body_entered` handles the new contact. The one_shot timer ensures the re-check loop stops when the timer isn't explicitly restarted.
+- **Properties:** `wait_time = 0.7`, `one_shot = true`
+- **Signal:** `Timeout` connected to `OnHitCooldownTimerTimeout` via `Connect()`. Re-checks overlap and deals damage again if player is still in range.
 
 ---
 
@@ -394,92 +463,59 @@ HUD (Control) [Hud.cs]
 
 ```
 DeathScreen (Control) [DeathScreen.cs]
-│   anchor_right = 1.0, anchor_bottom = 1.0 (full rect)
 │   visible = false
+│   full rect (anchors_preset=15)
 │   process_mode = PROCESS_MODE_ALWAYS
 ├── Overlay (ColorRect)
-│   anchor_right = 1.0, anchor_bottom = 1.0
 │   color = Color(0, 0, 0, 0.75)
 └── CenterContainer
-    │   anchor_right = 1.0, anchor_bottom = 1.0
-    └── VBoxContainer (theme_override_constants/separation = 16)
-        ├── TitleLabel (Label)
-        │   text = "You Died"
-        │   theme_override_colors/font_color = Color("#ffe1b0")
-        │   theme_override_font_sizes/font_size = 48
-        │   horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-        ├── InstructionLabel (Label)
-        │   text = "Press R to restart"
-        │   theme_override_colors/font_color = Color("#b6bfdb")
-        │   theme_override_font_sizes/font_size = 20
-        │   horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-        └── RestartButton (Button)
-            text = "Restart"
-            theme_override_colors/font_color = Color("#ecf0ff")
-            theme_override_styles/normal: StyleBoxFlat with accent bg
-            theme_override_styles/hover: StyleBoxFlat with lighter accent bg
-            custom_minimum_size = Vector2(120, 40)
+    └── VBoxContainer (separation = 16)
+        ├── TitleLabel (Label) — "You Died", font_size=48, color=Color(1, 0.882, 0.69)
+        ├── InstructionLabel (Label) — "Press R to restart", font_size=20
+        ├── RestartButton (Button) — "Restart (R)", min_size=180x40
+        └── QuitButton (Button) — "Quit Game (Esc)", min_size=180x40
 ```
 
 #### Node Details
 
 **DeathScreen (Control)**
-- **Type:** Control
 - **Script:** `res://scripts/ui/DeathScreen.cs`
-- **Properties:**
-  - `anchor_right = 1.0`, `anchor_bottom = 1.0` -- fills the entire viewport
-  - `visible = false` -- hidden by default. Set to `true` by `Main.cs` when the player dies.
-  - `process_mode = PROCESS_MODE_ALWAYS` -- continues processing even when the scene tree is paused. This is essential: when the player dies, `Main.cs` pauses the tree (`GetTree().Paused = true`) to freeze all gameplay. The death screen must still respond to input (R key, button click) despite the pause.
-- **Why process_mode ALWAYS:** Without this, the death screen would be paused along with everything else, and the player could never restart. PROCESS_MODE_ALWAYS is the standard Godot pattern for pause menus and death screens.
-- **Responsibilities:**
-  - Listens for R key press in `_UnhandledInput()` or `_Input()`
-  - Connects `RestartButton.Pressed += OnRestartButtonPressed;`
-  - On restart: calls `GameState.Reset()`, sets `GetTree().Paused = false`, calls `GetTree().ReloadCurrentScene()`
+- `visible = false`, `process_mode = PROCESS_MODE_ALWAYS`
+- **Input:** R key restarts (calls `GameState.Reset()`, hides self, unpauses, loads town via `Main.Instance.LoadTown()`). Esc quits game.
+- **Signal connections:** RestartButton and QuitButton both use `Connect(BaseButton.SignalName.Pressed, new Callable(...))`.
+- **Restart does NOT reload scene.** Instead it resets state and swaps world to town.
 
-**Overlay (ColorRect)**
-- **Type:** ColorRect
-- **Properties:**
-  - `anchor_right = 1.0`, `anchor_bottom = 1.0` -- fills entire parent (full viewport)
-  - `color = Color(0, 0, 0, 0.75)` -- 75% opaque black overlay
-- **Why ColorRect:** Provides the dark semi-transparent background behind the death UI. Matches Phaser's `this.add.rectangle(..., 0x000000, 0.75)`. ColorRect is the simplest way to fill a rectangular area with a solid color.
+**Buttons:** Both RestartButton and QuitButton use `StyleBoxFlat` with accent gold bg (`0.961, 0.784, 0.42`), dark text color (`0.086, 0.106, 0.157`), 6px corner radius. Hover state is a lighter gold (`0.98, 0.85, 0.55`).
 
-**CenterContainer**
-- **Type:** CenterContainer
-- **Properties:**
-  - `anchor_right = 1.0`, `anchor_bottom = 1.0` -- fills entire parent
-- **Why CenterContainer:** Automatically centers its single child (VBoxContainer) both horizontally and vertically. This replaces the CSS centering that Phaser's text had via `setOrigin(0.5)`.
+---
 
-**VBoxContainer**
-- **Type:** VBoxContainer
-- **Properties:**
-  - `theme_override_constants/separation = 16` -- 16px vertical gap between elements. More spacing than the HUD (4px) because the death screen is a modal dialog, not a compact info panel.
+### pause_menu.tscn
 
-**TitleLabel (Label)**
-- **Type:** Label
-- **Properties:**
-  - `text = "You Died"` -- matches Phaser's death screen text
-  - `theme_override_colors/font_color = Color("#ffe1b0")` -- warm gold/cream, matches Phaser's `#ffe1b0`
-  - `theme_override_font_sizes/font_size = 48` -- large, prominent text. Phaser used `28px` but at 2x camera zoom the effective size doubles.
-  - `horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER` -- text centered within the label
+```
+PauseMenu (Control) [PauseMenu.cs]
+│   visible = false
+│   full rect (anchors_preset=15)
+│   process_mode = PROCESS_MODE_ALWAYS
+├── Overlay (ColorRect)
+│   color = Color(0, 0, 0, 0.5)
+└── CenterContainer
+    └── PanelContainer (min_size=280, StyleBoxFlat bg=0.92 opacity)
+        └── MarginContainer
+            └── VBoxContainer (separation = 12)
+                ├── TitleLabel (Label) — "PAUSED", font_size=24, accent color
+                ├── Separator (HSeparator)
+                ├── ResumeButton (Button) — "Resume", min_height=40
+                └── QuitButton (Button) — "Quit Game", min_height=40
+```
 
-**InstructionLabel (Label)**
-- **Type:** Label
-- **Properties:**
-  - `text = "Press R to restart"` -- simplified from Phaser's "Tap / Press R to restart" since mobile touch is deferred
-  - `theme_override_colors/font_color = Color("#b6bfdb")` -- muted color, same as HUD controls text
-  - `theme_override_font_sizes/font_size = 20`
-  - `horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER`
+#### Node Details
 
-**RestartButton (Button)**
-- **Type:** Button
-- **Properties:**
-  - `text = "Restart"`
-  - `theme_override_colors/font_color = Color("#ecf0ff")` -- bright ink color for readability
-  - `theme_override_styles/normal` -- `StyleBoxFlat` with accent background color (gold/warm tone)
-  - `theme_override_styles/hover` -- `StyleBoxFlat` with slightly lighter accent on hover
-  - `custom_minimum_size = Vector2(120, 40)` -- minimum button size for comfortable clicking
-- **Why Button in addition to R key:** Provides a visible, clickable restart option. The R key is a keyboard shortcut; the button is for discoverability and future mouse/touch users.
-- **Signal connection:** `Pressed += OnRestartButtonPressed;`
+**PauseMenu (Control)**
+- **Script:** `res://scripts/ui/PauseMenu.cs`
+- `visible = false`, `process_mode = PROCESS_MODE_ALWAYS`
+- **Input:** Esc toggles the pause menu. Blocked when DeathScreen is visible (checks sibling node).
+- **Resume:** Hides menu, unpauses tree. **Quit:** Calls `GetTree().Quit()`.
+- **Panel style:** Dark panel (bg 0.92 opacity), gold border (0.5 opacity), 2px border, 8px corners.
 
 ---
 
@@ -487,7 +523,7 @@ DeathScreen (Control) [DeathScreen.cs]
 
 | Bit | Layer Value | Name | Used By |
 |-----|-------------|------|---------|
-| 0 | 1 | Walls/Tiles | TileMapLayer wall tile physics |
+| 0 | 1 | Walls/Tiles | TileMapLayer wall tile physics, NPC StaticBody2D, Stairs StaticBody2D |
 | 1 | 2 | Player | Player CharacterBody2D |
 | 2 | 4 | Enemies | Enemy CharacterBody2D |
 
@@ -495,14 +531,16 @@ DeathScreen (Control) [DeathScreen.cs]
 
 | Node | Layer (what I am) | Mask (what I collide with) | Effect |
 |------|-------------------|---------------------------|--------|
-| Player body | 2 | 1 | Player slides along walls |
-| Enemy body | 4 | 1 | Enemies slide along walls |
+| Player body | 2 | 5 (walls + enemies) | Player slides along walls and bumps into enemies |
+| Enemy body | 4 | 3 (walls + player) | Enemies slide along walls and bump into player |
 | Player AttackRange | 0 | 4 | Detects enemies for auto-attack |
 | Enemy HitArea | 0 | 2 | Detects player for contact damage |
+| NPC body | 1 (walls) | 0 | NPCs are solid obstacles (StaticBody2D) |
+| Stairs body | 1 (walls) | 0 | Stairs are solid obstacles (StaticBody2D) |
+| Stairs trigger | 0 | 2 (player) | Detects player approach for floor transition |
+| Projectile | 0 | 4 (enemies) | Arrow/bolt detects enemy hit |
 
-**Why enemies don't collide with each other:** Setting enemy mask to only bit 0 (walls) means enemies freely overlap each other. This is intentional -- in the Phaser prototype, enemies stack on top of each other when chasing the player. Adding enemy-enemy collision would require pathfinding to prevent enemies from getting stuck, which is deferred to a future iteration.
-
-**Why player doesn't collide with enemies:** If the player collided with enemies (mask bit 2), enemy bodies would push the player around. This would make combat feel frustrating -- getting surrounded would shove the player uncontrollably. Instead, enemies deal damage via Area2D overlap, and the player can always move freely.
+**Note on player-enemy collision:** Both player (`mask=5`) and enemy (`mask=3`) include each other in their masks. This means they physically collide and push each other -- enemies cannot walk through the player, and the player bumps into enemies.
 
 ---
 
@@ -515,19 +553,17 @@ DeathScreen (Control) [DeathScreen.cs]
 
 ## Implementation Notes
 
-- All scenes are saved as `.tscn` files in `res://scenes/`. Scripts are in `res://scripts/` with subdirectories matching the scene organization.
-- The player and enemy scenes are PackedScene resources loaded by `Dungeon.cs` using `GD.Load<PackedScene>()` for access:
-  ```
-  private static readonly PackedScene PlayerScene = GD.Load<PackedScene>("res://scenes/player.tscn");
-  private static readonly PackedScene EnemyScene = GD.Load<PackedScene>("res://scenes/enemy.tscn");
-  ```
-- Y-sorting is enabled on both TileMapLayer and Entities to ensure correct isometric draw order. Without y-sort, entities behind walls could render in front of them.
-- The UILayer CanvasLayer at layer 10 ensures UI is always on top regardless of Camera2D zoom or position.
+- All scenes are saved as `.tscn` files in `res://scenes/`. Scripts are in `res://scripts/` with subdirectories (`ui/`, `logic/`, `autoloads/`).
+- Scene paths are centralized in `Constants.Assets` (e.g., `Constants.Assets.PlayerScene`, `Constants.Assets.EnemyScene`).
+- PackedScenes are loaded via `GD.Load<PackedScene>()` as static readonly fields in `Main.cs`, `Dungeon.cs`, and `Town.cs`.
+- Y-sorting is enabled on both TileMapLayer and Entities in both town and dungeon scenes.
+- The UILayer CanvasLayer at **layer 100** ensures UI is always on top regardless of Camera2D zoom or position.
+- Signal connections throughout the project use `Connect()` with `Callable`, NOT the C# `+=` event syntax. This is the project convention.
+- Many UI nodes are built programmatically in `_Ready()` rather than defined in `.tscn` files (SplashScreen, ClassSelect, DebugPanel, NpcPanel, Toast, AscendDialog, DialogueBox, ShopWindow, ScreenTransition). Only the node itself is declared in `main.tscn`; its children are created in code.
+- `GlobalTheme.Create()` is applied to all UILayer Control children in `Main._Ready()`.
+- Multiple UI singletons use the `Instance` pattern: `ScreenTransition.Instance`, `Toast.Instance`, `NpcPanel.Instance`, `AscendDialog.Instance`, `DialogueBox.Instance`, `ShopWindow.Instance`.
 
 ## Open Questions
 
-- Should the player scene include an AnimationPlayer node for future sprite animations, or add it when pixel art is introduced?
-- Should the death screen scene include an AnimationPlayer for a fade-in transition?
 - Should enemies have a separate HealthBar node (ProgressBar or custom drawing) for visual HP feedback?
-- Should the Entities node use a YSort node (deprecated in Godot 4) or is `y_sort_enabled` on Node2D sufficient for all cases?
 - Should the HUD panel use a proper Theme resource (`.tres`) instead of per-node theme overrides, for easier global style changes?

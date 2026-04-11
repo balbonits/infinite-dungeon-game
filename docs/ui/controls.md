@@ -4,15 +4,98 @@
 
 PS1 DualShock controller as the MVP baseline. Arrow keys for movement, face buttons for combat actions, L1/R1 for target cycling and shortcut modifiers. Designed so the game works with ~12 inputs, then scales cleanly to modern controllers and full keyboards.
 
-**Core philosophy:** "Dumb hack n slash" — mash buttons to attack, bump shoulders to switch targets. Zero learning curve for new players.
+**Core philosophy:** "Dumb hack n slash" -- mash buttons to attack, bump shoulders to switch targets. Zero learning curve for new players.
 
 ## Current State
 
-**Spec status: LOCKED.**
+**Spec status: LOCKED.** Implementation status: partially implemented (see "What's Implemented Now" below).
 
-Redesigned from the Phaser prototype's WASD + auto-attack scheme. New control system uses arrow keys for movement, face buttons for combat, and a PS1-baseline button count.
+---
 
-## Design
+## What's Implemented Now
+
+These controls are functional in the current build. Everything else in this doc is design spec for future implementation.
+
+### Movement (Implemented)
+
+| Input | Keyboard | Action |
+|-------|----------|--------|
+| D-pad / Arrow keys | Up/Down/Left/Right Arrow | 8-directional **screen-space** movement (190 px/s) |
+
+Movement uses Godot's Input Map system. Arrow keys map to `move_up`, `move_down`, `move_left`, `move_right` actions.
+
+**Screen-space movement (NOT isometric transform).** Arrow keys move the player directly in screen directions. The isometric transform matrix from the original spec is NOT used in the current implementation. `Player.cs` uses `Input.GetVector()` directly:
+
+```csharp
+Vector2 inputDir = Input.GetVector("move_left", "move_right", "move_up", "move_down");
+Velocity = inputDir.Normalized() * Constants.PlayerStats.MoveSpeed;
+MoveAndSlide();
+```
+
+| Key(s) | Visual Result |
+|--------|---------------|
+| Up Arrow | Player moves up on screen |
+| Down Arrow | Player moves down on screen |
+| Left Arrow | Player moves left on screen |
+| Right Arrow | Player moves right on screen |
+| Up + Right | Player moves diagonally up-right |
+
+### Combat (Implemented)
+
+Auto-attack is fully automatic -- no button press needed. The player attacks the nearest enemy within range every cooldown tick.
+
+| Class | Primary Attack | Range | Cooldown | Fallback |
+|-------|---------------|-------|----------|----------|
+| Warrior | Melee slash (instant) | 78 px | 0.42s | -- |
+| Ranger | Arrow projectile | 250 px | 0.55s | -- |
+| Mage | Magic bolt projectile | 200 px | 0.80s | Staff melee (78 px, 0.50s) when enemy is close |
+
+### NPC Interaction (Implemented)
+
+| Input | Keyboard | Context | Action |
+|-------|----------|---------|--------|
+| action_cross | S | Near NPC in town | Open NPC panel (name, greeting, service button) |
+| -- | -- | Walk away from NPC | Auto-dismiss NPC panel |
+
+### Dialogue (Implemented)
+
+| Input | Keyboard | Context | Action |
+|-------|----------|---------|--------|
+| action_cross / Space / Enter | S / Space / Enter | Dialogue box open | Advance dialogue (or skip typewriter to show full text) |
+
+### Class Selection (Implemented)
+
+| Input | Keyboard | Action |
+|-------|----------|--------|
+| move_left / move_right | Left Arrow / Right Arrow | Navigate between class cards |
+| action_cross / Space / Enter | S / Space / Enter | Select highlighted card, or confirm selection |
+| Mouse click | -- | Click a card to select, click Confirm to proceed |
+
+### System (Implemented)
+
+| Input | Keyboard | Context | Action |
+|-------|----------|---------|--------|
+| Escape | Esc | Gameplay | Toggle pause menu (blocked when death screen is visible) |
+| Escape | Esc | Pause menu open | Resume (close pause menu) |
+| Escape | Esc | Death screen | Quit game |
+| Escape | Esc | Shop window | Close shop |
+| Escape | Esc | Ascend dialog | Cancel and close |
+| R | R | Death screen only | Restart (reset state, load town) |
+| F3 | F3 | Any time | Toggle debug panel |
+
+### Debug (Implemented)
+
+| Input | Keyboard | Context | Action |
+|-------|----------|---------|--------|
+| F3 | F3 | Any time | Toggle debug stats overlay (HP, level, XP, floor, enemies, kills, session time) |
+
+Note: The `F` key for debug floor descent mentioned in some contexts is NOT currently implemented in the codebase. Floor descent is triggered by walking into the stairs-down trigger area.
+
+---
+
+## Design Spec (Not Yet Implemented)
+
+Everything below is the locked design spec. These features will be built as their dependent systems come online.
 
 ### PS1 Controller Baseline
 
@@ -21,148 +104,73 @@ The game must be fully playable with a PS1 DualShock:
 ```
                 L1          R1
     
-         D-pad       △
-                   □   ○
-                     ✕
+         D-pad       triangle
+                   square   circle
+                     cross
     
                   Start
 ```
 
 If it works with these inputs, it works on any controller and any keyboard.
 
----
-
-### Movement
-
-| Input | PS1 | Keyboard | Action |
-|-------|-----|----------|--------|
-| D-pad / Left stick | D-pad | Arrow keys | 8-directional isometric movement (190 px/s) |
-
-Movement uses Godot's Input Map system. Arrow keys map to `move_up`, `move_down`, `move_left`, `move_right` actions. WASD is **not** mapped to movement — those keys are reserved for the action button area.
-
-#### Isometric Transform
-
-Raw keyboard input is screen-space. A `Transform2D` matrix converts to isometric world directions:
-
-```csharp
-private static readonly Transform2D IsoTransform = new Transform2D(
-    new Vector2(1, 0.5f),    // screen-right → iso-southeast
-    new Vector2(-1, 0.5f),   // screen-down → iso-southwest
-    Vector2.Zero
-);
-
-Vector2 rawInput = Input.GetVector("move_left", "move_right", "move_up", "move_down");
-Vector2 worldDir = (IsoTransform * rawInput).Normalized();
-Velocity = worldDir * MoveSpeed;
-MoveAndSlide();
-```
-
-| Key(s) | Screen Direction | Isometric Direction | Visual Result |
-|--------|-----------------|-------------------|---------------|
-| Up Arrow | Screen up | Northeast | Player moves up-right |
-| Down Arrow | Screen down | Southwest | Player moves down-left |
-| Left Arrow | Screen left | Northwest | Player moves up-left |
-| Right Arrow | Screen right | Southeast | Player moves down-right |
-| Up + Right | Screen up-right | East | Player moves pure right |
-| Up + Left | Screen up-left | North | Player moves pure up |
-| Down + Right | Screen down-right | South | Player moves pure down |
-| Down + Left | Screen down-left | West | Player moves pure left |
-
----
-
-### Face Buttons — Combat Actions
+### Face Buttons -- Combat Actions (Spec)
 
 | PS1 | Keyboard | Default Action | Context: Menus | Assignable? |
 |-----|----------|---------------|---------------|-------------|
-| ✕ (Cross) | S | Basic attack on current target | Confirm / Select | Yes |
-| ○ (Circle) | D | Basic attack (alt) | Cancel / Back / Close | Yes |
-| □ (Square) | A | Basic attack (alt) | — | Yes |
-| △ (Triangle) | W | Basic attack (alt) | — | Yes |
+| cross | S | Basic attack on current target | Confirm / Select | Yes |
+| circle | D | Basic attack (alt) | Cancel / Back / Close | Yes |
+| square | A | Basic attack (alt) | -- | Yes |
+| triangle | W | Basic attack (alt) | -- | Yes |
 
-Keyboard layout mirrors the PS1 diamond: W on top (△), A left (□), D right (○), S bottom (✕).
+Currently only `action_cross` (S) is used for NPC interaction and dialogue. Auto-attack does not require button press.
 
-**Default behavior:** All face buttons perform **basic attack** until the player assigns something else via the shortcut system. A new player can mash any face button to fight — zero learning curve. As they unlock skills and items, they assign them to replace the defaults.
-
-**Context switching:** ✕ and ○ change behavior in menus (Confirm/Cancel). In the dungeon, they're combat buttons. NPC proximity + ✕ opens the NPC panel; ○ closes it.
-
----
-
-### Target Cycling — L1/R1 Tap
+### Target Cycling -- L1/R1 Tap (Spec)
 
 | PS1 | Keyboard | Action |
 |-----|----------|--------|
 | L1 tap | Q | Cycle target to previous enemy |
 | R1 tap | E | Cycle target to next enemy |
 
-**Targeting behavior:**
-- **Default (no cycling):** Attacks hit based on the active **target priority setting** (defaults to nearest enemy)
-- **After L1/R1 tap:** A target indicator (highlight ring) appears on the selected enemy
-- Attacks focus on the locked target until it dies, moves out of range, or player cycles again
-- When the targeted enemy dies, targeting reverts to priority-based auto-selection
-- Cycling order follows the current target priority mode
+Not yet implemented. Auto-attack currently always targets the nearest enemy.
 
-**Target priority setting (configurable in Settings):**
+### Shortcuts -- L1/R1 Hold + Face Button (Spec)
 
-| Priority Mode | Description | Default? |
-|--------------|-------------|----------|
-| Nearest | Closest enemies first | Yes |
-| Strongest | Highest damage enemies first | |
-| Tankiest | Highest HP enemies first | |
-| Bosses | Boss enemies first, then nearest | |
-| Weakest | Lowest HP enemies first (finish off wounded) | |
+8 shortcut slots via hold-modifier. Not yet implemented (needs skills/items to assign).
 
-Player selects a mode in Settings. L1/R1 cycling follows that priority order. Can be changed anytime.
+### Game Window (Spec)
 
----
+Start (Esc) should open a tabbed game window (Inventory/Skills/Stats/Pause/Settings). Currently Esc only opens the simple pause menu with Resume/Quit.
 
-### Shortcuts — L1/R1 Hold + Face Button
+### Map Overlay (Spec)
 
-| Combo | Keyboard | Shortcut Slot |
-|-------|----------|--------------|
-| L1 hold + ✕ | Q hold + S | Slot 1 |
-| L1 hold + ○ | Q hold + D | Slot 2 |
-| L1 hold + □ | Q hold + A | Slot 3 |
-| L1 hold + △ | Q hold + W | Slot 4 |
-| R1 hold + ✕ | E hold + S | Slot 5 |
-| R1 hold + ○ | E hold + D | Slot 6 |
-| R1 hold + □ | E hold + A | Slot 7 |
-| R1 hold + △ | E hold + W | Slot 8 |
+| Input | Keyboard | Action |
+|-------|----------|--------|
+| map_toggle | M | Cycle map modes: Overlay -> Full Map -> Off |
 
-**Tap vs Hold distinction:**
-- L1/R1 **tapped** (pressed and released < 200ms) = cycle target
-- L1/R1 **held** (pressed > 200ms) = modifier for shortcut slots
-- Visual: when L1/R1 is held, a small shortcut bar appears on-screen showing the 4 assigned slots
-
-**Shortcut rules:**
-- 8 slots total (4 per bumper)
-- One assignment per slot — consumable item, active skill, or innate skill
-- Assigned via the game window (Inventory/Skills tabs)
-- Empty slots do nothing when pressed
-- Diablo 2 style — simple, one-to-one mapping. No Fallout-style multi-assignment.
+Not yet implemented. Input action is defined in project.godot.
 
 ---
 
-### System Buttons
+### Input Map (project.godot)
 
-| PS1 | Keyboard | Action |
-|-----|----------|--------|
-| Start | Esc | Game window (Inventory / Skills / Stats / Pause / Settings). Pauses game. |
-| — | M | Map overlay (cycles: Overlay → Full Map → Off). Does NOT pause game. |
-| ~~Select~~ | ~~P~~ | ~~Removed. Merged into Start (Esc).~~ |
+All 12 input actions are defined in `project.godot`. These match `Constants.InputActions`:
 
-**Game window (Esc):** A tabbed window containing all panels: Inventory, Skills, Stats, Pause, and Settings. When open, L1/R1 (Q/E) cycle between tabs (repurposed from target cycling while panel is active). Inside panels the player manages inventory, views skills, checks stats, assigns shortcuts, and accesses pause/settings. Opening the game window pauses gameplay. Closing it unpauses.
+| Action Name | Key | Keycode | Currently Used By |
+|-------------|-----|---------|-------------------|
+| `move_up` | Up Arrow | 4194320 | Player movement |
+| `move_down` | Down Arrow | 4194322 | Player movement |
+| `move_left` | Left Arrow | 4194319 | Player movement, class selection nav |
+| `move_right` | Right Arrow | 4194321 | Player movement, class selection nav |
+| `action_cross` | S | 83 | NPC interaction, dialogue advance, class selection confirm |
+| `action_circle` | D | 68 | (defined, not yet used in code) |
+| `action_square` | A | 65 | (defined, not yet used in code) |
+| `action_triangle` | W | 87 | (defined, not yet used in code) |
+| `shoulder_left` | Q | 81 | (defined, not yet used in code) |
+| `shoulder_right` | E | 69 | (defined, not yet used in code) |
+| `map_toggle` | M | 77 | (defined, not yet used in code) |
+| `start` | Esc | 4194305 | (defined, but pause uses raw Key.Escape check) |
 
-**Map overlay (M key):** Cycles through three states: Overlay (translucent map on top of gameplay) → Full Map (opaque, centered) → Off. Does not pause the game in any mode. This is a dedicated key outside the PS1 baseline — not context-dependent.
-
-**Direct panel shortcuts (unbound by default):**
-
-| Action | Default Key | Description |
-|--------|------------|-------------|
-| `panel_inventory` | Unbound | Open Inventory tab directly |
-| `panel_skills` | Unbound | Open Skills tab directly |
-| `panel_stats` | Unbound | Open Stats tab directly |
-
-Players can bind these in Settings for quick access without cycling through tabs. These are optional convenience bindings — the Esc game window with tab cycling is always available.
+**Note on Esc handling:** The pause menu, death screen, shop window, and ascend dialog all check for `Key.Escape` directly in `_UnhandledInput()` rather than using the `start` input action. This is a minor inconsistency -- the `start` action is defined but not used.
 
 ---
 
@@ -171,88 +179,27 @@ Players can bind these in Settings for quick access without cycling through tabs
 ```
 Left hand (actions):              Right hand (movement):
 
-[Q]  [W]  [E]                          [↑]
- L1   △    R1                        [←][↓][→]
+[Q]  [W]  [E]                          [Up]
+ L1   tri   R1                        [Left][Down][Right]
                                     
 [A]  [S]  [D]
- □    ✕    ○
+ sq   X    O
 
 [M]        = Map overlay (cycle)
-[Esc]      = Start (game window / pause)
+[Esc]      = Pause menu
+[R]        = Restart (death screen only)
+[F3]       = Debug panel toggle
 ```
-
-The WASD diamond mirrors the PS1 face button diamond exactly. Q and E sit on either side as the bumpers — mirrors the QWE row naturally. M for Map is a dedicated key outside the action area.
-
----
-
-### Input Map (project.godot)
-
-| Action Name | Key 1 | Key 2 (gamepad) | Purpose |
-|-------------|-------|-----------------|---------|
-| `move_up` | Up Arrow | D-pad Up / Left Stick Up | Movement |
-| `move_down` | Down Arrow | D-pad Down / Left Stick Down | Movement |
-| `move_left` | Left Arrow | D-pad Left / Left Stick Left | Movement |
-| `move_right` | Right Arrow | D-pad Right / Left Stick Right | Movement |
-| `action_cross` | S | Cross (✕) | Basic attack / Confirm |
-| `action_circle` | D | Circle (○) | Basic attack / Cancel |
-| `action_square` | A | Square (□) | Basic attack / Assignable |
-| `action_triangle` | W | Triangle (△) | Assignable face button |
-| `shoulder_left` | Q | L1 | Target cycle / Shortcut modifier |
-| `shoulder_right` | E | R1 | Target cycle / Shortcut modifier |
-| `start` | Esc | Start | Game window (Inventory/Skills/Stats/Pause/Settings) |
-| `map_toggle` | M | — | Map overlay cycle |
-| `panel_inventory` | Unbound | — | Direct open Inventory (bindable) |
-| `panel_skills` | Unbound | — | Direct open Skills (bindable) |
-| `panel_stats` | Unbound | — | Direct open Stats (bindable) |
-
----
-
-### Context-Dependent Input
-
-| Context | ✕ (S) | ○ (D) | □ (A) | △ (W) | L1 (Q) | R1 (E) |
-|---------|-------|-------|-------|-------|--------|--------|
-| **Dungeon** | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Attack / Shortcut | Cycle target / Hold: shortcuts 1-4 | Cycle target / Hold: shortcuts 5-8 |
-| **Menus/Panels** | Confirm | Cancel / Close | — | — | Previous tab | Next tab |
-| **NPC proximity** | Open NPC panel | Close NPC panel | — | — | — | — |
-| **Death screen** | Confirm choice | — | — | — | — | — |
-
----
-
-### Key Rebinding
-
-All key bindings listed above are **defaults** — the industry-standard starting layout. Players can rebind any action in the Settings menu. Godot's Input Map system supports runtime rebinding natively.
-
-**Rebinding rules:**
-- Any action can be rebound to any key
-- Multiple keys can map to the same action (alternates)
-- Conflicts are warned but allowed (player's choice)
-- Reset to defaults option available
-- Rebindings are saved per profile (persisted in settings file, not the save slot)
-
-### P1 Implementation Scope
-
-**P1 implements (basic systems):**
-- Arrow key movement with isometric transform
-- Face button (S) basic attack on current target
-- Esc to pause / restart from death screen
-- Input Map in project.godot with all actions defined
-
-**P2+ implements (as systems come online):**
-- L1/R1 target cycling with visual indicator + priority setting
-- L1/R1 hold shortcut system (needs skills/items to assign)
-- Esc → Game window with tabbed UI (Inventory/Skills/Stats/Pause/Settings)
-- Shortcut assignment interface
-- Gamepad support via Input Map (same actions, add joypad events)
 
 ---
 
 ### Gamepad Support (Deferred)
 
-Adding gamepad is trivial — add joypad events to the same Input Map actions. No code changes needed. `Input.GetVector()` and `Input.IsActionJustPressed()` read both keyboard and gamepad inputs automatically.
+Adding gamepad is trivial -- add joypad events to the same Input Map actions. No code changes needed. `Input.GetVector()` and `Input.IsActionJustPressed()` read both keyboard and gamepad inputs automatically.
 
 ### Mouse / Touch (Deferred)
 
-Pointer-to-move and virtual joystick are deferred. When implemented, pointer position uses `GetGlobalMousePosition()` (world-space, no iso conversion needed).
+Pointer-to-move and virtual joystick are deferred.
 
 ## Resolved Questions
 
@@ -260,11 +207,9 @@ Pointer-to-move and virtual joystick are deferred. When implemented, pointer pos
 |----------|----------|
 | Primary movement input | Arrow keys (not WASD) |
 | WASD purpose | Reserved for action buttons (not movement) |
-| Attack input | Face button press (not automatic proximity) |
-| Target selection | L1/R1 cycles, configurable priority mode (nearest/strongest/etc.) |
-| Shortcut system | 8 slots via L1/R1 hold + face buttons, Diablo 2 style |
+| Attack input | Auto-attack (proximity-based, no button needed currently) |
+| Target selection | Nearest enemy (L1/R1 cycling deferred) |
 | Controller baseline | PS1 DualShock (~12 buttons) |
-| Panel system | Start (Esc) opens game window with all tabs (Inventory/Skills/Stats/Pause/Settings) |
-| Key rebinding | Supported. All bindings are defaults — player can rebind any action in Settings. |
-| Map toggle key | M (dedicated key outside PS1 baseline). Triangle (W) freed for combat. |
-| Select button | Removed. Start (Esc) handles all panels + pause. |
+| Key rebinding | Deferred. All bindings are defaults. |
+| Map toggle key | M (defined in input map, not yet implemented) |
+| Isometric movement | NOT implemented. Screen-space movement is used. |

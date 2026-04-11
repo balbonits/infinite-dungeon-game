@@ -98,9 +98,29 @@ public partial class Enemy : CharacterBody2D
 
         if (_hp <= 0)
         {
+            // XP reward
             FloatingText.Xp(GetParent(), GlobalPosition, _xpReward);
-            EventBus.Instance.EmitSignal(EventBus.SignalName.EnemyDefeated, GlobalPosition, Level);
             GameState.Instance.AwardXp(_xpReward);
+
+            // Loot drops
+            int gold = LootTable.GetGoldDrop(Level);
+            GameState.Instance.PlayerInventory.Gold += gold;
+            FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 10),
+                $"+{gold}g", UiTheme.Colors.Accent, 11);
+
+            var itemDrop = LootTable.RollItemDrop(Level);
+            if (itemDrop != null)
+            {
+                if (GameState.Instance.PlayerInventory.TryAdd(itemDrop))
+                {
+                    FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 20),
+                        itemDrop.Name, UiTheme.Colors.Safe, 12, 1.5f);
+                    if (Toast.Instance != null)
+                        Toast.Instance.Success($"Found: {itemDrop.Name}");
+                }
+            }
+
+            EventBus.Instance.EmitSignal(EventBus.SignalName.EnemyDefeated, GlobalPosition, Level);
             QueueFree();
         }
         else

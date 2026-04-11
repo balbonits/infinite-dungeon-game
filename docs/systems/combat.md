@@ -2,331 +2,208 @@
 
 ## Summary
 
-Real-time button-press combat with target cycling. The player presses face buttons to attack the current target. L1/R1 cycles through nearby enemies based on a configurable priority mode (nearest, strongest, tankiest, bosses, weakest). Default target is nearest enemy within range.
+Data-driven auto-attack combat. Each class has an `AttackConfig` record defining range, cooldown, damage multiplier, and whether the attack is melee (instant hit) or ranged (projectile). The player automatically attacks the nearest enemy in range every physics frame. No class-specific branching exists in the attack execution path -- `Player.ExecuteAttack()` reads one `AttackConfig` and either applies instant damage (melee slash) or spawns a `Projectile` (ranged).
 
 ## Current State
 
-> **Entity Framework:** Combat is now implemented via `CombatSystem.DealDamage(attacker, target)` -- a single function for all entity-vs-entity combat (player vs enemy, enemy vs player, or any future entity matchup). The formulas in this spec are implemented across `StatSystem` (defense reduction via diminishing returns) and `CombatSystem` (crit rolls, damage floor of 1, final damage calculation). See [entity-framework.md](../architecture/entity-framework.md) for system architecture and formula details.
+Fully implemented across four files:
+- `scripts/Player.cs` -- auto-targeting, attack selection (primary vs melee fallback), unified `ExecuteAttack()`
+- `scripts/logic/AttackConfig.cs` -- data record defining any attack's properties
+- `scripts/logic/ClassAttacks.cs` -- three class configs: `WarriorSlash`, `RangerArrowShot`, `MageMagicBolt`, plus `MageStaffMelee` fallback
+- `scripts/Projectile.cs` -- projectile travel, collision, and damage application
 
-Implemented in the prototype:
-- Auto-targeting: finds nearest enemy within `ATTACK_RANGE` (78px)
-- Attack cooldown: `ATTACK_COOLDOWN` (420ms)
-- Damage: `12 + floor(level * 1.5)` per hit
-- Slash visual effect (tweened rectangle)
-- Enemy damage to player: `3 + dangerTier` on overlap, with 700ms hit cooldown per enemy
-- Camera shake on hit
+Damage formula: `Constants.PlayerStats.GetDamage(level) * AttackConfig.DamageMultiplier`, where base damage is `12 + floor(level * 1.5)`. Enemy damage to player: `Constants.EnemyStats.GetDamage(level)` = `2 + level * 1`. Damage feedback uses `FlashFx.Flash()` (red tint) instead of camera shake. Floating damage numbers via `FloatingText`.
 
 ## Design
 
-### Attack Input
+### AttackConfig Record
 
-Combat is triggered by **face button presses** (✕/○/□/△ on PS1, Z/X/A/S on keyboard). All face buttons default to basic attack. The player mashes a button to attack — no aiming required.
+All attacks (melee and ranged) are defined as `AttackConfig` records (`scripts/logic/AttackConfig.cs`):
 
-See [controls.md](../ui/controls.md) for the full control scheme and shortcut system.
+| Property | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `Range` | float | -- | Detection radius (px) for Area2D and projectile max travel |
+| `Cooldown` | float | -- | Seconds between attacks |
+| `DamageMultiplier` | float | 1.0 | Multiplied against base damage |
+| `IsProjectile` | bool | false | `false` = instant melee hit, `true` = spawn projectile |
+| `ProjectileSpeed` | float | 0 | Pixels/second travel speed (ranged only) |
+| `ProjectileTexture` | string | "" | Resource path to projectile sprite |
+| `ProjectileScale` | float | 1.0 | Scale of projectile sprite |
+| `ProjectileTint` | Color? | null | Optional color tint for projectile sprite |
+| `Effect` | VisualEffect | Slash | Visual effect type (Slash, Projectile, None) |
+| `EffectColor` | Color | #f5c86b | Color of the slash rectangle or effect |
 
-### Targeting
+### Class Attack Configurations
 
-Target selection uses a **priority-based system** with optional manual cycling:
+Defined as static readonly fields in `ClassAttacks` (`scripts/logic/ClassAttacks.cs`):
 
-**Default (no cycling):** The target is selected automatically based on the active priority mode.
-**After L1/R1 tap:** A visual indicator locks onto the selected enemy. Attacks focus on that target.
-**Target dies:** Lock clears, reverts to priority-based auto-selection.
+**WarriorSlash (melee):**
 
-**Target priority modes (configurable in Settings):**
+| Property | Value | Source |
+|----------|-------|--------|
+| Range | 78.0 px | `Constants.ClassCombat.WarriorMeleeRange` |
+| Cooldown | 0.42s | `Constants.ClassCombat.WarriorCooldown` |
+| DamageMultiplier | 1.0 | -- |
+| IsProjectile | false | -- |
+| Effect | Slash | Gold slash rectangle |
+| EffectColor | #f5c86b | -- |
 
-| Mode | Behavior | Default? |
-|------|----------|----------|
-| Nearest | Closest enemy within range | Yes |
-| Strongest | Highest damage enemy | |
-| Tankiest | Highest HP enemy | |
-| Bosses | Boss enemies first, then nearest | |
-| Weakest | Lowest HP enemy (finish off wounded) | |
+**RangerArrowShot (ranged projectile):**
+
+| Property | Value | Source |
+|----------|-------|--------|
+| Range | 250.0 px | `Constants.ClassCombat.RangerProjectileRange` |
+| Cooldown | 0.55s | `Constants.ClassCombat.RangerCooldown` |
+| DamageMultiplier | 1.0 | -- |
+| IsProjectile | true | -- |
+| ProjectileSpeed | 400.0 px/s | `Constants.ClassCombat.ArrowSpeed` |
+| ProjectileTexture | `res://assets/projectiles/arrow.png` | `Constants.Assets.ArrowProjectile` |
+| ProjectileScale | 0.6 | `Constants.ClassCombat.ArrowScale` |
+
+**MageMagicBolt (ranged projectile):**
+
+| Property | Value | Source |
+|----------|-------|--------|
+| Range | 200.0 px | `Constants.ClassCombat.MageSpellRange` |
+| Cooldown | 0.80s | `Constants.ClassCombat.MageSpellCooldown` |
+| DamageMultiplier | 1.3 | Higher damage, slower fire rate |
+| IsProjectile | true | -- |
+| ProjectileSpeed | 300.0 px/s | `Constants.ClassCombat.MagicBoltSpeed` |
+| ProjectileTexture | `res://assets/projectiles/magic_bolt.png` | `Constants.Assets.MagicBoltProjectile` |
+| ProjectileScale | 0.8 | `Constants.ClassCombat.MagicBoltScale` |
+| ProjectileTint | #4AE8E8 | Cyan tint |
+| EffectColor | #4AE8E8 | Cyan |
+
+**MageStaffMelee (melee fallback):**
+
+| Property | Value | Source |
+|----------|-------|--------|
+| Range | 78.0 px | `Constants.ClassCombat.MageMeleeRange` |
+| Cooldown | 0.50s | `Constants.ClassCombat.MageMeleeCooldown` |
+| DamageMultiplier | 0.8 | Weaker than spell |
+| IsProjectile | false | -- |
+| Effect | Slash | Purple slash rectangle |
+| EffectColor | #9B6BFF | -- |
+
+### Attack Selection
+
+On `_Ready()`, the player loads their class configs:
+```csharp
+_primaryAttack = ClassAttacks.GetPrimary(selectedClass);
+_meleeFallback = ClassAttacks.GetMeleeFallback(selectedClass);
+```
+
+`GetMeleeFallback()` returns `MageStaffMelee` for Mage, `null` for all other classes.
+
+The AttackRange Area2D collision shape radius is resized to match the primary attack's range.
 
 ### Attack Flow
 
-Each physics frame when a face button is held/pressed:
-1. Check if the attack cooldown has elapsed
-2. Find the current target (locked target if cycling, else priority-based)
-3. If target is in range, deal damage and show slash effect
-4. If the enemy's HP drops to 0, defeat it and clear target lock
-5. Reset attack cooldown
+Each physics frame in `HandleAttack(delta)`:
+
+1. Decrement `_attackTimer` by delta. If still positive, skip.
+2. Call `FindNearestEnemy()` -- iterates `_attackArea.GetOverlappingBodies()`, returns closest body in the `"enemies"` group.
+3. If no target found, skip.
+4. **Attack selection**: if a melee fallback exists AND the target is within fallback range, use the fallback. Otherwise use the primary attack.
+5. Call `ExecuteAttack(attack, target)`.
+6. Emit `EventBus.PlayerAttacked` signal.
+
+### ExecuteAttack (Unified)
+
+```csharp
+private void ExecuteAttack(AttackConfig attack, Node2D target)
+{
+    int baseDamage = Constants.PlayerStats.GetDamage(GameState.Instance.Level);
+    int finalDamage = (int)(baseDamage * attack.DamageMultiplier);
+    _attackTimer = attack.Cooldown;
+
+    if (attack.IsProjectile)
+    {
+        Projectile.Spawn(GetParent(), GlobalPosition, target.GlobalPosition,
+            finalDamage, attack.ProjectileSpeed, attack.Range,
+            attack.ProjectileTexture, attack.ProjectileScale, attack.ProjectileTint);
+    }
+    else
+    {
+        target.Call("TakeDamage", finalDamage);
+        DrawSlash(target.GlobalPosition, attack.EffectColor);
+    }
+}
+```
+
+No class-specific branching. The `AttackConfig` determines all behavior.
 
 ### Damage Formula
 
-**P1 (prototype parity):** Placeholder formula — no stats system yet:
+**Player damage:**
 ```
-playerDamage = 12 + floor(level * 1.5)
-enemyDamage = 3 + dangerTier  (tier 1–3)
+baseDamage = 12 + floor(level * 1.5)     // Constants.PlayerStats.GetDamage()
+finalDamage = floor(baseDamage * attackConfig.DamageMultiplier)
 ```
 
-**P2+ (after stats system is implemented):** Replaced by the STR-based formula from [stats.md](stats.md):
+| Player Level | Base Damage | Warrior (x1.0) | Ranger (x1.0) | Mage Bolt (x1.3) | Mage Staff (x0.8) |
+|-------------|-------------|-----------------|----------------|-------------------|---------------------|
+| 1 | 13 | 13 | 13 | 16 | 10 |
+| 3 | 16 | 16 | 16 | 20 | 12 |
+| 5 | 19 | 19 | 19 | 24 | 15 |
+| 10 | 27 | 27 | 27 | 35 | 21 |
+
+**Enemy damage to player:**
 ```
-total_melee_damage = (base_weapon_damage + flat_melee_bonus) * (1 + percent_melee_boost / 100)
+damage = 2 + level * 1     // Constants.EnemyStats.GetDamage()
 ```
-Where `flat_melee_bonus = effective_str * 1.5` and `percent_melee_boost = effective_str * 0.8%`. See stats.md for full formula and value tables. The transition happens when P2-02 (stats system) is implemented.
 
-### Attack Cooldown
+### Projectile System
 
-Fixed at 420ms. Future plans:
-- DEX could reduce cooldown
-- Different weapon types could have different base cooldowns
-- Abilities may have their own independent cooldowns
+`Projectile` (`scripts/Projectile.cs`) is an Area2D spawned via `Projectile.Spawn()`:
 
-### Range
+| Property | Value |
+|----------|-------|
+| Collision layer | 0 (does not block anything) |
+| Collision mask | `Constants.Layers.Enemies` (4) |
+| Collision shape | CircleShape2D, radius 6.0 px |
+| Monitoring | true |
+| Rotation | Faces travel direction (`_direction.Angle()`) |
+| Despawn | After traveling `_maxDistance` pixels |
 
-Fixed at 78px for melee. Future plans:
-- Ranger class could have longer range
-- Mage spells could have variable range
-- Melee range might scale slightly with weapon type
+**Behavior:**
+- Flies in a straight line at `_speed` px/s toward initial target position.
+- On `BodyEntered`: if body is in `"enemies"` group, calls `TakeDamage(_damage)`, spawns `FloatingText.Damage`, then `QueueFree()`.
+- If max distance reached without hitting, `QueueFree()`.
 
 ### Visual Feedback
 
-- **Slash effect:** a small rotated rectangle that fades upward (120ms tween)
-- **Camera shake:** 90ms, low intensity (0.0035) on player hit
-- **Enemy defeat:** enemy is disabled and fades out (currently instant disable)
+**Melee slash effect:**
+- Polygon2D rectangle (configurable via `Constants.Effects`): width 13px, height 2px
+- Color from `AttackConfig.EffectColor` at 0.95 alpha (`Constants.Effects.SlashAlpha`)
+- Random rotation in [-1.2, 1.2] radians (`Constants.Effects.SlashMaxRotation`)
+- Tween: fade alpha to 0 and rise 8px over 0.12s (`Constants.Effects.SlashFadeDuration`, `SlashRiseAmount`)
+- Auto-freed on tween completion
 
-## Godot Implementation
+**Damage feedback on player hit:**
+- `FlashFx.Flash()` -- red sprite tint, 0.15s fade back to white (no camera shake)
+- `FloatingText.Damage` -- floating damage number
 
-### Player Auto-Attack (Godot)
+**Damage feedback on enemy hit:**
+- `FlashFx.Flash()` -- white flash, 0.1s
+- `FloatingText.Damage` -- floating damage number
+- On death: `FloatingText.Xp` shows XP reward
 
-The auto-attack system is implemented using an Area2D node for range detection and a float-based cooldown timer.
+### Enemy Damage to Player
 
-**Scene tree structure:**
-```
-Player (CharacterBody2D)
-  +-- Polygon2D (player sprite)
-  +-- CollisionShape2D (body, radius 12px)
-  +-- AttackRange (Area2D)
-  |     +-- CollisionShape2D (CircleShape2D, radius 78px)
-  +-- Camera2D
-```
+Enemies deal contact damage through an Area2D hit area with cooldown timer:
 
-**AttackRange Area2D configuration:**
+| Property | Value | Source |
+|----------|-------|--------|
+| Hit area radius | 15.0 px | `Constants.EnemyStats.HitAreaRadius` |
+| Hit cooldown | 0.7s | `Constants.EnemyStats.HitCooldown` |
+| Invincibility check | Skips if `player.IsInvincible` (grace period) | -- |
 
-| Property | Value |
-|----------|-------|
-| Node type | Area2D |
-| CollisionShape2D shape | CircleShape2D |
-| Shape radius | 78.0 px (matches Phaser `ATTACK_RANGE = 78`) |
-| collision_layer | 4 (sensors) |
-| collision_mask | 3 (enemies) |
-| monitoring | true (detects bodies entering) |
-| monitorable | false (other areas do not need to detect this) |
-
-**Target finding algorithm (every physics frame):**
-```csharp
-private const float AttackCooldown = 0.42f; // seconds (420ms)
-private float _attackCooldownRemaining = 0.0f;
-
-public override void _PhysicsProcess(double delta)
-{
-    // Decrement cooldown
-    _attackCooldownRemaining -= (float)delta;
-    if (_attackCooldownRemaining > 0.0f)
-        return;
-
-    // Get all enemy bodies overlapping the AttackRange Area2D
-    var bodies = _attackRange.GetOverlappingBodies();
-
-    // Find the nearest enemy
-    CharacterBody2D bestEnemy = null;
-    float bestDistance = float.PositiveInfinity;
-
-    foreach (var body in bodies)
-    {
-        if (!body.IsInGroup("enemies"))
-            continue;
-        if (!body.IsInsideTree())
-            continue;
-        float dist = GlobalPosition.DistanceTo(body.GlobalPosition);
-        if (dist < bestDistance)
-        {
-            bestDistance = dist;
-            bestEnemy = (CharacterBody2D)body;
-        }
-    }
-
-    if (bestEnemy == null)
-        return;
-
-    // Attack the nearest enemy
-    _attackCooldownRemaining = AttackCooldown;
-    int damage = 12 + (int)(GameState.Level * 1.5f);
-    bestEnemy.TakeDamage(damage);
-    DrawSlash(bestEnemy.GlobalPosition);
-}
-```
-
-**Damage calculation:**
-```
-damage = 12 + int(GameState.level * 1.5)
-```
-
-| Player Level | Damage | Calculation |
-|-------------|--------|-------------|
-| 1 | 13 | 12 + int(1 * 1.5) = 12 + 1 |
-| 2 | 15 | 12 + int(2 * 1.5) = 12 + 3 |
-| 3 | 16 | 12 + int(3 * 1.5) = 12 + 4 |
-| 5 | 19 | 12 + int(5 * 1.5) = 12 + 7 |
-| 10 | 27 | 12 + int(10 * 1.5) = 12 + 15 |
-
-**Slash visual effect (Godot):**
-```csharp
-private void DrawSlash(Vector2 targetPos)
-{
-    var slash = new Polygon2D();
-    slash.Polygon = new Vector2[]
-    {
-        new Vector2(-13, -2), new Vector2(13, -2),
-        new Vector2(13, 2), new Vector2(-13, 2)
-    };
-    slash.Color = new Color(0.961f, 0.784f, 0.420f, 0.95f); // #f5c86b @ 95%
-    slash.Position = targetPos;
-    slash.Rotation = (float)GD.RandRange(-1.2, 1.2);
-    GetParent().AddChild(slash);
-
-    var tween = CreateTween();
-    tween.TweenProperty(slash, "modulate:a", 0.0f, 0.12); // Fade out over 120ms
-    tween.Parallel().TweenProperty(slash, "position:y", targetPos.Y - 8.0f, 0.12); // Drift up 8px
-    tween.TweenCallback(Callable.From(slash.QueueFree)); // Clean up
-}
-```
-
-### Enemy Damage to Player (Godot)
-
-Enemies deal contact damage through an Area2D "hit area" that detects the player. A cooldown timer prevents rapid-fire damage.
-
-**Enemy scene tree structure:**
-```
-Enemy (CharacterBody2D)
-  +-- Polygon2D (enemy sprite, color set by tier)
-  +-- CollisionShape2D (body, radius 10px)
-  +-- HitArea (Area2D)
-  |     +-- CollisionShape2D (CircleShape2D, radius 15px)
-  +-- HitCooldownTimer (Timer)
-```
-
-**HitArea Area2D configuration:**
-
-| Property | Value |
-|----------|-------|
-| Node type | Area2D |
-| CollisionShape2D shape | CircleShape2D |
-| Shape radius | 15.0 px |
-| collision_layer | 5 (damage) |
-| collision_mask | 2 (player) |
-| monitoring | true |
-
-**HitCooldownTimer configuration:**
-
-| Property | Value |
-|----------|-------|
-| Node type | Timer |
-| wait_time | 0.7 seconds (700ms, matches Phaser `enemy.lastHitAt` check) |
-| one_shot | true |
-| autostart | false |
-
-**Damage flow:**
-
-1. **Initial hit:** When the player enters the HitArea, `body_entered` signal fires.
-   ```csharp
-   private void OnHitAreaBodyEntered(Node2D body)
-   {
-       if (body.IsInGroup("player") && _hitCooldownTimer.IsStopped())
-       {
-           DealDamageToPlayer((CharacterBody2D)body);
-           _hitCooldownTimer.Start();
-       }
-   }
-   ```
-
-2. **Continuous damage:** While the player remains in the HitArea, the cooldown timer repeats.
-   ```csharp
-   private void OnHitCooldownTimerTimeout()
-   {
-       var overlapping = _hitArea.GetOverlappingBodies();
-       foreach (var body in overlapping)
-       {
-           if (body.IsInGroup("player"))
-           {
-               DealDamageToPlayer((CharacterBody2D)body);
-               _hitCooldownTimer.Start(); // Restart for next tick
-               return;
-           }
-       }
-       // Player left the area -- do not restart timer
-   }
-   ```
-
-3. **Damage calculation:**
-   ```csharp
-   private void DealDamageToPlayer(CharacterBody2D player)
-   {
-       int damage = 3 + _dangerTier;
-       player.TakeDamage(damage);
-   }
-   ```
-
-**Damage values by tier:**
-
-| Tier | Damage | Phaser Source |
-|------|--------|---------------|
-| 1 | 4 | `3 + 1` |
-| 2 | 5 | `3 + 2` |
-| 3 | 6 | `3 + 3` |
-
-**Player take_damage() handler:**
-```csharp
-public void TakeDamage(int amount)
-{
-    GameState.Hp -= amount;
-    ShakeCamera();
-    EventBus.PlayerDamaged.Emit(amount);
-
-    if (GameState.Hp <= 0)
-    {
-        GameState.Hp = 0;
-        Die();
-    }
-}
-```
-
-### Key Differences from Phaser
-
-| Aspect | Phaser Prototype | Godot Implementation |
-|--------|-----------------|---------------------|
-| Attack range check | Manual `Phaser.Math.Distance.Between()` every frame for every enemy | Area2D `GetOverlappingBodies()` -- physics engine maintains the overlap list; script just reads it |
-| Nearest enemy search | `this.enemies.children.iterate()` with distance comparison | Same logic, but over `_attackRange.GetOverlappingBodies()` (pre-filtered to in-range enemies only) |
-| Enemy-player overlap | `this.physics.add.overlap(player, enemies, callback)` -- fires every frame while overlapping | Area2D `BodyEntered` signal (event-based, fires once on enter) + Timer for sustained damage |
-| Cooldown tracking | `time - this.lastAttackAt < ATTACK_COOLDOWN` using scene time in milliseconds | Float variable decremented by delta each frame; attack fires when <= 0 |
-| Enemy hit cooldown | `now - enemy.lastHitAt < 700` per-enemy timestamp | Timer node per enemy, 0.7s one_shot |
-| Slash effect | `this.add.rectangle(x, y, 26, 4, color, alpha)` + `this.tweens.add(...)` | `new Polygon2D()` with vertices + `CreateTween()` property animations |
-| Camera shake | `this.cameras.main.shake(90, 0.0035)` -- built-in method, oscillating | Tween `Camera2D.Offset` -- single offset + return, 2 phases at 45ms each |
-| Damage application | Direct property mutation: `bestEnemy.hp -= damage` | Method call: `enemy.TakeDamage(damage)` -- allows encapsulation, signals, death checks |
-| Death check | Inline: `if (bestEnemy.hp <= 0) this.defeatEnemy(bestEnemy)` | Inside `TakeDamage()`: enemy checks its own HP and handles its own death |
-
-### Attack Timing Analysis
-
-At `ATTACK_COOLDOWN = 0.42s`, the player attacks ~2.38 times per second.
-
-**DPS (damage per second) by level:**
-
-| Level | Damage/Hit | Attacks/Sec | DPS | Tier 1 Kill Time (30 HP) | Tier 2 Kill Time (42 HP) | Tier 3 Kill Time (54 HP) |
-|-------|-----------|-------------|-----|-------------------------|-------------------------|-------------------------|
-| 1 | 13 | 2.38 | 30.9 | 0.97s (3 hits) | 1.39s (4 hits) | 1.81s (5 hits) |
-| 2 | 15 | 2.38 | 35.7 | 0.84s (2 hits) | 1.26s (3 hits) | 1.68s (4 hits) |
-| 3 | 16 | 2.38 | 38.1 | 0.84s (2 hits) | 1.26s (3 hits) | 1.68s (4 hits) |
-| 5 | 19 | 2.38 | 45.2 | 0.84s (2 hits) | 1.26s (3 hits) | 1.26s (3 hits) |
-| 10 | 27 | 2.38 | 64.3 | 0.42s (2 hits) | 0.84s (2 hits) | 0.84s (2 hits) |
-
-**Hits to kill formula:** `ceil(enemy_hp / damage)`
+Flow: `BodyEntered` signal fires -> checks player group + cooldown -> `GameState.Instance.TakeDamage()` -> `player.DamageFlash()` -> `FloatingText.Damage` -> starts cooldown timer.
 
 ## Open Questions
 
-- Should different classes have fundamentally different attack patterns (not just stat scaling)?
 - How should area-of-effect attacks work?
-- Should there be a manual attack option alongside auto-attack?
 - How does weapon type affect combat (speed, range, damage)?
-- Should the Area2D approach be replaced with a manual distance check for more control over targeting priority?
 - Should there be a visual indicator showing which enemy is currently targeted (outline, highlight)?
 - Should the attack cooldown be displayed as a small UI element (cooldown arc) near the player?

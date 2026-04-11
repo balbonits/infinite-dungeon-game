@@ -211,11 +211,16 @@ public static class Constants
         public const string ArrowProjectile = "res://assets/projectiles/arrow.png";
         public const string MagicBoltProjectile = "res://assets/projectiles/magic_bolt.png";
 
-        // Enemies
+        // Enemies (indexed by EnemySpecies enum)
         public static readonly string[] EnemySpeciesRotations =
         {
-            "res://assets/characters/enemies/skeleton/rotations",
-            "res://assets/characters/enemies/goblin/rotations",
+            "res://assets/characters/enemies/skeleton/rotations",   // 0 Skeleton
+            "res://assets/characters/enemies/goblin/rotations",     // 1 Goblin
+            "res://assets/characters/enemies/bat/rotations",        // 2 Bat
+            "res://assets/characters/enemies/wolf/rotations",       // 3 Wolf
+            "res://assets/characters/enemies/orc/rotations",        // 4 Orc
+            "res://assets/characters/enemies/dark_mage/rotations",  // 5 DarkMage
+            "res://assets/characters/enemies/spider/rotations",     // 6 Spider
         };
 
         // Dungeon tiles
