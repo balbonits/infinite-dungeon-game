@@ -201,6 +201,46 @@ Enemies deal contact damage through an Area2D hit area with cooldown timer:
 
 Flow: `BodyEntered` signal fires -> checks player group + cooldown -> `GameState.Instance.TakeDamage()` -> `player.DamageFlash()` -> `FloatingText.Damage` -> starts cooldown timer.
 
+### Stat Integration (P2)
+
+Phase 2 replaces the flat damage formula with stat-driven combat. The current `12 + floor(level * 1.5)` base damage is a placeholder — P2 uses the full stat system from [stats.md](stats.md).
+
+**P2 melee damage flow:**
+```
+base_weapon_damage = equipped_weapon.base_damage
+effective_str = raw_str * (100 / (raw_str + 100))
+flat_bonus = effective_str * 1.5
+percent_boost = effective_str * 0.8%
+total_melee = (base_weapon_damage + flat_bonus) * (1 + percent_boost / 100)
+```
+This replaces `Constants.PlayerStats.GetDamage(level)` via `StatSystem.GetMeleeDamage(entity)`.
+
+**P2 attack speed:**
+```
+effective_dex = raw_dex * (100 / (raw_dex + 100))
+attack_speed_bonus = effective_dex * 1.0%
+final_cooldown = base_cooldown / (1 + attack_speed_bonus / 100)
+```
+This modifies `AttackConfig.Cooldown` via `StatSystem.GetAttackSpeed(entity)`.
+
+**P2 defense reduction:**
+```
+total_defense = sum(all equipment defense) + buffs
+effective_defense = total_defense * (100 / (total_defense + 100))
+final_damage = incoming * (1 - effective_defense / 100)
+```
+Applied via `StatSystem.GetDefenseReduction(entity)`. Minimum 1 damage always passes through.
+
+**P2 crit:**
+```
+base_crit_chance = 15%
+dex_crit_bonus = effective_dex * 0.5%    // from dodge, also feeds crit
+total_crit = base_crit_chance + skill_crit_bonus
+crit_multiplier = 1.5x (base) + gear bonuses
+```
+
+See [stats.md](stats.md) for the full diminishing returns math. The transition from P1 flat formulas to P2 stat-driven formulas will happen when P2-02 (stats system) is implemented.
+
 ## Open Questions
 
 - ~~How should area-of-effect attacks work?~~ **Resolved** -- see [targeting.md](targeting.md) for all target modes (Self, SingleTarget, AreaOfEffect, MultiTarget, PlayerCentricAoe).

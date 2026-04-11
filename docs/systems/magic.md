@@ -94,6 +94,8 @@ Every class has a mana bar. Pool size depends on class and stats.
 
 For Warriors and Rangers, INT still matters: a bigger mana pool means more skills before tiring out. It's less impactful than for Mages, but never useless.
 
+**P2 implementation order:** Mana is implemented for the Mage class first. Warrior and Ranger mana pools are added in a subsequent phase once the base mana system is stable and tested.
+
 *Exact formulas defined in [stats.md](stats.md).*
 
 #### Mana Regeneration

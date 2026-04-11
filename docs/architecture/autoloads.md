@@ -54,7 +54,7 @@ Centralized, reactive game state. Replaces the Phaser prototype's `const state =
 | Property | Type | Default | Setter | Description |
 |----------|------|---------|--------|-------------|
 | `Hp` | `int` | `100` | Custom setter | Current hit points. Clamped to `[0, MaxHp]`. Setter emits `StatsChanged`. If HP reaches 0 and `IsDead` is false, sets `IsDead = true` and emits `PlayerDied`. |
-| `MaxHp` | `int` | `100` | Custom setter | Maximum hit points. Increases on level up via `Constants.PlayerStats.GetMaxHp(Level)` = `100 + Level * 8`. Setter emits `StatsChanged`. |
+| `MaxHp` | `int` | `100` | Custom setter | Maximum hit points. Increases on level up via `GameCore.LevelUp()` = `floor(8 + level * 0.5)` per level. Setter emits `StatsChanged`. See [leveling.md](../systems/leveling.md) for canonical formula. |
 | `Xp` | `int` | `0` | Custom setter | Current experience points toward next level. Setter emits `StatsChanged`. |
 | `Level` | `int` | `1` | Custom setter | Current character level. Setter emits `StatsChanged`. |
 | `FloorNumber` | `int` | `1` | Custom setter | Current dungeon floor. Setter emits `StatsChanged`. |
@@ -161,9 +161,12 @@ public void Reset()
 
 ##### `AwardXp(int amount)`
 
+> **SUPERSEDED.** Leveling logic has moved to `GameCore.GainXP()` and `ProgressionSystem.AwardXP()` in the entity framework. The code below documents the original Phaser-era prototype design. See [leveling.md](../systems/leveling.md) for canonical formulas.
+
 Awards experience points and handles level-up if the threshold is met.
 
 ```csharp
+// LEGACY — prototype implementation. Canonical logic is in GameCore.GainXP().
 public void AwardXp(int amount)
 {
     Xp += amount;
@@ -179,17 +182,17 @@ public void AwardXp(int amount)
 }
 ```
 
-**XP threshold formula:** `Constants.Leveling.GetXpToLevel(level)` = `level * 90`. At level 1, need 90 XP. At level 2, need 180 XP. Linear scaling.
+**Canonical formulas (from [leveling.md](../systems/leveling.md)):**
+- XP threshold: `floor(Level^2 * 45)` (quadratic scaling)
+- HP per level: `floor(8 + level * 0.5)` added each level
+- Level-up heal: `floor(max_hp * 0.15)` (15% of new max HP)
 
-**Level-up effects (all happen in sequence per iteration):**
-1. Subtract the threshold from current XP (leftover carries over)
-2. Increment level by 1
-3. Recalculate MaxHp via `Constants.PlayerStats.GetMaxHp(level)` = `100 + level * 8` (level 2: 116, level 10: 180)
-4. Heal via `Constants.PlayerStats.HealOnLevelUp` (18 HP) -- never exceeds MaxHp
+**Legacy prototype formulas (preserved for reference):**
+- ~~XP threshold: `level * 90` (linear)~~
+- ~~MaxHp: `100 + level * 8` (linear)~~
+- ~~Heal on level-up: flat +18~~
 
-**Multi-level-ups:** Uses a `while` loop. Each iteration awards full benefits and recalculates the threshold.
-
-**All formulas are in `Constants`:** No magic numbers in GameState. `Constants.PlayerStats` holds `StartingHp`, `HpPerLevel`, `HealOnLevelUp`. `Constants.Leveling` holds `XpPerLevelMultiplier`.
+**Multi-level-ups:** Uses a `while` loop. Each iteration awards full benefits and recalculates the threshold. This behavior is preserved in `GameCore.GainXP()`.
 
 ##### `TakeDamage(int amount)`
 

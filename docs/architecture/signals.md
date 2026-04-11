@@ -191,12 +191,13 @@ Player.HandleAttack(delta)
 │       │   │   └── EmitSignal(SignalName.StatsChanged)
 │       │   │       └── → Hud.OnStatsChanged() → update label
 │       │   │
-│       │   └── while Xp >= Level * 90 (level up):
-│       │       ├── Xp -= Level * 90 (triggers Xp setter → StatsChanged)
+│       │   └── while Xp >= floor(Level² * 45) (level up):
+│       │       ├── Xp -= floor(Level² * 45) (triggers Xp setter → StatsChanged)
 │       │       ├── Level += 1 (triggers Level setter → StatsChanged)
-│       │       ├── MaxHp = 100 + Level * 8 (triggers MaxHp setter → StatsChanged)
-│       │       └── Hp = Math.Min(MaxHp, Hp + 18) (triggers Hp setter → StatsChanged)
+│       │       ├── MaxHp += floor(8 + level * 0.5) (triggers MaxHp setter → StatsChanged)
+│       │       └── Hp = Math.Min(MaxHp, Hp + floor(MaxHp * 0.15)) (triggers Hp setter → StatsChanged)
 │       │           └── → Hud.OnStatsChanged() → update label (multiple times)
+│       │       (See leveling.md for canonical formulas)
 │       │
 │       └── QueueFree() → enemy node removed from scene tree
 │

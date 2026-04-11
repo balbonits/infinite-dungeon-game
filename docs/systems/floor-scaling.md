@@ -84,19 +84,19 @@ At all levels, even-level enemies die in 3-6 hits. The ratio stays consistent â€
 
 ### XP Curve & Floor Pacing
 
-XP to next level: `level * 90`
+XP to next level: `floor(level^2 * 45)` (see [leveling.md](leveling.md) for canonical formula)
 
 Expected kills to level up (killing even-level monsters):
 
 | Player Lvl | XP Needed | Monster XP (even) | Kills to Level |
 |-----------|-----------|-------------------|----------------|
-| 1         | 90        | 12                | 8              |
-| 3         | 270       | 20                | 14             |
-| 5         | 450       | 28                | 16             |
-| 10        | 900       | 48                | 19             |
-| 20        | 1800      | 88                | 21             |
+| 1         | 45        | 12                | 4              |
+| 3         | 405       | 20                | 21             |
+| 5         | 1,125     | 28                | 41             |
+| 10        | 4,500     | 48                | 94             |
+| 20        | 18,000    | 88                | 205            |
 
-Kills-to-level grows slowly (8 â†’ 21 over 20 levels). The player always feels progress without it becoming a slog.
+The quadratic XP curve means early levels come fast (dopamine) while later levels require deeper floor pushes for sufficient XP from the floor multiplier. See [leveling.md](leveling.md) for enemy XP scaling with floor depth.
 
 ### Metagaming
 

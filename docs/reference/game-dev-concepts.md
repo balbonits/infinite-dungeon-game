@@ -344,12 +344,15 @@ public partial class GameState : Node
 
     private void CheckLevelUp()
     {
-        int xpToLevel = Level * 90;
+        // Canonical formula: floor(Level^2 * 45). See leveling.md.
+        int xpToLevel = (int)Math.Floor(Level * Level * 45.0);
         if (Xp >= xpToLevel)
         {
-            Xp -= xpToLevel; // triggers setter recursion (safe, xp decreases)
+            Xp -= xpToLevel;
             Level += 1;
-            Hp = Mathf.Min(MaxHp, Hp + 18);
+            int hpGain = (int)Math.Floor(8 + Level * 0.5);
+            MaxHp += hpGain;
+            Hp = Math.Min(MaxHp, Hp + (int)Math.Floor(MaxHp * 0.15));
         }
     }
 

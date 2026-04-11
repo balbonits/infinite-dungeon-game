@@ -88,7 +88,7 @@ Items/Skills/Effects
 | Formula | Implementation |
 |---------|---------------|
 | Diminishing returns | `raw * (100 / (raw + 100))` |
-| Max HP | `100 + Level * 8 + VIT * 3 + equipment` |
+| Max HP | `class_base_hp + sum(floor(8 + L * 0.5) for L in 1..Level) + effective_STA * 5 + equipment` (see [leveling.md](../systems/leveling.md) and [stats.md](../systems/stats.md)) |
 | Max MP | `50 + INT * 3 + equipment` |
 | XP to next level | `Level² × 45` |
 | Defense reduction | `GetEffective(defense) / 100` (0-1 range, never reaches 1) |

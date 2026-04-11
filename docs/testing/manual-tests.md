@@ -454,19 +454,19 @@ Each test follows this structure:
 **Prerequisites:** Game is running, player can gain XP (MT-022 passes)
 **Steps:**
 1. Note the current level (should be 1) and XP (should be 0) on the HUD
-2. Kill enemies until XP reaches 90 (the level 1 threshold: level * 90 = 1 * 90 = 90)
+2. Kill enemies until XP reaches 45 (the level 1 threshold: floor(1^2 * 45) = 45)
 3. Observe the HUD when the threshold is reached
 4. Note the new level, XP, and HP values
 **Expected Result:**
-- When XP reaches or exceeds **90**, the player levels up to **level 2**
-- XP resets but **excess carries over** (e.g., if XP was 0 and a tier 3 kill awards 22, and another awards 22, etc., the XP past 90 carries to the next level)
+- When XP reaches or exceeds **45**, the player levels up to **level 2**
+- XP resets but **excess carries over** (e.g., if XP was 0 and kills award XP past 45, the remainder carries to the next level)
 - Level displays as **2** on the HUD
-- Max HP increases to **116** (100 + 2 * 8)
-- Player is **healed by 18 HP** on level up, capped at new max HP
-- If player was at full HP (100) before level up: HP becomes **min(116, 100 + 18) = 116**
+- Max HP increases by **floor(8 + 2 * 0.5) = 9** (new total: 109)
+- Player is **healed by floor(109 * 0.15) = 16 HP** on level up, capped at new max HP
+- If player was at full HP (100) before level up: HP becomes **min(109, 100 + 16) = 109**
 **Edge Cases:**
-- If the player has taken damage (e.g., HP = 50) and levels up: HP = min(116, 50 + 18) = 68
-- Level 2 threshold is 180 XP (2 * 90) -- verify the next level up requires 180 XP, not 90
+- If the player has taken damage (e.g., HP = 50) and levels up: HP = min(109, 50 + 16) = 66
+- Level 2 threshold is 180 XP (floor(2^2 * 45)) -- verify the next level up requires 180 XP, not 45
 - Multiple level-ups from a single large XP award: if the carried-over XP exceeds the next threshold, another level-up should occur
 
 ### MT-024: Player Takes Damage

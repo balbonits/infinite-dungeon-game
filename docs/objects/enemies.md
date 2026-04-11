@@ -232,6 +232,14 @@ Enemies are instanced and configured by `Dungeon.cs`:
 - White damage flash (via `FlashFx.Flash`) followed by tween back to gradient color provides visual hit feedback.
 - Enemy collision_mask includes player (bit 1), meaning enemies physically collide with the player body via `MoveAndSlide()`.
 
+### P2 Tier System
+
+The current level-based stat scaling (P1) will be extended with a 4-tier system in Phase 2. The `DangerTier 1-3` code from the Phaser prototype is replaced by a continuous level system in P1, and will gain tier overlays (Fodder/Standard/Elite/Boss) in P2.
+
+See [monsters.md](../world/monsters.md#enemy-tiers-p2--4-tier-system) for the full 4-tier spawn distribution, stat multipliers, and visual indicators.
+
+The current `Level`-based stat formulas (`20 + level * 10` HP, etc.) serve as the **floor base stats** that tier multipliers are applied to in P2.
+
 ## Open Questions
 
 - Should the AI be upgraded to NavigationAgent2D for pathfinding around obstacles?

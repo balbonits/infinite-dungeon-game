@@ -140,6 +140,8 @@ The Blacksmith is the only source of magical (affixed) equipment. Crafting is **
 - Treasure room chests (floor-appropriate materials)
 - Recycling class-locked gear at the Blacksmith (see below)
 
+**Materials are generic.** Crafting materials are not species-specific — there is no "Goblin Bone" vs. "Skeleton Bone." Materials are tiered by floor depth (e.g., "Iron Ore" from floors 1-10, "Mithril Ore" from floors 25+). Any enemy on a given floor range drops from the same material pool.
+
 **Recycling:** Bring class-locked gear you can't use → Blacksmith breaks it down into materials. Material yield scales with item level and quality. This ensures no drop feels wasted.
 
 ### Loot System
@@ -278,7 +280,7 @@ Weapon base damage scales with item level and quality:
 | 50 | 70–100 | 84–120 | 94–135 |
 | 100 | 140–200 | 168–240 | 189–270 |
 
-*Values are starting estimates — subject to balancing.*
+*Values are locked. Tunable during playtesting only — the formulas and scaling curves are final.*
 
 ## Resolved Questions
 

@@ -111,14 +111,16 @@ Floor size in tiles matches the progressive formula above — width and height v
 
 Each dungeon zone maps to an ISS wall sheet + floor sheet pair, giving each 10-floor zone a distinct visual identity. ISS provides 43 wall theme sheets and 49 floor theme sheets.
 
-| Zone | Floors | Wall Theme | Floor Theme |
-|------|--------|------------|-------------|
-| Zone 1 | 1-10 | TBD | TBD |
-| Zone 2 | 11-20 | TBD | TBD |
-| Zone 3 | 21-30 | TBD | TBD |
-| Zone N | (N-1)*10+1 - N*10 | TBD | TBD |
+| Zone | Floors | Wall Theme | Floor Theme | Feel |
+|------|--------|------------|-------------|------|
+| Zone 1 | 1-10 | Stone (grey brick) | Stone (smooth cobble) | Tutorial dungeon — familiar, safe |
+| Zone 2 | 11-20 | Wood (dark timber) | Wood (plank) | Abandoned mine — creaking, earthy |
+| Zone 3 | 21-30 | Ice (frozen crystal) | Ice (frost tile) | Frozen depths — cold, slippery |
+| Zone 4 | 31-40 | Bone (skeletal) | Bone (marrow tile) | Catacombs — organic horror |
+| Zone 5 | 41-50 | Metal (rusted iron) | Metal (grate) | Industrial forge — heat, machinery |
+| Zone N | (N-1)*10+1 - N*10 | Cycles through themes with increasing darkness/saturation | Same | Progressively more hostile |
 
-Theme assignments will be finalized after reviewing the full ISS sheet catalog. The goal: each zone should feel visually distinct and progressively darker/more hostile to reinforce the magicule density gradient described in The Living Dungeon section.
+Zones 6+ cycle through the same themes with darker palettes and increased particle density (dust, embers, fog). The ISS tileset provides 43 wall sheets and 49 floor sheets — plenty of variation for cycling with palette shifts.
 
 #### Transparency
 
@@ -126,7 +128,14 @@ ISS sprites use magenta (`#FF00FF`) backgrounds as a transparency key. The impor
 
 #### Lighting
 
-ISS includes 3 torch sprites (including an animated variant). Torches provide ambient environmental detail and can reinforce the dungeon's atmosphere. Torch placement rules are TBD.
+ISS includes 3 torch sprites (including an animated variant). Torches provide ambient environmental detail and reinforce the dungeon's atmosphere.
+
+**Torch placement rules:**
+- Corridor intersections: 1 torch on each wall at every T-junction or crossroads
+- Room entries: 1 torch on each side of every doorway/corridor entrance into a room
+- Long corridors: 1 torch every 8 tiles along corridor walls
+- Boss rooms: 4 torches at room corners + 2 flanking the boss spawn point
+- Safe spots: 2 torches flanking the crystal landmark
 
 #### Map Prototyping
 
@@ -140,7 +149,12 @@ The previous `cave_atlas.png` (1024x1024 irregular atlas) is superseded by ISS. 
 
 - Each floor has a seed that determines its layout
 - Seeds allow sharing specific floors: "try floor 47, seed ABC123"
-- **Seeded mode restrictions:** when replaying a seeded floor, certain benefits may be limited to prevent exploits (details TBD)
+- **Seeded mode restrictions:** when replaying a previously completed seeded floor:
+  - XP from enemies is reduced to **10%** of normal (prevents XP farming known layouts)
+  - Item drops are disabled (no loot on replayed seeds)
+  - Material drops remain at **50%** of normal (allows some resource farming but at reduced efficiency)
+  - Boss first-kill rewards are not re-grantable (already tracked per character)
+  - The floor is clearly marked in the UI as "Replayed Seed — reduced rewards"
 
 ### Floor Caching
 
@@ -148,6 +162,15 @@ The previous `cave_atlas.png` (1024x1024 irregular atlas) is superseded by ISS. 
 - When the cache is full, the oldest floor is purged
 - Purged floors regenerate with a new layout when revisited (new seed)
 - Cache priority: keep the floors nearest to the player's current position
+
+### Zone Entry Announcement
+
+When the player enters a new zone for the first time (floor 1, 11, 21, etc.), a full-screen banner announces the zone:
+- Large zone name text (e.g., "Zone 3 — Frozen Depths")
+- Brief atmospheric tagline
+- Fades in over 0.5s, holds for 2s, fades out over 0.5s
+- Non-blocking — player can still move during the announcement
+- Only shows once per zone per character (tracked in save data)
 
 ### Safe Spots
 
