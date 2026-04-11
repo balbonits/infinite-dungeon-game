@@ -6,6 +6,8 @@ Detailed step-by-step manual test cases for every feature in "A Dungeon in the M
 
 ## Current State
 
+> **Acceptance criteria.** No game features currently exist to test against. These test cases serve as acceptance criteria for reimplementation after the Session 8 fresh start.
+
 - 33 test cases defined covering all implemented systems
 - Tests are written for the Godot 4 version of the game
 - Run these tests after each significant code change or system implementation

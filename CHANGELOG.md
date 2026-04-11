@@ -6,6 +6,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 10 — Full Prototype Build (2026-04-11)
+
+#### Added
+- Playable dungeon crawler with full game loop (move, fight, level, die, restart)
+- PixelLab-generated art: warrior, skeleton, goblin, 5 town NPCs, dungeon tiles, town tiles, stairs
+- GameState + EventBus autoloads with reactive signals
+- Level-based enemy system with full color gradient (grey→blue→cyan→green→yellow→gold→orange→red)
+- Floor scaling formula: floor N = level N monsters, spawn range [N-1, N+2]
+- Proc-gen floors with random room sizes and 4 floor tile variations
+- Stairs up/down with physical collision + area trigger + sprite art
+- Screen transition system (fade to black, message, fade in)
+- Floating combat text (damage numbers, XP gains, level up)
+- Flash effect system (damage, poison, curse, boost, shield, freeze, heal, crazed)
+- Pause menu (Esc toggle, Resume/Quit)
+- Death screen with Restart (R) and Quit (Esc) options
+- HUD overlay (HP, XP, LVL, Floor) with reactive updates
+- Spawn safety: 150px safe radius + 1.5s invincibility grace period
+- Entity-to-entity collision (player↔enemies, enemy↔enemy)
+- Directional sprites (8-way rotation for player and enemies)
+- UiTheme shared palette + factory methods (DRY)
+- GameSettings with ShowCombatNumbers toggle
+- @art-lead agent for PixelLab art generation
+- Asset READMEs for navigability
+
+#### Fixed
+- Signal leak on scene reload (autoload += without -= in _ExitTree)
+- Diamond wall collision causing wiggle (switched to rectangular)
+- Isometric movement confusion (switched to screen-space: up=up)
+- Camera shake causing motion sickness (switched to red sprite flash)
+- Esc not working on death screen (process_mode=ALWAYS)
+- Enemies spawning outside room bounds (margin + despawn safeguard)
+- "LEVEL UP" showing on floor descent instead of actual level ups
+
+#### Docs
+- docs/systems/floor-scaling.md — monster level formula
+- docs/systems/spawn-safety.md — spawn safety rules
+- docs/systems/accessibility.md — font, color, readability settings spec
+- docs/dev-journal.md Session 10 entry
+
+### Reset — Fresh Start (2026-04-10)
+
+**All code, scenes, and tests deleted.** The pure C# game logic (480 tests passing) was correct, but the Godot rendering layer never worked visually. Starting over with visual-first development.
+
+#### Deleted
+- All Godot scene files (6 game scenes, 24+ test scenes)
+- All C# scripts (autoloads, dungeon, player, ui, game systems, entity framework)
+- All tests (480 unit tests, E2E test infrastructure, shell scripts)
+- `archive/phaser-prototype/` (original Phaser 3 prototype)
+- `addons/gut/` (GDScript testing addon)
+
+#### Retained
+- All documentation (80+ files across 11 directories)
+- All assets (819+ sprites, tiles, fonts, icons)
+- Config files (project.godot, DungeonGame.csproj, Makefile, AGENTS.md, CLAUDE.md)
+- Input map (12 actions in project.godot)
+
+#### Why
+See `docs/dev-journal.md` Session 8 for the full post-mortem.
+
+#### Docs Cleanup (2026-04-10)
+- Updated all architecture docs to reframe as design blueprints (no code exists to describe)
+- Rewrote `docs/dev-tracker.md` with new ticket structure (VIS-*, PROTO-*, CFG-*)
+- Stripped Makefile of 50+ stale targets referencing deleted scenes/scripts
+- Fixed `project.godot` (removed stale main scene and autoload references)
+- Updated `AGENTS.md` current state, project structure, priorities
+- Updated pre-commit hook from GDScript to C# formatting
+
+### Previous [Unreleased]
+
 ### Added
 
 - `docs/dev-tracker.md` — single-file development progress tracker with phased checklist

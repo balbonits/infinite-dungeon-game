@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "e1837d98-ce1b-42d2-8953-8c14371e400b",
+    "name": "Shopkeeper",
+    "prompt": "A portly merchant shopkeeper wearing a brown leather apron over a cream tunic. Round face, friendly expression, balding with a mustache. Carries a coin pouch at his belt.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T08:18:57.88111+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T08:20:54.769687"
+}

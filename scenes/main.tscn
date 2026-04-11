@@ -1,0 +1,99 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/Main.cs" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/death_screen.tscn" id="4_death"]
+[ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="5_pause"]
+[ext_resource type="Script" path="res://scripts/ui/ScreenTransition.cs" id="6_transition"]
+[ext_resource type="Script" path="res://scripts/ui/DebugPanel.cs" id="7_debug"]
+[ext_resource type="Script" path="res://scripts/ui/NpcPanel.cs" id="8_npc_panel"]
+[ext_resource type="Script" path="res://scripts/ui/Toast.cs" id="9_toast"]
+[ext_resource type="Script" path="res://scripts/ui/AscendDialog.cs" id="10_ascend"]
+[ext_resource type="Script" path="res://scripts/ui/DialogueBox.cs" id="11_dialogue"]
+[ext_resource type="Script" path="res://scripts/ui/ShopWindow.cs" id="12_shop"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_script")
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="HUD" parent="UILayer" instance=ExtResource("3_hud")]
+
+[node name="DeathScreen" parent="UILayer" instance=ExtResource("4_death")]
+
+[node name="PauseMenu" parent="UILayer" instance=ExtResource("5_pause")]
+
+[node name="ScreenTransition" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_transition")
+
+[node name="DebugPanel" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("7_debug")
+
+[node name="NpcPanel" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_npc_panel")
+
+[node name="Toast" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("9_toast")
+
+[node name="AscendDialog" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("10_ascend")
+
+[node name="DialogueBox" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("11_dialogue")
+
+[node name="ShopWindow" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("12_shop")

@@ -6,11 +6,7 @@ All visual effects in the game: slash marks on enemy hits and camera shake on pl
 
 ## Current State
 
-Two effects are implemented:
-- **Slash effect:** gold rectangle on the attacked enemy, fades and rises over 120ms
-- **Camera shake:** ±3px camera offset displacement over 90ms when the player takes damage
-
-Both match the Phaser prototype's visual behavior exactly.
+> **Design spec.** No effect scripts currently exist — all were deleted in the Session 8 fresh start. The specifications below serve as the blueprint for reimplementation.
 
 ## Design
 

@@ -6,7 +6,7 @@ Two autoload singletons provide global state and cross-system communication: `Ga
 
 ## Current State
 
-> **Entity Framework:** The Godot `GameState` autoload will wrap and delegate to the entity framework's `EntityData` and systems rather than implementing HP/XP/leveling logic directly. The framework is pure C# with no Godot dependencies -- `GameState` serves as the bridge layer between the framework and the Godot scene tree (emitting signals, persisting across scene reloads). Core logic like damage calculation, XP awards, and stat derivation now lives in `VitalSystem`, `ProgressionSystem`, and `StatSystem`. See [entity-framework.md](../architecture/entity-framework.md) for the full spec.
+> **Design spec.** No autoload scripts currently exist — all were deleted in the Session 8 fresh start. The designs and C# pseudocode below serve as the blueprint for reimplementation. Note: project.godot currently has no autoload registrations.
 
 Both autoloads are registered in `project.godot` and available from any script by name. `GameState` manages HP, XP, level, floor number, and death state. `EventBus` carries event signals that don't belong to any single node (enemy defeated, enemy spawned, player attacked).
 

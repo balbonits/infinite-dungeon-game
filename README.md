@@ -3,7 +3,7 @@
 **Engine:** Godot 4.x (.NET edition) with C#
 **Perspective:** Isometric 2D (Diablo 1 style, 2:1 diamond tiles)
 **Platform:** Desktop native (macOS primary, Windows/Linux supported)
-**Status:** Documentation & planning phase — specs being locked before implementation
+**Status:** Fresh start — all specs locked, all code deleted, rebuilding with visual-first development
 
 ## What is this?
 
@@ -36,12 +36,12 @@ All game design lives in [`docs/`](docs/). Architecture and AI context in [AGENT
 | [world/](docs/world/) | Dungeon (living entity lore), town, monsters |
 | [inventory/](docs/inventory/) | Backpack, bank, items |
 | [ui/](docs/ui/) | Controls, HUD, death screen |
-| [testing/](docs/testing/) | Test strategy, 33 manual tests, 64 automated tests (GdUnit4 + xUnit) |
+| [testing/](docs/testing/) | Test strategy, 33 manual tests, automated test plans (GdUnit4 + xUnit) |
 | [conventions/](docs/conventions/) | Team structure, ticketing |
 | [teams/](docs/teams/) | Per-team ticket boards (Design, QA, DevOps, Engine, Systems, UI, World) |
 | [reference/](docs/reference/) | Subagent research, technical references |
 
-Development progress: [**dev-tracker.md**](docs/dev-tracker.md) (44 tickets across 8 epics)
+Development progress: [**dev-tracker.md**](docs/dev-tracker.md) (41 tickets across 6 phases)
 
 ## Tech Stack
 
@@ -56,7 +56,7 @@ Development progress: [**dev-tracker.md**](docs/dev-tracker.md) (44 tickets acro
 
 ## How to Run
 
-> The game is in the documentation phase. Code implementation has not started yet.
+> The game is in a fresh-start rebuild phase. All code was deleted (see dev-journal Session 8). Visual-first reimplementation begins from the locked specs.
 
 When implementation begins:
 
@@ -67,11 +67,6 @@ When implementation begins:
 5. Open the project in Godot editor → Press F5 to run
 
 See [setup guide](docs/architecture/setup-guide.md) for detailed environment setup.
-
-### Archived Phaser prototype
-
-The original browser prototype is preserved in `archive/phaser-prototype/`. To run it:
-1. Open `archive/phaser-prototype/index.html` in a browser
 
 ## Development
 

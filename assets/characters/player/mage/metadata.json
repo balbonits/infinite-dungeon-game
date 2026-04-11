@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "580afaa7-c03f-4eee-adcc-59b41e5b08c8",
+    "name": "Mage (v0)",
+    "prompt": "A slender mage wearing flowing dark purple robes with arcane gold embroidery. Holding a wooden staff with a glowing crystal tip in right hand. Pointed wizard hat, long sleeves. Thin, scholarly build. Mystical and fragile-looking.",
+    "size": {
+      "width": 80,
+      "height": 80
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T01:49:59.684914+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T02:16:49.592951"
+}

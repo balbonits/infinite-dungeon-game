@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Pre-commit hook: lint staged GDScript files
+# Pre-commit hook: format check staged C# files
 set -e
 
-STAGED_GD=$(git diff --cached --name-only --diff-filter=ACM | grep '\.gd$' | grep -v '^addons/' || true)
+STAGED_CS=$(git diff --cached --name-only --diff-filter=ACM | grep '\.cs$' || true)
 
-if [ -z "$STAGED_GD" ]; then
+if [ -z "$STAGED_CS" ]; then
     exit 0
 fi
 
-echo "Linting staged GDScript files..."
+echo "Checking C# formatting..."
 
-if command -v gdlint >/dev/null 2>&1; then
-    echo "$STAGED_GD" | xargs gdlint
-    echo "$STAGED_GD" | xargs gdformat --check
+if command -v dotnet >/dev/null 2>&1; then
+    dotnet format --verify-no-changes 2>&1 || {
+        echo "Format check failed. Run 'dotnet format' to fix."
+        exit 1
+    }
 else
-    echo "Warning: gdtoolkit not installed. Skipping lint. Install with: pip3 install gdtoolkit"
+    echo "Warning: dotnet not installed. Skipping format check."
 fi

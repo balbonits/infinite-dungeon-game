@@ -2,6 +2,8 @@
 
 **Lead:** `@world-lead` | **Model:** Opus | **Domain:** Dungeon generation, floor caching, town, threading
 
+> **Session 8 fresh start:** All previous code and scenes were deleted. World work restarts from scratch once specs are locked and SETUP is complete.
+
 *This team activates when coding begins (after specs are locked).*
 
 ## Planned Queue

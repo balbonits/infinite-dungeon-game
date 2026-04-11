@@ -25,6 +25,8 @@ A unified framework where all entities (player, enemies, NPCs) share the same me
 | **ProgressionSystem** | `systems/ProgressionSystem.cs` | XP, leveling, stat/skill point allocation |
 | **SkillSystem** | `systems/SkillSystem.cs` | Skill execution, cooldowns, mana costs |
 
+> **Note:** These files do not currently exist. All entity framework code was deleted in the Session 8 fresh start. The file paths and designs below are the target for reimplementation.
+
 **Planned (not yet implemented):**
 
 | System | Responsibility |

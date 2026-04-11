@@ -1,0 +1,52 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/Enemy.cs" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/skeleton/rotations/south.png" id="2_sprite"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 10.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hit"]
+radius = 15.0
+
+[node name="Enemy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 3
+motion_mode = 1
+script = ExtResource("1_script")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 0
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("2_sprite")
+offset = Vector2(0, -26)
+
+[node name="LevelLabel" type="Label" parent="."]
+position = Vector2(0, -56)
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 11
+text = "Lv.1"
+horizontal_alignment = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -30.0
+offset_right = 30.0
+
+[node name="HitArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="HitShape" type="CollisionShape2D" parent="HitArea"]
+shape = SubResource("CircleShape2D_hit")
+
+[node name="HitCooldownTimer" type="Timer" parent="."]
+wait_time = 0.7
+one_shot = true

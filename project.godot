@@ -10,13 +10,14 @@ config_version=5
 [application]
 
 config/name="A Dungeon in the Middle of Nowhere"
-run/main_scene="res://scenes/ui/MainMenu.tscn"
+run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [autoload]
 
-SceneManager="*res://scripts/autoloads/SceneManager.cs"
+GameState="*res://scripts/autoloads/GameState.cs"
+EventBus="*res://scripts/autoloads/EventBus.cs"
 
 [display]
 
@@ -25,6 +26,10 @@ window/size/viewport_height=1080
 window/size/mode=2
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/theme_gen/plugin.cfg", "res://addons/theme_gen_save_sync/plugin.cfg", "res://addons/GDUIComponentLibrary/plugin.cfg")
 
 [dotnet]
 

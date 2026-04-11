@@ -6,12 +6,7 @@ The dungeon floor is rendered using a TileMapLayer node with an isometric TileSe
 
 ## Current State
 
-A single 10x10 room with programmatic tile painting:
-- Floor tiles: filled diamonds, dark blue-gray (`rgb(36, 49, 74)`), no physics
-- Wall tiles: outlined diamonds, lighter blue-gray (`rgb(60, 70, 100)`), full diamond collision polygon
-- TileSet configured for isometric shape (64x32 tiles)
-- One physics layer for wall collision
-- All tiles painted via `SetCell()` in `Dungeon.cs._Ready()`
+> **Design spec.** No tilemap scene, dungeon script, or tile assets currently exist — all were deleted in the Session 8 fresh start. The specifications below serve as the blueprint for reimplementation.
 
 ## Design
 

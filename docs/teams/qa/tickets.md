@@ -2,6 +2,8 @@
 
 **Lead:** `@qa-lead` | **Model:** Sonnet | **Domain:** Spec review, test planning, acceptance criteria validation
 
+> **Session 8 fresh start:** All previous tests (480 unit tests) were deleted. Testing restarts from zero.
+
 ## Active Queue
 
 | ID | Title | Status | What To Review |

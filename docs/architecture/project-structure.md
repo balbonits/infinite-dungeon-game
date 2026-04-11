@@ -6,7 +6,7 @@ Complete file organization for the Godot 4 migration of "A Dungeon in the Middle
 
 ## Current State
 
-The project is transitioning from a single-file Phaser 3 prototype (preserved in `archive/`) to a multi-file Godot 4 project. The directory structure below represents the target layout — files will be created as features are implemented, following a "docs first, code later" approach.
+> **Note:** All code, scenes, and tests were deleted in the Session 8 fresh start. The directory structure below represents the **target layout** — files will be created as features are reimplemented. The archive/ directory was also deleted.
 
 ## Design
 
@@ -166,15 +166,7 @@ dungeon-web-game/
 
 #### archive/ Directory
 
-| Path | Purpose | Details |
-|------|---------|---------|
-| `archive/phaser-prototype/index.html` | Original Phaser 3 prototype | The complete single-file game that started the project. Preserved as reference for the migration. Contains: HTML structure, CSS theme, Phaser game loop, player movement, enemy AI, auto-attack combat, HUD overlay, death screen. 451 lines total. |
-| `archive/phaser-prototype/docs/` | Archived Phaser-specific docs | Documentation that was specific to the Phaser 3 / single-file approach. Moved here because it's no longer applicable to the Godot version, but valuable for understanding original design decisions. |
-| `archive/phaser-prototype/docs/phaser-basics.md` | Phaser 3 concepts reference | Archived. Explained Phaser-specific APIs (Scene lifecycle, physics groups, tweens). Replaced by `docs/reference/godot-basics.md`. |
-| `archive/phaser-prototype/docs/single-file.md` | Single-file rationale | Archived. Explained why everything was in one HTML file. No longer applicable — Godot uses multiple files by design. |
-| `archive/phaser-prototype/docs/code-map.md` | Phaser code walkthrough | Archived. Line-by-line annotation of `index.html`. Useful for understanding what needs to be migrated but not for ongoing development. |
-
-**Why preserve the archive:** The original prototype is the ground truth for "what the game should do." During migration, we can reference it to ensure feature parity. It also documents the journey from web prototype to native game engine.
+> **Note:** The `archive/phaser-prototype/` directory was deleted in the Session 8 fresh start. The original Phaser 3 prototype is preserved in git history for reference.
 
 #### docs/ Directory
 

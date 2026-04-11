@@ -2,12 +2,13 @@
 
 **Lead:** `@devops-lead` | **Model:** Sonnet | **Domain:** CI, tooling, Makefile, project config
 
+> **Session 8 fresh start:** All previous code, scenes, and tests were deleted. The project is a clean slate with only project config files remaining. DevOps tickets below reflect post-reset state.
+
 ## Active Queue
 
 | ID | Title | Status | Details |
 |----|-------|--------|---------|
-| SETUP-02 | Create .csproj and .sln | To Do | Let Godot generate, add NuGet refs |
-| SETUP-03 | Remove GUT and GDScript tests | To Do | Delete `addons/gut/`, `tests/test_project_setup.gd` |
+| CFG-03 | Re-enable CI when code exists | To Do | CI pipeline needs test targets to be meaningful |
 
 ## Blocked Queue
 
@@ -24,3 +25,7 @@
 | ID | Title |
 |----|-------|
 | SETUP-01 | Install dev environment |
+| SETUP-02 | Create DungeonGame.csproj |
+| SETUP-03 | Remove GUT and GDScript tests |
+| CFG-01 | Fix project.godot stale references |
+| CFG-02 | Update pre-commit hook for C# |

@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "6a7b2240-6ad5-4754-bfa0-824e0ba38772",
+    "name": "Banker",
+    "prompt": "A thin well-dressed banker in a fine dark blue coat with gold buttons. Wearing spectacles, carrying a heavy ledger book. Precise and formal.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T08:20:46.871336+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T08:22:08.764866"
+}

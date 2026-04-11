@@ -1,0 +1,121 @@
+{
+  "character": {
+    "id": "172f03cf-9c41-4251-9a68-6b02176e7e1e",
+    "name": "Warrior (v0)",
+    "prompt": "A stocky, heavily armored warrior in dark steel plate armor with silver trim. Right hand always holds a large shiny steel sword, left hand always holds a round metal shield. Sword is always in the right hand. Shield is always in the left hand. Steel pauldrons, greaves, and a horned helmet that covers the face. Broad-shouldered, powerful combat-ready stance.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T01:57:55.170368+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac": {
+        "east": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/east/frame_007.png"
+        ],
+        "south-west": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-west/frame_007.png"
+        ],
+        "south": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south/frame_007.png"
+        ],
+        "north-east": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-east/frame_007.png"
+        ],
+        "south-east": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/south-east/frame_007.png"
+        ],
+        "north-west": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north-west/frame_007.png"
+        ],
+        "west": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/west/frame_007.png"
+        ],
+        "north": [
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_000.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_001.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_002.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_003.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_004.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_005.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_006.png",
+          "animations/idle_combat_stance_with_sword_held_in_right_hand_a-79a099ac/north/frame_007.png"
+        ]
+      },
+      "simple_downward_sword_slash_with_right_hand_shield-23f96808": {
+        "south": [
+          "animations/simple_downward_sword_slash_with_right_hand_shield-23f96808/south/frame_000.png",
+          "animations/simple_downward_sword_slash_with_right_hand_shield-23f96808/south/frame_001.png",
+          "animations/simple_downward_sword_slash_with_right_hand_shield-23f96808/south/frame_002.png",
+          "animations/simple_downward_sword_slash_with_right_hand_shield-23f96808/south/frame_003.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T02:17:40.766609"
+}
