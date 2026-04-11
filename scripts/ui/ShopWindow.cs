@@ -187,6 +187,7 @@ public partial class ShopWindow : Control
         _overlay.Visible = true;
         _center.Visible = true;
         RefreshList();
+        UiTheme.FocusFirstButton(_itemList);
     }
 
     public void Close()
@@ -203,6 +204,7 @@ public partial class ShopWindow : Control
         _selectedItem = null;
         _selectedIndex = -1;
         RefreshList();
+        UiTheme.FocusFirstButton(_itemList);
     }
 
     private void RefreshList()
@@ -220,11 +222,7 @@ public partial class ShopWindow : Control
         if (_isBuyMode)
         {
             for (int i = 0; i < _shopItems.Count; i++)
-            {
-                int index = i;
-                var item = _shopItems[i];
-                AddItemRow(item.Name, $"{item.BuyPrice}g", () => SelectItem(item, index));
-            }
+                AddItemRow(_shopItems[i], i, $"{_shopItems[i].BuyPrice}g");
         }
         else
         {
@@ -233,40 +231,57 @@ public partial class ShopWindow : Control
             {
                 var stack = inventory.GetSlot(i);
                 if (stack == null) continue;
-                int index = i;
-                string countText = stack.Count > 1 ? $" x{stack.Count}" : "";
-                AddItemRow($"{stack.Item.Name}{countText}", $"{stack.Item.SellPrice}g",
-                    () => SelectItem(stack.Item, index));
+                AddItemRow(stack.Item, i, $"{stack.Item.SellPrice}g");
             }
         }
     }
 
-    private void AddItemRow(string name, string price, System.Action onClick)
+    private void AddItemRow(ItemDef item, int index, string price)
     {
         var row = new Button();
-        row.Text = $"  {name}    {price}";
+        row.Text = $"  {item.Name}    {price}";
         row.Alignment = HorizontalAlignment.Left;
         row.CustomMinimumSize = new Vector2(0, 28);
+        row.FocusMode = FocusModeEnum.All;
 
-        var style = new StyleBoxFlat();
-        style.BgColor = new Color(0, 0, 0, 0.01f);
-        style.SetCornerRadiusAll(4);
-        style.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("normal", style);
+        var normal = new StyleBoxFlat();
+        normal.BgColor = new Color(0, 0, 0, 0.01f);
+        normal.SetCornerRadiusAll(4);
+        normal.ContentMarginLeft = 8;
+        row.AddThemeStyleboxOverride("normal", normal);
 
-        var hoverStyle = new StyleBoxFlat();
-        hoverStyle.BgColor = new Color(UiTheme.Colors.Accent, 0.15f);
-        hoverStyle.SetCornerRadiusAll(4);
-        hoverStyle.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("hover", hoverStyle);
+        var hover = new StyleBoxFlat();
+        hover.BgColor = new Color(UiTheme.Colors.Accent, 0.15f);
+        hover.SetCornerRadiusAll(4);
+        hover.ContentMarginLeft = 8;
+        row.AddThemeStyleboxOverride("hover", hover);
+
+        // FF-style: focused row is clearly highlighted (cursor)
+        var focus = new StyleBoxFlat();
+        focus.BgColor = new Color(UiTheme.Colors.Accent, 0.25f);
+        focus.SetCornerRadiusAll(4);
+        focus.ContentMarginLeft = 8;
+        row.AddThemeStyleboxOverride("focus", focus);
 
         row.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
         row.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
-        row.Connect(BaseButton.SignalName.Pressed, Callable.From(onClick));
+
+        // FF-style: description updates on FOCUS (cursor move), not on press
+        int capturedIndex = index;
+        ItemDef capturedItem = item;
+        row.FocusEntered += () => UpdateDescription(capturedItem, capturedIndex);
+
+        // Press (S/cross or click) = confirm buy/sell
+        row.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            UpdateDescription(capturedItem, capturedIndex);
+            OnActionPressed();
+        }));
+
         _itemList.AddChild(row);
     }
 
-    private void SelectItem(ItemDef item, int index)
+    private void UpdateDescription(ItemDef item, int index)
     {
         _selectedItem = item;
         _selectedIndex = index;
@@ -326,10 +341,37 @@ public partial class ShopWindow : Control
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!_isOpen) return;
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+
+        // FF-style: D (circle) or Esc = cancel/close
+        if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        // Up/Down navigate the item list (cursor), description follows via FocusEntered
+        if (KeyboardNav.HandleInput(@event, _itemList))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Q/E (shoulder) switch Buy/Sell tabs
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            SetMode(true);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            SetMode(false);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.ConsumeMovement(@event))
+            GetViewport().SetInputAsHandled();
     }
 }

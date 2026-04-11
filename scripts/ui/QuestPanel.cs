@@ -160,6 +160,7 @@ public partial class QuestPanel : Control
                 var claimBtn = new Button();
                 claimBtn.Text = Strings.Quests.Claim;
                 claimBtn.CustomMinimumSize = new Vector2(80, 28);
+                claimBtn.FocusMode = FocusModeEnum.All;
                 UiTheme.StyleButton(claimBtn, UiTheme.FontSizes.Small);
                 int idx = i;
                 claimBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
@@ -202,16 +203,28 @@ public partial class QuestPanel : Control
             if (i < tracker.ActiveQuests.Count - 1)
                 _questList.AddChild(new HSeparator());
         }
+
+        UiTheme.FocusFirstButton(_questList);
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!_isOpen) return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+        if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        if (KeyboardNav.HandleInput(@event, _questList))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.ConsumeMovement(@event))
+            GetViewport().SetInputAsHandled();
     }
 }

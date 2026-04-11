@@ -127,7 +127,7 @@ public static class Constants
     // --- Spawning ---
     public static class Spawning
     {
-        public const int InitialEnemies = 8;
+        public const int InitialEnemies = 10;
         public const int EnemySoftCap = 14;
         public const float SpawnInterval = 2.8f;
         public const float RespawnDelay = 1.4f;
