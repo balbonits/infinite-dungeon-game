@@ -79,7 +79,8 @@ public partial class DeathScreen : Control
     {
         ClearContent();
 
-        int floor = GameState.Instance.FloorNumber;
+        // Spec (death.md): penalties scale with DEEPEST floor ever reached, not current
+        int floor = GameState.Instance.DeepestFloor;
         int gold = GameState.Instance.PlayerInventory.Gold;
         int expCost = DeathPenalty.GetExpProtectionCost(floor);
         int backpackCost = DeathPenalty.GetBackpackProtectionCost(floor);
@@ -128,7 +129,7 @@ public partial class DeathScreen : Control
     private void ApplyPenaltiesAndRespawn()
     {
         var gs = GameState.Instance;
-        int floor = gs.FloorNumber;
+        int floor = gs.DeepestFloor; // Spec: penalties use deepest floor
         var inventory = gs.PlayerInventory;
 
         // XP penalty

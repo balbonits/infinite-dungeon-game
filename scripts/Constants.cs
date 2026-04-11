@@ -49,11 +49,18 @@ public static class Constants
         public const int BaseDamage = 12;
         public const float DamagePerLevel = 1.5f;
         public const int StartingHp = 100;
-        public const int HpPerLevel = 8;
-        public const int HealOnLevelUp = 18;
+        public const float HealOnLevelUpPercent = 0.15f; // 15% of max HP (spec: leveling.md)
 
         public static int GetDamage(int level) => BaseDamage + (int)(level * DamagePerLevel);
-        public static int GetMaxHp(int level) => StartingHp + level * HpPerLevel;
+
+        // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative
+        public static int GetMaxHp(int level)
+        {
+            int total = StartingHp;
+            for (int l = 1; l <= level; l++)
+                total += (int)(8 + l * 0.5f);
+            return total;
+        }
     }
 
     // --- Class-specific combat ---
@@ -75,9 +82,9 @@ public static class Constants
         public const float ArrowSpeed = 400.0f;
         public const float MagicBoltSpeed = 300.0f;
 
-        // Projectile sizes
-        public const float ArrowScale = 1.5f;
-        public const float MagicBoltScale = 1.5f;
+        // Projectile sizes (spec: combat.md)
+        public const float ArrowScale = 0.6f;
+        public const float MagicBoltScale = 0.8f;
 
         public static float GetAttackRange(PlayerClass playerClass) => playerClass switch
         {
@@ -151,6 +158,21 @@ public static class Constants
         /// <summary>Get the zone number for a floor (1-indexed).</summary>
         public static int GetZone(int floor) => (floor - 1) / FloorsPerZone + 1;
 
+        /// <summary>
+        /// Zone difficulty multiplier (spec: dungeon.md).
+        /// zone_multiplier = 1.0 + (zone - 1) * 0.5
+        /// intra_zone_multiplier = 1.0 + (intra_zone_step * 0.05)
+        /// total = zone_multiplier * intra_zone_multiplier
+        /// </summary>
+        public static float GetDifficultyMultiplier(int floor)
+        {
+            int zone = GetZone(floor);
+            int intraStep = (floor - 1) % FloorsPerZone;
+            float zoneMult = 1.0f + (zone - 1) * 0.5f;
+            float intraMult = 1.0f + intraStep * 0.05f;
+            return zoneMult * intraMult;
+        }
+
         /// <summary>Get species indices allowed on a given floor.</summary>
         public static int[] GetZoneSpecies(int floor)
         {
@@ -171,12 +193,11 @@ public static class Constants
         }
     }
 
-    // --- XP / Leveling ---
+    // --- XP / Leveling (spec: leveling.md) ---
     public static class Leveling
     {
-        public const int XpPerLevelMultiplier = 90;
-
-        public static int GetXpToLevel(int level) => level * XpPerLevelMultiplier;
+        // Quadratic XP curve: floor(L^2 * 45)
+        public static int GetXpToLevel(int level) => level * level * 45;
     }
 
     // --- Town ---
@@ -264,7 +285,7 @@ public static class Constants
             "res://assets/characters/enemies/spider/rotations",     // 6 Spider
         };
 
-        // Dungeon tiles
+        // Dungeon tiles (zone 1 default — kept for fallback)
         public static readonly string[] DungeonFloorTextures =
         {
             "res://assets/tiles/dungeon/floor.png",
@@ -273,6 +294,61 @@ public static class Constants
             "res://assets/tiles/dungeon/floor_worn.png",
         };
         public const string DungeonWallTexture = "res://assets/tiles/dungeon/wall.png";
+
+        // Zone-themed tilesets: floors[] + wall per zone
+        public static (string[] floors, string wall) GetZoneTheme(int zone)
+        {
+            return zone switch
+            {
+                1 => (new[]
+                {
+                    "res://assets/tiles/dungeon_dark/floor_0.png",
+                    "res://assets/tiles/dungeon_dark/floor_1.png",
+                    "res://assets/tiles/dungeon_dark/floor_2.png",
+                    "res://assets/tiles/dungeon_dark/floor_3.png",
+                    "res://assets/tiles/dungeon_dark/floor_4.png",
+                    "res://assets/tiles/dungeon_dark/floor_5.png",
+                }, "res://assets/tiles/dungeon_dark/wall_0.png"),
+                2 => (new[]
+                {
+                    "res://assets/tiles/cathedral/floor_0.png",
+                    "res://assets/tiles/cathedral/floor_1.png",
+                    "res://assets/tiles/cathedral/floor_2.png",
+                    "res://assets/tiles/cathedral/floor_3.png",
+                    "res://assets/tiles/cathedral/floor_4.png",
+                    "res://assets/tiles/cathedral/floor_5.png",
+                }, "res://assets/tiles/cathedral/wall_0.png"),
+                3 => (new[]
+                {
+                    "res://assets/tiles/volcano/floor_0.png",
+                    "res://assets/tiles/volcano/floor_1.png",
+                    "res://assets/tiles/volcano/floor_2.png",
+                    "res://assets/tiles/volcano/floor_3.png",
+                    "res://assets/tiles/volcano/floor_4.png",
+                    "res://assets/tiles/volcano/floor_5.png",
+                }, "res://assets/tiles/volcano/wall_0.png"),
+                4 => (new[]
+                {
+                    "res://assets/tiles/sky_temple/floor_0.png",
+                    "res://assets/tiles/sky_temple/floor_1.png",
+                    "res://assets/tiles/sky_temple/floor_2.png",
+                    "res://assets/tiles/sky_temple/floor_3.png",
+                    "res://assets/tiles/sky_temple/floor_4.png",
+                    "res://assets/tiles/sky_temple/floor_5.png",
+                }, "res://assets/tiles/sky_temple/wall_0.png"),
+                5 => (new[]
+                {
+                    "res://assets/tiles/nether/floor_0.png",
+                    "res://assets/tiles/nether/floor_1.png",
+                    "res://assets/tiles/nether/floor_2.png",
+                    "res://assets/tiles/nether/floor_3.png",
+                    "res://assets/tiles/nether/floor_4.png",
+                    "res://assets/tiles/nether/floor_5.png",
+                }, "res://assets/tiles/nether/wall_0.png"),
+                // Zone 6+: cycle through themes
+                _ => GetZoneTheme(((zone - 1) % 5) + 1),
+            };
+        }
         public const string StairsDownTexture = "res://assets/tiles/dungeon/stairs_down.png";
         public const string StairsUpTexture = "res://assets/tiles/dungeon/stairs_up.png";
 

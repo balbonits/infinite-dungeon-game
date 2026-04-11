@@ -40,10 +40,15 @@ public partial class Enemy : CharacterBody2D, IDamageable
     {
         AddToGroup(Constants.Groups.Enemies);
 
-        _hp = Constants.EnemyStats.GetHp(Level);
-        _moveSpeed = Constants.EnemyStats.GetSpeed(Level);
-        _damage = Constants.EnemyStats.GetDamage(Level);
-        _xpReward = Constants.EnemyStats.GetXpReward(Level);
+        // Apply zone difficulty multiplier to all stats (spec: dungeon.md)
+        int floor = GameState.Instance.FloorNumber;
+        float zoneMult = Constants.Zones.GetDifficultyMultiplier(floor);
+        _hp = (int)(Constants.EnemyStats.GetHp(Level) * zoneMult);
+        _moveSpeed = Constants.EnemyStats.GetSpeed(Level) * zoneMult;
+        _damage = (int)(Constants.EnemyStats.GetDamage(Level) * zoneMult);
+        // Enemy XP: base_xp * floor_multiplier (spec: leveling.md)
+        float floorXpMult = 1.0f + (floor - 1) * 0.5f;
+        _xpReward = (int)(Constants.EnemyStats.GetXpReward(Level) * floorXpMult);
 
         _sprite = GetNode<Sprite2D>("Sprite");
         _levelLabel = GetNode<Label>("LevelLabel");

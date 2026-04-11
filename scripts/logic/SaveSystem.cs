@@ -38,6 +38,7 @@ public static class SaveSystem
             MaxHp = gs.MaxHp,
             Xp = gs.Xp,
             FloorNumber = gs.FloorNumber,
+            DeepestFloor = gs.DeepestFloor,
             Str = gs.Stats.Str,
             Dex = gs.Stats.Dex,
             Sta = gs.Stats.Sta,
@@ -74,7 +75,9 @@ public static class SaveSystem
         int hp = System.Math.Clamp(data.Hp, 1, maxHp);
         int xp = System.Math.Max(0, data.Xp);
         int floor = System.Math.Max(1, data.FloorNumber);
+        int deepest = System.Math.Max(floor, data.DeepestFloor);
 
+        gs.DeepestFloor = deepest;
         gs.MaxHp = maxHp;
         gs.Hp = hp;
         gs.Xp = xp;

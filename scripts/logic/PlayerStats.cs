@@ -20,31 +20,33 @@ public class StatBlock
     /// <summary>Diminishing returns curve: raw * (K / (raw + K))</summary>
     public static float GetEffective(int raw) => raw * (DiminishingK / (raw + DiminishingK));
 
-    // --- Derived stats from STR ---
-    /// <summary>Flat melee damage bonus from STR.</summary>
+    // --- Derived stats from STR (spec: stats.md) ---
+    // flat_melee_bonus = effective_str * 1.5
     public float MeleeFlatBonus => GetEffective(Str) * 1.5f;
-    /// <summary>Percentage melee damage boost from STR.</summary>
+    // percent_melee_boost = effective_str * 0.8%
     public float MeleePercentBoost => GetEffective(Str) * 0.8f;
 
-    // --- Derived stats from DEX ---
-    /// <summary>Attack speed multiplier from DEX (1.0 = base speed).</summary>
-    public float AttackSpeedMultiplier => 1.0f + GetEffective(Dex) * 0.005f;
-    /// <summary>Dodge chance from DEX (0-1).</summary>
-    public float DodgeChance => MathF.Min(0.4f, GetEffective(Dex) * 0.003f);
+    // --- Derived stats from DEX (spec: stats.md) ---
+    // attack_speed_bonus = effective_dex * 1.0%
+    public float AttackSpeedMultiplier => 1.0f + GetEffective(Dex) * 0.01f;
+    // dodge_chance = effective_dex * 0.5%
+    public float DodgeChance => GetEffective(Dex) * 0.005f;
 
-    // --- Derived stats from STA ---
-    /// <summary>Bonus max HP from STA.</summary>
-    public int BonusMaxHp => (int)(GetEffective(Sta) * 3.0f);
-    /// <summary>HP regen per second from STA.</summary>
-    public float HpRegen => GetEffective(Sta) * 0.1f;
+    // --- Derived stats from STA (spec: stats.md) ---
+    // bonus_max_hp = effective_sta * 5.0
+    public int BonusMaxHp => (int)(GetEffective(Sta) * 5.0f);
+    // hp_regen_per_sec = effective_sta * 0.15
+    public float HpRegen => GetEffective(Sta) * 0.15f;
 
-    // --- Derived stats from INT ---
-    /// <summary>Bonus max mana from INT.</summary>
-    public int BonusMaxMana => (int)(GetEffective(Int) * 2.5f);
-    /// <summary>Mana regen per second from INT.</summary>
-    public float ManaRegen => GetEffective(Int) * 0.15f;
-    /// <summary>Spell damage multiplier from INT.</summary>
-    public float SpellDamageMultiplier => 1.0f + GetEffective(Int) * 0.01f;
+    // --- Derived stats from INT (spec: stats.md) ---
+    // bonus_max_mana = effective_int * 4.0
+    public int BonusMaxMana => (int)(GetEffective(Int) * 4.0f);
+    // mana_regen_per_sec = effective_int * 0.2
+    public float ManaRegen => GetEffective(Int) * 0.2f;
+    // processing_efficiency = effective_int * 0.6% (mana cost reduction)
+    public float ProcessingEfficiency => GetEffective(Int) * 0.006f;
+    // spell_damage_bonus = effective_int * 1.2%
+    public float SpellDamageMultiplier => 1.0f + GetEffective(Int) * 0.012f;
 
     /// <summary>
     /// Apply per-level class stat bonuses.
