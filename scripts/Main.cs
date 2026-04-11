@@ -76,6 +76,7 @@ public partial class Main : Node
     public void LoadTown()
     {
         SwapWorld(TownScene);
+        Ui.StairsCompass.Instance?.ClearTargets();
         Autoloads.SaveManager.Instance?.Save();
     }
 

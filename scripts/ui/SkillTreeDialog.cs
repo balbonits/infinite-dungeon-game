@@ -165,6 +165,8 @@ public partial class SkillTreeDialog : Control
             spacer.CustomMinimumSize = new Vector2(0, 8);
             _skillList.AddChild(spacer);
         }
+
+        UiTheme.FocusFirstButton(_skillList);
     }
 
     private HBoxContainer CreateSkillRow(SkillDef def, SkillState? state, SkillTracker tracker, bool isBase)
@@ -205,6 +207,7 @@ public partial class SkillTreeDialog : Control
         var allocBtn = new Button();
         allocBtn.Text = "+";
         allocBtn.CustomMinimumSize = new Vector2(32, 28);
+        allocBtn.FocusMode = FocusModeEnum.All;
         UiTheme.StyleButton(allocBtn, UiTheme.FontSizes.Small);
         allocBtn.Disabled = !canAllocate;
         string capturedId = def.Id;
@@ -215,9 +218,9 @@ public partial class SkillTreeDialog : Control
         }));
         row.AddChild(allocBtn);
 
-        // Hover/focus shows detail
+        // FF-style: detail updates on focus (cursor move), not just hover
         string detailText = BuildDetailText(def, state);
-        var focusCallable = Callable.From(() => { _detailLabel.Text = detailText; });
+        allocBtn.FocusEntered += () => _detailLabel.Text = detailText;
         row.MouseEntered += () => _detailLabel.Text = detailText;
 
         return row;
@@ -248,10 +251,20 @@ public partial class SkillTreeDialog : Control
     {
         if (!_isOpen) return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+        if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        if (KeyboardNav.HandleInput(@event, _skillList))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.ConsumeMovement(@event))
+            GetViewport().SetInputAsHandled();
     }
 }

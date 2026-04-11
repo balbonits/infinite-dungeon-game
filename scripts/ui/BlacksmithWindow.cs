@@ -148,11 +148,12 @@ public partial class BlacksmithWindow : Control
             ShowCraftableItems(inv);
         else
             ShowRecyclableItems(inv);
+
+        UiTheme.FocusFirstButton(_itemList);
     }
 
     private void ShowCraftableItems(Inventory inv)
     {
-        // List all equipment items in backpack that can receive affixes
         for (int i = 0; i < inv.SlotCount; i++)
         {
             var stack = inv.GetSlot(i);
@@ -162,33 +163,18 @@ public partial class BlacksmithWindow : Control
                 stack.Item.Category != ItemCategory.Accessory)
                 continue;
 
-            string label = $"{stack.Item.Name} (Lv.{stack.Item.LevelRequirement})";
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 6);
-
-            var nameLabel = new Label();
-            nameLabel.Text = label;
-            UiTheme.StyleLabel(nameLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
-            nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            row.AddChild(nameLabel);
-
-            // Show available affix count
             int maxTier = AffixDatabase.GetMaxTier(stack.Item.LevelRequirement);
-            var tierLabel = new Label();
-            tierLabel.Text = $"T{maxTier}";
-            UiTheme.StyleLabel(tierLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            row.AddChild(tierLabel);
+            string label = $"{stack.Item.Name} (Lv.{stack.Item.LevelRequirement})  T{maxTier}";
 
-            _itemList.AddChild(row);
+            var btn = CreateItemButton(label, () =>
+            {
+                _detailLabel.Text = $"{stack.Item.Name}\n{stack.Item.Description}\nMax affix tier: {maxTier}";
+            });
+            _itemList.AddChild(btn);
         }
 
         if (_itemList.GetChildCount() == 0)
-        {
-            var emptyLabel = new Label();
-            emptyLabel.Text = Strings.Blacksmith.NoCraftable;
-            UiTheme.StyleLabel(emptyLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-            _itemList.AddChild(emptyLabel);
-        }
+            _itemList.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoCraftable));
     }
 
     private void ShowRecyclableItems(Inventory inv)
@@ -204,54 +190,96 @@ public partial class BlacksmithWindow : Control
 
             int slotIndex = i;
             int recycleGold = 5 + stack.Item.LevelRequirement * 2;
+            string label = $"{stack.Item.Name}    +{recycleGold}g";
 
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 6);
-
-            var nameLabel = new Label();
-            nameLabel.Text = stack.Item.Name;
-            UiTheme.StyleLabel(nameLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
-            nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            row.AddChild(nameLabel);
-
-            var goldLabel = new Label();
-            goldLabel.Text = $"+{recycleGold}g";
-            UiTheme.StyleLabel(goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Small);
-            row.AddChild(goldLabel);
-
-            var recycleBtn = new Button();
-            recycleBtn.Text = Strings.Blacksmith.Recycle;
-            recycleBtn.CustomMinimumSize = new Vector2(80, 28);
-            UiTheme.StyleButton(recycleBtn, UiTheme.FontSizes.Small);
-            recycleBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+            var btn = CreateItemButton(label, () =>
             {
                 inv.RemoveAt(slotIndex);
                 inv.Gold += recycleGold;
                 Toast.Instance?.Success($"Recycled for {recycleGold}g");
                 Refresh();
-            }));
-            row.AddChild(recycleBtn);
-
-            _itemList.AddChild(row);
+            });
+            _itemList.AddChild(btn);
         }
 
         if (_itemList.GetChildCount() == 0)
-        {
-            var emptyLabel = new Label();
-            emptyLabel.Text = Strings.Blacksmith.NoRecyclable;
-            UiTheme.StyleLabel(emptyLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-            _itemList.AddChild(emptyLabel);
-        }
+            _itemList.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoRecyclable));
+    }
+
+    private static Button CreateItemButton(string text, System.Action onPress)
+    {
+        var btn = new Button();
+        btn.Text = $"  {text}";
+        btn.Alignment = HorizontalAlignment.Left;
+        btn.CustomMinimumSize = new Vector2(0, 32);
+        btn.FocusMode = FocusModeEnum.All;
+
+        var normal = new StyleBoxFlat();
+        normal.BgColor = new Color(0, 0, 0, 0.01f);
+        normal.SetCornerRadiusAll(4);
+        normal.ContentMarginLeft = 8;
+        btn.AddThemeStyleboxOverride("normal", normal);
+
+        var hover = new StyleBoxFlat();
+        hover.BgColor = new Color(UiTheme.Colors.Accent, 0.15f);
+        hover.SetCornerRadiusAll(4);
+        hover.ContentMarginLeft = 8;
+        btn.AddThemeStyleboxOverride("hover", hover);
+
+        var focus = new StyleBoxFlat();
+        focus.BgColor = new Color(UiTheme.Colors.Accent, 0.25f);
+        focus.SetCornerRadiusAll(4);
+        focus.ContentMarginLeft = 8;
+        btn.AddThemeStyleboxOverride("focus", focus);
+
+        btn.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
+        btn.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        btn.Connect(BaseButton.SignalName.Pressed, Callable.From(onPress));
+        return btn;
+    }
+
+    private static Label CreateEmptyLabel(string text)
+    {
+        var label = new Label();
+        label.Text = text;
+        UiTheme.StyleLabel(label, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
+        return label;
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!_isOpen) return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+        if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        if (KeyboardNav.HandleInput(@event, _itemList))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Q/E switch Craft/Recycle tabs
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            _isCraftMode = true;
+            Refresh();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            _isCraftMode = false;
+            Refresh();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.ConsumeMovement(@event))
+            GetViewport().SetInputAsHandled();
     }
 }

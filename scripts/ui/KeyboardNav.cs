@@ -4,14 +4,16 @@ using System.Collections.Generic;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Reusable keyboard navigation for dialog/panel UIs.
-/// Arrow Up/Down or Bumper buttons (Q/E) cycle through focusable buttons.
-/// Enter/Space/S activates the focused button.
+/// FF SNES-style keyboard navigation for all UI panels.
+/// Up/Down (or Q/E shoulders) = move cursor between buttons.
+/// S (action_cross) = confirm / press focused button.
+/// Focused button shows highlight. Description panels update via FocusEntered.
 /// </summary>
 public static class KeyboardNav
 {
     /// <summary>
     /// Process input for a container of buttons. Call from _UnhandledInput.
+    /// Handles: Up/Down cursor movement, S/cross confirm (presses focused button).
     /// Returns true if the event was handled.
     /// </summary>
     public static bool HandleInput(InputEvent @event, Control container)
@@ -25,8 +27,8 @@ public static class KeyboardNav
 
         int currentIndex = GetFocusedIndex(buttons);
 
-        // Bumpers (Q/E) or Up/Down arrows cycle through buttons
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft) ||
+        // Up arrow = move cursor up
+        if (@event.IsActionPressed(Constants.InputActions.MoveUp) ||
             keyEvent.Keycode == Key.Up)
         {
             int nextIndex = currentIndex <= 0 ? buttons.Count - 1 : currentIndex - 1;
@@ -34,7 +36,8 @@ public static class KeyboardNav
             return true;
         }
 
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight) ||
+        // Down arrow = move cursor down
+        if (@event.IsActionPressed(Constants.InputActions.MoveDown) ||
             keyEvent.Keycode == Key.Down)
         {
             int nextIndex = currentIndex >= buttons.Count - 1 ? 0 : currentIndex + 1;
@@ -42,6 +45,39 @@ public static class KeyboardNav
             return true;
         }
 
+        // S (cross) = confirm / press the focused button
+        if (@event.IsActionPressed(Constants.InputActions.ActionCross))
+        {
+            if (currentIndex >= 0)
+            {
+                buttons[currentIndex].EmitSignal(BaseButton.SignalName.Pressed);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Check if the event is a D/circle cancel press. Panels call this for FF-style back/cancel.
+    /// </summary>
+    public static bool IsCancelPressed(InputEvent @event)
+    {
+        return @event.IsActionPressed(Constants.InputActions.ActionCircle) ||
+               (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Escape);
+    }
+
+    /// <summary>
+    /// Consume movement input so the player doesn't walk behind open panels.
+    /// Returns true if consumed.
+    /// </summary>
+    public static bool ConsumeMovement(InputEvent @event)
+    {
+        if (@event.IsActionPressed(Constants.InputActions.MoveUp) ||
+            @event.IsActionPressed(Constants.InputActions.MoveDown) ||
+            @event.IsActionPressed(Constants.InputActions.MoveLeft) ||
+            @event.IsActionPressed(Constants.InputActions.MoveRight))
+            return true;
         return false;
     }
 

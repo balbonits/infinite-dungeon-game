@@ -162,6 +162,7 @@ public partial class BankWindow : Control
 
         RefreshBankList(bank, backpack);
         RefreshBackpackList(bank, backpack);
+        UiTheme.FocusFirstButton(_bankList);
     }
 
     private void RefreshBankList(Bank bank, Inventory backpack)
@@ -239,6 +240,7 @@ public partial class BankWindow : Control
         var actionBtn = new Button();
         actionBtn.Text = actionLabel;
         actionBtn.CustomMinimumSize = new Vector2(80, 28);
+        actionBtn.FocusMode = FocusModeEnum.All;
         UiTheme.StyleButton(actionBtn, UiTheme.FontSizes.Small);
         actionBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(action));
         row.AddChild(actionBtn);
@@ -267,10 +269,36 @@ public partial class BankWindow : Control
     {
         if (!_isOpen) return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+        if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        // Q/E switch focus between bank list and backpack list
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            UiTheme.FocusFirstButton(_bankList);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            UiTheme.FocusFirstButton(_backpackList);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Up/Down + S navigate and confirm within whichever list has focus
+        if (KeyboardNav.HandleInput(@event, _bankList) ||
+            KeyboardNav.HandleInput(@event, _backpackList))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.ConsumeMovement(@event))
+            GetViewport().SetInputAsHandled();
     }
 }

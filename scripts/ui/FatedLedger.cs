@@ -190,10 +190,28 @@ public partial class FatedLedger : Control
     {
         if (!_isOpen) return;
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
+        if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        // Scroll with Up/Down arrows
+        if (@event.IsActionPressed(Constants.InputActions.MoveUp))
+        {
+            _scrollContainer.ScrollVertical -= 40;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.MoveDown))
+        {
+            _scrollContainer.ScrollVertical += 40;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.ConsumeMovement(@event))
+            GetViewport().SetInputAsHandled();
     }
 }

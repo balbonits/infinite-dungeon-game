@@ -186,16 +186,20 @@ public partial class AscendDialog : Control
         if (!_isOpen)
             return;
 
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            Close();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (KeyboardNav.HandleInput(@event, _buttonContainer))
         {
             GetViewport().SetInputAsHandled();
             return;
         }
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
-        {
-            Close();
+        if (KeyboardNav.ConsumeMovement(@event))
             GetViewport().SetInputAsHandled();
-        }
     }
 }
