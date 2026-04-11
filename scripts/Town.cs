@@ -11,11 +11,11 @@ public partial class Town : Node2D
     // NPC data: name, sprite path, tile position, greeting
     private static readonly (string name, string spritePath, Vector2I position, string greeting)[] NpcData =
     {
-        (Strings.Npcs.Shopkeeper, "res://assets/characters/npcs/shopkeeper/rotations/south.png", new Vector2I(4, 3), Strings.NpcGreetings.Shopkeeper),
-        (Strings.Npcs.Blacksmith, "res://assets/characters/npcs/blacksmith/rotations/south.png", new Vector2I(12, 3), Strings.NpcGreetings.Blacksmith),
-        (Strings.Npcs.GuildMaster, "res://assets/characters/npcs/guild_master/rotations/south.png", new Vector2I(4, 7), Strings.NpcGreetings.GuildMaster),
-        (Strings.Npcs.Teleporter, "res://assets/characters/npcs/teleporter/rotations/south.png", new Vector2I(12, 7), Strings.NpcGreetings.Teleporter),
-        (Strings.Npcs.Banker, "res://assets/characters/npcs/banker/rotations/south.png", new Vector2I(8, 3), Strings.NpcGreetings.Banker),
+        (Strings.Npcs.Shopkeeper, "res://assets/characters/npcs/shopkeeper/rotations/south.png", new Vector2I(5, 7), Strings.NpcGreetings.Shopkeeper),
+        (Strings.Npcs.Blacksmith, "res://assets/characters/npcs/blacksmith/rotations/south.png", new Vector2I(18, 7), Strings.NpcGreetings.Blacksmith),
+        (Strings.Npcs.GuildMaster, "res://assets/characters/npcs/guild_master/rotations/south.png", new Vector2I(5, 14), Strings.NpcGreetings.GuildMaster),
+        (Strings.Npcs.Teleporter, "res://assets/characters/npcs/teleporter/rotations/south.png", new Vector2I(18, 14), Strings.NpcGreetings.Teleporter),
+        (Strings.Npcs.Banker, "res://assets/characters/npcs/banker/rotations/south.png", new Vector2I(12, 14), Strings.NpcGreetings.Banker),
     };
 
     private TileMapLayer _tileMap = null!;
@@ -80,15 +80,37 @@ public partial class Town : Node2D
     private void SpawnPlayer()
     {
         _player = PlayerScene.Instantiate<CharacterBody2D>();
-        // Spawn at town center, not near the dungeon entrance
-        _player.GlobalPosition = _tileMap.MapToLocal(new Vector2I(Constants.Town.Width / 2, Constants.Town.Height / 2));
+        // Spawn at lower-center of town, away from dungeon entrance at top
+        _player.GlobalPosition = _tileMap.MapToLocal(new Vector2I(Constants.Town.Width / 2, Constants.Town.Height - 5));
         _entities.AddChild(_player);
     }
+
+    // Building sprites placed behind each NPC (offset up-left from NPC position)
+    private static readonly (string npcName, string buildingTexture, Vector2I offset)[] NpcBuildings =
+    {
+        (Strings.Npcs.Shopkeeper, "res://assets/tiles/town/building_shop.png", new Vector2I(0, -1)),
+        (Strings.Npcs.Blacksmith, "res://assets/tiles/town/building_forge.png", new Vector2I(0, -1)),
+        (Strings.Npcs.GuildMaster, "res://assets/tiles/town/building_guild.png", new Vector2I(0, -1)),
+    };
 
     private void SpawnNpcs()
     {
         foreach (var (name, spritePath, position, greeting) in NpcData)
         {
+            // Place building behind NPC if one exists
+            foreach (var (bName, bTexture, bOffset) in NpcBuildings)
+            {
+                if (bName == name && ResourceLoader.Exists(bTexture))
+                {
+                    var building = new Sprite2D();
+                    building.Texture = GD.Load<Texture2D>(bTexture);
+                    building.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+                    building.GlobalPosition = _tileMap.MapToLocal(position + bOffset);
+                    building.Offset = new Vector2(0, -20);
+                    _entities.AddChild(building);
+                }
+            }
+
             var npc = new Npc();
             npc.NpcName = name;
             npc.SpritePath = spritePath;
@@ -100,16 +122,20 @@ public partial class Town : Node2D
 
     private void CreateDungeonEntrance()
     {
-        // Dungeon entrance at the bottom of town
-        var entrancePos = new Vector2I(Constants.Town.Width / 2, Constants.Town.Height - 2);
+        // Dungeon entrance at the top of town (screen-space "up")
+        var entrancePos = new Vector2I(Constants.Town.Width / 2, 2);
 
         var entrance = new Node2D();
 
-        // Stairs sprite
-        if (ResourceLoader.Exists(Constants.Assets.StairsDownTexture))
+        // Cave entrance sprite
+        string cavePath = Constants.Assets.CaveEntranceTexture;
+        string fallback = Constants.Assets.StairsDownTexture;
+        string texturePath = ResourceLoader.Exists(cavePath) ? cavePath : fallback;
+
+        if (ResourceLoader.Exists(texturePath))
         {
             var sprite = new Sprite2D();
-            sprite.Texture = GD.Load<Texture2D>(Constants.Assets.StairsDownTexture);
+            sprite.Texture = GD.Load<Texture2D>(texturePath);
             sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
             sprite.Offset = new Vector2(0, -16);
             entrance.AddChild(sprite);

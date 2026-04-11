@@ -14,10 +14,13 @@ public partial class Projectile : Area2D
     private int _damage;
     private float _maxDistance;
     private float _traveled;
+    private bool _hit;
+    private bool _pierces;
     private Sprite2D? _sprite;
 
     public static void Spawn(Node parent, Vector2 origin, Vector2 target, int damage,
-        float speed, float maxRange, string texturePath, float scale, Color? tint = null)
+        float speed, float maxRange, string texturePath, float scale, Color? tint = null,
+        bool pierces = false)
     {
         var projectile = new Projectile();
         projectile.GlobalPosition = origin;
@@ -25,6 +28,7 @@ public partial class Projectile : Area2D
         projectile._speed = speed;
         projectile._maxDistance = maxRange;
         projectile._direction = (target - origin).Normalized();
+        projectile._pierces = pierces;
 
         // Collision
         projectile.CollisionLayer = 0;
@@ -70,11 +74,19 @@ public partial class Projectile : Area2D
 
     private void OnBodyEntered(Node2D body)
     {
+        if (_hit && !_pierces)
+            return;
         if (!body.IsInGroup(Constants.Groups.Enemies))
             return;
 
         body.Call("TakeDamage", _damage);
         FloatingText.Damage(GetParent(), body.GlobalPosition, _damage);
-        QueueFree();
+
+        if (!_pierces)
+        {
+            _hit = true;
+            Monitoring = false;
+            QueueFree();
+        }
     }
 }

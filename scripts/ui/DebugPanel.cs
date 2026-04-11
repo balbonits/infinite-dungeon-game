@@ -75,23 +75,33 @@ public partial class DebugPanel : Control
     private void UpdateStats()
     {
         var gs = GameState.Instance;
+        var s = gs.Stats;
         int enemyCount = GetTree().GetNodesInGroup(Constants.Groups.Enemies).Count;
         int xpToNext = Constants.Leveling.GetXpToLevel(gs.Level);
         float xpPercent = xpToNext > 0 ? (float)gs.Xp / xpToNext * 100 : 0;
-        int playerDamage = Constants.PlayerStats.GetDamage(gs.Level);
+        int baseDamage = Constants.PlayerStats.GetDamage(gs.Level);
         int minutes = (int)(_sessionTime / 60);
         int seconds = (int)(_sessionTime % 60);
 
         _statsLabel.Text =
-            $"HP: {gs.Hp}/{gs.MaxHp}\n" +
-            $"Level: {gs.Level}\n" +
+            $"HP: {gs.Hp}/{gs.MaxHp}  Gold: {gs.PlayerInventory.Gold}\n" +
+            $"Level: {gs.Level}  Class: {gs.SelectedClass}\n" +
             $"XP: {gs.Xp}/{xpToNext} ({xpPercent:F0}%)\n" +
             $"Floor: {gs.FloorNumber}\n" +
-            $"Damage: {playerDamage}/hit\n" +
-            $"---\n" +
-            $"Enemies alive: {enemyCount}\n" +
-            $"Total kills: {_killCount}\n" +
-            $"Kills/level: {(_killCount > 0 && gs.Level > 1 ? _killCount / (gs.Level - 1) : 0)}\n" +
+            $"---STATS---\n" +
+            $"STR: {s.Str} ({StatBlock.GetEffective(s.Str):F0}eff)\n" +
+            $"DEX: {s.Dex} ({StatBlock.GetEffective(s.Dex):F0}eff)\n" +
+            $"STA: {s.Sta} ({StatBlock.GetEffective(s.Sta):F0}eff)\n" +
+            $"INT: {s.Int} ({StatBlock.GetEffective(s.Int):F0}eff)\n" +
+            $"Free pts: {s.FreePoints}\n" +
+            $"---DERIVED---\n" +
+            $"Base dmg: {baseDamage}  Melee+: {s.MeleeFlatBonus:F0}\n" +
+            $"Atk spd: {s.AttackSpeedMultiplier:F2}x\n" +
+            $"Dodge: {s.DodgeChance * 100:F1}%\n" +
+            $"HP regen: {s.HpRegen:F1}/s\n" +
+            $"Spell dmg: {s.SpellDamageMultiplier:F2}x\n" +
+            $"---COMBAT---\n" +
+            $"Enemies: {enemyCount}  Kills: {_killCount}\n" +
             $"Session: {minutes}:{seconds:D2}";
     }
 }

@@ -68,7 +68,7 @@ public partial class DeathScreen : Control
         _content.AddChild(new HSeparator());
         AddLabel(Strings.Death.ChooseDestination, UiTheme.Colors.Ink);
 
-        AddButton(Strings.Death.ReturnToTown, () => ShowStep2());
+        AddButton(Strings.Death.ReturnToTown, () => ShowStep2(), autoFocus: true);
 
         // Future: "Respawn at Last Safe Spot" option
         // AddButton(Strings.Death.RespawnAtSafeSpot, () => ShowStep2(false));
@@ -189,7 +189,7 @@ public partial class DeathScreen : Control
         _content.AddChild(label);
     }
 
-    private void AddButton(string text, System.Action action)
+    private void AddButton(string text, System.Action action, bool autoFocus = false)
     {
         var btn = new Button();
         btn.Text = text;
@@ -198,6 +198,8 @@ public partial class DeathScreen : Control
         UiTheme.StyleButton(btn);
         btn.Connect(BaseButton.SignalName.Pressed, Callable.From(action));
         _content.AddChild(btn);
+        if (autoFocus)
+            btn.CallDeferred(Control.MethodName.GrabFocus);
     }
 
     private Button AddToggleButton(string text, bool enabled, System.Action<bool> onToggle)
@@ -224,6 +226,12 @@ public partial class DeathScreen : Control
     {
         if (!Visible)
             return;
+
+        if (KeyboardNav.HandleInput(@event, _content))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
 
         if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
         {

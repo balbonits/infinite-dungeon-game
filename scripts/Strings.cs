@@ -26,6 +26,18 @@ public static class Strings
         public const string Cancel = "Cancel";
     }
 
+    // --- Floor Wipe ---
+    public static class FloorWipe
+    {
+        public const string Title = "FLOOR CLEARED";
+        public const string Subtitle = "You've dominated this floor. The dungeon trembles.";
+        public static string BonusGold(int gold) => $"Bonus: +{gold} gold";
+        public static string NextFloor(int floor) => $"Descend to Floor {floor}";
+        public const string StayOnFloor = "Stay & Farm (enemies respawn)";
+        public const string SelectFloor = "Select Floor...";
+        public const string ReturnToTown = "Return to Town";
+    }
+
     // --- Death Screen ---
     public static class Death
     {
@@ -41,7 +53,7 @@ public static class Strings
     // --- Splash Screen ---
     public static class Splash
     {
-        public const string Subtitle = "A dungeon crawler for the bold and the foolish";
+        public const string Subtitle = "The first to descend. The last to turn back.";
         public const string PressAnyKey = "Press any key to begin";
     }
 
@@ -176,10 +188,10 @@ public static class Strings
     // --- NPC Greetings ---
     public static class NpcGreetings
     {
-        public const string Shopkeeper = "Need supplies? I've got potions, scrolls, and idols.";
-        public const string Blacksmith = "Bring me materials and I'll forge something worthy.";
-        public const string GuildMaster = "Another adventurer. The guild has work for you.";
-        public const string Teleporter = "I can send you to any floor you've visited before.";
-        public const string Banker = "Your valuables are safe with me. Always.";
+        public const string Shopkeeper = "I hauled these supplies three weeks across the wastes. You'd better put them to good use down there.";
+        public const string Blacksmith = "Just got the forge hot. Bring me something from the deep and I'll make it into something worth carrying.";
+        public const string GuildMaster = "I organized this expedition. You're our first delver — make every floor count.";
+        public const string Teleporter = "The dungeon's magical signature drew me here. I've mapped what you've seen — I can send you back to any floor.";
+        public const string Banker = "Frontier towns attract frontier trouble. Your gold and gear stay locked in my vault until you need them.";
     }
 }

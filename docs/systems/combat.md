@@ -203,7 +203,7 @@ Flow: `BodyEntered` signal fires -> checks player group + cooldown -> `GameState
 
 ## Open Questions
 
-- How should area-of-effect attacks work?
+- ~~How should area-of-effect attacks work?~~ **Resolved** -- see [targeting.md](targeting.md) for all target modes (Self, SingleTarget, AreaOfEffect, MultiTarget, PlayerCentricAoe).
 - How does weapon type affect combat (speed, range, damage)?
 - Should there be a visual indicator showing which enemy is currently targeted (outline, highlight)?
 - Should the attack cooldown be displayed as a small UI element (cooldown arc) near the player?

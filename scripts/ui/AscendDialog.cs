@@ -121,6 +121,7 @@ public partial class AscendDialog : Control
         // Show
         GetChild<ColorRect>(0).Visible = true;
         GetChild<CenterContainer>(1).Visible = true;
+        UiTheme.FocusFirstButton(_buttonContainer);
     }
 
     private void ShowFloorList(int currentFloor)
@@ -184,6 +185,12 @@ public partial class AscendDialog : Control
     {
         if (!_isOpen)
             return;
+
+        if (KeyboardNav.HandleInput(@event, _buttonContainer))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
 
         if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
         {
