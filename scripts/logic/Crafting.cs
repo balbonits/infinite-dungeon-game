@@ -118,9 +118,4 @@ public class CraftableItem
     public List<AppliedAffix> Affixes { get; init; } = new();
 }
 
-public enum BaseQuality
-{
-    Normal,
-    Superior,
-    Elite,
-}
+// BaseQuality enum moved to DepthGearTier.cs (extended with Masterwork/Mythic/Transcendent)

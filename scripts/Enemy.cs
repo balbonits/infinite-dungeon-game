@@ -42,13 +42,25 @@ public partial class Enemy : CharacterBody2D, IDamageable
 
         // Apply zone difficulty multiplier to all stats (spec: dungeon.md)
         int floor = GameState.Instance.FloorNumber;
+        int zone = Constants.Zones.GetZone(floor);
         float zoneMult = Constants.Zones.GetDifficultyMultiplier(floor);
-        _hp = (int)(Constants.EnemyStats.GetHp(Level) * zoneMult);
-        _moveSpeed = Constants.EnemyStats.GetSpeed(Level) * zoneMult;
-        _damage = (int)(Constants.EnemyStats.GetDamage(Level) * zoneMult);
-        // Enemy XP: base_xp * floor_multiplier (spec: leveling.md)
+
+        // Endgame multiplier chain: floor * pact * saturation * intelligence
+        var pacts = GameState.Instance.Pacts;
+        var sat = GameState.Instance.Saturation;
+        var intel = GameState.Instance.Intelligence;
+
+        float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone) * intel.SpawnRateModifier;
+        float dmgMult = zoneMult * pacts.EnemyDamageMultiplier * sat.GetDamageMultiplier(zone);
+        float spdMult = zoneMult * pacts.EnemySpeedMultiplier * sat.GetSpeedMultiplier(zone) * intel.AggressionModifier;
+
+        _hp = (int)(Constants.EnemyStats.GetHp(Level) * hpMult);
+        _moveSpeed = Constants.EnemyStats.GetSpeed(Level) * spdMult;
+        _damage = (int)(Constants.EnemyStats.GetDamage(Level) * dmgMult);
+        // Enemy XP: base_xp * floor_multiplier * (1 + saturation_bonus + pact_bonus)
         float floorXpMult = 1.0f + (floor - 1) * 0.5f;
-        _xpReward = (int)(Constants.EnemyStats.GetXpReward(Level) * floorXpMult);
+        float xpBonus = 1.0f + sat.GetXpBonus(zone) + pacts.XpBonus;
+        _xpReward = (int)(Constants.EnemyStats.GetXpReward(Level) * floorXpMult * xpBonus);
 
         _sprite = GetNode<Sprite2D>("Sprite");
         _levelLabel = GetNode<Label>("LevelLabel");
@@ -141,6 +153,11 @@ public partial class Enemy : CharacterBody2D, IDamageable
             GameState.Instance.Achievements.IncrementCounter("enemies_killed");
             GameState.Instance.Achievements.IncrementCounter("gold_earned", gold);
 
+            // Endgame system hooks
+            int zone = Constants.Zones.GetZone(GameState.Instance.FloorNumber);
+            GameState.Instance.Saturation.RecordKill(zone);
+            GameState.Instance.Intelligence.RecordKill();
+
             EventBus.Instance.EmitSignal(EventBus.SignalName.EnemyDefeated, GlobalPosition, Level);
             GameState.Instance.CheckAchievements();
             QueueFree();
@@ -207,6 +224,7 @@ public partial class Enemy : CharacterBody2D, IDamageable
             return;
 
         GameState.Instance.TakeDamage(_damage);
+        GameState.Instance.Intelligence.RecordDamageTaken(_damage);
         player.DamageFlash();
         FloatingText.Damage(player.GetParent(), player.GlobalPosition, _damage);
         _hitCooldown.Start();

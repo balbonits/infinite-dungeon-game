@@ -51,6 +51,20 @@ public static class SaveSystem
             BankData = gs.PlayerBank.CaptureState(),
             QuestData = gs.Quests.CaptureState(),
             AchievementData = gs.Achievements.CaptureState(),
+            // Endgame systems
+            SaturationData = new SavedSaturationData
+            {
+                Zones = gs.Saturation.ExportState(),
+                LastDecayTimestamp = gs.Saturation.LastDecayTimestamp,
+            },
+            PactRanks = gs.Pacts.ExportRanks(),
+            AttunementData = new SavedAttunementData
+            {
+                IsUnlocked = gs.Attunement.IsUnlocked,
+                Nodes = gs.Attunement.ExportNodes(),
+                ClearedFloors = gs.Attunement.ExportClearedFloors(),
+                ActiveKeystone = gs.Attunement.ActiveKeystone,
+            },
         };
     }
 
@@ -116,6 +130,30 @@ public static class SaveSystem
         gs.Achievements = new AchievementTracker();
         if (data.AchievementData != null)
             gs.Achievements.RestoreState(data.AchievementData);
+
+        // Restore endgame systems
+        gs.Saturation = new ZoneSaturation();
+        if (data.SaturationData != null)
+        {
+            gs.Saturation.ImportState(data.SaturationData.Zones, data.SaturationData.LastDecayTimestamp);
+            // Apply time-based decay for offline time
+            double now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            gs.Saturation.ApplyDecay(now);
+        }
+
+        gs.Pacts = new DungeonPacts();
+        gs.Pacts.ImportRanks(data.PactRanks);
+
+        gs.Attunement = new MagiculeAttunement();
+        if (data.AttunementData != null)
+            gs.Attunement.ImportState(
+                data.AttunementData.Nodes,
+                data.AttunementData.ClearedFloors,
+                data.AttunementData.ActiveKeystone,
+                data.AttunementData.IsUnlocked);
+
+        // Intelligence is session-scoped, always starts fresh
+        gs.Intelligence = new DungeonIntelligence();
     }
 
     public static string Serialize(SaveData data) => JsonSerializer.Serialize(data, JsonOptions);
