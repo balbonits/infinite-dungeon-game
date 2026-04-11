@@ -2,365 +2,190 @@
 
 ## Summary
 
-The dungeon floor is rendered using a TileMapLayer node with an isometric TileSet. The TileSet is created programmatically in `Dungeon.cs` (not loaded from a `.tres` file) and contains two tile types: floor (walkable) and wall (physics collision). The room is a simple 10x10 grid with walls on the border and floors in the interior.
+The dungeon floor is rendered using a TileMapLayer node with an isometric TileSet. The TileSet is created programmatically in `Dungeon.cs` (not loaded from a `.tres` file) and contains multiple tile types: 4 floor variations (randomly mixed), 1 wall tile with rectangular collision, and stairs objects (up/down) with collision and area triggers. Rooms are procedurally generated with dimensions scaling by floor depth.
 
 ## Current State
 
-> **Design spec.** No tilemap scene, dungeon script, or tile assets currently exist — all were deleted in the Session 8 fresh start. The specifications below serve as the blueprint for reimplementation.
+Implemented. `scripts/Dungeon.cs` handles tileset setup, procedural room generation, stairs creation, enemy spawning, and floor transitions. Tiles use 64x64 texture art with a 64x32 isometric footprint. Four floor tile variations are randomly mixed for visual variety. Stairs are physical Node2D objects with sprites, collision bodies, and trigger areas.
 
 ## Design
 
 ### TileSet Configuration
 
-The TileSet is created programmatically, not loaded from a `.tres` resource file. This is done in `Dungeon.cs._Ready()` because:
-1. The TileSet only needs two simple tile types (no complex authoring needed)
-2. Programmatic creation avoids `.tres` file management and import issues
-3. Future procedural generation will likely modify the TileSet at runtime anyway
-
-**Core TileSet properties:**
+The TileSet is created programmatically in `Dungeon.cs.SetupTileset()`:
 
 | Property | Value | Description |
 |----------|-------|-------------|
-| `tile_shape` | `TileSet.TILE_SHAPE_ISOMETRIC` | Isometric diamond rendering mode. Tiles are drawn as diamonds, not rectangles. |
-| `tile_size` | `new Vector2I(64, 32)` | Each tile occupies a 64-pixel-wide by 32-pixel-tall bounding box. The 2:1 ratio is the standard isometric proportion (width = 2 * height). |
-| `tile_layout` | `TileSet.TILE_LAYOUT_STACKED` (default) | Standard stacked isometric layout where odd rows are offset. |
-| Physics layers | 1 layer (index 0) | A single physics layer for wall collision. Floor tiles have no physics data on this layer. |
+| `tile_shape` | `TileSet.TILE_SHAPE_ISOMETRIC` | Isometric diamond rendering mode. |
+| `tile_size` | `Vector2I(64, 32)` | 64px wide by 32px tall isometric footprint. |
+| Physics layers | 1 layer (index 0) | Wall collision on layer 1 (bit 0). |
 
-**Why 64x32:** This is the most common isometric tile size, giving a clean 2:1 diamond ratio. It's small enough that a 10x10 room fits comfortably in the viewport at 2x camera zoom, and large enough that individual tiles are visually distinct.
+**Texture region size:** `Vector2I(64, 64)`. The source textures are 64x64 pixels, rendered into the 64x32 isometric footprint by the TileSet. This gives walls and floors visual height.
 
 ---
 
 ### Tile Types
 
-| Source ID | Name | Texture | Visual Description | Physics |
-|-----------|------|---------|-------------------|---------|
-| 0 (first atlas source) | Floor | `res://assets/tiles/floor.png` (64x32) | Filled diamond shape, solid color `rgb(36, 49, 74)` -- dark blue-gray matching CSS `var(--bg-1)` | None (walkable) |
-| 1 (second atlas source) | Wall | `res://assets/tiles/wall.png` (64x32) | Outlined diamond shape, border color `rgb(60, 70, 100)` -- lighter blue-gray, visually distinct from floor | Full diamond collision polygon on physics layer 0 |
+**Floor Tiles (4 variations):**
 
-**Texture format:** Both textures are 64x32 PNG images. They contain a single tile each (atlas coordinates `(0, 0)`).
+Each floor texture is loaded as a separate `TileSetAtlasSource`. A random variation is selected per tile during room painting.
 
-**Floor tile visual:** A filled diamond with a solid dark color. It should be subtle -- the floor is background, not a focal point. The Phaser prototype used `fillStyle(0x131927)` for the background and drew a grid; the Godot version replaces this with isometric floor tiles.
+| Path | Description |
+|------|-------------|
+| `res://assets/tiles/dungeon/floor.png` | Base floor |
+| `res://assets/tiles/dungeon/floor_cracked.png` | Cracked variant |
+| `res://assets/tiles/dungeon/floor_flagstone.png` | Flagstone variant |
+| `res://assets/tiles/dungeon/floor_worn.png` | Worn variant |
 
-**Wall tile visual:** A diamond with a visible border/outline and slightly lighter fill. The border makes walls recognizable. The fill is lighter than the floor to create contrast. The Phaser prototype had no walls (the game was bounded by the viewport edge); walls are a new addition for the Godot version.
+Floor tiles have no physics collision (walkable).
 
-**Alternative (placeholder without textures):** If tile textures don't exist yet, the TileSet can use a programmatically generated `ImageTexture`:
-```csharp
-// Create a 64x32 image, fill with color, convert to texture
-var img = Image.CreateEmpty(64, 32, false, Image.Format.Rgba8);
-img.Fill(new Color(0.141f, 0.192f, 0.290f));  // rgb(36, 49, 74)
-var texture = ImageTexture.CreateFromImage(img);
-```
+**Wall Tile:**
+
+| Path | Description |
+|------|-------------|
+| `res://assets/tiles/dungeon/wall.png` | Single wall texture |
+
+Wall tiles have a rectangular collision polygon for smooth wall sliding.
 
 ---
 
 ### Wall Collision Polygon
 
-Wall tiles have a physics collision polygon that matches the diamond shape:
+Wall tiles use a **rectangular** collision polygon (not diamond-shaped):
 
 ```
-Points: [Vector2(-32, 0), Vector2(0, -16), Vector2(32, 0), Vector2(0, 16)]
+Points: [(-32, -16), (32, -16), (32, 16), (-32, 16)]
 ```
 
-**Visual representation:**
-```
-        (0, -16)
-         /    \
-        /      \
-(-32, 0)        (32, 0)
-        \      /
-         \    /
-        (0, 16)
-```
+This is a full 64x32 rectangle matching the tile footprint. The rectangular shape allows characters to slide smoothly along walls without catching on diamond corners. Both the player and enemies collide with walls via `MoveAndSlide()`.
 
-**Why these coordinates:**
-- The polygon is defined relative to the tile's local origin (center)
-- A 64x32 tile has half-width 32 and half-height 16
-- The four points are the midpoints of the tile's bounding rectangle edges
-- This creates a diamond shape that exactly fills the isometric tile
-
-**Physics layer assignment:**
-```csharp
-// On the wall tile's TileData, physics layer 0:
-var polygon = new Vector2[]
-{
-    new Vector2(-32, 0),
-    new Vector2(0, -16),
-    new Vector2(32, 0),
-    new Vector2(0, 16)
-};
-wallTileData.AddCollisionPolygon(0);  // Physics layer 0
-wallTileData.SetCollisionPolygonPoints(0, 0, polygon);  // Layer 0, polygon 0
-```
-
-**Collision interaction:**
-- Player (collision_mask bit 0): collides with wall physics, slides along diamond edges via `MoveAndSlide()`
-- Enemies (collision_mask bit 0): collides with wall physics, slides along diamond edges
-- The diamond collision shape means characters slide smoothly along diagonal wall surfaces rather than getting stuck on rectangular corners
+Defined in `Constants.Tiles.WallCollisionPolygon`.
 
 ---
 
-### Room Layout
+### Procedural Room Generation
 
-**Dimensions:**
-- Room size: `RoomSize = 10` tiles (configurable constant in `Dungeon.cs`)
-- Total tiles: 10 * 10 = 100
-- Border tiles (walls): 36 (all tiles where row == 0, row == 9, col == 0, or col == 9)
-- Interior tiles (floor): 64 (all tiles where 1 <= row <= 8 AND 1 <= col <= 8)
+Rooms are single rectangular chambers with wall borders and floor interiors. Dimensions grow with floor depth.
 
-**Layout diagram (10x10, W = wall, F = floor):**
+**Room size formula:**
+
 ```
-W W W W W W W W W W
-W F F F F F F F F W
-W F F F F F F F F W
-W F F F F F F F F W
-W F F F F F F F F W
-W F F F F F F F F W
-W F F F F F F F F W
-W F F F F F F F F W
-W F F F F F F F F W
-W W W W W W W W W W
+floorBonus = min(floorNumber / 5, 6)
+width  = random(18 + floorBonus, 30 + floorBonus + 1)
+height = random(18 + floorBonus, 30 + floorBonus + 1)
 ```
 
-**Isometric rendering:** Even though the layout is a simple grid, isometric rendering rotates the visual representation 45 degrees. The top-left corner of the grid appears at the top of the screen, and the grid extends down-left and down-right.
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `MinRoomSize` | `18` | Minimum room dimension in tiles. |
+| `MaxRoomSize` | `30` | Maximum room dimension in tiles. |
+| `RoomGrowthPerFloors` | `5` | Every 5 floors, bonus increases by 1. |
+| `MaxRoomGrowth` | `6` | Cap on floor bonus (reached at floor 30). |
 
-**Player spawn position:** Center of the room at tile coordinates `(5, 5)`. Converted to world position via `_tileMap.MapToLocal(new Vector2I(5, 5))`.
+| Floor | Bonus | Size Range |
+|-------|-------|------------|
+| 1 | 0 | 18-30 |
+| 5 | 1 | 19-31 |
+| 10 | 2 | 20-32 |
+| 15 | 3 | 21-33 |
+| 30+ | 6 | 24-36 |
 
-**Enemy spawn positions:** Near the room edges, on floor tiles adjacent to walls (e.g., tiles at row 1, row 8, col 1, col 8). Enemies should not spawn ON wall tiles (they'd be inside the collision polygon).
+Width and height are rolled independently, so rooms are not necessarily square.
+
+**Floor painting:** Border tiles (col=0, col=width-1, row=0, row=height-1) are walls. Interior tiles use a random floor source: `_floorSourceBaseId + (GD.Randi() % _floorSourceCount)`.
 
 ---
 
-### TileSet Setup Algorithm (Dungeon.cs)
+### Stairs System
 
-Complete pseudocode for the programmatic TileSet creation:
+Stairs are physical Node2D objects (not special tiles) created by `CreateStairsObject()`. Each stairs object contains:
 
-```csharp
-private (int floorSourceId, int wallSourceId) SetupTileset()
-{
-    // Step 1: Create TileSet with isometric configuration
-    var tileSet = new TileSet();
-    tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
-    tileSet.TileSize = new Vector2I(64, 32);
+1. **Sprite2D** -- Stairs tile art from `res://assets/tiles/dungeon/stairs_down.png` or `stairs_up.png`, texture_filter=Nearest, offset=(0,-16)
+2. **StaticBody2D** -- Collision body (CircleShape2D, radius=14px) so the player bumps into stairs
+3. **Area2D** -- Trigger area (CircleShape2D, radius=24px) that detects player approach
+4. **Label** -- Text above stairs (font_size=11, outline_size=3, centered)
 
-    // Step 2: Add physics layer for wall collision
-    tileSet.AddPhysicsLayer();
-    // Physics layer 0 now exists; collision_layer and collision_mask
-    // default to layer 1 (bit 0), which is what player/enemy masks expect
+**Stairs placement:**
 
-    // Step 3: Create floor tile atlas source
-    Texture2D floorTexture = GD.Load<Texture2D>("res://assets/tiles/floor.png");
-    var floorSource = new TileSetAtlasSource();
-    floorSource.Texture = floorTexture;
-    floorSource.CreateTile(new Vector2I(0, 0));  // Single tile at atlas coords (0,0)
-    int floorSourceId = tileSet.AddSource(floorSource);
+Stairs are placed with a minimum wall margin of 4 tiles. The room is split by center; up-stairs and down-stairs are placed in opposite halves (randomly which half), ensuring they are separated.
 
-    // Step 4: Create wall tile atlas source
-    Texture2D wallTexture = GD.Load<Texture2D>("res://assets/tiles/wall.png");
-    var wallSource = new TileSetAtlasSource();
-    wallSource.Texture = wallTexture;
-    wallSource.CreateTile(new Vector2I(0, 0));  // Single tile at atlas coords (0,0)
-    int wallSourceId = tileSet.AddSource(wallSource);
-
-    // Step 5: Add collision polygon to wall tile
-    TileData wallTileData = wallSource.GetTileData(new Vector2I(0, 0), 0);
-    wallTileData.AddCollisionPolygon(0);  // Physics layer index 0
-    wallTileData.SetCollisionPolygonPoints(0, 0, new Vector2[]
-    {
-        new Vector2(-32, 0),
-        new Vector2(0, -16),
-        new Vector2(32, 0),
-        new Vector2(0, 16)
-    });
-
-    // Step 6: Assign TileSet to TileMapLayer node
-    _tileMap.TileSet = tileSet;
-
-    // Return source IDs for use in floor painting
-    return (floorSourceId, wallSourceId);
-}
+```
+wallMargin = 4
+centerCol = roomWidth / 2
+centerRow = roomHeight / 2
 ```
 
-**Why separate TileSetAtlasSource per tile type:** Each atlas source references one texture. With two tile types, there are two textures and two atlas sources. The alternative -- a single texture atlas with multiple tiles -- is the standard approach for production art, but for the current placeholder textures, separate sources are simpler.
+One staircase goes in the range `[wallMargin, center-2]`, the other in `[center+2, roomSize-1-wallMargin]`. A coin flip decides which half gets up vs. down.
 
-**Why TileSetAtlasSource (not TileSetScenesCollectionSource):** TileSetAtlasSource is for tiles from image textures. TileSetScenesCollectionSource is for tiles that are full scenes (e.g., animated tiles, tiles with logic). Our tiles are simple static images, so atlas source is appropriate.
+**Stairs Down behavior:** When the player enters the trigger area, `ScreenTransition.Instance.Play()` is called, which shows a floor transition screen and calls `PerformFloorDescent()`.
+
+**Stairs Up behavior:** When the player enters the trigger area, `AscendDialog.Instance.Show()` is called. On floor 1, the label reads "Back to Town"; on deeper floors, "Stairs Up".
+
+**Floor descent (`PerformFloorDescent()`):**
+1. Increment `GameState.FloorNumber`
+2. Clear all enemies (queue free nodes in enemies group)
+3. Clear tilemap
+4. Generate new floor layout
+5. Reposition player to new stairs-up position
+6. Reset player grace period
+7. Reposition stairs objects
+8. Spawn fresh enemies
 
 ---
 
-### Floor Painting Algorithm (Dungeon.cs)
+### Enemy Spawning Integration
 
-Complete pseudocode for painting the tile grid:
+Enemy spawning uses the room dimensions for placement:
 
-```csharp
-private const int RoomSize = 10;
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `SpawnWallMargin` | `5 tiles` | Enemies spawn this far from walls. |
+| `SafeSpawnRadius` | `150px` | Minimum distance from player. |
+| `MaxSpawnRetries` | `10` | Attempts to find a valid spawn position. |
 
-private void PaintRoom(int floorSourceId, int wallSourceId)
-{
-    for (int col = 0; col < RoomSize; col++)
-    {
-        for (int row = 0; row < RoomSize; row++)
-        {
-            bool isBorder = (
-                col == 0 || col == RoomSize - 1 ||
-                row == 0 || row == RoomSize - 1
-            );
+`GetRandomEdgePosition()` picks a random position along one of the 4 room edges (inset by `SpawnWallMargin`). `IsFloorTile()` validates the position is inside the wall border. The spawn is rejected if too close to the player.
 
-            if (isBorder)
-            {
-                _tileMap.SetCell(
-                    new Vector2I(col, row),     // Tile coordinates
-                    wallSourceId,               // Source ID (wall atlas)
-                    new Vector2I(0, 0)          // Atlas coordinates (only tile)
-                );
-            }
-            else
-            {
-                _tileMap.SetCell(
-                    new Vector2I(col, row),     // Tile coordinates
-                    floorSourceId,              // Source ID (floor atlas)
-                    new Vector2I(0, 0)          // Atlas coordinates (only tile)
-                );
-            }
-        }
-    }
-}
-```
-
-**`SetCell()` parameters:**
-1. `new Vector2I(col, row)` -- tile map coordinates. (0, 0) is the top-left tile. In isometric mode, tile (0, 0) renders at the top of the diamond grid.
-2. Source ID -- which TileSetAtlasSource to use (floor or wall)
-3. `new Vector2I(0, 0)` -- atlas coordinates within the source. Both sources have only one tile at (0, 0).
-
-**Iteration order:** Column-major (`col` outer, `row` inner). The order doesn't matter for correctness -- all tiles are painted regardless. The TileMapLayer handles render ordering based on its isometric configuration.
+Enemy levels scale with floor depth:
+- Min level: `max(1, floor - 1)`
+- Max level: `floor + 2`
 
 ---
 
 ### Coordinate Conversion
 
-TileMapLayer provides methods to convert between tile coordinates and world coordinates:
+`TileMapLayer.MapToLocal(Vector2I)` converts tile coordinates to world position. Used for:
+- Player spawn at stairs-up position
+- Stairs object positioning
+- Enemy spawn position calculation
 
-**`MapToLocal(Vector2I tileCoords) -> Vector2`**
+`TileMapLayer.LocalToMap(Vector2)` converts world position to tile coordinates. Used for spawn validation (`IsFloorTile()`).
 
-Converts tile grid coordinates to the tile's center position in the TileMapLayer's local coordinate space.
+---
 
-```csharp
-// Get the world position of tile (5, 5) -- center of the room
-Vector2 centerPos = _tileMap.MapToLocal(new Vector2I(5, 5));
-player.GlobalPosition = centerPos;
+### Scene Structure (Dungeon.tscn)
+
+```
+Dungeon (Node2D) [Dungeon.cs]
+├── TileMapLayer -> tileset assigned programmatically
+├── Entities (Node2D) -> player, enemies, stairs, effects
+└── SpawnTimer (Timer) -> 2.8s interval, enemy soft cap check
 ```
 
-**Usage in the game:**
-- Placing the player at room center: `_tileMap.MapToLocal(new Vector2I(RoomSize / 2, RoomSize / 2))`
-- Spawning enemies at edge tiles: `_tileMap.MapToLocal(new Vector2I(1, row))` for left edge
-- Future: placing items, NPCs, staircase at specific tile positions
-
-**`LocalToMap(Vector2 localPos) -> Vector2I`**
-
-Converts a local position to the nearest tile coordinates. Useful for determining which tile a character is standing on.
-
-```csharp
-// What tile is the player standing on?
-Vector2I playerTile = _tileMap.LocalToMap(player.Position);
-```
-
-**Usage in the game:**
-- Future: checking if the player is on a special tile (exit, safe spot)
-- Future: fog of war based on explored tiles
-
----
-
-### Isometric Coordinate Math
-
-**Tile (0, 0) position:** In isometric mode, tile (0, 0) is at the top of the diamond. Each subsequent column shifts right and down; each subsequent row shifts left and down.
-
-**Tile spacing in world coordinates:**
-- Moving +1 column: `+32` X, `+16` Y (half tile width right, quarter tile height down)
-- Moving +1 row: `-32` X, `+16` Y (half tile width left, quarter tile height down)
-
-**Room dimensions in world pixels:**
-- A 10x10 isometric room spans approximately:
-  - Width: `(RoomSize * 2) * (tile_width / 2)` = `20 * 32` = 640 pixels
-  - Height: `(RoomSize * 2) * (tile_height / 2)` = `20 * 16` = 320 pixels
-  - (These are approximate; actual bounds depend on tile overlap and the diamond orientation)
-
----
-
-### TileMapLayer Node Properties
-
-| Property | Value | Description |
-|----------|-------|-------------|
-| `y_sort_enabled` | `true` | Tiles at lower Y positions (further "back" in isometric space) render behind tiles at higher Y positions. Critical for correct isometric depth. |
-| `tile_set` | Set programmatically | Assigned in `SetupTileset()` during `Dungeon.cs._Ready()`. |
-| `collision_visibility_mode` | `0` (default) | Collision shapes are visible in the editor but hidden at runtime. Useful for debugging. |
-
----
-
-### Future: Procedural Generation
-
-The current 10x10 bordered room is a placeholder. Future dungeon generation will:
-
-**Replace the fixed room with generated layouts:**
-- Multiple rooms connected by corridors
-- Rooms of varying sizes (5x5 to 20x20)
-- L-shaped rooms, T-intersections, dead ends
-- Use the same `SetCell()` API to paint generated layouts
-
-**Generation algorithm (planned, not implemented):**
-- Binary Space Partition (BSP) or random walk to create room layouts
-- Corridor carving between rooms
-- Entrance (staircase up) and exit (staircase down) placement
-- Safe spot placement at entrance/exit tiles
-
-**Floor seeds:**
-- Each floor will have a seed that determines its layout
-- `seed(floor_seed)` before generation for reproducibility
-- Seeds allow sharing: "try floor 47, seed ABC123"
-- See `docs/world/dungeon.md` for generation rules
-
-**New tile types (future):**
-| ID | Name | Visual | Physics | Purpose |
-|----|------|--------|---------|---------|
-| 2 | Door | Doorway shape | None (open) or full (closed) | Room transitions |
-| 3 | Stairs Down | Arrow/spiral indicator | None | Descend to next floor |
-| 4 | Stairs Up | Arrow/spiral indicator | None | Ascend to previous floor |
-| 5 | Safe Spot | Glowing crystal | None | Checkpoint / respawn point |
-| 6 | Corridor | Narrow floor variant | None | Connects rooms |
-
-**Tileset evolution:** When procedural generation is added, the TileSet will likely move from programmatic creation to a `.tres` resource file authored in the Godot TileSet editor. This allows:
-- Visual tile editing with terrain rules (auto-tiling)
-- Multiple tiles per terrain type (floor variation)
-- Animated tiles (water, lava)
-- Alternative tiles for visual variety
-
----
-
-### Phaser-to-Godot Background Comparison
-
-| Aspect | Phaser Prototype | Godot Implementation |
-|--------|-----------------|---------------------|
-| Background rendering | `this.add.graphics()` with filled rect + grid lines | TileMapLayer with isometric tiles |
-| World bounds | `this.physics.world.setBounds(0, 0, 1100, 700)` | Wall tiles with physics collision |
-| Coordinate system | Screen space (0,0 at top-left, pixel positions) | Isometric tile coordinates + MapToLocal conversion |
-| Tile shape | No tiles (flat rectangle world) | 64x32 isometric diamonds |
-| Wall collision | `setCollideWorldBounds(true)` (screen edges) | CharacterBody2D + wall tile collision polygons |
-| Scrolling | None (fixed camera) | Camera2D follows player with 2x zoom |
+The Dungeon node also connects to:
+- `SpawnTimer.Timeout` for periodic enemy spawning
+- `EventBus.EnemyDefeated` for respawn-after-kill logic
 
 ## Implementation Notes
 
-- The TileMapLayer must be a direct child of the Dungeon node (not nested inside other containers) so that `MapToLocal()` returns positions in the Dungeon's coordinate space.
-- `y_sort_enabled` on the TileMapLayer sorts tiles by their Y position. This is separate from the Entities node's y-sorting -- tiles and entities are sorted within their own containers, and the container draw order is determined by their position in the scene tree.
-- The physics layer added to the TileSet automatically uses collision layer 1 (bit 0) by default, which matches the player's and enemy's collision masks. No explicit layer/mask configuration is needed on the TileSet's physics layer.
-- `SetCell()` can be called multiple times on the same coordinates -- the latest call overwrites the previous tile. This is useful for future door/corridor carving that might need to replace walls with floors.
+- The TileMapLayer must be a direct child of Dungeon so `MapToLocal()` returns positions in Dungeon's coordinate space.
+- The physics layer added to the TileSet automatically uses collision layer 1 (bit 0), matching player/enemy collision masks.
+- `SetCell()` can be called multiple times on the same coordinates; latest call overwrites.
+- Stairs objects are persistent across floor transitions -- they are repositioned, not recreated.
+- The `_tileMap.Clear()` call in `PerformFloorDescent()` removes all tiles before regenerating.
+- Each floor texture is a separate TileSetAtlasSource with a unique source ID. Random selection uses modular arithmetic on the source ID range.
 
 ## Open Questions
 
-- How should the TileSet evolve when procedural generation is added -- stay programmatic or move to a `.tres` file?
+- Should rooms evolve from single rectangles to multi-room layouts with corridors?
 - Should there be a fog-of-war system that hides unexplored tiles?
-
-## Resolved Questions
-
-| Question | Decision |
-|----------|----------|
-| Should floor tiles have visual variation? | Yes — ISS provides multiple variants per floor theme (e.g., ISS_Floor_Dirt has 6 tile variants). Use random selection when painting. |
-| Should wall tiles be taller (64x64 "wall blocks")? | Yes — ISS wall blocks are 64x64 with full and half block variants plus top-face overlays. Walls use a separate TileMapLayer with 64x64 tile size. |
-| What procedural generation algorithm? | Hybrid: BSP + Drunkard's Walk + Cellular Automata (see [dungeon.md](../world/dungeon.md)). |
-| Should tile textures be hand-drawn or generated? | Neither — use Isometric Stone Soup (ISS) pre-rendered sprites. The Python-generated placeholder tiles are superseded. |
-| What is the primary environment tileset? | Isometric Stone Soup by Screaming Brain Studios (CC0). 49 floor sheets (64x32), 43 wall block sheets (64x64), 3 torch sprites. All environment art must conform to ISS dimensions. |
+- Should the TileSet move from programmatic creation to a `.tres` resource file when more tile types are needed?

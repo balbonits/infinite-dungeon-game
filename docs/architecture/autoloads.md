@@ -6,9 +6,9 @@ Two autoload singletons provide global state and cross-system communication: `Ga
 
 ## Current State
 
-> **Design spec.** No autoload scripts currently exist — all were deleted in the Session 8 fresh start. The designs and C# pseudocode below serve as the blueprint for reimplementation. Note: project.godot currently has no autoload registrations.
+> **Implemented.** Both autoloads are functional and registered in `project.godot`. Last verified against code as of Session 10+.
 
-Both autoloads are registered in `project.godot` and available from any script by name. `GameState` manages HP, XP, level, floor number, and death state. `EventBus` carries event signals that don't belong to any single node (enemy defeated, enemy spawned, player attacked).
+Both autoloads are registered in `project.godot` and available from any script via the static `Instance` property. `GameState` manages HP, XP, level, floor number, death state, selected class, and player inventory. `EventBus` carries event signals that don't belong to any single node (enemy defeated, enemy spawned, player attacked).
 
 ## Design
 
@@ -54,11 +54,13 @@ Centralized, reactive game state. Replaces the Phaser prototype's `const state =
 | Property | Type | Default | Setter | Description |
 |----------|------|---------|--------|-------------|
 | `Hp` | `int` | `100` | Custom setter | Current hit points. Clamped to `[0, MaxHp]`. Setter emits `StatsChanged`. If HP reaches 0 and `IsDead` is false, sets `IsDead = true` and emits `PlayerDied`. |
-| `MaxHp` | `int` | `100` | Custom setter | Maximum hit points. Increases on level up via formula `100 + Level * 8`. Setter emits `StatsChanged`. |
+| `MaxHp` | `int` | `100` | Custom setter | Maximum hit points. Increases on level up via `Constants.PlayerStats.GetMaxHp(Level)` = `100 + Level * 8`. Setter emits `StatsChanged`. |
 | `Xp` | `int` | `0` | Custom setter | Current experience points toward next level. Setter emits `StatsChanged`. |
 | `Level` | `int` | `1` | Custom setter | Current character level. Setter emits `StatsChanged`. |
 | `FloorNumber` | `int` | `1` | Custom setter | Current dungeon floor. Setter emits `StatsChanged`. |
-| `IsDead` | `bool` | `false` | Auto-property | Death flag. Prevents `PlayerDied` from being emitted multiple times if damage continues after death (e.g., enemies still overlapping during the frame death occurs). Not emitted via signal -- it's an internal guard. |
+| `IsDead` | `bool` | `false` | Auto-property | Death flag. Prevents `PlayerDied` from being emitted multiple times. Internal guard. |
+| `SelectedClass` | `PlayerClass` | `Warrior` | Auto-property | The class chosen at the class selection screen. Set by `ClassSelect.OnConfirmPressed()`. Read by `Player._Ready()` to load class-specific attack configs and sprites. |
+| `PlayerInventory` | `Inventory` | `new(25)` | Private set | Player backpack. 25-slot inventory with gold tracker. Used by ShopWindow for buy/sell. Reset to a fresh instance with 100 starting gold on `Reset()`. |
 
 **Why custom setters:** C# supports property accessors (`get`/`set`) to run code whenever a value is assigned. This is the reactive pattern: assigning `GameState.Hp = 80` automatically emits `StatsChanged` without the caller needing to remember to emit it. This prevents bugs where a stat changes but the HUD doesn't update.
 
@@ -135,24 +137,27 @@ public int FloorNumber
 
 ##### `Reset()`
 
-Resets all state to initial values. Called by the death screen before reloading the scene.
+Resets all state to initial values. Called by `DeathScreen.OnRestartPressed()` before loading town.
 
 ```csharp
 public void Reset()
 {
     IsDead = false;
-    // Set MaxHp before Hp so the clamp in Hp's setter uses the correct max
-    MaxHp = 100;
-    Hp = 100;
+    MaxHp = Constants.PlayerStats.StartingHp; // 100
+    Hp = Constants.PlayerStats.StartingHp;    // 100
     Xp = 0;
     Level = 1;
     FloorNumber = 1;
+    PlayerInventory = new Inventory(25);
+    PlayerInventory.Gold = 100; // Starting gold
 }
 ```
 
-**Note on ordering:** `MaxHp` must be set before `Hp` because `Hp`'s setter clamps to `MaxHp`. If `Hp` were set first while `MaxHp` was still a higher value from a previous run, `Hp` would be clamped incorrectly. Setting `IsDead = false` first (without a setter) ensures the `PlayerDied` signal is not re-emitted if `Hp` passes through 0 during reset.
+**Note on ordering:** `MaxHp` must be set before `Hp` because `Hp`'s setter clamps to `MaxHp`. Setting `IsDead = false` first (without a setter) ensures `PlayerDied` is not re-emitted.
 
-**Note on signal emission:** Each property assignment triggers `EmitSignal(SignalName.StatsChanged)`. This means `Reset()` emits `StatsChanged` five times (once per property). This is acceptable because `Reset()` is called immediately before `ReloadCurrentScene()`, which destroys all listeners anyway. If performance ever matters, a batch pattern could be introduced (suppress signals during reset, emit once at the end).
+**Note on inventory:** A fresh `Inventory(25)` is created with 100 starting gold. The old inventory object is discarded (no persistence across deaths in current implementation).
+
+**Note on Constants:** Uses `Constants.PlayerStats.StartingHp` (value 100) instead of hardcoded values.
 
 ##### `AwardXp(int amount)`
 
@@ -161,29 +166,30 @@ Awards experience points and handles level-up if the threshold is met.
 ```csharp
 public void AwardXp(int amount)
 {
-    Xp += amount; // Triggers Xp setter -> StatsChanged
-
-    int xpToLevel = Level * 90;
+    Xp += amount;
+    int xpToLevel = Constants.Leveling.GetXpToLevel(Level);
     while (Xp >= xpToLevel)
     {
-        Xp -= xpToLevel;          // Triggers Xp setter -> StatsChanged
-        Level += 1;               // Triggers Level setter -> StatsChanged
-        MaxHp = 100 + Level * 8;  // Triggers MaxHp setter -> StatsChanged
-        Hp = Math.Min(MaxHp, Hp + 18); // Triggers Hp setter -> StatsChanged
-        xpToLevel = Level * 90;   // Recalculate for next iteration
+        Xp -= xpToLevel;
+        Level += 1;
+        MaxHp = Constants.PlayerStats.GetMaxHp(Level);
+        Hp = Math.Min(MaxHp, Hp + Constants.PlayerStats.HealOnLevelUp);
+        xpToLevel = Constants.Leveling.GetXpToLevel(Level);
     }
 }
 ```
 
-**XP threshold formula:** `Level * 90`. At level 1, need 90 XP to reach level 2. At level 2, need 180 XP to reach level 3. This is a linear scaling curve that matches the Phaser prototype's `state.level * 90`.
+**XP threshold formula:** `Constants.Leveling.GetXpToLevel(level)` = `level * 90`. At level 1, need 90 XP. At level 2, need 180 XP. Linear scaling.
 
 **Level-up effects (all happen in sequence per iteration):**
-1. Subtract the threshold from current XP (leftover XP carries over)
+1. Subtract the threshold from current XP (leftover carries over)
 2. Increment level by 1
-3. Recalculate MaxHp: `100 + Level * 8` (at level 2: 116, level 3: 124, level 10: 180)
-4. Heal: `Math.Min(MaxHp, Hp + 18)` -- heals 18 HP but never exceeds MaxHp
+3. Recalculate MaxHp via `Constants.PlayerStats.GetMaxHp(level)` = `100 + level * 8` (level 2: 116, level 10: 180)
+4. Heal via `Constants.PlayerStats.HealOnLevelUp` (18 HP) -- never exceeds MaxHp
 
-**Multi-level-ups:** Uses a `while` loop to handle cases where a single XP award crosses multiple level thresholds (e.g., boss kills, rested XP bonuses). Each iteration awards full level-up benefits (max HP increase, heal) and recalculates the threshold for the new level.
+**Multi-level-ups:** Uses a `while` loop. Each iteration awards full benefits and recalculates the threshold.
+
+**All formulas are in `Constants`:** No magic numbers in GameState. `Constants.PlayerStats` holds `StartingHp`, `HpPerLevel`, `HealOnLevelUp`. `Constants.Leveling` holds `XpPerLevelMultiplier`.
 
 ##### `TakeDamage(int amount)`
 
@@ -202,114 +208,17 @@ public void TakeDamage(int amount)
 
 **Why not `Hp = Math.Max(0, Hp - amount)`:** The `Hp` setter already clamps to `[0, MaxHp]`, so explicit clamping in `TakeDamage` would be redundant. The subtraction can safely produce a negative intermediate value because the setter handles it.
 
-#### Full C# Pseudocode
+#### Full C# (actual implementation)
 
-```csharp
-using Godot;
-using System;
+See `scripts/autoloads/GameState.cs` for the complete source. Key additions beyond the pseudocode:
 
-public partial class GameState : Node
-{
-    // --- Signals ---
-    [Signal] public delegate void StatsChangedEventHandler();
-    [Signal] public delegate void PlayerDiedEventHandler();
-
-    // --- Properties with setters ---
-    private int _hp = 100;
-    public int Hp
-    {
-        get => _hp;
-        set
-        {
-            _hp = Math.Clamp(value, 0, MaxHp);
-            EmitSignal(SignalName.StatsChanged);
-            if (_hp <= 0 && !IsDead)
-            {
-                IsDead = true;
-                EmitSignal(SignalName.PlayerDied);
-            }
-        }
-    }
-
-    private int _maxHp = 100;
-    public int MaxHp
-    {
-        get => _maxHp;
-        set
-        {
-            _maxHp = value;
-            EmitSignal(SignalName.StatsChanged);
-        }
-    }
-
-    private int _xp = 0;
-    public int Xp
-    {
-        get => _xp;
-        set
-        {
-            _xp = value;
-            EmitSignal(SignalName.StatsChanged);
-        }
-    }
-
-    private int _level = 1;
-    public int Level
-    {
-        get => _level;
-        set
-        {
-            _level = value;
-            EmitSignal(SignalName.StatsChanged);
-        }
-    }
-
-    private int _floorNumber = 1;
-    public int FloorNumber
-    {
-        get => _floorNumber;
-        set
-        {
-            _floorNumber = value;
-            EmitSignal(SignalName.StatsChanged);
-        }
-    }
-
-    public bool IsDead { get; set; } = false;
-
-    // --- Methods ---
-    public void Reset()
-    {
-        IsDead = false;
-        MaxHp = 100;
-        Hp = 100;
-        Xp = 0;
-        Level = 1;
-        FloorNumber = 1;
-    }
-
-    public void AwardXp(int amount)
-    {
-        Xp += amount;
-        int xpToLevel = Level * 90;
-        while (Xp >= xpToLevel)
-        {
-            Xp -= xpToLevel;
-            Level += 1;
-            MaxHp = 100 + Level * 8;
-            Hp = Math.Min(MaxHp, Hp + 18);
-            xpToLevel = Level * 90;
-        }
-    }
-
-    public void TakeDamage(int amount)
-    {
-        if (IsDead)
-            return;
-        Hp -= amount;
-    }
-}
-```
+- **Namespace:** `DungeonGame.Autoloads`
+- **Static Instance:** `public static GameState Instance { get; private set; }` set in `_Ready()`
+- **`SelectedClass`:** `public PlayerClass SelectedClass { get; set; } = PlayerClass.Warrior;`
+- **`PlayerInventory`:** `public Inventory PlayerInventory { get; private set; } = new(25);`
+- **`Reset()`** uses `Constants.PlayerStats.StartingHp` and creates a new `Inventory(25)` with `Gold = 100`
+- **`AwardXp()`** uses `Constants.Leveling.GetXpToLevel()`, `Constants.PlayerStats.GetMaxHp()`, and `Constants.PlayerStats.HealOnLevelUp`
+- All other properties (Hp/MaxHp/Xp/Level/FloorNumber/IsDead/TakeDamage) match the pseudocode exactly
 
 ---
 
@@ -360,79 +269,55 @@ Decoupled signal hub for gameplay events that don't belong to any single node. W
 - `amount` is the raw damage dealt (before any future mitigation), useful for floating damage numbers.
 - `source` is the enemy or hazard that caused the damage, so listeners can vary effects by source type (e.g., different hit sounds for different enemy tiers).
 
-#### Full C# Pseudocode
+#### Full C# (actual implementation)
 
-```csharp
-using Godot;
+See `scripts/autoloads/EventBus.cs` for the complete source. Key details:
 
-public partial class EventBus : Node
-{
-    // --- Signals ---
+- **Namespace:** `DungeonGame.Autoloads`
+- **Static Instance:** `public static EventBus Instance { get; private set; }` set in `_Ready()`
+- **Signals:** Same 4 signals as pseudocode. Note: `EnemyDefeated` second param is `int tier` in the declaration but `Dungeon.SpawnEnemy()` passes `Level` (enemy level, not a 1-3 tier).
+- **_Ready():** Only sets `Instance = this`. No other logic.
 
-    /// <summary>
-    /// Emitted when an enemy's HP reaches 0 and it is about to be freed.
-    /// </summary>
-    /// <param name="position">The enemy's GlobalPosition at the moment of death.</param>
-    /// <param name="tier">The enemy's DangerTier (1, 2, or 3).</param>
-    [Signal] public delegate void EnemyDefeatedEventHandler(Vector2 position, int tier);
+EventBus is near-minimal: signal declarations + Instance pattern + `_Ready()`. No methods, no state, no `_Process()`.
 
-    /// <summary>
-    /// Emitted after a new enemy instance is added to the scene tree.
-    /// </summary>
-    /// <param name="enemy">The enemy Node (CharacterBody2D) that was just spawned.</param>
-    [Signal] public delegate void EnemySpawnedEventHandler(Node enemy);
-
-    /// <summary>
-    /// Emitted when the player successfully attacks an enemy (after cooldown, within range).
-    /// </summary>
-    /// <param name="target">The enemy Node that was attacked.</param>
-    [Signal] public delegate void PlayerAttackedEventHandler(Node target);
-
-    /// <summary>
-    /// Emitted when the player takes damage from any source.
-    /// </summary>
-    /// <param name="amount">The raw damage amount dealt.</param>
-    /// <param name="source">The Node that caused the damage.</param>
-    [Signal] public delegate void PlayerDamagedEventHandler(int amount, Node source);
-}
-```
-
-That's it -- the EventBus script contains only signal declarations. No methods, no state, no `_Ready()`, no `_Process()`. It is the thinnest possible script: just a place for signals to live.
-
-**Why such a minimal script:** EventBus is a pure signal relay point. It doesn't process or transform events. It doesn't store state. Adding logic to EventBus would defeat its purpose -- it would become a "god object" that knows about everything. By keeping it to pure signal declarations, each system retains ownership of its own logic.
+**Why such a minimal script:** EventBus is a pure signal relay point. It doesn't process or transform events. Adding logic to EventBus would defeat its purpose. Each system retains ownership of its own logic.
 
 ---
 
 ### How Autoloads Are Accessed
 
-From any script in the game, autoloads are accessed via `GetNode<T>()` or a cached singleton pattern:
+Both autoloads use a **static `Instance` property** set in `_Ready()`. This is the project convention -- no `GetNode<T>("/root/...")` calls needed:
 
 ```csharp
-// Getting a reference to the autoload singleton
-var gameState = GetNode<GameState>("/root/GameState");
-var eventBus = GetNode<EventBus>("/root/EventBus");
-
 // Reading state
-int currentHp = gameState.Hp;
-int playerLevel = gameState.Level;
+int currentHp = GameState.Instance.Hp;
+int playerLevel = GameState.Instance.Level;
+PlayerClass cls = GameState.Instance.SelectedClass;
 
 // Modifying state (triggers setters and signals)
-gameState.Hp -= 10;
-gameState.AwardXp(14);
+GameState.Instance.AwardXp(14);
+GameState.Instance.TakeDamage(10);
 
-// Connecting to state signals
-gameState.Connect(GameState.SignalName.StatsChanged, new Callable(this, MethodName.OnStatsChanged));
-gameState.Connect(GameState.SignalName.PlayerDied, new Callable(this, MethodName.OnPlayerDied));
+// Connecting to signals — uses Connect(), NOT C# += syntax
+GameState.Instance.Connect(
+    GameState.SignalName.StatsChanged,
+    new Callable(this, MethodName.OnStatsChanged));
+
+GameState.Instance.Connect(
+    GameState.SignalName.PlayerDied,
+    new Callable(this, MethodName.OnPlayerDied));
 
 // Emitting events
-eventBus.EmitSignal(EventBus.SignalName.EnemyDefeated, GlobalPosition, dangerTier);
-eventBus.EmitSignal(EventBus.SignalName.PlayerAttacked, nearestEnemy);
+EventBus.Instance.EmitSignal(EventBus.SignalName.EnemyDefeated, GlobalPosition, Level);
+EventBus.Instance.EmitSignal(EventBus.SignalName.PlayerAttacked, nearestEnemy);
 
 // Connecting to event signals
-eventBus.Connect(EventBus.SignalName.EnemyDefeated, new Callable(this, MethodName.OnEnemyDefeated));
+EventBus.Instance.Connect(
+    EventBus.SignalName.EnemyDefeated,
+    new Callable(this, MethodName.OnEnemyDefeated));
 ```
 
-**Accessing autoloads in C#:** Unlike GDScript, C# does not have implicit global access to autoloads by name. Use `GetNode<T>("/root/AutoloadName")` to get a typed reference. A common pattern is to cache the reference in `_Ready()` or use a static `Instance` property on the autoload class.
+**Signal connection convention:** The project uses `Connect()` with `new Callable(this, MethodName.X)` throughout, NOT the C# `+=` event syntax. This is consistent across all scripts.
 
 **Lifecycle:** Autoloads are created before the main scene loads and destroyed after the main scene is freed. They survive `ReloadCurrentScene()` -- their state persists across scene reloads. This is why `GameState.Reset()` must be called explicitly before reloading: the old HP/XP/level values would otherwise carry over.
 

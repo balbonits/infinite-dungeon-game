@@ -7,4 +7,9 @@ public enum EnemySpecies
 {
     Skeleton = 0,
     Goblin = 1,
+    Bat = 2,
+    Wolf = 3,
+    Orc = 4,
+    DarkMage = 5,
+    Spider = 6,
 }

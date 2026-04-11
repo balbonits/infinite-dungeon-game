@@ -26,6 +26,18 @@ public static class Strings
         public const string Cancel = "Cancel";
     }
 
+    // --- Death Screen ---
+    public static class Death
+    {
+        public const string Title = "YOU DIED";
+        public const string Subtitle = "The dungeon consumes your memories...";
+        public const string ChooseDestination = "Where will you respawn?";
+        public const string ReturnToTown = "Return to Town";
+        public const string RespawnAtSafeSpot = "Respawn at Last Safe Spot";
+        public const string MitigationTitle = "NEGOTIATE WITH THE DUNGEON";
+        public const string Confirm = "Accept Fate";
+    }
+
     // --- Splash Screen ---
     public static class Splash
     {
@@ -37,8 +49,8 @@ public static class Strings
     public static class Hud
     {
         public const string ControlsHint = "Move: Arrow keys\nAuto-attack: nearest enemy in range";
-        public static string Stats(int hp, int maxHp, int xp, int level, int floor) =>
-            $"HP: {hp}/{maxHp} | XP: {xp} | LVL: {level} | Floor: {floor}";
+        public static string Stats(int hp, int maxHp, int xp, int level, int floor, int gold) =>
+            $"HP: {hp}/{maxHp} | XP: {xp} | LVL: {level} | Floor: {floor} | Gold: {gold}";
     }
 
     // --- Combat ---

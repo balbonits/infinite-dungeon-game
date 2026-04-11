@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "2f39a9f8-14c8-4fa0-be4a-0549448e1ec0",
+    "name": "Dungeon Wolf",
+    "prompt": "A fierce dark gray wolf on all fours with glowing yellow eyes and bared fangs. Muscular, aggressive stance. Dark fur with scars. Dungeon predator beast. Low crouching animal.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T10:14:46.224597+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T10:37:30.383048"
+}

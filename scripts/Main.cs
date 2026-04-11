@@ -85,7 +85,8 @@ public partial class Main : Node
 
     private void OnPlayerDied()
     {
-        _deathScreen.Visible = true;
         GetTree().Paused = true;
+        if (_deathScreen is Ui.DeathScreen ds)
+            ds.ShowDeathFlow();
     }
 }

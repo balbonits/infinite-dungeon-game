@@ -309,13 +309,27 @@ public partial class Dungeon : Node2D
         int maxLevel = Constants.FloorScaling.GetMaxEnemyLevel(floor);
         enemy.Level = (int)GD.RandRange(minLevel, maxLevel + 1);
 
-        // Random species
-        enemy.SpeciesIndex = (int)(GD.Randi() % Constants.Assets.EnemySpeciesRotations.Length);
+        // Random species — only use species that have assets available
+        enemy.SpeciesIndex = GetRandomAvailableSpecies();
 
         enemy.GlobalPosition = spawnPos;
         _entities.AddChild(enemy);
 
         EventBus.Instance.EmitSignal(EventBus.SignalName.EnemySpawned, enemy);
+    }
+
+    private static int GetRandomAvailableSpecies()
+    {
+        var available = new System.Collections.Generic.List<int>();
+        for (int i = 0; i < Constants.Assets.EnemySpeciesRotations.Length; i++)
+        {
+            string path = Constants.Assets.EnemySpeciesRotations[i] + "/south.png";
+            if (ResourceLoader.Exists(path))
+                available.Add(i);
+        }
+        return available.Count > 0
+            ? available[(int)(GD.Randi() % available.Count)]
+            : 0;
     }
 
     private Vector2 GetRandomEdgePosition()

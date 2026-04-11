@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "1eb530a0-1853-47f1-9028-44ba929df247",
+    "name": "Dark Mage",
+    "prompt": "A dark robed evil sorcerer with glowing red eyes under a pointed hood. Tattered black and dark red robes, holding a gnarled staff with dark energy. Undead wizard.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T10:37:48.941057+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T10:39:39.611247"
+}
