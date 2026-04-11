@@ -1664,4 +1664,143 @@ All 7 scenes written by hand in Godot's text format (no editor):
 
 ---
 
+## Session 10b — Hitscan Combat, Save/Load, Stats, Compass, 7 Species, Floor Wipe (2026-04-11)
+
+### What Happened
+
+**Started from:** Playable prototype from Session 10 — movement, combat, enemies, floors, HUD, death screen.
+
+**Ended with:** A vastly deeper game with hitscan projectiles, save/load persistence, stat allocation, 7 enemy species, stairs compass navigation, death penalty flow, loot drops, floor wipe bonuses, full town with buildings and NPCs, and a complete item/inventory system.
+
+### What We Built
+
+#### Hitscan Projectile System
+Replaced physics-based projectile collision with instant damage + cosmetic tracer. The arrow was passing through enemies due to Y-offset mismatch between projectile spawn and enemy hitbox planes. Instead of fighting the physics engine, switched to the industry-standard ARPG approach: hitscan determines the hit instantly, then a cosmetic tracer (arrow or bolt sprite) flies to the target for visual feedback.
+
+**Learning:** Don't fight projectile physics — use hitscan + visual tracer. This is the industry standard for ARPGs. Instant damage calculation with a cosmetic-only projectile eliminates all collision plane issues.
+
+#### Stairs Compass Navigation
+Two arrows on screen edges pointing to stairs-down (gold) and stairs-up (green). Auto-hides when the respective staircase is visible on screen. Gives the player constant orientation in large procedurally generated maps.
+
+#### Stairs & Floor Fixes
+- Labels now recreated on floor descent (was showing "Return to Town" on floor 2)
+- Floor 1 stairs-up goes directly to town (no dialog)
+- Player spawns south of stairs-up (40px offset)
+- Stairs exclusion zone: enemies can't spawn within 150px of either staircase
+
+#### Map Size Increase
+Minimum map size increased to 50-70 tiles. Larger maps make exploration meaningful and give the compass a reason to exist.
+
+#### Save/Load System
+- `SaveData`, `SaveSystem`, `SaveManager` autoload
+- Auto-save on floor transitions and town entry
+- Continue from title screen loads last save
+- Persists floor number, player stats, inventory, gold
+
+#### Stat System
+- STR/DEX/STA/INT with diminishing returns
+- Class-specific bonuses per level (Warrior gets more STR, etc.)
+- Free stat points on level-up
+- HP regen from STA stat
+- Stat allocation dialog accessible from pause menu
+
+#### Death Penalty Multi-Step Flow
+- XP loss on death
+- Item loss chance
+- Gold buyout option to recover lost items
+- Sacrificial Idol consumable prevents all death penalties
+
+#### Loot Drops & Gold Economy
+- Enemies drop gold on death
+- Item drop chance per enemy kill
+- Gold economy feeds into shop system and death penalty buyout
+
+#### 7 Enemy Species
+Skeleton, Goblin, Bat, Wolf, Orc, Dark Mage, Spider. Each with unique collision shapes via `SpeciesConfig` and `SpeciesDatabase`. Per-species configuration replaces the old one-size-fits-all enemy setup.
+
+#### Floor Wipe Mechanic
+Bonus rewards when all enemies on a floor are killed. Incentivizes full exploration over rushing to stairs.
+
+#### Town Expansion
+- Expanded to 24x20 tiles
+- Buildings placed behind NPCs for visual context
+- Cave entrance at top of town leading to dungeon
+- NPC interaction with S key
+- Frontier town lore
+
+#### Targeting System
+8 targeting modes + 3 projectile behaviors. Data-driven configuration per class and attack type.
+
+#### Dialogue & Shop UI
+- Visual novel dialogue system with typewriter effect and portraits
+- JRPG-style shop window with buy/sell tabs
+- Keyboard navigation across all dialogs (Q/E bumpers)
+
+#### Item System
+- `ItemDef`, `ItemDatabase`, `Inventory` classes
+- Full item definitions with stats, descriptions, rarity
+- Inventory management with equip/use/drop
+
+#### Hand-Drawn Projectile Sprites
+Arrow and magic bolt sprites drawn by hand for projectile visuals.
+
+#### Performance
+- GC forced during loading screen transitions to prevent hitches during gameplay
+
+#### Documentation Audit
+11 specs updated to match code — full reconciliation between docs and implementation.
+
+### Issues Found & Fixed
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| Arrow passing through enemies | Y-offset mismatch between projectile spawn plane and enemy hitbox plane | Replaced with hitscan + cosmetic tracer |
+| "Return to Town" label on floor 2 | Stairs labels not recreated on floor descent | Recreate labels each floor transition |
+| Enemies spawning on stairs | No exclusion zone around staircases | 150px exclusion radius around both stairs |
+| GC hitches during gameplay | Object allocation during floor transitions | Force GC during loading screen |
+
+### Design Decisions Made
+
+1. **Hitscan over physics projectiles.** Physics-based collision is unreliable with isometric Y-offset mismatches. Hitscan + cosmetic tracer is simpler, more reliable, and industry standard.
+2. **Compass over minimap for stairs.** Two simple arrows are less intrusive than a minimap and solve the "where are the stairs?" problem directly.
+3. **Floor 1 stairs-up = town shortcut.** No dialog, no confirmation. Just go home. Reduces friction.
+4. **Forced GC during loading screens.** Players expect loading screens to take a moment. Hide GC pauses there.
+5. **Per-species collision.** Each enemy species has unique hitbox dimensions via SpeciesConfig. More realistic than uniform collision for all creatures.
+
+### New Systems
+
+| System | Key Files | Status |
+|--------|-----------|--------|
+| Hitscan projectiles | `Projectile.cs` | Done |
+| Stairs compass | `StairsCompass.cs` | Done |
+| Save/load | `SaveData`, `SaveSystem`, `SaveManager` | Done |
+| Stat system | `Constants.cs` (stat formulas) | Done |
+| Death penalty | Multi-step flow in `Player.cs` | Done |
+| Loot drops | Enemy death → gold + items | Done |
+| 7 enemy species | `SpeciesConfig`, `SpeciesDatabase` | Done |
+| Floor wipe | Bonus on full clear | Done |
+| Item system | `ItemDef`, `ItemDatabase`, `Inventory` | Done |
+| Targeting | 8 modes + 3 projectile types | Done |
+| Town (expanded) | 24x20, buildings, NPCs, cave entrance | Done |
+| Dialogue system | Visual novel style | Done |
+| Shop system | JRPG buy/sell window | Done |
+
+### What We Learned
+
+1. **Don't fight projectile physics — use hitscan + visual tracer.** This is the industry standard for ARPGs. Instant damage calculation eliminates all collision plane issues while the cosmetic tracer provides the visual feedback players expect.
+
+2. **Compass arrows are better than minimaps for single objectives.** When the player only needs to find one or two things (stairs up/down), dedicated directional indicators are clearer and less screen-intrusive than a full minimap.
+
+3. **Per-species collision makes enemies feel distinct.** A bat and an orc shouldn't have the same hitbox. SpeciesConfig/SpeciesDatabase makes this data-driven rather than hardcoded.
+
+4. **Auto-save on transitions is invisible persistence.** Players never think about saving. Every floor change and town entry saves automatically. Combined with "Continue" on the title screen, this feels modern.
+
+5. **Death penalty needs multiple outs.** XP loss alone feels punishing. Adding gold buyout and Sacrificial Idol gives players agency over the penalty — it's a cost, not a punishment.
+
+6. **Floor wipe rewards exploration.** Without it, players rush to stairs. With it, clearing every enemy on a floor is a meaningful choice with tangible rewards.
+
+7. **Force GC during loading screens.** Players expect loading to take a moment. Hiding garbage collection there prevents mid-gameplay hitches at zero perceived cost.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*

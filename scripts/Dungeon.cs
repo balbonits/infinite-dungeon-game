@@ -35,7 +35,7 @@ public partial class Dungeon : Node2D
 
         // Spawn player at the up-stairs position (where you "arrived" from)
         _player = PlayerScene.Instantiate<CharacterBody2D>();
-        _player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
+        _player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition) + new Vector2(0, 40);
         _entities.AddChild(_player);
 
         // Spawn initial enemies
@@ -48,14 +48,22 @@ public partial class Dungeon : Node2D
         _stairsDownNode.GlobalPosition = _tileMap.MapToLocal(_stairsDownPosition);
         _entities.AddChild(_stairsDownNode);
 
-        // Floor 1: "Back to Town", deeper floors: "Stairs Up"
-        string upLabel = GameState.Instance.FloorNumber == 1
+        // Floor 1: always "Return to Town". Deeper floors: "Stairs Up"
+        int currentFloor = GameState.Instance.FloorNumber;
+        string upLabel = currentFloor <= 1
             ? Strings.Ascend.ReturnToTown
             : Strings.Floor.StairsUp;
-        _stairsUpNode = CreateStairsObject(upLabel, UiTheme.Colors.Muted,
+        Color upColor = currentFloor <= 1
+            ? UiTheme.Colors.Safe
+            : UiTheme.Colors.Muted;
+        GD.Print($"[Dungeon] Floor {currentFloor}, stairs up label: {upLabel}");
+        _stairsUpNode = CreateStairsObject(upLabel, upColor,
             Constants.Assets.StairsUpTexture, false, isStairsUp: true);
         _stairsUpNode.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
         _entities.AddChild(_stairsUpNode);
+
+        // Set compass targets
+        UpdateCompass();
 
         _spawnTimer.Connect(Timer.SignalName.Timeout, new Callable(this, MethodName.OnSpawnTimerTimeout));
         EventBus.Instance.Connect(
@@ -63,14 +71,32 @@ public partial class Dungeon : Node2D
             new Callable(this, MethodName.OnEnemyDefeated));
     }
 
+    private void UpdateCompass()
+    {
+        StairsCompass.Instance?.SetTargets(
+            _tileMap.MapToLocal(_stairsDownPosition),
+            _tileMap.MapToLocal(_stairsUpPosition));
+    }
+
     private void OnStairsUpEntered(Node2D body)
     {
         if (!body.IsInGroup(Constants.Groups.Player))
             return;
-        if (ScreenTransition.Instance.IsTransitioning || AscendDialog.Instance.IsOpen)
+        if (ScreenTransition.Instance.IsTransitioning)
             return;
 
-        AscendDialog.Instance.Show();
+        if (GameState.Instance.FloorNumber == 1)
+        {
+            // Floor 1: go straight to town, no dialog needed
+            ScreenTransition.Instance.Play(
+                Strings.Town.DungeonEntrance,
+                () => Scenes.Main.Instance.LoadTown(),
+                Strings.Ascend.ReturningToTown);
+        }
+        else if (!AscendDialog.Instance.IsOpen)
+        {
+            AscendDialog.Instance.Show();
+        }
     }
 
     private void OnStairsDownEntered(Node2D body)
@@ -104,15 +130,34 @@ public partial class Dungeon : Node2D
         GenerateFloor();
 
         // Move player to the up-stairs position (where they "arrive")
-        _player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
+        _player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition) + new Vector2(0, 40);
 
         // Reset grace period
         if (_player is Player p)
             p.StartGracePeriod();
 
-        // Reposition stairs objects
+        // Recreate stairs with correct labels for the new floor
+        _stairsDownNode.QueueFree();
+        _stairsUpNode.QueueFree();
+
+        _stairsDownNode = CreateStairsObject(Strings.Floor.StairsDown, UiTheme.Colors.Accent,
+            Constants.Assets.StairsDownTexture, true);
         _stairsDownNode.GlobalPosition = _tileMap.MapToLocal(_stairsDownPosition);
+        _entities.AddChild(_stairsDownNode);
+
+        int newFloor = GameState.Instance.FloorNumber;
+        string upLabel = newFloor <= 1
+            ? Strings.Ascend.ReturnToTown
+            : Strings.Floor.StairsUp;
+        Color upColor = newFloor <= 1
+            ? UiTheme.Colors.Safe
+            : UiTheme.Colors.Muted;
+        _stairsUpNode = CreateStairsObject(upLabel, upColor,
+            Constants.Assets.StairsUpTexture, false, isStairsUp: true);
         _stairsUpNode.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);
+        _entities.AddChild(_stairsUpNode);
+
+        UpdateCompass();
 
         // Spawn enemies for new floor
         for (int i = 0; i < Constants.Spawning.InitialEnemies; i++)
@@ -289,10 +334,17 @@ public partial class Dungeon : Node2D
             spawnPos = GetRandomEdgePosition();
             Vector2I tileCoord = _tileMap.LocalToMap(spawnPos);
 
-            // Must be a floor tile AND far enough from player
+            // Must be a floor tile, far from player, AND far from both staircases
             if (!IsFloorTile(tileCoord))
                 continue;
             if (spawnPos.DistanceTo(playerPos) < Constants.Spawning.SafeSpawnRadius)
+                continue;
+
+            Vector2 stairsUpWorld = _tileMap.MapToLocal(_stairsUpPosition);
+            Vector2 stairsDownWorld = _tileMap.MapToLocal(_stairsDownPosition);
+            if (spawnPos.DistanceTo(stairsUpWorld) < Constants.Spawning.SafeSpawnRadius)
+                continue;
+            if (spawnPos.DistanceTo(stairsDownWorld) < Constants.Spawning.SafeSpawnRadius)
                 continue;
 
             foundSafe = true;

@@ -209,21 +209,22 @@ public partial class Player : CharacterBody2D
                 break;
 
             case TargetMode.SingleTarget:
+                // Damage is ALWAYS instant — melee or ranged, same thing
+                target.Call("TakeDamage", finalDamage);
+
                 if (attack.IsProjectile)
                 {
-                    // Spawn at chest height — both visual and collision travel together
-                    float offsetY = Constants.Sprite.ProjectileSpawnOffsetY;
-                    Projectile.Spawn(
+                    // Visual tracer at chest height (cosmetic only, hit already applied)
+                    float chestY = Constants.Sprite.ProjectileSpawnOffsetY;
+                    Projectile.SpawnTracer(
                         GetParent(),
-                        GlobalPosition + new Vector2(0, offsetY),
-                        target.GlobalPosition + new Vector2(0, offsetY),
-                        finalDamage, attack.ProjectileSpeed, attack.Range,
-                        attack.ProjectileTexture, attack.ProjectileScale,
-                        attack.ProjectileTint, attack.PiercesTargets);
+                        GlobalPosition + new Vector2(0, chestY),
+                        target.GlobalPosition + new Vector2(0, chestY),
+                        attack.ProjectileSpeed, attack.ProjectileTexture,
+                        attack.ProjectileScale, attack.ProjectileTint);
                 }
                 else
                 {
-                    target.Call("TakeDamage", finalDamage);
                     DrawSlash(target.GlobalPosition, attack.EffectColor);
                 }
                 break;

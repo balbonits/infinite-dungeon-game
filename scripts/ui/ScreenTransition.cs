@@ -84,8 +84,13 @@ public partial class ScreenTransition : Control
         tween.TweenProperty(_messageLabel, "modulate:a", 1.0f, 0.15f);
         tween.TweenProperty(_subLabel, "modulate:a", 1.0f, 0.1f);
 
-        // Phase 3: Hold + execute callback
-        tween.TweenCallback(Callable.From(() => onMidpoint?.Invoke()));
+        // Phase 3: Execute callback + force GC while screen is black
+        tween.TweenCallback(Callable.From(() =>
+        {
+            onMidpoint?.Invoke();
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+        }));
         tween.TweenInterval(HoldDuration);
 
         // Phase 4: Fade text out

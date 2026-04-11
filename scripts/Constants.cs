@@ -133,8 +133,8 @@ public static class Constants
     // --- Floor Scaling ---
     public static class FloorScaling
     {
-        public const int MinRoomSize = 18;
-        public const int MaxRoomSize = 30;
+        public const int MinRoomSize = 50;
+        public const int MaxRoomSize = 70;
         public const int StairsWallMargin = 4;
         public const int RoomGrowthPerFloors = 5;
         public const int MaxRoomGrowth = 6;
