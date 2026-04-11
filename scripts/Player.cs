@@ -73,6 +73,7 @@ public partial class Player : CharacterBody2D
         HandleHpRegen(delta);
         HandleMovement();
         HandleAttack(delta);
+        GameState.Instance.Intelligence.Update((float)delta);
     }
 
     public void StartGracePeriod()
@@ -198,6 +199,9 @@ public partial class Player : CharacterBody2D
         float flatBonus = attack.IsProjectile ? 0 : stats.MeleeFlatBonus;
 
         int finalDamage = (int)((baseDamage + flatBonus) * attack.DamageMultiplier * statBonus);
+
+        // Track damage dealt for Dungeon Intelligence
+        GameState.Instance.Intelligence.RecordDamageDealt(finalDamage);
 
         // DEX affects cooldown (attack speed)
         _attackTimer = attack.Cooldown / stats.AttackSpeedMultiplier;

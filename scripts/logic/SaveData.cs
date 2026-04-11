@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -44,6 +45,11 @@ public record SaveData
 
     // Achievements
     public SavedAchievementData? AchievementData { get; init; }
+
+    // Endgame systems
+    public SavedSaturationData? SaturationData { get; init; }
+    public int[]? PactRanks { get; init; }
+    public SavedAttunementData? AttunementData { get; init; }
 }
 
 public record SavedItemStack
@@ -63,4 +69,18 @@ public record SavedBankData
 {
     public int ExpansionCount { get; init; }
     public SavedItemStack[] Items { get; init; } = System.Array.Empty<SavedItemStack>();
+}
+
+public record SavedSaturationData
+{
+    public Dictionary<int, float> Zones { get; init; } = new();
+    public double LastDecayTimestamp { get; init; }
+}
+
+public record SavedAttunementData
+{
+    public bool IsUnlocked { get; init; }
+    public bool[] Nodes { get; init; } = System.Array.Empty<bool>();
+    public int[] ClearedFloors { get; init; } = System.Array.Empty<int>();
+    public int ActiveKeystone { get; init; } = -1;
 }

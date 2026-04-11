@@ -82,6 +82,12 @@ public partial class GameState : Node
     public QuestTracker Quests { get; set; } = new();
     public AchievementTracker Achievements { get; set; } = new();
 
+    // Endgame systems (END-01 through END-05)
+    public ZoneSaturation Saturation { get; set; } = new();
+    public DungeonPacts Pacts { get; set; } = new();
+    public DungeonIntelligence Intelligence { get; set; } = new();
+    public MagiculeAttunement Attunement { get; set; } = new();
+
     public override void _Ready()
     {
         Instance = this;
@@ -104,6 +110,10 @@ public partial class GameState : Node
         Quests = new QuestTracker();
         Quests.GenerateQuests(1);
         Achievements = new AchievementTracker();
+        Saturation = new ZoneSaturation();
+        Pacts = new DungeonPacts();
+        Intelligence = new DungeonIntelligence();
+        Attunement = new MagiculeAttunement();
     }
 
     public void AwardXp(int amount)
