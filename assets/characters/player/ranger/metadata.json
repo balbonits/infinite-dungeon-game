@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "435c1a5d-5c0c-476f-8001-acb54ec3f67d",
+    "name": "Ranger (v0)",
+    "prompt": "A lean, agile ranger wearing a dark green hooded cloak over brown leather armor. A short bow is slung across their back with a strap, arrow quiver hanging from the belt on the right hip. Hands are empty and relaxed at sides. Light leather boots and bracers. Athletic build, standing upright.",
+    "size": {
+      "width": 80,
+      "height": 80
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T01:49:56.998495+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T02:16:48.615848"
+}

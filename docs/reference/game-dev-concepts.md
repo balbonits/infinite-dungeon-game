@@ -6,7 +6,7 @@ A bridge from web development to game development, mapping familiar concepts to 
 
 ## Current State
 
-Understanding these concepts will help make sense of the Godot 4 (C#) codebase. The game is being migrated from a Phaser 3 browser prototype to native Godot 4 — see `archive/phaser-prototype/index.html` for the original implementation of each concept.
+Understanding these concepts will help make sense of the Godot 4 (C#) codebase. The game originated as a Phaser 3 browser prototype, went through a C# implementation phase, and is now being rebuilt with visual-first development after the Session 8 fresh start.
 
 ## Design
 

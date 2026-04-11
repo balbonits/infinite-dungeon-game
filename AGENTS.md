@@ -25,6 +25,7 @@ This project uses specialized AI team leads defined in `.claude/agents/`. Each t
 | Team | Agent | Handles | Tickets |
 |------|-------|---------|---------|
 | Design | `@design-lead` | Game specs, formulas, balance | SPEC-* |
+| Art | `@art-lead` | PixelLab sprites, tiles, animations | ART-* |
 | QA | `@qa-lead` | Spec review, test planning | TEST-*, reviews |
 | DevOps | `@devops-lead` | CI, Makefile, project config | SETUP-*, INFRA-* |
 | Engine | `@engine-lead` | Godot scenes, physics, tiles | P1 scenes (Phase 2) |
@@ -183,7 +184,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Persistence | FileAccess + JSON/MessagePack | user:// directory |
 | Platform | Desktop native | macOS primary, Windows/Linux supported |
 
-**NuGet dependencies:**
+**Target NuGet dependencies** (not yet in .csproj — will be added as features are implemented):
 ```xml
 <ItemGroup>
   <PackageReference Include="gdUnit4.api" Version="5.1.0" />
@@ -216,20 +217,19 @@ See [docs/architecture/tech-stack.md](docs/architecture/tech-stack.md) for detai
 
 ### 7. Project Structure
 
+> **Note:** All code, scenes, and tests were deleted in the Session 8 fresh start. The tree below shows what actually exists now.
+
 ```text
 dungeon-web-game/
-├── DungeonGame.sln                — .NET solution file
-├── DungeonGame.csproj             — Main project (Godot.NET.Sdk, NuGet refs)
+├── DungeonGame.csproj             — Main project (minimal, no NuGet refs yet)
 ├── project.godot                  — Godot 4 project config (.NET edition)
 ├── Makefile                       — AI-drivable automation (make help)
 ├── .editorconfig                  — Editor formatting rules (C# + Godot)
 ├── .gitignore / .gdignore         — Git + editor ignores (includes bin/, obj/)
 ├── .githooks/pre-commit           — C# formatting check on commit
-├── .github/workflows/ci.yml      — GitHub Actions CI (build + lint + test)
 ├── AGENTS.md / CLAUDE.md          — AI assistant guidelines
 ├── README.md / CHANGELOG.md       — Project docs
-├── archive/phaser-prototype/      — Original Phaser 3 code (preserved)
-├── docs/                          — Game design documentation
+├── docs/                          — Game design documentation (80+ files)
 │   ├── overview.md / dev-tracker.md / dev-journal.md
 │   ├── architecture/              — Tech stack, setup guide, project structure, scene tree, autoloads, signals
 │   ├── conventions/               — Code patterns, agile process, AI workflow, teams
@@ -240,17 +240,9 @@ dungeon-web-game/
 │   ├── inventory/                 — Backpack, bank, items
 │   ├── ui/                        — Controls, HUD, death screen
 │   └── testing/                   — Test strategy, manual tests, automated tests
-├── scenes/                        — Godot scenes (.tscn)
-│   ├── Main.tscn
-│   ├── dungeon/ player/ enemies/ ui/
-├── scripts/                       — C# scripts (.cs)
-│   ├── autoloads/                 — GameState.cs, EventBus.cs
-│   └── GenerateTiles.py           — Tile asset generator (Python)
-├── tests/                         — GdUnit4 + xUnit automated tests
-├── addons/                        — GdUnit4 addon (if required)
-├── assets/                        — Tiles, sprites, UI, audio (binary assets)
+├── assets/                        — Tiles, sprites, fonts, icons (819+ files)
 │   └── ATTRIBUTION.md             — Asset license tracking
-└── resources/                     — TileSet, Theme (.tres resources)
+└── icon.svg
 ```
 
 See [docs/architecture/project-structure.md](docs/architecture/project-structure.md) for the full breakdown.
@@ -279,21 +271,16 @@ See [docs/architecture/project-structure.md](docs/architecture/project-structure
 
 All development can be driven from the terminal. Run `make help` for available targets.
 
-**Setup (first time):**
-```bash
-make setup          # Verify .NET SDK + Godot .NET, configure git hooks, NuGet restore
-```
-
 **Daily workflow:**
 ```bash
 make build          # dotnet build
-make test           # dotnet test (xUnit + GdUnit4)
-make lint           # dotnet format --verify-no-changes
-make format         # dotnet format (auto-fix)
-make check          # build + lint + test (all three)
 make run            # Launch the game (godot --path .)
-make tiles          # Generate tile assets (Python)
+make import         # Run Godot import (after adding new assets/scenes)
+make clean          # Remove build artifacts
+make doctor         # Check dev environment health
 ```
+
+> **Note:** Most make targets (`test`, `lint`, `check`) require code/tests to exist. Run `make help` to see available targets. CI is currently disabled (moved to `.github/workflows-disabled/`).
 
 **Tools required:**
 | Tool | Install | Purpose |
@@ -304,9 +291,7 @@ make tiles          # Generate tile assets (Python)
 
 See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for full install instructions.
 
-**CI:** GitHub Actions (`.github/workflows/ci.yml`) runs `dotnet build` + `dotnet format --verify-no-changes` + `dotnet test` on every push/PR to `main`.
-
-**Pre-commit hook:** `.githooks/pre-commit` runs `dotnet format --verify-no-changes` on staged `.cs` files. Activated by `make setup`.
+**Pre-commit hook:** `.githooks/pre-commit` runs `dotnet format --verify-no-changes` on staged `.cs` files.
 
 See [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md) for the full automation reference.
 
@@ -437,24 +422,23 @@ docs/
 
 ## Current State
 
-**Phase: Implementation active.** Specs are locked. Full game loop implemented (menu → town → dungeon → combat → save/load).
+**Phase: Fresh start.** All 26 specs are locked. All code, scenes, and tests were deleted in Session 8 (commit `1f917e2`). Rebuilding from scratch with visual-first development.
 
-**Stack:** Godot 4.6 + C# (.NET 8+). Unified entity framework (EntityData + 9 systems). Elemental damage, crit system, monster AI with archetypes and modifiers.
+**Stack:** Godot 4.6 + C# (.NET 8+). No code exists yet. NuGet packages listed in docs are not yet in .csproj.
 
 **Dynamic state** (do not hardcode numbers here — they go stale):
-- Test count: run `make test` or `dotnet test tests/DungeonGame.Tests.csproj`
-- Game loop test: run `make test-game-headless` (60 assertions, 16 phases)
+- No code, scenes, or tests exist yet
 - Recent work: run `git log --oneline -10`
 - Ticket status: see [docs/dev-tracker.md](docs/dev-tracker.md)
 - Session history: see [docs/dev-journal.md](docs/dev-journal.md)
 
-**Current mode:** Implementation. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md).
+**Current mode:** Visual-first rebuild. One tile, one sprite, one scene at a time. Verify each step visually before proceeding. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md).
 
 ## Priorities
 
-1. **Close gaps** — Elemental damage integration, monster variety, unique items, pathfinding
-2. **Polish game loop** — Death flow, equipment UI, skill UI, full combat with all systems
-3. **Content** — Monster families per zone, unique item definitions, achievement system
+1. **Visual foundation** — Render tiles, place sprites, movement, camera (VIS-01 through VIS-06)
+2. **Playable prototype** — Combat, HUD, death, game loop (PROTO-01 through PROTO-06)
+3. **Complete systems** — Classes, skills, death flow, quests (SYS-01 through SYS-10)
 
 ---
 

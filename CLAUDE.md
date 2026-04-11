@@ -18,9 +18,9 @@ For development progress tracking, see [docs/dev-tracker.md](docs/dev-tracker.md
 
 ## Current Mode
 
-**Implementation active.** All 26 specs are locked. Code is being written. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md).
+**Fresh start.** All 26 specs are locked. All code, scenes, and tests were deleted (see dev-journal Session 8). Rebuilding from scratch with visual-first development.
 
-**Stack:** Godot 4 + C# (.NET 8+). See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
+**Stack:** Godot 4 + C# (.NET 8+). No code exists yet. See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
 
 ## AI Teams
 

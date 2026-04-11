@@ -6,7 +6,7 @@ Planned automated test suite for "A Dungeon in the Middle of Nowhere" using the 
 
 ## Current State
 
-- Tests are planned but not yet implemented (game is migrating to Godot 4)
+- Tests are planned but not yet implemented (game is being rebuilt with visual-first development after the Session 8 fresh start)
 - All test code below is ready to be placed in the `tests/` directory once the corresponding game systems are built
 - Tests reference a `GameState` autoload singleton and enemy/player scenes that will be created during migration
 

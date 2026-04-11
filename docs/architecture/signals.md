@@ -6,7 +6,7 @@ Every signal connection in the game, documented as a complete registry with flow
 
 ## Current State
 
-The game uses 9 distinct signal connections across 2 autoload singletons, 3 Timer nodes, 1 Area2D, and 1 Button. All connections are established in `_Ready()` methods (never in `_Process()` or conditionally at runtime), making the signal graph static and predictable.
+> **Design spec.** No signal connections currently exist — all code was deleted in the Session 8 fresh start. The signal registry and flow diagrams below serve as the blueprint for reimplementation.
 
 ## Design
 

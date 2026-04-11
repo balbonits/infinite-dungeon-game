@@ -2,6 +2,8 @@
 
 **Lead:** `@engine-lead` | **Model:** Sonnet | **Domain:** Godot scenes, physics, rendering, tiles, collision
 
+> **Session 8 fresh start:** All previous code was deleted. Engine work restarts from VIS-* tickets in dev-tracker.md.
+
 *This team activates when coding begins (after SETUP is complete).*
 
 ## Planned Queue

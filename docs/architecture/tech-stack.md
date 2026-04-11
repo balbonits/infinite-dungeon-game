@@ -141,6 +141,8 @@ C# maintains a **2-3x advantage** for compute-heavy tasks (array sorting, physic
 
 ### NuGet Dependencies
 
+> **Note:** These packages are the target dependencies. The current DungeonGame.csproj is minimal (Godot.NET.Sdk only, no NuGet references). Packages will be added as features are implemented.
+
 ```xml
 <ItemGroup>
   <!-- Testing -->

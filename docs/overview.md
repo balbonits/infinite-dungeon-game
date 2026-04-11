@@ -100,7 +100,7 @@ The MVP is a playable dungeon crawler with the core loop: **move → fight → l
 
 ## Migration Context
 
-The game began as a single-file Phaser 3 browser prototype (`index.html`, ~450 lines). The original code is preserved in `archive/phaser-prototype/` for reference. The Godot 4 rebuild keeps all game design intact while adopting:
+The game began as a single-file Phaser 3 browser prototype (~450 lines), then went through a C# implementation (480 unit tests passing), and was reset in Session 8 when the rendering layer never worked visually. The Godot 4 rebuild keeps all game design intact while adopting:
 
 - **Godot 4.x** as the engine (replacing Phaser 3)
 - **C#** as the language (replacing vanilla JavaScript)
@@ -110,4 +110,4 @@ The game began as a single-file Phaser 3 browser prototype (`index.html`, ~450 l
 
 ## Current State
 
-All 26 spec tickets are complete. All game systems are fully designed and documented. The project is transitioning from docs-only to implementation phase. Next step: SETUP-02 (create C# project files).
+All 26 spec tickets are complete. All game systems are fully designed and documented. The project is in a fresh-start rebuild phase — all code was deleted in Session 8. Visual-first reimplementation begins from VIS-01 (render one floor tile). See `docs/dev-tracker.md` for the full ticket list.

@@ -2,6 +2,8 @@
 
 **Lead:** `@systems-lead` | **Model:** Sonnet | **Domain:** C# logic, autoloads, state, signals, data flow
 
+> **Session 8 fresh start:** All previous code was deleted. Systems work restarts from scratch once SETUP tickets are complete.
+
 *This team activates when coding begins (after SETUP is complete).*
 
 ## Planned Queue

@@ -111,6 +111,14 @@ Equipment has **class-locked gear** — some items can only be equipped by speci
 
 **No imbued/magical equipment drops from monsters or bosses.** All equipment drops are base items. Magical/enchanted gear comes exclusively from player-driven crafting and enchanting systems.
 
+#### Ranger: Bow & Quiver System
+
+The Ranger's primary attack is ranged. Equipment is split into two slots:
+
+- **Bow** -- stat stick only. Determines base damage and attack speed. No effects or imbues.
+- **Quiver** -- modifier slot. Effects and imbues (fire arrows, explosive bullets, poison tips, etc.) go on the quiver, not the bow.
+- **Infinite ammo** -- arrows are unlimited. The player buys quivers to enable a weapon; ammo itself is never consumed.
+
 ### Character Appearance
 
 Each class has a distinct default character design:

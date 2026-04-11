@@ -1488,4 +1488,180 @@ The logic is sound. The rendering was not. The next build should use the tested 
 
 ---
 
+## Session 8 Addendum — 2026-04-10
+
+Session 8 listed `tests/` and `scripts/game/` under "What We Keep," but the actual commit (`1f917e2`) deleted everything — tests, scripts, scenes, all of it. What actually survived the fresh start: docs, assets, and config files only. No C# source code, no test files, no scene files remain.
+
+---
+
+## Session 9 — Docs Cleanup (2026-04-10)
+
+### What Happened
+
+**Started from:** 80+ docs describing a game that no longer exists in code. Config files referencing deleted scenes/scripts.
+
+**Ended with:** All docs cleaned up to reflect reality. New ticket structure for visual-first rebuild.
+
+### What We Did
+
+1. **Fixed config files:**
+   - `project.godot` — removed stale main scene and autoload references
+   - `Makefile` — stripped 50+ targets referencing deleted scenes/scripts, kept core targets
+   - `.githooks/pre-commit` — replaced GDScript lint with C# format check
+   - `CLAUDE.md` — updated to "Fresh start" mode
+   - `AGENTS.md` — updated current state, project structure, priorities, NuGet notes
+
+2. **Reframed architecture docs as design blueprints:**
+   - `scene-tree.md`, `autoloads.md`, `signals.md`, `entity-framework.md`, `project-structure.md`, `tech-stack.md`
+   - Changed "Current State: X exists" to "Design spec: X will be built"
+
+3. **Reframed object docs as design specs:**
+   - `player.md`, `enemies.md`, `tilemap.md`, `effects.md`
+
+4. **Rewrote tracking docs:**
+   - `dev-tracker.md` — complete rewrite with new VIS-*, PROTO-*, CFG-* tickets
+   - `docs/README.md` — updated navigation, removed stale test references
+   - `CHANGELOG.md` — added fresh-start entry documenting what was deleted/retained
+   - `dev-journal.md` — added Session 8 addendum (factual correction)
+
+5. **Updated testing docs:**
+   - `test-strategy.md`, `automated-tests.md`, `manual-tests.md` — reframed as target strategy
+
+6. **Updated root README.md:**
+   - Status changed to "Fresh start"
+   - Removed archived Phaser prototype section (deleted)
+
+7. **Updated team ticket boards:**
+   - Added fresh-start notes, updated ticket references to VIS-*/PROTO-*
+
+8. **Created new ticket structure:**
+   - Phase 0: VIS-01 through VIS-06 (visual foundation)
+   - Phase 0.5: PROTO-01 through PROTO-06 (playable prototype)
+   - Config: CFG-01 through CFG-05
+
+### Key Decision
+
+55+ docs (game design specs, learning material, ADRs, conventions) were **left untouched** — they are blueprints for what to build, not claims about what exists.
+
+~30 docs were updated — all changes were reframing "what exists" to "design spec" or removing references to deleted code/scenes/tests.
+
+---
+
+## Session 10 — Full Prototype Build (2026-04-11)
+
+### What Happened
+
+**Started from:** Zero code, zero scenes. 80+ locked specs, character sprites (warrior/mage/ranger), and project config.
+
+**Ended with:** A playable dungeon crawler with real PixelLab art, 8 C# scripts, 7 scenes, 2 autoloads, level-based enemies with a full color gradient, floating combat text, a pause menu, and a floor scaling system.
+
+**Approach:** The user gave full autonomy — "go ham, no micromanaging." AI built everything from scratch in one session, generating art assets in parallel with code.
+
+### What We Built (in order)
+
+#### Phase 1: Asset Generation (PixelLab)
+- Generated isometric floor tile (64px, thin tile, dark blue-gray cobblestone)
+- Generated isometric wall tile (64px, block, lighter blue-gray brick)
+- Generated Skeleton Enemy character (92x92, 8 directional rotations + walking animation)
+- Generated 3 floor tile variations (cracked, flagstone, worn) via background agent
+- Initially generated at 32px, upscaled with sips, then regenerated natively at 64px for crispness
+
+**Learning:** PixelLab's `size` parameter is canvas size, not tile footprint. A 64px canvas produces a 64x64 PNG. For isometric tiles with a 64x32 footprint, the TileSet `TextureRegionSize` should be `Vector2I(64, 64)` with `TileSize` at `Vector2I(64, 32)`.
+
+**Learning:** PixelLab rate limits at 8 concurrent jobs. Walking animations (8 directions) consume all 8 slots. Queue animations after rotations complete, not simultaneously.
+
+#### Phase 2: Core Code (Autoloads + Scripts)
+- `GameState.cs` — HP, MaxHp, Xp, Level, FloorNumber with reactive setters + signals
+- `EventBus.cs` — EnemyDefeated, EnemySpawned, PlayerAttacked, PlayerDamaged signals
+- `Player.cs` — movement, auto-attack, slash effects, damage flash
+- `Enemy.cs` — level-based stats, chase AI, contact damage, color gradient
+- `Dungeon.cs` — programmatic TileSet, room painting, enemy spawning, floor advancement
+- `Main.cs` — death handling, scene management
+- `Hud.cs` — reactive stats display
+- `DeathScreen.cs` — restart/quit with keyboard shortcuts
+
+#### Phase 3: Scenes (.tscn files)
+All 7 scenes written by hand in Godot's text format (no editor):
+- `main.tscn`, `dungeon.tscn`, `player.tscn`, `enemy.tscn`, `hud.tscn`, `death_screen.tscn`, `pause_menu.tscn`
+
+**Learning:** Writing .tscn files by hand is viable for simple scenes. Key format details: `load_steps` count, `ExtResource` IDs, `SubResource` IDs, `layout_mode` for Control nodes, `process_mode = 3` for PROCESS_MODE_ALWAYS.
+
+#### Phase 4: Test Suite (sequenced debugging)
+- **Test 1:** Room + player only (no enemies) — verified tiles render, movement works
+- **Test 2:** Single enemy — verified auto-attack, slash effect, XP gain, enemy death/respawn
+- **Test 3:** Full game (10 enemies, spawn timer) — verified game loop end-to-end
+
+**Learning:** Always test incrementally. Spawning 10 enemies immediately overwhelmed the player in a 10x10 room. Expanded to 24x24 room with 8 initial enemies for breathing room.
+
+### Issues Found & Fixed
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| Death/restart broke after first restart | C# `+=` signal subscriptions on autoloads don't auto-disconnect when scene nodes are freed | Added `_ExitTree()` to disconnect from autoload signals in Main, Dungeon, Hud |
+| Esc didn't work on death screen | `GetTree().Paused = true` freezes Main's input handler | Added Esc handling to DeathScreen (has `process_mode = ALWAYS`) |
+| Player wiggled along walls | Diamond-shaped collision polygons on wall tiles created zigzag edges | Changed wall collision to full rectangle — adjacent tiles merge into smooth straight edges |
+| Isometric movement felt wrong | User expected up=up, not up=northeast | Removed IsoTransform matrix — screen-space movement (up=up, down=down) |
+| Camera shake caused motion sickness | Camera offset tween on damage | Replaced with red sprite flash (0.15s tween on Modulate) |
+| Enemies spawned on top of player | No minimum distance check | Added SafeSpawnRadius (150px) with 10 retry attempts |
+
+### Design Decisions Made
+
+1. **Screen-space movement over isometric transform.** The user explicitly rejected Diablo-style isometric input mapping. Up arrow = up on screen, period. This overrides the movement spec in `docs/systems/movement.md`.
+
+2. **No camera shake, red flash instead.** Camera shake induces motion sickness. Damage feedback is a red sprite flash (0.15s). This overrides the camera shake spec in `docs/systems/camera.md`.
+
+3. **Level-based enemies over tier-based.** Replaced the 3-tier danger system (green/yellow/red) with actual enemy levels. Color is now computed from `(enemyLevel - playerLevel)` using the full 8-anchor gradient from `docs/systems/color-system.md`.
+
+4. **Floor = Level formula.** `baseLevel = floorNumber`, spawn range `[floor-1, floor+2]`. Documented in `docs/systems/floor-scaling.md`. Transparent and metagame-able.
+
+5. **Rectangular wall collision.** Diamond-shaped collision on wall tiles causes jitter. Full-rectangle collision creates smooth sliding walls. This overrides the collision polygon in `docs/objects/tilemap.md`.
+
+6. **Spawn safety rules.** 150px safe radius around player, 1.5s invincibility grace period on floor entry. Documented in `docs/systems/spawn-safety.md`.
+
+### New Files Created
+
+| File | Purpose |
+|------|---------|
+| `scripts/autoloads/GameState.cs` | Reactive game state singleton |
+| `scripts/autoloads/EventBus.cs` | Decoupled signal hub |
+| `scripts/Player.cs` | Player movement, combat, flash effects |
+| `scripts/Enemy.cs` | Level-based enemy with color gradient |
+| `scripts/Dungeon.cs` | Room generation, spawning, floor advancement |
+| `scripts/Main.cs` | Scene management, death handling |
+| `scripts/ui/Hud.cs` | Stats overlay |
+| `scripts/ui/DeathScreen.cs` | Death screen with restart/quit |
+| `scripts/ui/PauseMenu.cs` | Esc-toggle pause menu |
+| `scripts/ui/UiTheme.cs` | Shared UI palette + factory methods |
+| `scripts/ui/FlashFx.cs` | Reusable sprite flash effects |
+| `scripts/ui/FloatingText.cs` | Floating combat text (damage, XP, heal) |
+| `scripts/GameSettings.cs` | Toggleable settings (combat numbers) |
+| `scenes/*.tscn` (7 files) | All game scenes |
+| `assets/tiles/floor.png` | PixelLab floor tile (64x64) |
+| `assets/tiles/wall.png` | PixelLab wall tile (64x64) |
+| `assets/tiles/floor_*.png` (3 files) | Floor tile variations |
+| `assets/characters/enemy/` | Skeleton enemy (8-dir + walking) |
+| `docs/systems/floor-scaling.md` | Floor difficulty formula spec |
+| `docs/systems/spawn-safety.md` | Spawn safety rules spec |
+| `.claude/agents/art-lead.md` | PixelLab art generation agent |
+
+### What We Learned
+
+1. **C# signal subscriptions (`+=`) leak across scene reloads.** Autoload signals persist but subscribing scene nodes are freed. Always pair `+=` in `_Ready()` with `-=` in `_ExitTree()`. This is the #1 bug pattern in Godot C# with autoloads.
+
+2. **Isometric movement is a game feel choice, not a technical requirement.** The isometric tile grid and the movement system are independent. You can have isometric tiles with screen-space movement and it feels natural. Don't force the Diablo control scheme — let the user decide.
+
+3. **Camera shake is a motion sickness risk.** Sprite flashing achieves the same "you got hit" feedback without moving the viewport. Red flash (0.15s) is universally readable.
+
+4. **Test incrementally with sequenced runs.** Don't launch with the full game and debug everything at once. Build up: empty room → movement → single enemy → full game. Each step catches different bugs.
+
+5. **PixelLab art can run in parallel with coding.** Kick off asset generation with a background agent while writing code. By the time the code compiles, the art is ready to download.
+
+6. **Write .tscn files by hand for simple scenes.** The Godot text scene format is learnable. For scenes with <15 nodes, hand-writing is faster than fighting the editor.
+
+7. **Rectangular wall collision > diamond collision for smooth sliding.** Isometric diamond collisions create zigzag edges. Full-rectangle collisions on adjacent tiles merge into straight walls.
+
+8. **DRY the UI early.** A shared `UiTheme.cs` with color constants and `StyleBoxFlat` factories prevents copy-paste drift across scenes. Same gold border, same panel bg, same button style everywhere.
+
+---
+
 *This journal is append-only. Each session adds a new section. Never edit previous sessions — they're a historical record.*

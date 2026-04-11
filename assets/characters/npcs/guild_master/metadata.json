@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "a0f3581c-5faf-4755-b7e0-59017288ed60",
+    "name": "Guild Master",
+    "prompt": "An elder adventure guild master in weathered green robes with gold trim. Long gray beard, wise eyes, scarred face. Carries a scroll.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-11T08:19:02.176695+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-11T08:20:24.867637"
+}

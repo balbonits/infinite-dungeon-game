@@ -2,6 +2,8 @@
 
 **Lead:** `@ui-lead` | **Model:** Sonnet | **Domain:** HUD, menus, panels, themes, input handling
 
+> **Session 8 fresh start:** All previous code and scenes were deleted. UI work restarts from scratch once SETUP tickets are complete.
+
 *This team activates when coding begins (after SETUP is complete).*
 
 ## Planned Queue

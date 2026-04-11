@@ -6,7 +6,7 @@ Every `.tscn` scene in the game, with every node listed, every property value do
 
 ## Current State
 
-Six scenes form the complete game: `main.tscn` (root), `dungeon.tscn` (gameplay), `player.tscn` (player character), `enemy.tscn` (enemy template), `hud.tscn` (stats overlay), and `death_screen.tscn` (game over UI). All scenes use placeholder Polygon2D diamonds for sprites -- no pixel art assets yet.
+> **Design spec.** No scenes currently exist — all were deleted in the Session 8 fresh start. The node hierarchies below serve as the blueprint for reimplementation.
 
 ## Design
 

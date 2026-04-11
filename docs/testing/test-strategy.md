@@ -6,10 +6,7 @@ Testing approach for "A Dungeon in the Middle of Nowhere" using Godot 4 + C#. Co
 
 ## Current State
 
-- **219 unit tests passing** (51 legacy + 168 entity framework)
-- **GdUnit4** selected for Godot scene/node testing (NuGet: `gdUnit4.api`)
-- **xUnit** selected for pure C# logic testing (stat formulas, XP curves, data structures)
-- Test cases documented in `docs/testing/manual-tests.md` and `docs/testing/automated-tests.md`
+> **Design spec.** No tests currently exist — all 480 unit tests and test infrastructure were deleted in the Session 8 fresh start. The testing approach described below remains the target strategy for reimplementation.
 
 ## Design
 
