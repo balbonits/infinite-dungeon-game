@@ -50,6 +50,18 @@ public partial class Enemy : CharacterBody2D
         _hitArea = GetNode<Area2D>("HitArea");
         _hitCooldown = GetNode<Timer>("HitCooldownTimer");
 
+        // Apply per-species collision and sprite config
+        var speciesConfig = SpeciesDatabase.Get(SpeciesIndex);
+        _sprite.Scale = new Godot.Vector2(speciesConfig.SpriteScale, speciesConfig.SpriteScale);
+        _sprite.Offset = new Godot.Vector2(0, speciesConfig.SpriteOffsetY);
+        _levelLabel.Position = new Godot.Vector2(-20, speciesConfig.LabelOffsetY);
+
+        // Resize collision shapes to match species body
+        var bodyShape = GetNode<CollisionShape2D>("CollisionShape2D");
+        ((CircleShape2D)bodyShape.Shape).Radius = speciesConfig.CollisionRadius;
+        var hitShape = _hitArea.GetNode<CollisionShape2D>("HitShape");
+        ((CircleShape2D)hitShape.Shape).Radius = speciesConfig.HitAreaRadius;
+
         // Load species-specific directional sprites
         if (SpeciesIndex >= 0 && SpeciesIndex < Constants.Assets.EnemySpeciesRotations.Length)
         {

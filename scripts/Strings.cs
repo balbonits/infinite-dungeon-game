@@ -170,6 +170,13 @@ public static class Strings
         public static string GoldDisplay(int gold) => $"Gold: {gold}";
     }
 
+    // --- Stat Allocation ---
+    public static class Stats
+    {
+        public const string Title = "ALLOCATE STATS";
+        public static string FreePoints(int points) => $"Free points: {points}";
+    }
+
     // --- NPC Interaction ---
     public static class Npc
     {

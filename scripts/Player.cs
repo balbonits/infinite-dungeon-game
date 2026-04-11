@@ -39,6 +39,13 @@ public partial class Player : CharacterBody2D
         var attackShape = _attackArea.GetNode<CollisionShape2D>("AttackShape");
         ((CircleShape2D)attackShape.Shape).Radius = _primaryAttack.Range;
 
+        // Apply player collision config
+        var playerConfig = SpeciesDatabase.Player;
+        _sprite.Scale = new Vector2(playerConfig.SpriteScale, playerConfig.SpriteScale);
+        _sprite.Offset = new Vector2(0, playerConfig.SpriteOffsetY);
+        var bodyShape = GetNode<CollisionShape2D>("CollisionShape2D");
+        ((CircleShape2D)bodyShape.Shape).Radius = playerConfig.CollisionRadius;
+
         // Load class sprites
         int classIndex = (int)selectedClass;
         string rotationsPath = Constants.Assets.PlayerClassRotations[classIndex];
@@ -204,8 +211,12 @@ public partial class Player : CharacterBody2D
             case TargetMode.SingleTarget:
                 if (attack.IsProjectile)
                 {
+                    // Spawn at chest height — both visual and collision travel together
+                    float offsetY = Constants.Sprite.ProjectileSpawnOffsetY;
                     Projectile.Spawn(
-                        GetParent(), GlobalPosition, target.GlobalPosition,
+                        GetParent(),
+                        GlobalPosition + new Vector2(0, offsetY),
+                        target.GlobalPosition + new Vector2(0, offsetY),
                         finalDamage, attack.ProjectileSpeed, attack.Range,
                         attack.ProjectileTexture, attack.ProjectileScale,
                         attack.ProjectileTint, attack.PiercesTargets);
