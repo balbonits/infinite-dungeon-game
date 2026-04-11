@@ -43,14 +43,14 @@ Current state of the game. Updated as work completes. Run `make build` to verify
 |----|-------|--------|-------|
 | SYS-01 | Character class selection (Warrior/Ranger/Mage) | Done | ClassSelect screen with stat cards, skill previews, keyboard/mouse nav. Warrior=melee slash, Ranger=arrow projectile, Mage=magic bolt+staff fallback. |
 | SYS-02 | Skill definitions + use-based leveling | To Do | `AttackConfig` system exists (data-driven melee/projectile), but no skill trees, no skill XP, no skill UI. |
-| SYS-03 | Death penalty flow (XP loss, item loss, buyout) | Partial | Death restarts to town with full state reset. No XP penalty, no item loss, no buyout mechanic. |
+| SYS-03 | Death penalty flow (XP loss, item loss, buyout) | Done | Multi-step flow: XP loss, item loss chance, gold buyout option, Sacrificial Idol prevention. |
 | SYS-04 | Quest system (Adventure Guild radiant quests) | To Do | Guild Master NPC exists with placeholder service button. No quest logic. |
 | SYS-05 | Level Teleporter NPC | Partial | AscendDialog exists at stairs-up: return to town, go up one floor, select previous floor. Teleporter NPC in town has placeholder "Teleport" service button but no direct floor-select UI. |
 | SYS-06 | Blacksmith crafting UI | To Do | Blacksmith NPC exists in town with "Open Forge" service button. No crafting logic or UI -- shows "coming soon" toast. |
 | SYS-07 | Bank UI | To Do | Banker NPC exists in town with "Open Vault" service button. No bank logic or UI -- shows "coming soon" toast. |
 | SYS-08 | Unique items (70-100 fixed-effect items) | To Do | ItemDef system built, ItemDatabase has 8 starter items (potions, quivers, weapons). No unique/legendary items. |
 | SYS-09 | Achievement system (Fated Ledger) | To Do | Not started. |
-| SYS-10 | Monster families (zone-exclusive creature sets) | Partial | 2 species: Skeleton and Goblin. Random species per spawn. 8-directional pixel art rotations. No zone exclusivity or family behavior. |
+| SYS-10 | Monster families (zone-exclusive creature sets) | Partial | 7 species: Skeleton, Goblin, Bat, Wolf, Orc, Dark Mage, Spider. Per-species collision (SpeciesConfig/SpeciesDatabase). No zone exclusivity or family behavior yet. |
 
 ---
 
@@ -97,6 +97,36 @@ These systems were implemented during visual-first development but were not part
 | HUD | `Hud.cs` | Done -- stats label updated reactively from GameState |
 | Death screen | `DeathScreen.cs` | Done -- R to restart (loads town), Esc to quit, button variants |
 
+### Save/Load & Persistence
+| System | Scripts | Status |
+|--------|---------|--------|
+| Save/load system | `SaveData`, `SaveSystem`, `SaveManager` | Done -- auto-save on transitions, Continue from title screen |
+
+### Stats & Progression
+| System | Scripts | Status |
+|--------|---------|--------|
+| Stat system | `Constants.cs` (stat formulas) | Done -- STR/DEX/STA/INT with diminishing returns, class bonuses per level, free points |
+| Stat allocation UI | Pause menu dialog | Done -- allocate free stat points from pause menu |
+| HP regen | STA stat | Done -- passive HP regen derived from STA |
+| Death penalty flow | Multi-step in `Player.cs` | Done -- XP loss, item loss, gold buyout, Sacrificial Idol |
+
+### Loot & Economy
+| System | Scripts | Status |
+|--------|---------|--------|
+| Loot drops | Enemy death drops | Done -- gold + item chance per enemy kill |
+| Floor wipe mechanic | `Dungeon.cs` | Done -- bonus rewards when all enemies killed on a floor |
+| Item system | `ItemDef`, `ItemDatabase`, `Inventory` | Done -- full item definitions with stats, descriptions, rarity |
+
+### Navigation & Combat
+| System | Scripts | Status |
+|--------|---------|--------|
+| Stairs compass | `StairsCompass.cs` | Done -- gold/green arrows on screen edge, auto-hide when visible |
+| Hitscan projectile system | `Projectile.cs` | Done -- instant damage + cosmetic tracer, replaced physics-based collision |
+| Targeting system | `AttackConfig.cs`, `ClassAttacks.cs` | Done -- 8 targeting modes + 3 projectile behaviors |
+| Per-species collision | `SpeciesConfig`, `SpeciesDatabase` | Done -- unique hitbox per enemy species |
+| 7 enemy species | `Enemy.cs` | Done -- Skeleton, Goblin, Bat, Wolf, Orc, Dark Mage, Spider |
+| Stairs exclusion zone | `Dungeon.cs` | Done -- enemies can't spawn within 150px of staircases |
+
 ### Architecture
 | System | Scripts | Status |
 |--------|---------|--------|
@@ -104,6 +134,7 @@ These systems were implemented during visual-first development but were not part
 | Strings architecture | `Strings.cs` | Done -- all player-facing strings centralized for future i18n |
 | Global theme | `GlobalTheme.cs`, `UiTheme.cs` | Done -- consistent UI colors, font sizes, panel styles, button styles |
 | Game settings | `GameSettings.cs` | Done -- toggles like ShowCombatNumbers |
+| GC during loading | `ScreenTransition.cs` | Done -- forced GC during loading screen transitions |
 
 ---
 
@@ -155,7 +186,7 @@ These systems were implemented during visual-first development but were not part
 | Input actions | 12 | `project.godot` [input] section |
 | Autoloads | 2 | GameState, EventBus |
 | Item definitions | 8 | `ItemDatabase.cs` |
-| Enemy species | 2 | Skeleton, Goblin |
+| Enemy species | 7 | Skeleton, Goblin, Bat, Wolf, Orc, Dark Mage, Spider |
 | Player classes | 3 | Warrior, Ranger, Mage |
 
 ---
