@@ -76,8 +76,8 @@ public static class Constants
         public const float MagicBoltSpeed = 300.0f;
 
         // Projectile sizes
-        public const float ArrowScale = 0.6f;
-        public const float MagicBoltScale = 0.8f;
+        public const float ArrowScale = 1.5f;
+        public const float MagicBoltScale = 1.5f;
 
         public static float GetAttackRange(PlayerClass playerClass) => playerClass switch
         {
@@ -269,6 +269,7 @@ public static class Constants
         public const float NpcScale = 0.9f;
         public const float PlayerSpriteOffsetY = -30.0f;
         public const float EnemySpriteOffsetY = -26.0f;
+        public const float ProjectileSpawnOffsetY = -25.0f;
     }
 }
 

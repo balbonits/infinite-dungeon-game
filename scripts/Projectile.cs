@@ -4,8 +4,8 @@ using DungeonGame.Ui;
 namespace DungeonGame.Scenes;
 
 /// <summary>
-/// A projectile that flies toward a target position, damages the first enemy hit, and despawns.
-/// Used by Ranger (arrows) and Mage (magic bolts).
+/// Projectile that flies toward a target, damages the first enemy hit, and despawns.
+/// Uses manual overlap checking each frame to prevent tunneling through enemies.
 /// </summary>
 public partial class Projectile : Area2D
 {
@@ -16,6 +16,7 @@ public partial class Projectile : Area2D
     private float _traveled;
     private bool _hit;
     private bool _pierces;
+    private float _collisionRadius;
     private Sprite2D? _sprite;
 
     public static void Spawn(Node parent, Vector2 origin, Vector2 target, int damage,
@@ -29,19 +30,21 @@ public partial class Projectile : Area2D
         projectile._maxDistance = maxRange;
         projectile._direction = (target - origin).Normalized();
         projectile._pierces = pierces;
+        projectile._collisionRadius = 10.0f; // Generous hitbox for reliable collision
 
-        // Collision
+        // Area2D config — acts as a sensor
         projectile.CollisionLayer = 0;
         projectile.CollisionMask = Constants.Layers.Enemies;
         projectile.Monitoring = true;
+        projectile.Monitorable = false;
 
         var shape = new CollisionShape2D();
         var circle = new CircleShape2D();
-        circle.Radius = 6.0f;
+        circle.Radius = projectile._collisionRadius;
         shape.Shape = circle;
         projectile.AddChild(shape);
 
-        // Sprite
+        // Sprite — no offset (rotation would rotate the offset too)
         if (ResourceLoader.Exists(texturePath))
         {
             var sprite = new Sprite2D();
@@ -54,39 +57,47 @@ public partial class Projectile : Area2D
             projectile.AddChild(sprite);
         }
 
-        // Rotate sprite to face direction
         projectile.Rotation = projectile._direction.Angle();
-
-        projectile.Connect(SignalName.BodyEntered, new Callable(projectile, MethodName.OnBodyEntered));
 
         parent.AddChild(projectile);
     }
 
     public override void _PhysicsProcess(double delta)
     {
+        if (_hit && !_pierces)
+            return;
+
         float step = _speed * (float)delta;
         GlobalPosition += _direction * step;
         _traveled += step;
+
+        // Manual overlap check every frame — prevents tunneling
+        CheckHits();
 
         if (_traveled >= _maxDistance)
             QueueFree();
     }
 
-    private void OnBodyEntered(Node2D body)
+    private void CheckHits()
     {
-        if (_hit && !_pierces)
-            return;
-        if (!body.IsInGroup(Constants.Groups.Enemies))
-            return;
-
-        body.Call("TakeDamage", _damage);
-        FloatingText.Damage(GetParent(), body.GlobalPosition, _damage);
-
-        if (!_pierces)
+        var bodies = GetOverlappingBodies();
+        foreach (Node2D body in bodies)
         {
-            _hit = true;
-            Monitoring = false;
-            QueueFree();
+            if (_hit && !_pierces)
+                return;
+            if (!body.IsInGroup(Constants.Groups.Enemies))
+                continue;
+
+            body.Call("TakeDamage", _damage);
+            FloatingText.Damage(GetParent(), body.GlobalPosition, _damage);
+
+            if (!_pierces)
+            {
+                _hit = true;
+                Monitoring = false;
+                QueueFree();
+                return;
+            }
         }
     }
 }
