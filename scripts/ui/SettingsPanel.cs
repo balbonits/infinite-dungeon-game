@@ -42,6 +42,7 @@ public partial class SettingsPanel : Control
         ActiveInstance = this;
         _isOpen = true;
         ProcessMode = ProcessModeEnum.Always;
+        SetAnchorsPreset(LayoutPreset.FullRect);
 
         _overlay = new ColorRect();
         _overlay.Color = new Color(0, 0, 0, 0.7f);
