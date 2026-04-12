@@ -4,6 +4,70 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 11 — Endgame Systems, Mana, Skill Execution, UI Overhaul (2026-04-11)
+
+### What Happened
+
+**Started from:** Specs reconciled, all formulas locked.
+
+**Ended with:** All 5 END systems implemented, full mana system, skill execution engine, Diablo-style HUD, 8 projectile sprites, 4 reusable UI components, settings panel, tutorial, backpack window, debug console.
+
+### Systems Built
+
+| System | Scripts | Status |
+|--------|---------|--------|
+| Zone Saturation | `ZoneSaturation.cs` | Done — per-zone difficulty, builds on kills, decays, stat/reward multipliers |
+| Dungeon Pacts | `DungeonPacts.cs` | Done — 10 pacts, heat scoring, enemy stat multipliers |
+| Dungeon Intelligence | `DungeonIntelligence.cs` | Done — 4 performance metrics, adaptive pressure score |
+| Magicule Attunement | `MagiculeAttunement.cs` | Done — 40-node passive tree, floor tracking, keystones |
+| Depth Gear Tiers | `DepthGearTier.cs` | Done — 6 quality tiers (Normal→Transcendent), floor-gated |
+| Mana system | `GameState.cs` | Done — Mana/MaxMana, class pools (M:200/R:100/W:60), INT regen |
+| Skill execution | `SkillDef.cs`, `SkillBar.cs`, `Player.ExecuteSkill()` | Done — all 80+ skills castable with mana/cooldowns/targeting |
+| Skill bar HUD | `SkillBarHud.cs` | Done — 4 slots, shoulder+face combos (Q+W/Q+S/E+W/E+S) |
+| HP/MP orbs | `OrbDisplay.cs`, `Hud.cs` | Done — Diablo-style glass sphere sprites, fill/drain |
+| XP bar | `XpBar.cs` | Done — below skill bar, level-up glow, XP loss flash |
+| Backpack window | `BackpackWindow.cs` | Done — 5x5 slot grid, action menu, accessible from pause |
+| Settings panel | `SettingsPanel.cs` | Done — 4 tabs, 20+ settings, persisted to JSON |
+| Tutorial | `TutorialPanel.cs` | Done — 4 tabs, static reference |
+| Debug console | `DebugConsole.cs` | Done — F4, god mode, cheats, teleport, perf metrics |
+| Character card | `CharacterCard.cs` | Done — reusable, on title screen for saved games |
+| Action menu | `ActionMenu.cs` | Done — FF-style popup for item/skill context actions |
+| Reusable components | `GameWindow.cs`, `TabBar.cs`, `ScrollList.cs`, `ContentSection.cs` | Done |
+| Window stack | `WindowStack.cs` | Done — central input routing, no bleed-through |
+
+### Key Fixes
+
+- **Mage auto-attack**: staff melee is free auto-attack; magic bolt is mana skill via hotbar
+- **Monster spawn**: guaranteed 10 per floor via `SpawnInitialEnemies()` loop; floor wipe requires 10+ kills
+- **Transition screens**: all scene loads (town/dungeon/floor) use `ScreenTransition.Play()`
+- **Input isolation**: every dialog blocks ALL keyboard input when open; WindowStack prevents bleed-through
+- **UI color system**: blue buttons (#518ef4), gold headings only, distinct semantic colors
+- **Sub-dialog focus restoration**: Skills/Stats/Ledger return to PauseMenu with focus on close
+- **Keyboard scroll**: `KeyboardNav.EnsureVisible()` auto-scrolls ScrollContainer to focused button
+- **NpcPanel cancel**: D/Escape now closes NPC panel (was missing)
+
+### Projectile Sprites (PixelLab)
+
+arrow, magic_bolt, fireball, frost_bolt, lightning, stone_spike, energy_blast, shadow_bolt — all 32x32 pixel art.
+
+### What We Learned
+
+1. **Build complete systems, not skeletons.** Skills that show a toast but deal zero damage are not "done." Every system must work end-to-end: input → effect → visual → persistence.
+
+2. **Never invent features.** The specs are the source of truth. If it's not documented, don't build it. A "difficulty setting" that doesn't exist in any spec is hallucination, no matter how "obvious" it seems.
+
+3. **Trace all callers before modifying shared functions.** `LoadDungeon()` is called from 4 places. Adding a transition wrapper broke 3 of them because they already had their own transitions.
+
+4. **WindowStack > per-window checks.** Checking "is SettingsPanel open? is ActionMenu open?" in every parent is fragile and grows linearly. A central stack tracks topmost and blocks everything below.
+
+5. **Reusable components save hundreds of lines.** GameWindow, TabBar, ScrollList, ContentSection — 4 components eliminated 30+ lines of boilerplate per dialog.
+
+6. **Dividers go at section bottom, not top.** Prevents double dividers when the parent already has a top separator.
+
+7. **Buttons need consistent sizing.** If two buttons sit next to each other, they need the same height, font size, and padding. StyleButton vs StyleSecondaryButton can't have different sizes.
+
+---
+
 ## Session — 2026-04-11
 
 ### What Happened

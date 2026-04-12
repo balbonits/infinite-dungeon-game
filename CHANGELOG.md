@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 11 — Endgame + Mana + Skills + UI Overhaul (2026-04-11)
+
+#### Added
+- Endgame systems: Zone Saturation, Dungeon Pacts (10 pacts), Dungeon Intelligence (adaptive AI), Magicule Attunement (40-node tree), Depth Gear Tiers (6 quality tiers)
+- Mana system: Mana/MaxMana on GameState, class pools (M:200/R:100/W:60), INT regen, save/load
+- Skill execution: all 80+ skills castable from hotbar with ManaCost/Cooldown/AttackConfig
+- Skill bar HUD: 4 slots with shoulder+face combos (Q+W, Q+S, E+W, E+S), dynamic key labels
+- HP/MP orbs: Diablo-style glass sphere sprites (PixelLab), fill/drain with ratio
+- XP progress bar below skill bar with level-up gold glow and XP loss red flash
+- Backpack window: 5-column slot grid (64x64), action menu (Use/Drop), from pause menu
+- Settings panel: 4 tabbed categories (Gameplay/Display/Audio/Controls), persisted to JSON
+- Tutorial: 4 tabbed sections (Movement/Combat/Menus/Town), static reference
+- Debug console (F4): god mode, XP/gold/level cheats, teleport, kill all, perf metrics
+- Character card: reusable component on title screen showing saved game sprite/stats
+- Action menu: FF-style popup for context actions on items and skills
+- 8 projectile sprites: arrow, magic bolt, fireball, frost bolt, lightning, stone spike, energy blast, shadow bolt
+- Reusable UI components: GameWindow, TabBar, ScrollList, ContentSection
+- WindowStack: central input routing, eliminates bleed-through permanently
+- Back to Main Menu button on class select screen
+- Camera shake on damage setting (off by default)
+
+#### Fixed
+- All UI panels block ALL input when open (not just movement)
+- Sub-dialogs restore PauseMenu visibility and focus on close
+- NpcPanel closeable with D/Escape (was missing)
+- Mage auto-attack: staff melee is free, magic bolt requires mana via hotbar
+- Monster spawn: guaranteed 10 per floor, floor wipe requires 10+ kills
+- All scene loads use transition screen (town, dungeon, floor descent)
+- Keyboard nav auto-scrolls ScrollContainer to focused button
+- Skill targeting uses skill's range, not auto-attack range
+- ClassSelect calls Reset() to initialize mana on new game
+- GlobalTheme buttons use blue Action color (not gold Accent)
+- Confirm button uses proper disabled style (not transparent modulate)
+- Tutorial text autowraps within panel (no horizontal clipping)
+- Section dividers at bottom (no double dividers)
+- Removed fabricated difficulty setting (not in specs)
+
 ### Phase 1 Complete — All Systems Built (2026-04-11)
 
 #### Added

@@ -61,8 +61,8 @@ These systems were implemented during visual-first development but were not part
 ### Game Flow
 | System | Scripts | Status |
 |--------|---------|--------|
-| Splash screen | `SplashScreen.cs` | Done -- title, subtitle, "press any key" with pulse animation |
-| Class selection | `ClassSelect.cs` | Done -- 3 class cards with stats/skills, keyboard+mouse, two-step confirm |
+| Splash screen | `SplashScreen.cs` | Done -- title, character card for saved game, New Game/Tutorial/Settings/Exit |
+| Class selection | `ClassSelect.cs` | Done -- 3 class cards, Up/Down zone nav (cards→confirm→back), keyboard+mouse |
 | Town hub | `Town.cs` | Done -- 16x12 tile room, 5 NPCs, dungeon entrance |
 | World swapping | `Main.cs` | Done -- `LoadTown()`/`LoadDungeon()` swap world scenes dynamically |
 | Screen transitions | `ScreenTransition.cs` | Done -- fade-to-black with message, used for floor descent and town/dungeon travel |
@@ -80,10 +80,10 @@ These systems were implemented during visual-first development but were not part
 |--------|---------|--------|
 | Proc-gen floors | `Dungeon.cs` | Done -- random room size (18-30), 4 floor tile variations, wall border |
 | Floor scaling | `Constants.FloorScaling` | Done -- room growth per 5 floors, enemy level range per floor |
-| Spawn safety | `Dungeon.SpawnEnemy()` | Done -- safe spawn radius (150px from player), wall margin, max retries |
+| Spawn safety | `Dungeon.SpawnInitialEnemies()` | Done -- guaranteed 10 enemies per floor, fallback to any floor tile, floor wipe requires 10+ kills |
 | Ascend dialog | `AscendDialog.cs` | Done -- stairs-up triggers: return to town, go up 1 floor, select specific floor |
-| Unified combat | `AttackConfig.cs`, `ClassAttacks.cs` | Done -- data-driven melee/projectile, no class-specific branching in Player |
-| Projectile system | `Projectile.cs` | Done -- spawned by Ranger (arrow) and Mage (magic bolt), despawns on hit or max range |
+| Unified combat | `AttackConfig.cs`, `ClassAttacks.cs` | Done -- data-driven melee/projectile, Mage auto=staff melee (magic bolt via hotbar) |
+| Projectile system | `Projectile.cs` | Done -- 8 projectile sprites (arrow, magic bolt, fireball, frost bolt, lightning, stone spike, energy blast, shadow bolt) |
 | Directional sprites | `DirectionalSprite.cs` | Done -- 8-direction rotation loading and velocity-based switching |
 | Flash effects | `FlashFx.cs` | Done -- damage, poison, curse, boost, shield, freeze, heal, crazed flash types |
 | Floating text | `FloatingText.cs` | Done -- combat damage, heals, XP, level-up numbers that rise and fade |
@@ -93,8 +93,17 @@ These systems were implemented during visual-first development but were not part
 | System | Scripts | Status |
 |--------|---------|--------|
 | Debug panel | `DebugPanel.cs` | Done -- F3 toggle, shows HP/level/XP/floor/damage/enemies/kills/session time |
-| Pause menu | `PauseMenu.cs` | Done -- Esc toggle, Resume/Quit buttons, blocked during death screen |
-| HUD | `Hud.cs` | Done -- stats label updated reactively from GameState |
+| Debug console | `DebugConsole.cs` | Done -- F4 toggle, god mode, XP/gold/level cheats, teleport, kill all, give items, perf metrics |
+| Pause menu | `PauseMenu.cs` | Done -- Esc toggle, Resume/Backpack/Stats/Skills/Ledger/Tutorial/Settings/Main Menu/Quit |
+| HUD | `Hud.cs` | Done -- Diablo-style HP/MP orbs (bottom-left/right), XP bar below skill bar, stats panel top-left |
+| Skill bar HUD | `SkillBarHud.cs` | Done -- 4 skill slots (Q+W/Q+S/E+W/E+S), controller-aware labels, cooldown overlays |
+| XP bar | `XpBar.cs` | Done -- progress bar below skill bar, level-up gold glow, XP loss red flash |
+| HP/MP orbs | `OrbDisplay.cs` | Done -- PixelLab glass sphere sprites, colored fill rises/falls with ratio |
+| Backpack window | `BackpackWindow.cs` | Done -- 5-column slot grid (64x64), action menu (Use/Drop), item detail on focus |
+| Action menu | `ActionMenu.cs` | Done -- FF-style popup for item/skill context actions, keyboard nav |
+| Tutorial | `TutorialPanel.cs` | Done -- 4 tabbed sections (Movement/Combat/Menus/Town), static reference |
+| Settings panel | `SettingsPanel.cs` | Done -- 4 tabbed categories (Gameplay/Display/Audio/Controls), saved to disk |
+| Character card | `CharacterCard.cs` | Done -- reusable PanelContainer with sprite/stats/level, used on title screen |
 | Death screen | `DeathScreen.cs` | Done -- R to restart (loads town), Esc to quit, button variants |
 
 ### Save/Load & Persistence
@@ -132,9 +141,13 @@ These systems were implemented during visual-first development but were not part
 |--------|---------|--------|
 | Constants architecture | `Constants.cs` | Done -- all magic numbers centralized: PlayerStats, EnemyStats, Spawning, FloorScaling, Leveling, Tiles, Effects, Assets, Layers, Groups, InputActions, ClassCombat, Town, Sprite |
 | Strings architecture | `Strings.cs` | Done -- all player-facing strings centralized for future i18n |
-| Global theme | `GlobalTheme.cs`, `UiTheme.cs` | Done -- consistent UI colors, font sizes, panel styles, button styles |
-| Game settings | `GameSettings.cs` | Done -- toggles like ShowCombatNumbers |
+| Global theme | `GlobalTheme.cs`, `UiTheme.cs` | Done -- blue buttons, gold headings, semantic color system, slot styles |
+| Game settings | `GameSettings.cs` | Done -- 20+ settings across Gameplay/Display/Audio/Controls, persisted to JSON |
 | GC during loading | `ScreenTransition.cs` | Done -- forced GC during loading screen transitions |
+| Mana system | `GameState.cs` | Done -- Mana/MaxMana with signals, class base pools, INT regen, save/load |
+| Skill execution | `SkillDef.cs`, `SkillBar.cs`, `Player.ExecuteSkill()` | Done -- 80+ skills with ManaCost/Cooldown/AttackConfig, hotbar casting |
+| Reusable UI components | `GameWindow.cs`, `TabBar.cs`, `ScrollList.cs`, `ContentSection.cs` | Done -- base window, tab system, scroll nav, content helpers |
+| Window stack | `WindowStack.cs`, `KeyboardNav.BlockIfNotTopmost()` | Done -- central input routing, eliminates bleed-through |
 
 ---
 
@@ -142,14 +155,14 @@ These systems were implemented during visual-first development but were not part
 
 | ID | Title | Status | Notes |
 |----|-------|--------|-------|
-| END-01 | Dungeon Pacts (voluntary difficulty modifiers) | To Do | |
-| END-02 | Magicule Attunement (post-cap passive tree) | To Do | |
-| END-03 | Dungeon Intelligence (adaptive AI Director) | To Do | |
-| END-04 | Zone Saturation (per-zone difficulty dial) | To Do | |
-| END-05 | Depth gear tiers (new rarity at floor 50/100/150) | To Do | |
-| POL-01 | Audio system (SFX + music + ambient) | To Do | |
+| END-01 | Dungeon Pacts (voluntary difficulty modifiers) | Done | `DungeonPacts.cs` — 10 pacts, heat-based rewards, enemy stat multipliers, save/load |
+| END-02 | Magicule Attunement (post-cap passive tree) | Done | `MagiculeAttunement.cs` — 40-node tree, 3 rings, 4 branches, keystones, floor tracking |
+| END-03 | Dungeon Intelligence (adaptive AI Director) | Done | `DungeonIntelligence.cs` — 4 metrics, pressure score, spawn/aggro/elite modifiers |
+| END-04 | Zone Saturation (per-zone difficulty dial) | Done | `ZoneSaturation.cs` — per-zone saturation, decay, stat/reward multipliers |
+| END-05 | Depth gear tiers (new rarity at floor 50/100/150) | Done | `DepthGearTier.cs` — BaseQuality extended to 6 tiers, quality roll with floor shift |
+| POL-01 | Audio system (SFX + music + ambient) | To Do | Skipped per user — no audio/sound tasks |
 | POL-02 | Real sprite animations (AnimatedSprite2D) | To Do | 8-directional static rotations done; animation frames not yet |
-| POL-03 | Zone visual themes (per-zone floor/wall textures) | To Do | Dungeon has 4 floor variations; no zone-specific theming |
+| POL-03 | Zone visual themes (per-zone floor/wall textures) | Done | `Constants.Assets.GetZoneTheme()` — 5 themes cycling for zone 6+ |
 | POL-04 | Shader effects (hit flash, outline, glow) | Partial | FlashFx uses Modulate tinting; no custom shaders yet |
 
 ---
@@ -182,12 +195,15 @@ These systems were implemented during visual-first development but were not part
 | Category | Count | Location |
 |----------|-------|----------|
 | Scene files (.tscn) | 8 | `scenes/` |
-| C# scripts | 67 | `scripts/` (includes autoloads/, ui/, logic/) |
+| C# scripts | 87 | `scripts/` (includes autoloads/, ui/, logic/) |
 | Input actions | 12 | `project.godot` [input] section |
-| Autoloads | 2 | GameState, EventBus |
+| Autoloads | 3 | GameState, EventBus, SaveManager |
 | Item definitions | 8 | `ItemDatabase.cs` |
 | Enemy species | 7 | Skeleton, Goblin, Bat, Wolf, Orc, Dark Mage, Spider |
 | Player classes | 3 | Warrior, Ranger, Mage |
+| Projectile sprites | 8 | `assets/projectiles/` |
+| UI orb assets | 2 | `assets/ui/` (HP red, MP blue) |
+| Zone tilesets | 7 | `assets/tiles/` |
 
 ---
 
