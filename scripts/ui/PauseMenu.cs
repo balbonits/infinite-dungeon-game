@@ -11,6 +11,7 @@ public partial class PauseMenu : Control
         _buttonContainer = GetNode<VBoxContainer>("CenterContainer/PanelContainer/MarginContainer/VBoxContainer");
 
         var resumeButton = _buttonContainer.GetNode<Button>("ResumeButton");
+        var backpackButton = _buttonContainer.GetNode<Button>("BackpackButton");
         var statsButton = _buttonContainer.GetNode<Button>("StatsButton");
         var skillsButton = _buttonContainer.GetNode<Button>("SkillsButton");
         var ledgerButton = _buttonContainer.GetNode<Button>("LedgerButton");
@@ -19,6 +20,7 @@ public partial class PauseMenu : Control
         var quitButton = _buttonContainer.GetNode<Button>("QuitButton");
 
         resumeButton.FocusMode = FocusModeEnum.All;
+        backpackButton.FocusMode = FocusModeEnum.All;
         statsButton.FocusMode = FocusModeEnum.All;
         skillsButton.FocusMode = FocusModeEnum.All;
         ledgerButton.FocusMode = FocusModeEnum.All;
@@ -27,6 +29,7 @@ public partial class PauseMenu : Control
         quitButton.FocusMode = FocusModeEnum.All;
 
         resumeButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnResumePressed));
+        backpackButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnBackpackPressed));
         statsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnStatsPressed));
         skillsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSkillsPressed));
         ledgerButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnLedgerPressed));
@@ -76,6 +79,12 @@ public partial class PauseMenu : Control
         Visible = true;
         GetTree().Paused = true;
         UiTheme.FocusFirstButton(_buttonContainer);
+    }
+
+    private void OnBackpackPressed()
+    {
+        Visible = false;
+        BackpackWindow.Instance?.Open();
     }
 
     private void OnStatsPressed()
