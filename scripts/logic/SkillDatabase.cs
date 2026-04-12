@@ -110,54 +110,82 @@ public static class SkillDatabase
     {
         const PlayerClass W = PlayerClass.Warrior;
 
-        // Body > Unarmed
+        // Body > Unarmed — fast melee, low mana cost (stamina)
         RegisterBase("w_unarmed", "Unarmed", "Hand-to-hand combat", "warrior_body", W, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("w_punch", "Punch", "Fast straight strikes, high attack speed", "w_unarmed", W);
-        RegisterSpecific("w_kick", "Kick", "Leg strikes, knockback effect", "w_unarmed", W);
-        RegisterSpecific("w_grapple", "Grapple", "Holds and throws, close-range crowd control", "w_unarmed", W);
-        RegisterSpecific("w_elbow_knee", "Elbow/Knee", "Short-range burst damage", "w_unarmed", W);
+        RegisterSpecific("w_punch", "Punch", "Fast straight strikes, high attack speed", "w_unarmed", W,
+            manaCost: 5, cooldown: 0.6f, combat: new AttackConfig { Range = 78, DamageMultiplier = 1.0f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FFCC66") });
+        RegisterSpecific("w_kick", "Kick", "Leg strikes, knockback effect", "w_unarmed", W,
+            manaCost: 8, cooldown: 1.2f, combat: new AttackConfig { Range = 78, DamageMultiplier = 1.4f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FFAA33") });
+        RegisterSpecific("w_grapple", "Grapple", "Holds and throws, close-range crowd control", "w_unarmed", W,
+            manaCost: 12, cooldown: 2.5f, combat: new AttackConfig { Range = 60, DamageMultiplier = 0.8f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("DDAA44") });
+        RegisterSpecific("w_elbow_knee", "Elbow/Knee", "Short-range burst damage", "w_unarmed", W,
+            manaCost: 10, cooldown: 1.0f, combat: new AttackConfig { Range = 60, DamageMultiplier = 1.8f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FF8800") });
 
-        // Body > Bladed
+        // Body > Bladed — medium melee, balanced
         RegisterBase("w_bladed", "Bladed", "Swords, axes, and daggers", "warrior_body", W, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("w_slash", "Slash", "Wide arc swing, can hit multiple enemies", "w_bladed", W);
-        RegisterSpecific("w_thrust", "Thrust", "Precision stab, high single-target damage", "w_bladed", W);
-        RegisterSpecific("w_cleave", "Cleave", "Heavy overhead strike, hits multiple enemies", "w_bladed", W);
-        RegisterSpecific("w_parry", "Parry", "Deflect incoming melee attack", "w_bladed", W);
+        RegisterSpecific("w_slash", "Slash", "Wide arc swing, can hit multiple enemies", "w_bladed", W,
+            manaCost: 8, cooldown: 1.0f, combat: new AttackConfig { Range = 85, DamageMultiplier = 1.2f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 85, MaxTargets = 3, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("CCCCCC") });
+        RegisterSpecific("w_thrust", "Thrust", "Precision stab, high single-target damage", "w_bladed", W,
+            manaCost: 10, cooldown: 1.2f, combat: new AttackConfig { Range = 90, DamageMultiplier = 2.0f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("DDDDDD") });
+        RegisterSpecific("w_cleave", "Cleave", "Heavy overhead strike, hits multiple enemies", "w_bladed", W,
+            manaCost: 15, cooldown: 2.0f, combat: new AttackConfig { Range = 80, DamageMultiplier = 1.8f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 80, MaxTargets = 5, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("AAAAAA") });
+        RegisterSpecific("w_parry", "Parry", "Deflect incoming melee attack", "w_bladed", W,
+            manaCost: 6, cooldown: 3.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
-        // Body > Blunt
+        // Body > Blunt — slow, hard-hitting melee
         RegisterBase("w_blunt", "Blunt", "Clubs, hammers, and maces", "warrior_body", W, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("w_smash", "Smash", "Heavy overhead hit, bonus vs armored", "w_blunt", W);
-        RegisterSpecific("w_sweep", "Sweep", "Low arc swing, knockback effect", "w_blunt", W);
-        RegisterSpecific("w_crush", "Crush", "Charged hit, chance to stun", "w_blunt", W);
-        RegisterSpecific("w_shatter", "Shatter", "Break enemy guard or shields", "w_blunt", W);
+        RegisterSpecific("w_smash", "Smash", "Heavy overhead hit, bonus vs armored", "w_blunt", W,
+            manaCost: 12, cooldown: 1.5f, combat: new AttackConfig { Range = 78, DamageMultiplier = 2.2f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("996633") });
+        RegisterSpecific("w_sweep", "Sweep", "Low arc swing, knockback effect", "w_blunt", W,
+            manaCost: 10, cooldown: 1.3f, combat: new AttackConfig { Range = 85, DamageMultiplier = 1.3f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 85, MaxTargets = 4, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("AA7744") });
+        RegisterSpecific("w_crush", "Crush", "Charged hit, chance to stun", "w_blunt", W,
+            manaCost: 18, cooldown: 2.5f, combat: new AttackConfig { Range = 78, DamageMultiplier = 2.8f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("884422") });
+        RegisterSpecific("w_shatter", "Shatter", "Break enemy guard or shields", "w_blunt", W,
+            manaCost: 14, cooldown: 2.0f, combat: new AttackConfig { Range = 78, DamageMultiplier = 1.5f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("BB6633") });
 
-        // Body > Polearms
+        // Body > Polearms — extended range melee
         RegisterBase("w_polearms", "Polearms", "Spears, halberds, and quarterstaffs", "warrior_body", W, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("w_pole_thrust", "Thrust", "Long-range poke", "w_polearms", W);
-        RegisterSpecific("w_pole_sweep", "Sweep", "Wide arc, crowd control", "w_polearms", W);
-        RegisterSpecific("w_brace", "Brace", "Set weapon against charging enemies", "w_polearms", W);
-        RegisterSpecific("w_vault", "Vault", "Use polearm to reposition", "w_polearms", W);
+        RegisterSpecific("w_pole_thrust", "Thrust", "Long-range poke", "w_polearms", W,
+            manaCost: 8, cooldown: 1.0f, combat: new AttackConfig { Range = 110, DamageMultiplier = 1.4f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("BBAA88") });
+        RegisterSpecific("w_pole_sweep", "Sweep", "Wide arc, crowd control", "w_polearms", W,
+            manaCost: 12, cooldown: 1.5f, combat: new AttackConfig { Range = 100, DamageMultiplier = 1.2f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 100, MaxTargets = 5, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("AA9977") });
+        RegisterSpecific("w_brace", "Brace", "Set weapon against charging enemies", "w_polearms", W,
+            manaCost: 10, cooldown: 4.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_vault", "Vault", "Use polearm to reposition", "w_polearms", W,
+            manaCost: 8, cooldown: 3.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
-        // Body > Shields
+        // Body > Shields — defensive
         RegisterBase("w_shields", "Shields", "Shield techniques", "warrior_body", W, PassiveBonusType.Defense, 1.2f);
-        RegisterSpecific("w_block", "Block", "Active damage reduction stance", "w_shields", W);
-        RegisterSpecific("w_shield_bash", "Shield Bash", "Offensive shield strike, staggers", "w_shields", W);
-        RegisterSpecific("w_deflect", "Deflect", "Reflect incoming projectiles", "w_shields", W);
-        RegisterSpecific("w_bulwark", "Bulwark", "Sustained defensive stance", "w_shields", W);
+        RegisterSpecific("w_block", "Block", "Active damage reduction stance", "w_shields", W,
+            manaCost: 5, cooldown: 2.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_shield_bash", "Shield Bash", "Offensive shield strike, staggers", "w_shields", W,
+            manaCost: 10, cooldown: 1.5f, combat: new AttackConfig { Range = 70, DamageMultiplier = 1.0f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("8899AA") });
+        RegisterSpecific("w_deflect", "Deflect", "Reflect incoming projectiles", "w_shields", W,
+            manaCost: 8, cooldown: 3.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_bulwark", "Bulwark", "Sustained defensive stance", "w_shields", W,
+            manaCost: 15, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
-        // Mind > Inner
+        // Mind > Inner — self-buffs
         RegisterBase("w_inner", "Inner", "Self-focused mental discipline", "warrior_mind", W, PassiveBonusType.Regen, 0.3f);
-        RegisterSpecific("w_battle_focus", "Battle Focus", "Increases accuracy and crit chance", "w_inner", W);
-        RegisterSpecific("w_pain_tolerance", "Pain Tolerance", "Passive damage reduction", "w_inner", W);
-        RegisterSpecific("w_second_wind", "Second Wind", "Self-heal over time, cooldown-based", "w_inner", W);
-        RegisterSpecific("w_iron_will", "Iron Will", "Resist debuffs and status effects", "w_inner", W);
+        RegisterSpecific("w_battle_focus", "Battle Focus", "Increases accuracy and crit chance", "w_inner", W,
+            manaCost: 12, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_pain_tolerance", "Pain Tolerance", "Passive damage reduction", "w_inner", W,
+            manaCost: 10, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_second_wind", "Second Wind", "Self-heal over time, cooldown-based", "w_inner", W,
+            manaCost: 15, cooldown: 15.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_iron_will", "Iron Will", "Resist debuffs and status effects", "w_inner", W,
+            manaCost: 10, cooldown: 12.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
-        // Mind > Outer
+        // Mind > Outer — AoE shouts
         RegisterBase("w_outer", "Outer", "Enemy-focused mental presence", "warrior_mind", W, PassiveBonusType.Chance, 0.5f);
-        RegisterSpecific("w_war_cry", "War Cry", "AoE shout that weakens nearby enemies", "w_outer", W);
-        RegisterSpecific("w_intimidate", "Intimidate", "Single-target fear or stagger", "w_outer", W);
-        RegisterSpecific("w_menacing", "Menacing Presence", "Passive aura that debuffs enemies", "w_outer", W);
-        RegisterSpecific("w_battle_roar", "Battle Roar", "AoE shout that slows enemy attack speed", "w_outer", W);
+        RegisterSpecific("w_war_cry", "War Cry", "AoE shout that weakens nearby enemies", "w_outer", W,
+            manaCost: 15, cooldown: 6.0f, combat: new AttackConfig { Range = 120, DamageMultiplier = 0.5f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 120, MaxTargets = 10, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FF6644") });
+        RegisterSpecific("w_intimidate", "Intimidate", "Single-target fear or stagger", "w_outer", W,
+            manaCost: 10, cooldown: 4.0f, combat: new AttackConfig { Range = 100, DamageMultiplier = 0.3f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("CC4422") });
+        RegisterSpecific("w_menacing", "Menacing Presence", "Passive aura that debuffs enemies", "w_outer", W,
+            manaCost: 12, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("w_battle_roar", "Battle Roar", "AoE shout that slows enemy attack speed", "w_outer", W,
+            manaCost: 18, cooldown: 8.0f, combat: new AttackConfig { Range = 110, DamageMultiplier = 0.4f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 110, MaxTargets = 8, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("DD5533") });
     }
 
     // --- Ranger Skills ---
@@ -165,54 +193,82 @@ public static class SkillDatabase
     {
         const PlayerClass R = PlayerClass.Ranger;
 
-        // Arms > Drawn
+        // Arms > Drawn — bow/crossbow ranged
         RegisterBase("r_drawn", "Drawn", "Bows and crossbows", "ranger_arms", R, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("r_power_shot", "Power Shot", "High-damage single shot, slow draw", "r_drawn", R);
-        RegisterSpecific("r_rapid_fire", "Rapid Fire", "Fast consecutive shots, reduced damage", "r_drawn", R);
-        RegisterSpecific("r_arc_shot", "Arc Shot", "Arcing trajectory, hits behind cover", "r_drawn", R);
-        RegisterSpecific("r_pin_shot", "Pin Shot", "Pins enemy in place briefly", "r_drawn", R);
+        RegisterSpecific("r_power_shot", "Power Shot", "High-damage single shot, slow draw", "r_drawn", R,
+            manaCost: 12, cooldown: 2.0f, combat: new AttackConfig { Range = 250, DamageMultiplier = 2.5f, IsProjectile = true, ProjectileSpeed = 450, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.8f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_rapid_fire", "Rapid Fire", "Fast consecutive shots, reduced damage", "r_drawn", R,
+            manaCost: 15, cooldown: 0.8f, combat: new AttackConfig { Range = 250, DamageMultiplier = 0.6f, IsProjectile = true, ProjectileSpeed = 500, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.6f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_arc_shot", "Arc Shot", "Arcing trajectory, hits behind cover", "r_drawn", R,
+            manaCost: 10, cooldown: 1.5f, combat: new AttackConfig { Range = 280, DamageMultiplier = 1.4f, IsProjectile = true, ProjectileSpeed = 350, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.7f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_pin_shot", "Pin Shot", "Pins enemy in place briefly", "r_drawn", R,
+            manaCost: 14, cooldown: 3.0f, combat: new AttackConfig { Range = 250, DamageMultiplier = 1.0f, IsProjectile = true, ProjectileSpeed = 500, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.7f, Effect = VisualEffect.Projectile });
 
-        // Arms > Thrown
+        // Arms > Thrown — throwing weapons
         RegisterBase("r_thrown", "Thrown", "Throwing knives, axes, projectiles", "ranger_arms", R, PassiveBonusType.AttackSpeed, 0.8f);
-        RegisterSpecific("r_knife_throw", "Knife Throw", "Fast, low-damage throw", "r_thrown", R);
-        RegisterSpecific("r_axe_throw", "Axe Throw", "Slower, heavier throw, higher damage", "r_thrown", R);
-        RegisterSpecific("r_fan_throw", "Fan Throw", "Multiple projectiles in a spread arc", "r_thrown", R);
-        RegisterSpecific("r_bounce_shot", "Bounce Shot", "Projectile ricochets between enemies", "r_thrown", R);
+        RegisterSpecific("r_knife_throw", "Knife Throw", "Fast, low-damage throw", "r_thrown", R,
+            manaCost: 5, cooldown: 0.5f, combat: new AttackConfig { Range = 180, DamageMultiplier = 0.7f, IsProjectile = true, ProjectileSpeed = 450, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.5f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_axe_throw", "Axe Throw", "Slower, heavier throw, higher damage", "r_thrown", R,
+            manaCost: 10, cooldown: 1.5f, combat: new AttackConfig { Range = 200, DamageMultiplier = 1.8f, IsProjectile = true, ProjectileSpeed = 350, ProjectileTexture = Constants.Assets.StoneSpikeProjectile, ProjectileScale = 0.8f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_fan_throw", "Fan Throw", "Multiple projectiles in a spread arc", "r_thrown", R,
+            manaCost: 18, cooldown: 2.0f, combat: new AttackConfig { Range = 160, DamageMultiplier = 0.8f, TargetMode = TargetMode.AreaOfEffect, AoeRadius = 100, MaxTargets = 5, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("CCCCCC") });
+        RegisterSpecific("r_bounce_shot", "Bounce Shot", "Projectile ricochets between enemies", "r_thrown", R,
+            manaCost: 14, cooldown: 1.8f, combat: new AttackConfig { Range = 200, DamageMultiplier = 1.0f, TargetMode = TargetMode.MultiTarget, ChainCount = 3, ChainRange = 120, IsProjectile = true, ProjectileSpeed = 400, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.5f, Effect = VisualEffect.Projectile });
 
-        // Arms > Firearms
+        // Arms > Firearms — gunpowder weapons
         RegisterBase("r_firearms", "Firearms", "Pistols, rifles, and other guns", "ranger_arms", R, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("r_quick_draw", "Quick Draw", "Fast shot from holster", "r_firearms", R);
-        RegisterSpecific("r_steady_shot", "Steady Shot", "Aimed shot, high accuracy", "r_firearms", R);
-        RegisterSpecific("r_burst_fire", "Burst Fire", "Multiple rapid shots", "r_firearms", R);
-        RegisterSpecific("r_snipe", "Snipe", "Long-range precision shot", "r_firearms", R);
+        RegisterSpecific("r_quick_draw", "Quick Draw", "Fast shot from holster", "r_firearms", R,
+            manaCost: 6, cooldown: 0.6f, combat: new AttackConfig { Range = 220, DamageMultiplier = 1.2f, IsProjectile = true, ProjectileSpeed = 600, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.4f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_steady_shot", "Steady Shot", "Aimed shot, high accuracy", "r_firearms", R,
+            manaCost: 10, cooldown: 1.5f, combat: new AttackConfig { Range = 300, DamageMultiplier = 2.2f, IsProjectile = true, ProjectileSpeed = 700, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.4f, Effect = VisualEffect.Projectile });
+        RegisterSpecific("r_burst_fire", "Burst Fire", "Multiple rapid shots", "r_firearms", R,
+            manaCost: 20, cooldown: 1.0f, combat: new AttackConfig { Range = 220, DamageMultiplier = 0.5f, TargetMode = TargetMode.AreaOfEffect, AoeRadius = 80, MaxTargets = 4, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("DDDDDD") });
+        RegisterSpecific("r_snipe", "Snipe", "Long-range precision shot", "r_firearms", R,
+            manaCost: 16, cooldown: 3.0f, combat: new AttackConfig { Range = 350, DamageMultiplier = 3.5f, IsProjectile = true, ProjectileSpeed = 800, ProjectileTexture = Constants.Assets.ArrowProjectile, ProjectileScale = 0.4f, Effect = VisualEffect.Projectile });
 
-        // Arms > Melee
+        // Arms > Melee — defensive offhand
         RegisterBase("r_melee", "Melee", "Defensive offhand weapons", "ranger_arms", R, PassiveBonusType.Defense, 1.2f);
-        RegisterSpecific("r_parry", "Parry", "Deflect incoming melee attack", "r_melee", R);
-        RegisterSpecific("r_r_block", "Block", "Reduce damage with offhand", "r_melee", R);
-        RegisterSpecific("r_riposte", "Riposte", "Counter-attack after a successful parry", "r_melee", R);
-        RegisterSpecific("r_disarm", "Disarm", "Knock weapon from enemy's grip", "r_melee", R);
+        RegisterSpecific("r_parry", "Parry", "Deflect incoming melee attack", "r_melee", R,
+            manaCost: 6, cooldown: 3.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_r_block", "Block", "Reduce damage with offhand", "r_melee", R,
+            manaCost: 5, cooldown: 2.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_riposte", "Riposte", "Counter-attack after a successful parry", "r_melee", R,
+            manaCost: 10, cooldown: 2.0f, combat: new AttackConfig { Range = 78, DamageMultiplier = 2.0f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("AABBCC") });
+        RegisterSpecific("r_disarm", "Disarm", "Knock weapon from enemy's grip", "r_melee", R,
+            manaCost: 12, cooldown: 5.0f, combat: new AttackConfig { Range = 78, DamageMultiplier = 0.5f, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("99AABB") });
 
-        // Instinct > Precision
+        // Instinct > Precision — self-buffs
         RegisterBase("r_precision", "Precision", "Offensive mental calculation", "ranger_instinct", R, PassiveBonusType.Chance, 0.5f);
-        RegisterSpecific("r_steady_aim", "Steady Aim", "Increases accuracy while stationary", "r_precision", R);
-        RegisterSpecific("r_weak_spot", "Weak Spot", "Identify enemy vulnerabilities", "r_precision", R);
-        RegisterSpecific("r_range_calc", "Range Calc", "Improved damage at long range", "r_precision", R);
-        RegisterSpecific("r_lead_shot", "Lead Shot", "Predict enemy movement", "r_precision", R);
+        RegisterSpecific("r_steady_aim", "Steady Aim", "Increases accuracy while stationary", "r_precision", R,
+            manaCost: 8, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_weak_spot", "Weak Spot", "Identify enemy vulnerabilities", "r_precision", R,
+            manaCost: 10, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_range_calc", "Range Calc", "Improved damage at long range", "r_precision", R,
+            manaCost: 8, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_lead_shot", "Lead Shot", "Predict enemy movement", "r_precision", R,
+            manaCost: 8, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
-        // Instinct > Awareness
+        // Instinct > Awareness — mobility
         RegisterBase("r_awareness", "Awareness", "Defensive situational reading", "ranger_instinct", R, PassiveBonusType.Chance, 0.5f);
-        RegisterSpecific("r_threat_sense", "Threat Sense", "Detect enemies before visual range", "r_awareness", R);
-        RegisterSpecific("r_dodge_roll", "Dodge Roll", "Quick roll to evade attacks", "r_awareness", R);
-        RegisterSpecific("r_disengage", "Disengage", "Create distance from nearby enemies", "r_awareness", R);
-        RegisterSpecific("r_tumble", "Tumble", "Recover from knockback or stagger", "r_awareness", R);
+        RegisterSpecific("r_threat_sense", "Threat Sense", "Detect enemies before visual range", "r_awareness", R,
+            manaCost: 5, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_dodge_roll", "Dodge Roll", "Quick roll to evade attacks", "r_awareness", R,
+            manaCost: 8, cooldown: 2.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_disengage", "Disengage", "Create distance from nearby enemies", "r_awareness", R,
+            manaCost: 10, cooldown: 3.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_tumble", "Tumble", "Recover from knockback or stagger", "r_awareness", R,
+            manaCost: 6, cooldown: 2.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
-        // Instinct > Trapping
+        // Instinct > Trapping — area control
         RegisterBase("r_trapping", "Trapping", "Tactical preparation", "ranger_instinct", R, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("r_snare", "Snare", "Place a trap that roots enemies", "r_trapping", R);
-        RegisterSpecific("r_tripwire", "Tripwire", "Line trap that triggers knockdown", "r_trapping", R);
-        RegisterSpecific("r_decoy", "Decoy", "Place a dummy that draws attention", "r_trapping", R);
-        RegisterSpecific("r_ambush", "Ambush", "Bonus damage on first attack", "r_trapping", R);
+        RegisterSpecific("r_snare", "Snare", "Place a trap that roots enemies", "r_trapping", R,
+            manaCost: 12, cooldown: 5.0f, combat: new AttackConfig { Range = 100, DamageMultiplier = 0.5f, TargetMode = TargetMode.AreaOfEffect, AoeRadius = 60, MaxTargets = 3, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("66AA44") });
+        RegisterSpecific("r_tripwire", "Tripwire", "Line trap that triggers knockdown", "r_trapping", R,
+            manaCost: 10, cooldown: 4.0f, combat: new AttackConfig { Range = 120, DamageMultiplier = 0.8f, TargetMode = TargetMode.AreaOfEffect, AoeRadius = 80, MaxTargets = 4, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("558833") });
+        RegisterSpecific("r_decoy", "Decoy", "Place a dummy that draws attention", "r_trapping", R,
+            manaCost: 15, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("r_ambush", "Ambush", "Bonus damage on first attack", "r_trapping", R,
+            manaCost: 10, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
     }
 
     // --- Mage Skills ---
