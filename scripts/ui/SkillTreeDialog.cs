@@ -4,9 +4,9 @@ using DungeonGame.Autoloads;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Skill tree browser and allocation UI. Accessed from pause menu.
-/// Shows categories → base skills → specific skills in a hierarchical layout.
-/// Players can spend skill points to level skills.
+/// Skill tree browser with tabbed categories (Q/E to switch).
+/// Each tab shows base skills and their specific skills for one category.
+/// Players can spend skill points and assign skills to the hotbar.
 /// </summary>
 public partial class SkillTreeDialog : Control
 {
@@ -14,12 +14,16 @@ public partial class SkillTreeDialog : Control
 
     private ColorRect _overlay = null!;
     private CenterContainer _center = null!;
-    private VBoxContainer _contentContainer = null!;
     private Label _pointsLabel = null!;
     private Label _detailLabel = null!;
+    private HBoxContainer _tabBar = null!;
     private ScrollContainer _scrollContainer = null!;
     private VBoxContainer _skillList = null!;
     private bool _isOpen;
+
+    private string[] _categories = System.Array.Empty<string>();
+    private Button[] _tabButtons = System.Array.Empty<Button>();
+    private int _currentTab;
 
     public bool IsOpen => _isOpen;
 
@@ -47,54 +51,57 @@ public partial class SkillTreeDialog : Control
 
         var panel = new PanelContainer();
         panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(420, 0);
+        panel.CustomMinimumSize = new Vector2(440, 0);
         _center.AddChild(panel);
 
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
-        _contentContainer = new VBoxContainer();
-        _contentContainer.AddThemeConstantOverride("separation", 8);
-        margin.AddChild(_contentContainer);
+        var content = new VBoxContainer();
+        content.AddThemeConstantOverride("separation", 6);
+        panel.AddChild(content);
 
         // Header
         var title = new Label();
         title.Text = Strings.Skills.Title;
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        _contentContainer.AddChild(title);
+        content.AddChild(title);
 
         _pointsLabel = new Label();
         UiTheme.StyleLabel(_pointsLabel, UiTheme.Colors.Safe, UiTheme.FontSizes.Body);
         _pointsLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _contentContainer.AddChild(_pointsLabel);
+        content.AddChild(_pointsLabel);
 
-        _contentContainer.AddChild(new HSeparator());
+        // Tab bar — one tab per category
+        _tabBar = new HBoxContainer();
+        _tabBar.AddThemeConstantOverride("separation", 0);
+        _tabBar.Alignment = BoxContainer.AlignmentMode.Center;
+        content.AddChild(_tabBar);
 
-        // Detail area (shows selected skill info)
+        // Q/E hint
+        var tabHint = new Label();
+        string lKey = GetActionKeyName(Constants.InputActions.ShoulderLeft);
+        string rKey = GetActionKeyName(Constants.InputActions.ShoulderRight);
+        tabHint.Text = $"[{lKey}] / [{rKey}] switch tabs | [D] close";
+        UiTheme.StyleLabel(tabHint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        tabHint.HorizontalAlignment = HorizontalAlignment.Center;
+        content.AddChild(tabHint);
+
+        content.AddChild(new HSeparator());
+
+        // Detail area
         _detailLabel = new Label();
         UiTheme.StyleLabel(_detailLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         _detailLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _detailLabel.CustomMinimumSize = new Vector2(0, 40);
-        _contentContainer.AddChild(_detailLabel);
+        _detailLabel.CustomMinimumSize = new Vector2(0, 36);
+        content.AddChild(_detailLabel);
 
-        // Scrollable skill list
+        // Scrollable skill list — ONLY skills, no Cancel button
         _scrollContainer = new ScrollContainer();
-        _scrollContainer.CustomMinimumSize = new Vector2(0, 320);
-        _contentContainer.AddChild(_scrollContainer);
+        _scrollContainer.CustomMinimumSize = new Vector2(0, 300);
+        content.AddChild(_scrollContainer);
 
         _skillList = new VBoxContainer();
         _skillList.AddThemeConstantOverride("separation", 4);
         _scrollContainer.AddChild(_skillList);
-
-        // Close button
-        var closeBtn = new Button();
-        closeBtn.Text = Strings.Ui.Cancel;
-        closeBtn.CustomMinimumSize = new Vector2(200, 38);
-        closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Body);
-        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Close()));
-        _contentContainer.AddChild(closeBtn);
     }
 
     public new void Show()
@@ -102,7 +109,12 @@ public partial class SkillTreeDialog : Control
         if (_isOpen) return;
         _isOpen = true;
         GetTree().Paused = true;
-        RefreshSkillList();
+
+        // Build tabs from player's class categories
+        _categories = SkillDatabase.GetCategories(GameState.Instance.SelectedClass);
+        RebuildTabs();
+        BuildTab(0);
+
         _overlay.Visible = true;
         _center.Visible = true;
     }
@@ -112,7 +124,6 @@ public partial class SkillTreeDialog : Control
         _isOpen = false;
         _overlay.Visible = false;
         _center.Visible = false;
-        // Return to PauseMenu (which opened us) — keep game paused
         var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
         if (pauseMenu != null)
         {
@@ -125,57 +136,81 @@ public partial class SkillTreeDialog : Control
         }
     }
 
+    private void RebuildTabs()
+    {
+        foreach (Node child in _tabBar.GetChildren())
+            child.QueueFree();
+
+        _tabButtons = new Button[_categories.Length];
+        for (int i = 0; i < _categories.Length; i++)
+        {
+            var btn = new Button();
+            btn.Text = SkillDatabase.GetCategoryName(_categories[i]);
+            btn.CustomMinimumSize = new Vector2(0, 28);
+            btn.FocusMode = FocusModeEnum.None; // tabs not focusable — Q/E only
+            int idx = i;
+            btn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => BuildTab(idx)));
+            _tabBar.AddChild(btn);
+            _tabButtons[i] = btn;
+        }
+    }
+
+    private void BuildTab(int tabIndex)
+    {
+        _currentTab = tabIndex;
+
+        // Style active/inactive tabs
+        for (int i = 0; i < _tabButtons.Length; i++)
+        {
+            bool active = i == tabIndex;
+            _tabButtons[i].AddThemeStyleboxOverride("normal", CreateTabStyle(active));
+            _tabButtons[i].AddThemeStyleboxOverride("hover", CreateTabStyle(active));
+            _tabButtons[i].AddThemeStyleboxOverride("focus", CreateTabStyle(active));
+            _tabButtons[i].AddThemeColorOverride("font_color", active ? UiTheme.Colors.BgDark : UiTheme.Colors.Muted);
+            _tabButtons[i].AddThemeColorOverride("font_hover_color", active ? UiTheme.Colors.BgDark : UiTheme.Colors.Ink);
+            _tabButtons[i].AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Small);
+        }
+
+        RefreshSkillList();
+    }
+
     private void RefreshSkillList()
     {
         foreach (Node child in _skillList.GetChildren())
             child.QueueFree();
 
         var tracker = GameState.Instance.Skills;
-        var playerClass = GameState.Instance.SelectedClass;
-
         _pointsLabel.Text = Strings.Skills.PointsAvailable(tracker.SkillPoints);
         _detailLabel.Text = Strings.Skills.SelectSkill;
 
-        string[] categories = SkillDatabase.GetCategories(playerClass);
-        foreach (string catId in categories)
+        if (_currentTab >= _categories.Length) return;
+        string catId = _categories[_currentTab];
+
+        foreach (var baseDef in SkillDatabase.GetBaseSkillsInCategory(catId))
         {
-            // Category header
-            string catName = SkillDatabase.GetCategoryName(catId);
-            var catLabel = new Label();
-            catLabel.Text = $"─── {catName} ───";
-            UiTheme.StyleLabel(catLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
-            catLabel.HorizontalAlignment = HorizontalAlignment.Center;
-            _skillList.AddChild(catLabel);
+            var baseState = tracker.GetState(baseDef.Id);
+            int baseLevel = baseState?.Level ?? 0;
 
-            // Base skills in this category
-            foreach (var baseDef in SkillDatabase.GetBaseSkillsInCategory(catId))
+            var baseRow = CreateSkillRow(baseDef, baseState, tracker, isBase: true);
+            _skillList.AddChild(baseRow);
+
+            if (baseLevel >= 1)
             {
-                var baseState = tracker.GetState(baseDef.Id);
-                int baseLevel = baseState?.Level ?? 0;
-                float passiveBonus = baseState?.GetPassiveBonus(baseDef.PassiveMultiplier) ?? 0;
-
-                // Base skill row
-                var baseRow = CreateSkillRow(baseDef, baseState, tracker, isBase: true);
-                _skillList.AddChild(baseRow);
-
-                // Specific skills under this base (only if base >= 1)
-                if (baseLevel >= 1)
+                foreach (var specDef in SkillDatabase.GetSpecificSkills(baseDef.Id))
                 {
-                    foreach (var specDef in SkillDatabase.GetSpecificSkills(baseDef.Id))
-                    {
-                        var specState = tracker.GetState(specDef.Id);
-                        var specRow = CreateSkillRow(specDef, specState, tracker, isBase: false);
-                        _skillList.AddChild(specRow);
-                    }
+                    var specState = tracker.GetState(specDef.Id);
+                    var specRow = CreateSkillRow(specDef, specState, tracker, isBase: false);
+                    _skillList.AddChild(specRow);
                 }
             }
-
-            // Spacer between categories
-            var spacer = new Control();
-            spacer.CustomMinimumSize = new Vector2(0, 8);
-            _skillList.AddChild(spacer);
         }
 
+        _scrollContainer.ScrollVertical = 0;
+        CallDeferred(MethodName.FocusFirst);
+    }
+
+    private void FocusFirst()
+    {
         UiTheme.FocusFirstButton(_skillList);
     }
 
@@ -184,7 +219,6 @@ public partial class SkillTreeDialog : Control
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
 
-        // Indent specific skills
         if (!isBase)
         {
             var indent = new Control();
@@ -192,7 +226,6 @@ public partial class SkillTreeDialog : Control
             row.AddChild(indent);
         }
 
-        // Skill name + level
         int level = state?.Level ?? 0;
         var nameLabel = new Label();
         string prefix = isBase ? "▸ " : "  ";
@@ -202,7 +235,6 @@ public partial class SkillTreeDialog : Control
         nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(nameLabel);
 
-        // XP progress (if leveled)
         if (level > 0 && state != null)
         {
             var xpLabel = new Label();
@@ -212,7 +244,7 @@ public partial class SkillTreeDialog : Control
             row.AddChild(xpLabel);
         }
 
-        // Allocate button (if player has points and skill is available)
+        // Allocate point button
         bool canAllocate = tracker.SkillPoints > 0 && tracker.IsUnlocked(def.Id);
         var allocBtn = new Button();
         allocBtn.Text = "+";
@@ -228,8 +260,8 @@ public partial class SkillTreeDialog : Control
         }));
         row.AddChild(allocBtn);
 
-        // Assign-to-hotbar button (only for specific skills that are unlocked)
-        if (def.Type == SkillType.Specific && (state?.Level ?? 0) >= 1)
+        // Assign-to-hotbar button (specific skills that are unlocked)
+        if (def.Type == SkillType.Specific && level >= 1)
         {
             var assignBtn = new Button();
             assignBtn.Text = "▶";
@@ -245,7 +277,7 @@ public partial class SkillTreeDialog : Control
             row.AddChild(assignBtn);
         }
 
-        // FF-style: detail updates on focus (cursor move), not just hover
+        // Detail on focus
         string detailText = BuildDetailText(def, state);
         allocBtn.FocusEntered += () => _detailLabel.Text = detailText;
         row.MouseEntered += () => _detailLabel.Text = detailText;
@@ -257,6 +289,9 @@ public partial class SkillTreeDialog : Control
     {
         int level = state?.Level ?? 0;
         string text = $"{def.Name}\n{def.Description}";
+
+        if (def.ManaCost > 0)
+            text += $"\nCost: {def.ManaCost} MP | CD: {def.Cooldown:F1}s";
 
         if (def.Type == SkillType.Base && level > 0 && state != null)
         {
@@ -296,7 +331,7 @@ public partial class SkillTreeDialog : Control
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!_isOpen) return;
-        if (ActionMenu.Instance?.IsOpen == true) return; // let action menu handle input
+        if (ActionMenu.Instance?.IsOpen == true) return;
 
         if (KeyboardNav.IsCancelPressed(@event))
         {
@@ -305,6 +340,21 @@ public partial class SkillTreeDialog : Control
             return;
         }
 
+        // Q/E switch tabs
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            BuildTab((_currentTab - 1 + _categories.Length) % _categories.Length);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            BuildTab((_currentTab + 1) % _categories.Length);
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Navigate ONLY within skill list — Cancel button is gone, D closes
         if (KeyboardNav.HandleInput(@event, _skillList))
         {
             GetViewport().SetInputAsHandled();
@@ -313,5 +363,39 @@ public partial class SkillTreeDialog : Control
 
         if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
+    }
+
+    private static StyleBoxFlat CreateTabStyle(bool active)
+    {
+        var style = new StyleBoxFlat();
+        if (active)
+        {
+            style.BgColor = UiTheme.Colors.Action;
+            style.BorderColor = UiTheme.Colors.Action;
+        }
+        else
+        {
+            style.BgColor = new Color(UiTheme.Colors.BgPanel, 0.6f);
+            style.BorderColor = new Color(UiTheme.Colors.Muted, 0.3f);
+        }
+        style.SetBorderWidthAll(1);
+        style.BorderWidthBottom = active ? 3 : 1;
+        style.SetCornerRadiusAll(0);
+        style.CornerRadiusTopLeft = 4;
+        style.CornerRadiusTopRight = 4;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 4;
+        style.ContentMarginBottom = 4;
+        return style;
+    }
+
+    private static string GetActionKeyName(string action)
+    {
+        var events = InputMap.ActionGetEvents(action);
+        foreach (var ev in events)
+            if (ev is InputEventKey keyEv)
+                return OS.GetKeycodeString(keyEv.Keycode);
+        return "?";
     }
 }
