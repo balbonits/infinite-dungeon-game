@@ -169,16 +169,20 @@ public partial class FloorWipeDialog : Control
         if (!_isOpen)
             return;
 
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            Close();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (KeyboardNav.HandleInput(@event, _content))
         {
             GetViewport().SetInputAsHandled();
             return;
         }
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
-        {
-            Close();
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
-        }
     }
 }

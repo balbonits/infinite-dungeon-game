@@ -158,12 +158,28 @@ public partial class StatAllocDialog : Control
         _isOpen = false;
         _overlay.Visible = false;
         _center.Visible = false;
-        GetTree().Paused = false;
+        var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
+        if (pauseMenu != null)
+        {
+            pauseMenu.Visible = true;
+            UiTheme.FocusFirstButton(pauseMenu.GetNode<VBoxContainer>("CenterContainer/PanelContainer/MarginContainer/VBoxContainer"));
+        }
+        else
+        {
+            GetTree().Paused = false;
+        }
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!_isOpen) return;
+
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            Close();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
 
         if (KeyboardNav.HandleInput(@event, _content))
         {
@@ -171,10 +187,7 @@ public partial class StatAllocDialog : Control
             return;
         }
 
-        if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
-        {
-            Close();
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
-        }
     }
 }

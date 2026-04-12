@@ -371,7 +371,8 @@ public partial class ShopWindow : Control
             return;
         }
 
-        if (KeyboardNav.ConsumeMovement(@event))
+        // Block ALL input when open — nothing passes through to game or panels behind
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
     }
 }
