@@ -90,7 +90,7 @@ public partial class BackpackWindow : Control
         content.AddChild(_scrollContainer);
 
         _itemList = new VBoxContainer();
-        _itemList.AddThemeConstantOverride("separation", 0);
+        _itemList.AddThemeConstantOverride("separation", 4);
         _scrollContainer.AddChild(_itemList);
 
         // Close button
@@ -148,23 +148,24 @@ public partial class BackpackWindow : Control
         // Grid of square slot boxes — 5 columns
         const int columns = 5;
         const float slotSize = 64;
-        HBoxContainer? currentRow = null;
+
+        var grid = new GridContainer();
+        grid.Columns = columns;
+        grid.AddThemeConstantOverride("h_separation", 6);
+        grid.AddThemeConstantOverride("v_separation", 6);
+        grid.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        _itemList.AddChild(grid);
 
         for (int i = 0; i < inv.SlotCount; i++)
         {
-            if (i % columns == 0)
-            {
-                currentRow = new HBoxContainer();
-                currentRow.AddThemeConstantOverride("separation", 4);
-                currentRow.Alignment = BoxContainer.AlignmentMode.Center;
-                _itemList.AddChild(currentRow);
-            }
 
             var stack = inv.GetSlot(i);
             int slotIdx = i;
 
             var slotBtn = new Button();
             slotBtn.CustomMinimumSize = new Vector2(slotSize, slotSize);
+            slotBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            slotBtn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
             slotBtn.FocusMode = FocusModeEnum.All;
 
             if (stack != null)
@@ -209,7 +210,7 @@ public partial class BackpackWindow : Control
                 slotBtn.Disabled = true;
             }
 
-            currentRow!.AddChild(slotBtn);
+            grid.AddChild(slotBtn);
         }
 
         _scrollContainer.ScrollVertical = 0;
@@ -221,16 +222,8 @@ public partial class BackpackWindow : Control
         UiTheme.FocusFirstButton(_itemList);
     }
 
-    private static StyleBoxFlat CreateSlotBox(Color bgColor, bool focused)
-    {
-        var style = new StyleBoxFlat();
-        style.BgColor = bgColor;
-        style.BorderColor = focused ? UiTheme.Colors.Accent : new Color(UiTheme.Colors.Muted, 0.4f);
-        style.SetBorderWidthAll(focused ? 2 : 1);
-        style.SetCornerRadiusAll(3);
-        style.SetContentMarginAll(4);
-        return style;
-    }
+    private static StyleBoxFlat CreateSlotBox(Color bgColor, bool focused) =>
+        UiTheme.CreateSlotStyle(bgColor, focused);
 
     private void ShowItemActions(int slotIdx, ItemDef item, Vector2 position)
     {

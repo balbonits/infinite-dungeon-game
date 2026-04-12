@@ -173,4 +173,25 @@ public static class UiTheme
         label.AddThemeColorOverride("font_color", color);
         label.AddThemeFontSizeOverride("font_size", fontSize);
     }
+
+    /// <summary>
+    /// Unified slot box style for backpack, bank, and skill bar.
+    /// Square with 5px rounded corners, consistent border.
+    /// </summary>
+    public static StyleBoxFlat CreateSlotStyle(Color bgColor, bool focused)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = bgColor;
+        style.BorderColor = focused ? Colors.Accent : new Color(Colors.PanelBorder, 0.6f);
+        style.SetBorderWidthAll(focused ? 2 : 1);
+        style.SetCornerRadiusAll(5);
+        style.SetContentMarginAll(4);
+        return style;
+    }
+
+    /// <summary>Slot style for empty/disabled slots.</summary>
+    public static StyleBoxFlat CreateEmptySlotStyle()
+    {
+        return CreateSlotStyle(new Color(0.08f, 0.08f, 0.12f, 0.6f), false);
+    }
 }

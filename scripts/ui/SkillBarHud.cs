@@ -55,8 +55,9 @@ public partial class SkillBarHud : Control
         for (int i = 0; i < SkillBar.SlotCount; i++)
         {
             var panel = new PanelContainer();
-            panel.CustomMinimumSize = new Vector2(90, 44);
-            panel.AddThemeStyleboxOverride("panel", CreateSlotStyle());
+            panel.CustomMinimumSize = new Vector2(90, 48);
+            panel.AddThemeStyleboxOverride("panel", UiTheme.CreateSlotStyle(
+                new Color(0.08f, 0.08f, 0.12f, 0.85f), false));
             panel.MouseFilter = MouseFilterEnum.Ignore;
             _barContainer.AddChild(panel);
             _slotPanels[i] = panel;
@@ -95,19 +96,7 @@ public partial class SkillBarHud : Control
         }
     }
 
-    private static StyleBoxFlat CreateSlotStyle()
-    {
-        var style = new StyleBoxFlat();
-        style.BgColor = new Color(0.08f, 0.08f, 0.12f, 0.85f);
-        style.BorderColor = UiTheme.Colors.Accent;
-        style.SetBorderWidthAll(1);
-        style.SetCornerRadiusAll(3);
-        style.ContentMarginLeft = 4;
-        style.ContentMarginRight = 4;
-        style.ContentMarginTop = 2;
-        style.ContentMarginBottom = 2;
-        return style;
-    }
+    // Slot style now uses UiTheme.CreateSlotStyle (shared with backpack/bank)
 
     public override void _Process(double delta)
     {
