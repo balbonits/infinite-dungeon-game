@@ -92,6 +92,16 @@ public partial class BackpackWindow : Control
         _itemList = new VBoxContainer();
         _itemList.AddThemeConstantOverride("separation", 3);
         _scrollContainer.AddChild(_itemList);
+
+        // Close button
+        var closeBtn = new Button();
+        closeBtn.Text = "Close";
+        closeBtn.CustomMinimumSize = new Vector2(200, 38);
+        closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        closeBtn.FocusMode = FocusModeEnum.None; // not in nav — D/Esc closes, this is mouse-only
+        UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Body);
+        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(Close));
+        content.AddChild(closeBtn);
     }
 
     public void Open()
@@ -138,61 +148,64 @@ public partial class BackpackWindow : Control
         for (int i = 0; i < inv.SlotCount; i++)
         {
             var stack = inv.GetSlot(i);
-            if (stack == null) continue;
 
             var row = new HBoxContainer();
             row.AddThemeConstantOverride("separation", 8);
 
-            // Item name + count
-            var nameLabel = new Label();
-            string countStr = stack.Count > 1 ? $" x{stack.Count}" : "";
-            nameLabel.Text = $"{stack.Item.Name}{countStr}";
-            Color nameColor = stack.Item.Category switch
+            // Slot number
+            var slotLabel = new Label();
+            slotLabel.Text = $"{i + 1:D2}";
+            slotLabel.CustomMinimumSize = new Vector2(22, 0);
+            UiTheme.StyleLabel(slotLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+            row.AddChild(slotLabel);
+
+            if (stack != null)
             {
-                ItemCategory.Consumable => UiTheme.Colors.Safe,
-                ItemCategory.Material => UiTheme.Colors.Info,
-                ItemCategory.Weapon or ItemCategory.Armor => UiTheme.Colors.Ink,
-                _ => UiTheme.Colors.Muted,
-            };
-            UiTheme.StyleLabel(nameLabel, nameColor, UiTheme.FontSizes.Body);
-            nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            row.AddChild(nameLabel);
+                // Item name + count
+                var nameLabel = new Label();
+                string countStr = stack.Count > 1 ? $" x{stack.Count}" : "";
+                nameLabel.Text = $"{stack.Item.Name}{countStr}";
+                Color nameColor = stack.Item.Category switch
+                {
+                    ItemCategory.Consumable => UiTheme.Colors.Safe,
+                    ItemCategory.Material => UiTheme.Colors.Info,
+                    ItemCategory.Weapon or ItemCategory.Armor => UiTheme.Colors.Ink,
+                    _ => UiTheme.Colors.Muted,
+                };
+                UiTheme.StyleLabel(nameLabel, nameColor, UiTheme.FontSizes.Body);
+                nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                row.AddChild(nameLabel);
 
-            // Category tag
-            var catLabel = new Label();
-            catLabel.Text = stack.Item.Category.ToString();
-            UiTheme.StyleLabel(catLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            row.AddChild(catLabel);
+                // Action button
+                var actionBtn = new Button();
+                actionBtn.Text = "▶";
+                actionBtn.CustomMinimumSize = new Vector2(28, 28);
+                actionBtn.FocusMode = FocusModeEnum.All;
+                UiTheme.StyleButton(actionBtn, UiTheme.FontSizes.Small);
+                int slotIdx = i;
+                var itemDef = stack.Item;
+                actionBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+                    ShowItemActions(slotIdx, itemDef, actionBtn.GlobalPosition)));
+                row.AddChild(actionBtn);
 
-            // Action button
-            var actionBtn = new Button();
-            actionBtn.Text = "▶";
-            actionBtn.CustomMinimumSize = new Vector2(28, 28);
-            actionBtn.FocusMode = FocusModeEnum.All;
-            UiTheme.StyleButton(actionBtn, UiTheme.FontSizes.Small);
-            int slotIdx = i;
-            var itemDef = stack.Item;
-            actionBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
-                ShowItemActions(slotIdx, itemDef, actionBtn.GlobalPosition)));
-            row.AddChild(actionBtn);
-
-            // Detail on focus
-            string detail = $"{stack.Item.Name}\n{stack.Item.Description}";
-            if (stack.Item.HealAmount > 0) detail += $"\nHeals: {stack.Item.HealAmount} HP";
-            if (stack.Item.ManaAmount > 0) detail += $"\nRestores: {stack.Item.ManaAmount} MP";
-            if (stack.Item.SellPrice > 0) detail += $"\nSell: {stack.Item.SellPrice}g";
-            actionBtn.FocusEntered += () => _detailLabel.Text = detail;
+                // Detail on focus
+                string detail = $"{stack.Item.Name}\n{stack.Item.Description}";
+                if (stack.Item.HealAmount > 0) detail += $"\nHeals: {stack.Item.HealAmount} HP";
+                if (stack.Item.ManaAmount > 0) detail += $"\nRestores: {stack.Item.ManaAmount} MP";
+                if (stack.Item.SellPrice > 0) detail += $"\nSell: {stack.Item.SellPrice}g";
+                actionBtn.FocusEntered += () => _detailLabel.Text = detail;
+            }
+            else
+            {
+                // Empty slot
+                var emptyLabel = new Label();
+                emptyLabel.Text = "— empty —";
+                UiTheme.StyleLabel(emptyLabel, new Color(UiTheme.Colors.Muted, 0.4f), UiTheme.FontSizes.Small);
+                emptyLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                row.AddChild(emptyLabel);
+            }
 
             _itemList.AddChild(row);
-        }
-
-        if (inv.UsedSlots == 0)
-        {
-            var empty = new Label();
-            empty.Text = "Backpack is empty";
-            UiTheme.StyleLabel(empty, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-            empty.HorizontalAlignment = HorizontalAlignment.Center;
-            _itemList.AddChild(empty);
         }
 
         _scrollContainer.ScrollVertical = 0;
