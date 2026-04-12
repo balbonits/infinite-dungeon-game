@@ -91,6 +91,7 @@ public partial class BackpackWindow : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
         Refresh();
         _overlay.Visible = true;
@@ -99,6 +100,7 @@ public partial class BackpackWindow : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         _overlay.Visible = false;
         var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
         if (pauseMenu != null)

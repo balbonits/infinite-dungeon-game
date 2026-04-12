@@ -137,6 +137,7 @@ public partial class BankWindow : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
         Refresh();
         _overlay.Visible = true;
@@ -146,6 +147,7 @@ public partial class BankWindow : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         GetTree().Paused = false;
         _overlay.Visible = false;
         _center.Visible = false;

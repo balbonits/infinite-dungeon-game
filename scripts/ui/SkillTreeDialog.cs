@@ -91,6 +91,7 @@ public partial class SkillTreeDialog : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
 
         // Build tabs from player's class categories
@@ -104,6 +105,7 @@ public partial class SkillTreeDialog : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         _overlay.Visible = false;
         var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
         if (pauseMenu != null)

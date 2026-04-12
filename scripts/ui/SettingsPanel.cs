@@ -41,6 +41,7 @@ public partial class SettingsPanel : Control
     {
         ActiveInstance = this;
         _isOpen = true;
+        WindowStack.Push(this);
         ProcessMode = ProcessModeEnum.Always;
         AnchorsPreset = (int)LayoutPreset.FullRect;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -348,6 +349,7 @@ public partial class SettingsPanel : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         ActiveInstance = null;
         GameSettings.Save();
         _onClose?.Invoke();

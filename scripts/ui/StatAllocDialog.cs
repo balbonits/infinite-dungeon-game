@@ -62,6 +62,7 @@ public partial class StatAllocDialog : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
         Rebuild();
         _overlay.Visible = true;
@@ -156,6 +157,7 @@ public partial class StatAllocDialog : Control
     private void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         _overlay.Visible = false;
         _center.Visible = false;
         var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");

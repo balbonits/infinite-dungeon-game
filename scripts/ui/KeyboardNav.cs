@@ -83,6 +83,21 @@ public static class KeyboardNav
     }
 
     /// <summary>
+    /// Check if this window should skip input because another window is on top.
+    /// Call at the top of _UnhandledInput. Returns true if input was blocked.
+    /// </summary>
+    public static bool BlockIfNotTopmost(Godot.Control window, Godot.InputEvent @event)
+    {
+        if (WindowStack.IsBlocked(window))
+        {
+            if (@event is Godot.InputEventKey k && k.Pressed)
+                window.GetViewport().SetInputAsHandled();
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Check if the event is a D/circle cancel press. Panels call this for FF-style back/cancel.
     /// </summary>
     public static bool IsCancelPressed(InputEvent @event)
