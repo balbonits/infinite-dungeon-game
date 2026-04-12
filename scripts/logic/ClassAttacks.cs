@@ -60,22 +60,23 @@ public static class ClassAttacks
     };
 
     /// <summary>
-    /// Get the primary attack config for a class.
+    /// Get the primary (auto-attack) config for a class.
+    /// Mage auto-attacks with staff melee — magic bolt is a mana skill (use via hotbar).
     /// </summary>
     public static AttackConfig GetPrimary(PlayerClass playerClass) => playerClass switch
     {
         PlayerClass.Warrior => WarriorSlash,
         PlayerClass.Ranger => RangerArrowShot,
-        PlayerClass.Mage => MageMagicBolt,
+        PlayerClass.Mage => MageStaffMelee,
         _ => WarriorSlash,
     };
 
     /// <summary>
     /// Get the melee fallback for a class (null if class has no fallback).
+    /// Ranger has no fallback. Warrior and Mage primary IS melee.
     /// </summary>
     public static AttackConfig? GetMeleeFallback(PlayerClass playerClass) => playerClass switch
     {
-        PlayerClass.Mage => MageStaffMelee,
         _ => null,
     };
 }

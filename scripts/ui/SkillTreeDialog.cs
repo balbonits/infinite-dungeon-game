@@ -218,6 +218,23 @@ public partial class SkillTreeDialog : Control
         }));
         row.AddChild(allocBtn);
 
+        // Assign-to-hotbar button (only for specific skills that are unlocked)
+        if (def.Type == SkillType.Specific && (state?.Level ?? 0) >= 1)
+        {
+            var assignBtn = new Button();
+            assignBtn.Text = "▶";
+            assignBtn.CustomMinimumSize = new Vector2(28, 28);
+            assignBtn.FocusMode = FocusModeEnum.All;
+            UiTheme.StyleSecondaryButton(assignBtn, UiTheme.FontSizes.Small);
+            string assignId = def.Id;
+            string assignName = def.Name;
+            assignBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+            {
+                ShowAssignMenu(assignId, assignName, assignBtn.GlobalPosition);
+            }));
+            row.AddChild(assignBtn);
+        }
+
         // FF-style: detail updates on focus (cursor move), not just hover
         string detailText = BuildDetailText(def, state);
         allocBtn.FocusEntered += () => _detailLabel.Text = detailText;
@@ -247,9 +264,29 @@ public partial class SkillTreeDialog : Control
         return text;
     }
 
+    private void ShowAssignMenu(string skillId, string skillName, Vector2 position)
+    {
+        var actions = new (string label, System.Action action)[]
+        {
+            ($"Assign to [1]", () => AssignToSlot(0, skillId, skillName)),
+            ($"Assign to [2]", () => AssignToSlot(1, skillId, skillName)),
+            ($"Assign to [3]", () => AssignToSlot(2, skillId, skillName)),
+            ($"Assign to [4]", () => AssignToSlot(3, skillId, skillName)),
+        };
+        ActionMenu.Instance?.Show(position, actions);
+    }
+
+    private void AssignToSlot(int slot, string skillId, string skillName)
+    {
+        GameState.Instance.SkillHotbar.SetSlot(slot, skillId);
+        SkillBarHud.Instance?.RefreshDisplay();
+        Toast.Instance?.Success($"{skillName} → Slot [{slot + 1}]");
+    }
+
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!_isOpen) return;
+        if (ActionMenu.Instance?.IsOpen == true) return; // let action menu handle input
 
         if (KeyboardNav.IsCancelPressed(@event))
         {

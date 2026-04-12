@@ -51,6 +51,8 @@ public static class SaveSystem
             BankData = gs.PlayerBank.CaptureState(),
             QuestData = gs.Quests.CaptureState(),
             AchievementData = gs.Achievements.CaptureState(),
+            // Skill hotbar
+            SkillBarSlots = gs.SkillHotbar.ExportSlots(),
             // Endgame systems
             SaturationData = new SavedSaturationData
             {
@@ -130,6 +132,10 @@ public static class SaveSystem
         gs.Achievements = new AchievementTracker();
         if (data.AchievementData != null)
             gs.Achievements.RestoreState(data.AchievementData);
+
+        // Restore skill hotbar
+        gs.SkillHotbar = new SkillBar();
+        gs.SkillHotbar.ImportSlots(data.SkillBarSlots);
 
         // Restore endgame systems
         gs.Saturation = new ZoneSaturation();
