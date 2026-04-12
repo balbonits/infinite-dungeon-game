@@ -3,12 +3,12 @@ using Godot;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Static controls reference screen. Shows all keybindings organized by category.
+/// Static tutorial reference. Shows keybindings, combat basics, and game info.
 /// No guided tour — just a readable reference the player can open anytime.
 /// </summary>
-public partial class ControlsHelp : Control
+public partial class TutorialPanel : Control
 {
-    public static ControlsHelp? ActiveInstance { get; private set; }
+    public static TutorialPanel? ActiveInstance { get; private set; }
 
     private bool _isOpen;
     private int _currentTab;
@@ -21,11 +21,13 @@ public partial class ControlsHelp : Control
 
     public bool IsOpen => _isOpen;
 
-    public static ControlsHelp Open(Node parent, System.Action? onClose = null)
+    public static TutorialPanel Open(Node parent, System.Action? onClose = null)
     {
-        var help = new ControlsHelp();
+        var help = new TutorialPanel();
         help._onClose = onClose;
-        parent.AddChild(help);
+        // Add to UILayer (sibling level) so input doesn't bleed to parent
+        var uiLayer = parent.GetTree().Root.GetNode("Main/UILayer");
+        uiLayer.AddChild(help);
         return help;
     }
 
@@ -41,12 +43,12 @@ public partial class ControlsHelp : Control
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         Size = GetViewportRect().Size;
 
-        var (overlay, vbox) = UiTheme.CreateDialogWindow(460f, 0.7f);
+        var (overlay, vbox) = UiTheme.CreateDialogWindow(560f, 0.7f);
         AddChild(overlay);
 
         // Title
         var title = new Label();
-        title.Text = "CONTROLS";
+        title.Text = "TUTORIAL";
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         vbox.AddChild(title);
@@ -80,7 +82,7 @@ public partial class ControlsHelp : Control
         vbox.AddChild(new HSeparator());
 
         _scrollContainer = new ScrollContainer();
-        _scrollContainer.CustomMinimumSize = new Vector2(0, 320);
+        _scrollContainer.CustomMinimumSize = new Vector2(0, 400);
         vbox.AddChild(_scrollContainer);
 
         _content = new VBoxContainer();

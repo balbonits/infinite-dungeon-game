@@ -33,7 +33,8 @@ public partial class SettingsPanel : Control
     {
         var panel = new SettingsPanel();
         panel._onClose = onClose;
-        parent.AddChild(panel);
+        var uiLayer = parent.GetTree().Root.GetNode("Main/UILayer");
+        uiLayer.AddChild(panel);
         return panel;
     }
 

@@ -80,13 +80,13 @@ public partial class SplashScreen : Control
 
         // Controls button
         var controlsBtn = new Button();
-        controlsBtn.Text = "Controls";
+        controlsBtn.Text = "Tutorial";
         controlsBtn.CustomMinimumSize = new Vector2(300, 44);
         controlsBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         controlsBtn.FocusMode = FocusModeEnum.All;
         UiTheme.StyleSecondaryButton(controlsBtn, UiTheme.FontSizes.Button);
         controlsBtn.Connect(BaseButton.SignalName.Pressed,
-            Callable.From(() => ControlsHelp.Open(this)));
+            Callable.From(() => TutorialPanel.Open(this)));
         btnBox.AddChild(controlsBtn);
 
         // Settings button
