@@ -84,6 +84,17 @@ public partial class SplashScreen : Control
             Callable.From(() => EmitSignal(SignalName.NewGamePressed)));
         btnBox.AddChild(newGameBtn);
 
+        // Controls button
+        var controlsBtn = new Button();
+        controlsBtn.Text = "Controls";
+        controlsBtn.CustomMinimumSize = new Vector2(300, 44);
+        controlsBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        controlsBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleSecondaryButton(controlsBtn, UiTheme.FontSizes.Button);
+        controlsBtn.Connect(BaseButton.SignalName.Pressed,
+            Callable.From(() => ControlsHelp.Open(this)));
+        btnBox.AddChild(controlsBtn);
+
         // Settings button
         var settingsBtn = new Button();
         settingsBtn.Text = "Settings";
@@ -125,9 +136,9 @@ public partial class SplashScreen : Control
         if (!_ready || !Visible)
             return;
 
-        // SettingsPanel handles its own input when open
-        if (SettingsPanel.ActiveInstance?.IsOpen == true)
-            return;
+        // Child panels handle their own input when open
+        if (SettingsPanel.ActiveInstance?.IsOpen == true) return;
+        if (ControlsHelp.ActiveInstance?.IsOpen == true) return;
 
         if (KeyboardNav.HandleInput(@event, this))
             GetViewport().SetInputAsHandled();
