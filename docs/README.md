@@ -1,8 +1,10 @@
+<p align="center">
+  <img src="../icon.png" alt="A Dungeon in the Middle of Nowhere" width="96" />
+</p>
+
 # Documentation Index
 
 Master navigation for all project documentation. 80+ files across 11 directories.
-
-> **Fresh start.** All code, scenes, and tests were deleted in Session 8. Documentation and assets remain intact. The specs below serve as blueprints for visual-first reimplementation.
 
 ---
 
