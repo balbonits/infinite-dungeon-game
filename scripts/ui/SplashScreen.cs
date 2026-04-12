@@ -56,22 +56,17 @@ public partial class SplashScreen : Control
         btnBox.AddThemeConstantOverride("separation", 10);
         vbox.AddChild(btnBox);
 
-        // Continue button (only if save exists)
+        // Character card (only if save exists)
         if (SaveManager.Instance != null && SaveManager.Instance.HasSave())
         {
             var saveData = SaveManager.Instance.PeekSave();
-            string continueText = saveData != null
-                ? $"Continue (Lv.{saveData.Level} {saveData.SelectedClass}, Floor {saveData.FloorNumber})"
-                : Strings.Splash.Continue;
-
-            var continueBtn = new Button();
-            continueBtn.Text = continueText;
-            continueBtn.CustomMinimumSize = new Vector2(300, 44);
-            continueBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-            continueBtn.FocusMode = FocusModeEnum.All;
-            continueBtn.Connect(BaseButton.SignalName.Pressed,
-                Callable.From(() => EmitSignal(SignalName.ContinuePressed)));
-            btnBox.AddChild(continueBtn);
+            if (saveData != null)
+            {
+                var card = BuildCharacterCard(saveData);
+                card.Connect(BaseButton.SignalName.Pressed,
+                    Callable.From(() => EmitSignal(SignalName.ContinuePressed)));
+                btnBox.AddChild(card);
+            }
         }
 
         // New Game button
@@ -124,6 +119,52 @@ public partial class SplashScreen : Control
             _ready = true;
             UiTheme.FocusFirstButton(btnBox);
         }));
+    }
+
+    private Button BuildCharacterCard(SaveData save)
+    {
+        var card = new Button();
+        card.CustomMinimumSize = new Vector2(340, 0);
+        card.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        card.FocusMode = FocusModeEnum.All;
+
+        // Style: dark panel look, not a regular button
+        var normalStyle = UiTheme.CreateSlotStyle(new Color(0.10f, 0.12f, 0.18f, 0.9f), false);
+        normalStyle.ContentMarginLeft = 12;
+        normalStyle.ContentMarginRight = 12;
+        normalStyle.ContentMarginTop = 10;
+        normalStyle.ContentMarginBottom = 10;
+        var focusStyle = UiTheme.CreateSlotStyle(new Color(0.12f, 0.14f, 0.22f, 0.95f), true);
+        focusStyle.ContentMarginLeft = 12;
+        focusStyle.ContentMarginRight = 12;
+        focusStyle.ContentMarginTop = 10;
+        focusStyle.ContentMarginBottom = 10;
+
+        card.AddThemeStyleboxOverride("normal", normalStyle);
+        card.AddThemeStyleboxOverride("hover", focusStyle);
+        card.AddThemeStyleboxOverride("focus", focusStyle);
+        card.AddThemeStyleboxOverride("pressed", focusStyle);
+
+        // Build card content as a formatted text block
+        string className = save.SelectedClass.ToString();
+        int xpToNext = Constants.Leveling.GetXpToLevel(save.Level);
+        float xpPct = xpToNext > 0 ? (float)save.Xp / xpToNext * 100 : 0;
+
+        string cardText =
+            $"{className}  Lv.{save.Level}\n" +
+            $"HP: {save.Hp}/{save.MaxHp}  MP: {save.Mana}/{save.MaxMana}\n" +
+            $"STR: {save.Str}  DEX: {save.Dex}  STA: {save.Sta}  INT: {save.Int}\n" +
+            $"Floor: {save.FloorNumber}  Deepest: {save.DeepestFloor}  Gold: {save.Gold}\n" +
+            $"XP: {xpPct:F0}%  |  {save.SaveDate}";
+
+        card.Text = cardText;
+        card.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
+        card.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
+        card.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
+        card.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Small);
+        card.Alignment = HorizontalAlignment.Left;
+
+        return card;
     }
 
     private void OpenSettings()
