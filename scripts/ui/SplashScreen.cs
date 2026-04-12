@@ -123,46 +123,85 @@ public partial class SplashScreen : Control
 
     private Button BuildCharacterCard(SaveData save)
     {
+        // Use a Button with ClipContents off so children render fully
         var card = new Button();
-        card.CustomMinimumSize = new Vector2(340, 0);
+        card.Text = "";
+        card.CustomMinimumSize = new Vector2(300, 120);
         card.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         card.FocusMode = FocusModeEnum.All;
+        card.ClipContents = false;
 
-        // Style: dark panel look, not a regular button
-        var normalStyle = UiTheme.CreateSlotStyle(new Color(0.10f, 0.12f, 0.18f, 0.9f), false);
-        normalStyle.ContentMarginLeft = 12;
-        normalStyle.ContentMarginRight = 12;
-        normalStyle.ContentMarginTop = 10;
-        normalStyle.ContentMarginBottom = 10;
+        var style = UiTheme.CreateSlotStyle(new Color(0.10f, 0.12f, 0.18f, 0.9f), false);
+        style.SetContentMarginAll(12);
         var focusStyle = UiTheme.CreateSlotStyle(new Color(0.12f, 0.14f, 0.22f, 0.95f), true);
-        focusStyle.ContentMarginLeft = 12;
-        focusStyle.ContentMarginRight = 12;
-        focusStyle.ContentMarginTop = 10;
-        focusStyle.ContentMarginBottom = 10;
-
-        card.AddThemeStyleboxOverride("normal", normalStyle);
+        focusStyle.SetContentMarginAll(12);
+        card.AddThemeStyleboxOverride("normal", style);
         card.AddThemeStyleboxOverride("hover", focusStyle);
         card.AddThemeStyleboxOverride("focus", focusStyle);
         card.AddThemeStyleboxOverride("pressed", focusStyle);
 
-        // Build card content as a formatted text block
+        // Vertical layout centered — match class select card style
+        var vbox = new VBoxContainer();
+        vbox.AddThemeConstantOverride("separation", 4);
+        vbox.SetAnchorsPreset(LayoutPreset.FullRect);
+        vbox.MouseFilter = MouseFilterEnum.Ignore;
+        card.AddChild(vbox);
+
+        // Character sprite (centered, same size as class select)
+        int classIdx = (int)save.SelectedClass;
+        string spritePath = Constants.Assets.PlayerClassPreviews[classIdx];
+        if (ResourceLoader.Exists(spritePath))
+        {
+            var sprite = new TextureRect();
+            sprite.Texture = GD.Load<Texture2D>(spritePath);
+            sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+            sprite.CustomMinimumSize = new Vector2(48, 48);
+            sprite.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+            sprite.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            sprite.MouseFilter = MouseFilterEnum.Ignore;
+            vbox.AddChild(sprite);
+        }
+
+        // Class + Level (heading)
         string className = save.SelectedClass.ToString();
-        int xpToNext = Constants.Leveling.GetXpToLevel(save.Level);
-        float xpPct = xpToNext > 0 ? (float)save.Xp / xpToNext * 100 : 0;
+        var titleLabel = new Label();
+        titleLabel.Text = $"{className}  Lv.{save.Level}";
+        titleLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        titleLabel.MouseFilter = MouseFilterEnum.Ignore;
+        UiTheme.StyleLabel(titleLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Label);
+        vbox.AddChild(titleLabel);
 
-        string cardText =
-            $"{className}  Lv.{save.Level}\n" +
-            $"HP: {save.Hp}/{save.MaxHp}  MP: {save.Mana}/{save.MaxMana}\n" +
-            $"STR: {save.Str}  DEX: {save.Dex}  STA: {save.Sta}  INT: {save.Int}\n" +
-            $"Floor: {save.FloorNumber}  Deepest: {save.DeepestFloor}  Gold: {save.Gold}\n" +
-            $"XP: {xpPct:F0}%  |  {save.SaveDate}";
+        // HP / MP
+        var hpMpLabel = new Label();
+        hpMpLabel.Text = $"HP: {save.Hp}/{save.MaxHp}   MP: {save.Mana}/{save.MaxMana}";
+        hpMpLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        hpMpLabel.MouseFilter = MouseFilterEnum.Ignore;
+        UiTheme.StyleLabel(hpMpLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Small);
+        vbox.AddChild(hpMpLabel);
 
-        card.Text = cardText;
-        card.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
-        card.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
-        card.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
-        card.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Small);
-        card.Alignment = HorizontalAlignment.Left;
+        // Stats
+        var statsLabel = new Label();
+        statsLabel.Text = $"STR: {save.Str}  DEX: {save.Dex}  STA: {save.Sta}  INT: {save.Int}";
+        statsLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        statsLabel.MouseFilter = MouseFilterEnum.Ignore;
+        UiTheme.StyleLabel(statsLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        vbox.AddChild(statsLabel);
+
+        // Floor + Gold
+        var floorLabel = new Label();
+        floorLabel.Text = $"Floor: {save.FloorNumber}  Deepest: {save.DeepestFloor}  Gold: {save.Gold}";
+        floorLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        floorLabel.MouseFilter = MouseFilterEnum.Ignore;
+        UiTheme.StyleLabel(floorLabel, UiTheme.Colors.Info, UiTheme.FontSizes.Small);
+        vbox.AddChild(floorLabel);
+
+        // Save date
+        var dateLabel = new Label();
+        dateLabel.Text = save.SaveDate;
+        dateLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        dateLabel.MouseFilter = MouseFilterEnum.Ignore;
+        UiTheme.StyleLabel(dateLabel, UiTheme.Colors.Muted, 9);
+        vbox.AddChild(dateLabel);
 
         return card;
     }
