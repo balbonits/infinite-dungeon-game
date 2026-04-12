@@ -84,13 +84,13 @@ public partial class BackpackWindow : Control
         _detailLabel.CustomMinimumSize = new Vector2(0, 36);
         content.AddChild(_detailLabel);
 
-        // Scrollable item list
+        // Scrollable slot grid
         _scrollContainer = new ScrollContainer();
         _scrollContainer.CustomMinimumSize = new Vector2(0, 320);
         content.AddChild(_scrollContainer);
 
         _itemList = new VBoxContainer();
-        _itemList.AddThemeConstantOverride("separation", 3);
+        _itemList.AddThemeConstantOverride("separation", 0);
         _scrollContainer.AddChild(_itemList);
 
         // Close button
@@ -145,67 +145,71 @@ public partial class BackpackWindow : Control
         foreach (Node child in _itemList.GetChildren())
             child.QueueFree();
 
+        // Grid of square slot boxes — 5 columns
+        const int columns = 5;
+        const float slotSize = 64;
+        HBoxContainer? currentRow = null;
+
         for (int i = 0; i < inv.SlotCount; i++)
         {
+            if (i % columns == 0)
+            {
+                currentRow = new HBoxContainer();
+                currentRow.AddThemeConstantOverride("separation", 4);
+                currentRow.Alignment = BoxContainer.AlignmentMode.Center;
+                _itemList.AddChild(currentRow);
+            }
+
             var stack = inv.GetSlot(i);
+            int slotIdx = i;
 
-            var row = new HBoxContainer();
-            row.AddThemeConstantOverride("separation", 8);
-
-            // Slot number
-            var slotLabel = new Label();
-            slotLabel.Text = $"{i + 1:D2}";
-            slotLabel.CustomMinimumSize = new Vector2(22, 0);
-            UiTheme.StyleLabel(slotLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            row.AddChild(slotLabel);
+            var slotBtn = new Button();
+            slotBtn.CustomMinimumSize = new Vector2(slotSize, slotSize);
+            slotBtn.FocusMode = FocusModeEnum.All;
 
             if (stack != null)
             {
-                // Item name + count
-                var nameLabel = new Label();
-                string countStr = stack.Count > 1 ? $" x{stack.Count}" : "";
-                nameLabel.Text = $"{stack.Item.Name}{countStr}";
-                Color nameColor = stack.Item.Category switch
+                string countStr = stack.Count > 1 ? $"\n x{stack.Count}" : "";
+                slotBtn.Text = stack.Item.Name.Length > 6
+                    ? stack.Item.Name[..6] + countStr
+                    : stack.Item.Name + countStr;
+
+                Color slotColor = stack.Item.Category switch
                 {
-                    ItemCategory.Consumable => UiTheme.Colors.Safe,
-                    ItemCategory.Material => UiTheme.Colors.Info,
-                    ItemCategory.Weapon or ItemCategory.Armor => UiTheme.Colors.Ink,
-                    _ => UiTheme.Colors.Muted,
+                    ItemCategory.Consumable => new Color(0.15f, 0.35f, 0.15f, 0.9f),
+                    ItemCategory.Material => new Color(0.15f, 0.25f, 0.35f, 0.9f),
+                    ItemCategory.Weapon => new Color(0.35f, 0.20f, 0.15f, 0.9f),
+                    ItemCategory.Armor => new Color(0.20f, 0.20f, 0.30f, 0.9f),
+                    _ => new Color(0.15f, 0.15f, 0.20f, 0.9f),
                 };
-                UiTheme.StyleLabel(nameLabel, nameColor, UiTheme.FontSizes.Body);
-                nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-                row.AddChild(nameLabel);
+                slotBtn.AddThemeStyleboxOverride("normal", CreateSlotBox(slotColor, false));
+                slotBtn.AddThemeStyleboxOverride("hover", CreateSlotBox(slotColor, true));
+                slotBtn.AddThemeStyleboxOverride("focus", CreateSlotBox(slotColor, true));
+                slotBtn.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
+                slotBtn.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
+                slotBtn.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
+                slotBtn.AddThemeFontSizeOverride("font_size", 9);
 
-                // Action button
-                var actionBtn = new Button();
-                actionBtn.Text = "▶";
-                actionBtn.CustomMinimumSize = new Vector2(28, 28);
-                actionBtn.FocusMode = FocusModeEnum.All;
-                UiTheme.StyleButton(actionBtn, UiTheme.FontSizes.Small);
-                int slotIdx = i;
                 var itemDef = stack.Item;
-                actionBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
-                    ShowItemActions(slotIdx, itemDef, actionBtn.GlobalPosition)));
-                row.AddChild(actionBtn);
+                slotBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+                    ShowItemActions(slotIdx, itemDef, slotBtn.GlobalPosition)));
 
-                // Detail on focus
                 string detail = $"{stack.Item.Name}\n{stack.Item.Description}";
                 if (stack.Item.HealAmount > 0) detail += $"\nHeals: {stack.Item.HealAmount} HP";
                 if (stack.Item.ManaAmount > 0) detail += $"\nRestores: {stack.Item.ManaAmount} MP";
                 if (stack.Item.SellPrice > 0) detail += $"\nSell: {stack.Item.SellPrice}g";
-                actionBtn.FocusEntered += () => _detailLabel.Text = detail;
+                slotBtn.FocusEntered += () => _detailLabel.Text = detail;
             }
             else
             {
-                // Empty slot
-                var emptyLabel = new Label();
-                emptyLabel.Text = "— empty —";
-                UiTheme.StyleLabel(emptyLabel, new Color(UiTheme.Colors.Muted, 0.4f), UiTheme.FontSizes.Small);
-                emptyLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-                row.AddChild(emptyLabel);
+                slotBtn.Text = "";
+                slotBtn.AddThemeStyleboxOverride("normal", CreateSlotBox(new Color(0.08f, 0.08f, 0.12f, 0.6f), false));
+                slotBtn.AddThemeStyleboxOverride("hover", CreateSlotBox(new Color(0.08f, 0.08f, 0.12f, 0.6f), false));
+                slotBtn.AddThemeStyleboxOverride("focus", CreateSlotBox(new Color(0.08f, 0.08f, 0.12f, 0.6f), false));
+                slotBtn.Disabled = true;
             }
 
-            _itemList.AddChild(row);
+            currentRow!.AddChild(slotBtn);
         }
 
         _scrollContainer.ScrollVertical = 0;
@@ -215,6 +219,17 @@ public partial class BackpackWindow : Control
     private void FocusFirst()
     {
         UiTheme.FocusFirstButton(_itemList);
+    }
+
+    private static StyleBoxFlat CreateSlotBox(Color bgColor, bool focused)
+    {
+        var style = new StyleBoxFlat();
+        style.BgColor = bgColor;
+        style.BorderColor = focused ? UiTheme.Colors.Accent : new Color(UiTheme.Colors.Muted, 0.4f);
+        style.SetBorderWidthAll(focused ? 2 : 1);
+        style.SetCornerRadiusAll(3);
+        style.SetContentMarginAll(4);
+        return style;
     }
 
     private void ShowItemActions(int slotIdx, ItemDef item, Vector2 position)
