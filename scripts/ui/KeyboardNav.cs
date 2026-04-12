@@ -14,6 +14,7 @@ public static class KeyboardNav
     /// <summary>
     /// Process input for a container of buttons. Call from _UnhandledInput.
     /// Handles: Up/Down cursor movement, S/cross confirm (presses focused button).
+    /// Auto-scrolls parent ScrollContainer to keep focused button visible.
     /// Returns true if the event was handled.
     /// </summary>
     public static bool HandleInput(InputEvent @event, Control container)
@@ -33,6 +34,7 @@ public static class KeyboardNav
         {
             int nextIndex = currentIndex <= 0 ? buttons.Count - 1 : currentIndex - 1;
             buttons[nextIndex].GrabFocus();
+            EnsureVisible(buttons[nextIndex]);
             return true;
         }
 
@@ -42,6 +44,7 @@ public static class KeyboardNav
         {
             int nextIndex = currentIndex >= buttons.Count - 1 ? 0 : currentIndex + 1;
             buttons[nextIndex].GrabFocus();
+            EnsureVisible(buttons[nextIndex]);
             return true;
         }
 
@@ -56,6 +59,27 @@ public static class KeyboardNav
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Scroll the nearest parent ScrollContainer so that the control is visible.
+    /// </summary>
+    public static void EnsureVisible(Control control)
+    {
+        var scroll = FindParentScroll(control);
+        scroll?.EnsureControlVisible(control);
+    }
+
+    private static ScrollContainer? FindParentScroll(Node node)
+    {
+        Node? current = node.GetParent();
+        while (current != null)
+        {
+            if (current is ScrollContainer sc)
+                return sc;
+            current = current.GetParent();
+        }
+        return null;
     }
 
     /// <summary>

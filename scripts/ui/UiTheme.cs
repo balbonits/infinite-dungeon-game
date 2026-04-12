@@ -133,17 +133,29 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Grabs focus on the first button in a container. Call after adding buttons.</summary>
+    /// <summary>Grabs focus on the first focusable button in a container (recursive). Call after adding buttons.</summary>
     public static void FocusFirstButton(Control container)
     {
-        foreach (Node child in container.GetChildren())
+        var btn = FindFirstButton(container);
+        if (btn != null)
         {
-            if (child is Button btn && !btn.Disabled)
+            btn.CallDeferred(Control.MethodName.GrabFocus);
+        }
+    }
+
+    private static Button? FindFirstButton(Node node)
+    {
+        foreach (Node child in node.GetChildren())
+        {
+            if (child is Button btn && !btn.Disabled && btn.Visible)
+                return btn;
+            if (child is Control ctrl)
             {
-                btn.CallDeferred(Control.MethodName.GrabFocus);
-                return;
+                var found = FindFirstButton(ctrl);
+                if (found != null) return found;
             }
         }
+        return null;
     }
 
     /// <summary>Applies standard label styling.</summary>
