@@ -1,89 +1,108 @@
 # A Dungeon in the Middle of Nowhere
 
-**Engine:** Godot 4.x (.NET edition) with C#
-**Perspective:** Isometric 2D (Diablo 1 style, 2:1 diamond tiles)
-**Platform:** Desktop native (macOS primary, Windows/Linux supported)
-**Status:** Fresh start — all specs locked, all code deleted, rebuilding with visual-first development
+A persistent, never-ending real-time action dungeon crawler built with **Godot 4 + C#**.
 
-## What is this?
+Inspired by Diablo 1's atmosphere, loot chase, and town hub — reimagined as an infinite descent into a living dungeon that feeds on adventurers.
 
-**A Dungeon in the Middle of Nowhere** is a persistent, never-ending real-time action dungeon crawler inspired by Diablo 1's atmosphere, loot chase, and town hub feel.
+> **Status:** In active development. Playable prototype with full game loop.
 
-You control a **single permanent character** (Warrior, Ranger, or Mage) that grows stronger across all sessions — there are no rerolls. The dungeon descends infinitely with escalating difficulty, endless monster respawns, and a living dungeon entity that feeds on adventurers who die within it.
+## The Game
 
-Death hurts (the dungeon eats your experience), but it's not permadeath. Gold buyout mitigates penalties, Sacrificial Idols protect your inventory, and revival is always an option — because the dungeon *wants* you to come back and grow stronger before it harvests you again.
+You control a single permanent character — **Warrior**, **Ranger**, or **Mage** — that grows stronger across all sessions. There are no rerolls. The dungeon descends infinitely with escalating difficulty, and the dungeon itself is a living entity that wants you to grow strong before it harvests you.
 
-### Core Features
+**Core features:**
 
-- **3 classes** — Warrior (melee bruiser), Ranger (agile marksman), Mage (thought-based spellcaster)
-- **Unified magic system** — all skills run on magicules (natural magic particles). Warriors enhance muscles, Rangers imbue weapons, Mages manifest elements from thought
-- **Infinite progression** — no level cap, no skill cap, diminishing returns but never zero growth
-- **Living dungeon** — the dungeon is an intelligent entity that attracts, fattens, and harvests adventurers
-- **Meaningful death** — XP loss scales with depth, gold buyout, inventory risk, revival negotiation
-- **Town hub** — safe zone with NPCs (Shop, Blacksmith, Adventure Guild, Teleporter, Banker)
-- **Procedural floors** — seeded generation, background threaded, 10-floor cache
-- **Spell scroll osmosis** — Mages learn spells through repeated scroll use (knowledge retention)
+- 3 classes with 80+ skills across melee, ranged, and magic
+- Infinite progression — no level cap, diminishing returns but never zero growth
+- Living dungeon — an intelligent entity that adapts to your play style
+- Meaningful death — XP loss, inventory risk, gold buyout, revival negotiation
+- Town hub with 5 NPCs — Shop, Blacksmith, Guild, Teleporter, Banker
+- Procedural floors with zone-based themes and difficulty scaling
+- Diablo-style HUD — HP/MP orbs, skill hotbar, XP progress bar
+- Endgame systems — Dungeon Pacts, Zone Saturation, Magicule Attunement
 
-## Documentation
+## Screenshots
 
-All game design lives in [`docs/`](docs/). Architecture and AI context in [AGENTS.md](AGENTS.md).
-
-| Folder | Contents |
-|--------|----------|
-| [architecture/](docs/architecture/) | Tech stack, project structure, autoloads, signals, setup guide |
-| [systems/](docs/systems/) | Stats, classes, skills, magic, combat, leveling, death, save, color system |
-| [objects/](docs/objects/) | Player, enemies, tilemap, effects |
-| [world/](docs/world/) | Dungeon (living entity lore), town, monsters |
-| [inventory/](docs/inventory/) | Backpack, bank, items |
-| [ui/](docs/ui/) | Controls, HUD, death screen |
-| [testing/](docs/testing/) | Test strategy, 33 manual tests, automated test plans (GdUnit4 + xUnit) |
-| [conventions/](docs/conventions/) | Team structure, ticketing |
-| [teams/](docs/teams/) | Per-team ticket boards (Design, QA, DevOps, Engine, Systems, UI, World) |
-| [reference/](docs/reference/) | Subagent research, technical references |
-
-Development progress: [**dev-tracker.md**](docs/dev-tracker.md) (41 tickets across 6 phases)
+*Coming soon*
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Engine | Godot 4.x (.NET edition) |
+| Engine | Godot 4.6 (.NET edition) |
 | Language | C# / .NET 8+ |
-| Testing | GdUnit4 (scene tests) + xUnit (logic tests) |
-| Serialization | System.Text.Json (saves) + MessagePack (floor cache) |
-| Object pooling | Microsoft.Extensions.ObjectPool |
-| Async generation | System.Threading.Channels |
+| Renderer | GL Compatibility |
+| Art | PixelLab AI + Screaming Brain Studios (CC0) |
+| Platform | macOS (Apple Silicon + Intel), Windows, Linux |
 
-## How to Run
+## Building from Source
 
-> The game is in a fresh-start rebuild phase. All code was deleted (see dev-journal Session 8). Visual-first reimplementation begins from the locked specs.
+### Requirements
 
-When implementation begins:
+- [.NET 8+ SDK](https://dotnet.microsoft.com/download)
+- [Godot 4.6 .NET edition](https://godotengine.org/download)
 
-1. Install [.NET 9+ SDK](https://dotnet.microsoft.com/download)
-2. Install [Godot 4.x .NET edition](https://godotengine.org/download) (the .NET build, not standard)
-3. Clone the repo
-4. `dotnet restore` to install NuGet packages
-5. Open the project in Godot editor → Press F5 to run
+### Run
 
-See [setup guide](docs/architecture/setup-guide.md) for detailed environment setup.
+```bash
+# Build
+dotnet build
 
-## Development
+# Run in Godot
+/path/to/Godot --path .
 
-All development is AI-assisted. The product owner directs game vision; AI teams handle implementation.
+# Export (macOS)
+# Open Godot editor → Project → Export → macOS → Export Project
+```
+
+### Make targets
 
 ```bash
 make build      # dotnet build
-make test       # dotnet test (GdUnit4 + xUnit)
-make lint       # dotnet format --verify-no-changes
-make check      # build + lint + test
-make run        # Launch in Godot
+make run        # Build and launch
+make test       # Run tests
+make lint       # Format check
+make clean      # Remove build artifacts
 ```
 
-7 AI team leads are defined in `.claude/agents/` for specialized work (Design, QA, DevOps, Engine, Systems, UI, World). See [team conventions](docs/conventions/teams.md).
+## Project Structure
 
-## Contributing
+```
+scripts/
+├── autoloads/          # GameState, EventBus, SaveManager
+├── logic/              # Pure C# game logic (no Godot dependency)
+│   ├── SkillDatabase.cs, SkillDef.cs, SkillBar.cs
+│   ├── DungeonPacts.cs, ZoneSaturation.cs, DungeonIntelligence.cs
+│   ├── MagiculeAttunement.cs, DepthGearTier.cs
+│   ├── Inventory.cs, Item.cs, Bank.cs, Crafting.cs
+│   └── SaveData.cs, SaveSystem.cs
+├── ui/                 # All UI (GameWindow, TabBar, ScrollList, etc.)
+└── *.cs                # Scene scripts (Player, Enemy, Dungeon, Town)
 
-Solo learning project — no formal contributions, but feel free to fork, play, and open issues with feedback.
+docs/                   # 80+ design docs, specs, and architecture
+assets/                 # Sprites, tiles, projectiles, UI art
+scenes/                 # Godot .tscn scene files
+```
 
-Made with curiosity in Los Angeles, 2026.
+## Documentation
+
+Extensive game design documentation lives in [`docs/`](docs/):
+
+- **Game systems** — combat, leveling, stats, skills, magic, death, save
+- **World design** — dungeon lore, town, monsters, zone themes
+- **Architecture** — autoloads, signals, entity framework, tech stack
+- **Endgame** — pacts, attunement, zone saturation, dungeon intelligence
+
+## License
+
+**Proprietary.** See [LICENSE](LICENSE) for terms.
+
+This repository is public for viewing and educational purposes. The source code and original game assets may not be used in commercial products or redistributed. Third-party assets retain their original licenses — see [CREDITS.md](CREDITS.md).
+
+## Credits
+
+See [CREDITS.md](CREDITS.md) for full attribution of third-party assets and tools.
+
+---
+
+Made in Los Angeles, 2026.

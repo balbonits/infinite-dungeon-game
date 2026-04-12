@@ -1,0 +1,33 @@
+Copyright (c) 2026 John Dilig. All rights reserved.
+
+This source code and all original game assets are proprietary and
+confidential. No part of this software may be reproduced, distributed,
+or transmitted in any form or by any means without the prior written
+permission of the copyright holder.
+
+This repository is made available for public viewing and educational
+purposes only. You may:
+
+  - View and read the source code
+  - Fork the repository for personal study
+  - Reference the code in educational contexts with attribution
+
+You may NOT:
+
+  - Use this code or assets in any commercial product
+  - Redistribute modified or unmodified copies
+  - Create derivative works for distribution
+  - Use any original game assets (sprites, tiles, UI art) outside this project
+
+THIRD-PARTY ASSETS
+
+This project includes third-party assets under their own licenses.
+See CREDITS.md for full attribution. These assets are NOT covered by
+this proprietary license — they retain their original licenses:
+
+  - CC0 assets: public domain, no restrictions
+  - CC-BY 3.0/4.0 assets: require attribution (see CREDITS.md)
+  - PixelLab-generated art: subject to PixelLab Terms of Service
+    (https://pixellab.ai/termsofservice)
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
