@@ -75,15 +75,28 @@ public partial class Main : Node
 
     public void LoadTown()
     {
-        SwapWorld(TownScene);
-        Ui.StairsCompass.Instance?.ClearTargets();
-        Autoloads.SaveManager.Instance?.Save();
+        Ui.ScreenTransition.Instance.Play(
+            Strings.Town.Title,
+            () =>
+            {
+                SwapWorld(TownScene);
+                Ui.StairsCompass.Instance?.ClearTargets();
+                Autoloads.SaveManager.Instance?.Save();
+            },
+            Strings.Town.Arriving);
     }
 
     public void LoadDungeon()
     {
-        SwapWorld(DungeonScene);
-        Autoloads.SaveManager.Instance?.Save();
+        int floor = GameState.Instance.FloorNumber;
+        Ui.ScreenTransition.Instance.Play(
+            Strings.Floor.FloorNumber(floor),
+            () =>
+            {
+                SwapWorld(DungeonScene);
+                Autoloads.SaveManager.Instance?.Save();
+            },
+            Strings.Floor.Entering);
     }
 
     private void SwapWorld(PackedScene scene)
