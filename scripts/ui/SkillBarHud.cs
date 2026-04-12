@@ -5,14 +5,23 @@ namespace DungeonGame.Ui;
 
 /// <summary>
 /// Diablo-style skill hotbar displayed at the bottom of the screen.
-/// Shows 4 skill slots with keybinds (1-4), skill names, and cooldown overlays.
+/// Shows 4 skill slots with controller-aware keybind labels and cooldown overlays.
+/// Slots triggered by shoulder + face button combos (L1+△, L1+✕, R1+△, R1+○).
 /// </summary>
 public partial class SkillBarHud : Control
 {
     public static SkillBarHud? Instance { get; private set; }
 
-    private const float SkillCooldown = 2.0f; // Default cooldown in seconds
-    private static readonly string[] SlotKeys = { "1", "2", "3", "4" };
+    private const float SkillCooldown = 2.0f;
+
+    // Slot bindings: (shoulder action, face action) combos
+    private static readonly (string shoulder, string face)[] SlotBindings =
+    {
+        (Constants.InputActions.ShoulderLeft, Constants.InputActions.ActionTriangle),  // Slot 1: L1+△
+        (Constants.InputActions.ShoulderLeft, Constants.InputActions.ActionCross),     // Slot 2: L1+✕
+        (Constants.InputActions.ShoulderRight, Constants.InputActions.ActionTriangle), // Slot 3: R1+△
+        (Constants.InputActions.ShoulderRight, Constants.InputActions.ActionCross),    // Slot 4: R1+✕
+    };
 
     private HBoxContainer _barContainer = null!;
     private readonly PanelContainer[] _slotPanels = new PanelContainer[SkillBar.SlotCount];
@@ -57,9 +66,9 @@ public partial class SkillBarHud : Control
             vbox.MouseFilter = MouseFilterEnum.Ignore;
             panel.AddChild(vbox);
 
-            // Key label (e.g., "[1]")
+            // Key label — reads actual bindings from InputMap
             var keyLabel = new Label();
-            keyLabel.Text = $"[{SlotKeys[i]}]";
+            keyLabel.Text = GetSlotLabel(i);
             keyLabel.HorizontalAlignment = HorizontalAlignment.Center;
             UiTheme.StyleLabel(keyLabel, UiTheme.Colors.Accent, 10);
             keyLabel.MouseFilter = MouseFilterEnum.Ignore;
@@ -115,15 +124,8 @@ public partial class SkillBarHud : Control
         if (GameState.Instance.IsDead) return;
         if (@event is not InputEventKey key || !key.Pressed || key.Echo) return;
 
-        int slotIndex = key.Keycode switch
-        {
-            Key.Key1 => 0,
-            Key.Key2 => 1,
-            Key.Key3 => 2,
-            Key.Key4 => 3,
-            _ => -1,
-        };
-
+        // Detect shoulder + face button combos
+        int slotIndex = DetectSlot();
         if (slotIndex < 0) return;
 
         var bar = GameState.Instance.SkillHotbar;
@@ -133,19 +135,48 @@ public partial class SkillBarHud : Control
             var def = SkillDatabase.Get(skillId);
             if (def != null)
             {
-                // Record use for skill XP
                 GameState.Instance.Skills.RecordUse(skillId, GameState.Instance.FloorNumber);
 
-                // Visual feedback
                 FloatingText.Spawn(
                     GetTree().Root,
                     GetViewport().GetVisibleRect().Size / 2 + new Vector2(0, -60),
                     def.Name, UiTheme.Colors.Accent, 14, 0.8f);
-
-                Toast.Instance?.Info($"{def.Name} [{SlotKeys[slotIndex]}]");
             }
             GetViewport().SetInputAsHandled();
         }
+    }
+
+    /// <summary>Detect which slot combo is active (shoulder held + face pressed).</summary>
+    private static int DetectSlot()
+    {
+        for (int i = 0; i < SkillBar.SlotCount; i++)
+        {
+            var (shoulder, face) = SlotBindings[i];
+            if (Input.IsActionPressed(shoulder) && Input.IsActionJustPressed(face))
+                return i;
+        }
+        return -1;
+    }
+
+    /// <summary>Get display label for a slot based on actual InputMap bindings.</summary>
+    private static string GetSlotLabel(int index)
+    {
+        var (shoulder, face) = SlotBindings[index];
+        string sKey = GetActionKeyName(shoulder);
+        string fKey = GetActionKeyName(face);
+        return $"{sKey}+{fKey}";
+    }
+
+    /// <summary>Read the first keyboard key bound to an action from InputMap.</summary>
+    private static string GetActionKeyName(string action)
+    {
+        var events = InputMap.ActionGetEvents(action);
+        foreach (var ev in events)
+        {
+            if (ev is InputEventKey keyEv)
+                return OS.GetKeycodeString(keyEv.Keycode);
+        }
+        return "?";
     }
 
     /// <summary>Refresh slot display (call after assigning skills).</summary>
