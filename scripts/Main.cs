@@ -75,28 +75,41 @@ public partial class Main : Node
 
     public void LoadTown()
     {
-        Ui.ScreenTransition.Instance.Play(
-            Strings.Town.Title,
-            () =>
-            {
-                SwapWorld(TownScene);
-                Ui.StairsCompass.Instance?.ClearTargets();
-                Autoloads.SaveManager.Instance?.Save();
-            },
-            Strings.Town.Arriving);
+        if (Ui.ScreenTransition.Instance.IsTransitioning)
+        {
+            // Already inside a transition — do work directly
+            DoLoadTown();
+        }
+        else
+        {
+            Ui.ScreenTransition.Instance.Play(Strings.Town.Title, DoLoadTown, Strings.Town.Arriving);
+        }
+    }
+
+    private void DoLoadTown()
+    {
+        SwapWorld(TownScene);
+        Ui.StairsCompass.Instance?.ClearTargets();
+        Autoloads.SaveManager.Instance?.Save();
     }
 
     public void LoadDungeon()
     {
-        int floor = GameState.Instance.FloorNumber;
-        Ui.ScreenTransition.Instance.Play(
-            Strings.Floor.FloorNumber(floor),
-            () =>
-            {
-                SwapWorld(DungeonScene);
-                Autoloads.SaveManager.Instance?.Save();
-            },
-            Strings.Floor.Entering);
+        if (Ui.ScreenTransition.Instance.IsTransitioning)
+        {
+            DoLoadDungeon();
+        }
+        else
+        {
+            int floor = GameState.Instance.FloorNumber;
+            Ui.ScreenTransition.Instance.Play(Strings.Floor.FloorNumber(floor), DoLoadDungeon, Strings.Floor.Entering);
+        }
+    }
+
+    private void DoLoadDungeon()
+    {
+        SwapWorld(DungeonScene);
+        Autoloads.SaveManager.Instance?.Save();
     }
 
     private void SwapWorld(PackedScene scene)
