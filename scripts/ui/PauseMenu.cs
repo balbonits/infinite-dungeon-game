@@ -15,6 +15,7 @@ public partial class PauseMenu : Control
         var statsButton = _buttonContainer.GetNode<Button>("StatsButton");
         var skillsButton = _buttonContainer.GetNode<Button>("SkillsButton");
         var ledgerButton = _buttonContainer.GetNode<Button>("LedgerButton");
+        var controlsButton = _buttonContainer.GetNode<Button>("ControlsButton");
         var settingsButton = _buttonContainer.GetNode<Button>("SettingsButton");
         var mainMenuButton = _buttonContainer.GetNode<Button>("MainMenuButton");
         var quitButton = _buttonContainer.GetNode<Button>("QuitButton");
@@ -24,6 +25,7 @@ public partial class PauseMenu : Control
         statsButton.FocusMode = FocusModeEnum.All;
         skillsButton.FocusMode = FocusModeEnum.All;
         ledgerButton.FocusMode = FocusModeEnum.All;
+        controlsButton.FocusMode = FocusModeEnum.All;
         settingsButton.FocusMode = FocusModeEnum.All;
         mainMenuButton.FocusMode = FocusModeEnum.All;
         quitButton.FocusMode = FocusModeEnum.All;
@@ -33,6 +35,7 @@ public partial class PauseMenu : Control
         statsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnStatsPressed));
         skillsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSkillsPressed));
         ledgerButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnLedgerPressed));
+        controlsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnControlsPressed));
         settingsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSettingsPressed));
         mainMenuButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnMainMenuPressed));
         quitButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnQuitPressed));
@@ -103,6 +106,16 @@ public partial class PauseMenu : Control
     {
         Visible = false;
         FatedLedger.Instance?.Show();
+    }
+
+    private void OnControlsPressed()
+    {
+        Visible = false;
+        ControlsHelp.Open(GetParent(), () =>
+        {
+            Visible = true;
+            UiTheme.FocusFirstButton(_buttonContainer);
+        });
     }
 
     private void OnSettingsPressed()
