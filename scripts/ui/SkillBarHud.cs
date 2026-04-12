@@ -129,21 +129,26 @@ public partial class SkillBarHud : Control
         if (slotIndex < 0) return;
 
         var bar = GameState.Instance.SkillHotbar;
-        string? skillId = bar.TryActivate(slotIndex, SkillCooldown);
-        if (skillId != null)
-        {
-            var def = SkillDatabase.Get(skillId);
-            if (def != null)
-            {
-                GameState.Instance.Skills.RecordUse(skillId, GameState.Instance.FloorNumber);
+        var def = bar.GetSlot(slotIndex) != null ? SkillDatabase.Get(bar.GetSlot(slotIndex)!) : null;
+        if (def?.CombatConfig == null)
+            return;
 
-                FloatingText.Spawn(
-                    GetTree().Root,
-                    GetViewport().GetVisibleRect().Size / 2 + new Vector2(0, -60),
-                    def.Name, UiTheme.Colors.Accent, 14, 0.8f);
-            }
-            GetViewport().SetInputAsHandled();
+        // Check cooldown
+        if (!bar.IsReady(slotIndex))
+            return;
+
+        // Execute through Player — handles mana deduction, targeting, damage
+        var player = GetTree().GetFirstNodeInGroup(Constants.Groups.Player) as Scenes.Player;
+        if (player == null)
+            return;
+
+        if (player.ExecuteSkill(def.CombatConfig, def.ManaCost))
+        {
+            // Skill cast succeeded — start cooldown and record use
+            bar.TryActivate(slotIndex, def.Cooldown);
+            GameState.Instance.Skills.RecordUse(def.Id, GameState.Instance.FloorNumber);
         }
+        GetViewport().SetInputAsHandled();
     }
 
     /// <summary>Detect which slot combo is active (shoulder held + face pressed).</summary>

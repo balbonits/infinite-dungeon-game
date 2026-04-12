@@ -59,6 +59,28 @@ public partial class GameState : Node
         }
     }
 
+    private int _mana = 0;
+    public int Mana
+    {
+        get => _mana;
+        set
+        {
+            _mana = Math.Clamp(value, 0, MaxMana);
+            EmitSignal(SignalName.StatsChanged);
+        }
+    }
+
+    private int _maxMana = 0;
+    public int MaxMana
+    {
+        get => _maxMana;
+        set
+        {
+            _maxMana = value;
+            EmitSignal(SignalName.StatsChanged);
+        }
+    }
+
     private int _floorNumber = 1;
     public int FloorNumber
     {
@@ -101,6 +123,9 @@ public partial class GameState : Node
         IsDead = false;
         MaxHp = Constants.PlayerStats.StartingHp;
         Hp = Constants.PlayerStats.StartingHp;
+        int baseMana = Constants.PlayerStats.GetClassBaseMana(SelectedClass);
+        MaxMana = baseMana;
+        Mana = baseMana;
         Xp = 0;
         Level = 1;
         FloorNumber = 1;
@@ -156,6 +181,10 @@ public partial class GameState : Node
             // Spec: HP restore = floor(max_hp * 0.15)
             int healAmount = (int)(MaxHp * Constants.PlayerStats.HealOnLevelUpPercent);
             Hp = Math.Min(MaxHp, Hp + healAmount);
+
+            // Recalculate MaxMana including INT bonus (spec: stats.md)
+            MaxMana = Constants.PlayerStats.GetClassBaseMana(SelectedClass) + Stats.BonusMaxMana;
+            Mana = MaxMana; // Full mana restore on level-up
             xpToLevel = Constants.Leveling.GetXpToLevel(Level);
         }
     }

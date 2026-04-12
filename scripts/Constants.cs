@@ -53,6 +53,15 @@ public static class Constants
 
         public static int GetDamage(int level) => BaseDamage + (int)(level * DamagePerLevel);
 
+        // Spec (magic.md): class base mana pools
+        public static int GetClassBaseMana(PlayerClass cls) => cls switch
+        {
+            PlayerClass.Mage => 200,
+            PlayerClass.Ranger => 100,
+            PlayerClass.Warrior => 60,
+            _ => 60,
+        };
+
         // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative
         public static int GetMaxHp(int level)
         {
@@ -272,6 +281,16 @@ public static class Constants
         // Projectiles
         public const string ArrowProjectile = "res://assets/projectiles/arrow.png";
         public const string MagicBoltProjectile = "res://assets/projectiles/magic_bolt.png";
+        public const string FireballProjectile = "res://assets/projectiles/fireball.png";
+        public const string FrostBoltProjectile = "res://assets/projectiles/frost_bolt.png";
+        public const string LightningProjectile = "res://assets/projectiles/lightning.png";
+        public const string StoneSpikeProjectile = "res://assets/projectiles/stone_spike.png";
+        public const string EnergyBlastProjectile = "res://assets/projectiles/energy_blast.png";
+        public const string ShadowBoltProjectile = "res://assets/projectiles/shadow_bolt.png";
+
+        // HUD orbs
+        public const string OrbHp = "res://assets/ui/orb_hp.png";
+        public const string OrbMp = "res://assets/ui/orb_mp.png";
 
         // Enemies (indexed by EnemySpecies enum)
         public static readonly string[] EnemySpeciesRotations =
