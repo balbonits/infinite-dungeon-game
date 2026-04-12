@@ -130,9 +130,14 @@ public partial class SplashScreen : Control
         if (!_ready || !Visible)
             return;
 
-        // Child panels handle their own input when open
-        if (SettingsPanel.ActiveInstance?.IsOpen == true) return;
-        if (ControlsHelp.ActiveInstance?.IsOpen == true) return;
+        // Block ALL input when child panels are open
+        if (SettingsPanel.ActiveInstance?.IsOpen == true ||
+            ControlsHelp.ActiveInstance?.IsOpen == true)
+        {
+            if (@event is InputEventKey k && k.Pressed)
+                GetViewport().SetInputAsHandled();
+            return;
+        }
 
         if (KeyboardNav.HandleInput(@event, this))
             GetViewport().SetInputAsHandled();
