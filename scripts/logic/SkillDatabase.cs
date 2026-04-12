@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Godot;
 
 namespace DungeonGame;
 
@@ -81,7 +82,8 @@ public static class SkillDatabase
     }
 
     private static void RegisterSpecific(string id, string name, string desc,
-        string parentBaseId, PlayerClass cls, int baseXp = 10)
+        string parentBaseId, PlayerClass cls, int baseXp = 10,
+        int manaCost = 0, float cooldown = 2.0f, AttackConfig? combat = null)
     {
         var def = new SkillDef
         {
@@ -93,6 +95,9 @@ public static class SkillDatabase
             Type = SkillType.Specific,
             Class = cls,
             BaseXpPerUse = baseXp,
+            ManaCost = manaCost,
+            Cooldown = cooldown,
+            CombatConfig = combat,
         };
         Skills[id] = def;
         if (!BaseToSpecific.ContainsKey(parentBaseId))
@@ -217,65 +222,101 @@ public static class SkillDatabase
 
         // Arcane > Fire
         RegisterBase("m_fire", "Fire", "Fire magic — heat, flame, combustion", "mage_arcane", M, PassiveBonusType.AttackSpeed, 0.8f);
-        RegisterSpecific("m_fireball", "Fireball", "Projectile explosion, area damage", "m_fire", M);
-        RegisterSpecific("m_flame_wall", "Flame Wall", "Line of fire that damages enemies", "m_fire", M);
-        RegisterSpecific("m_ignite", "Ignite", "Set target ablaze, damage over time", "m_fire", M);
-        RegisterSpecific("m_inferno", "Inferno", "Large area sustained fire", "m_fire", M);
+        RegisterSpecific("m_fireball", "Fireball", "Projectile explosion, area damage", "m_fire", M,
+            manaCost: 25, cooldown: 1.5f, combat: new AttackConfig { Range = 200, Cooldown = 1.5f, DamageMultiplier = 1.8f, IsProjectile = true, ProjectileSpeed = 280, ProjectileTexture = Constants.Assets.FireballProjectile, ProjectileScale = 1.0f, ProjectileTint = new Godot.Color("FF6B35"), TargetMode = TargetMode.AreaOfEffect, AoeRadius = 80, MaxTargets = 5, Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("FF6B35") });
+        RegisterSpecific("m_flame_wall", "Flame Wall", "Line of fire that damages enemies", "m_fire", M,
+            manaCost: 30, cooldown: 3.0f, combat: new AttackConfig { Range = 150, DamageMultiplier = 1.2f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 100, MaxTargets = 8, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FF4500") });
+        RegisterSpecific("m_ignite", "Ignite", "Set target ablaze, damage over time", "m_fire", M,
+            manaCost: 15, cooldown: 2.0f, combat: new AttackConfig { Range = 150, DamageMultiplier = 0.8f, IsProjectile = true, ProjectileSpeed = 350, ProjectileTexture = Constants.Assets.FireballProjectile, ProjectileScale = 0.6f, ProjectileTint = new Godot.Color("FF8C00"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("FF8C00") });
+        RegisterSpecific("m_inferno", "Inferno", "Large area sustained fire", "m_fire", M,
+            manaCost: 50, cooldown: 5.0f, combat: new AttackConfig { Range = 120, DamageMultiplier = 2.5f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 120, MaxTargets = 10, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FF2200") });
 
         // Arcane > Water
         RegisterBase("m_water", "Water", "Water and ice magic", "mage_arcane", M, PassiveBonusType.AttackSpeed, 0.8f);
-        RegisterSpecific("m_frost_bolt", "Frost Bolt", "Ice projectile, slows target", "m_water", M);
-        RegisterSpecific("m_freeze", "Freeze", "Immobilize target in ice", "m_water", M);
-        RegisterSpecific("m_tidal_wave", "Tidal Wave", "Wide frontal wave", "m_water", M);
-        RegisterSpecific("m_mist_veil", "Mist Veil", "Obscuring mist, reduces accuracy", "m_water", M);
+        RegisterSpecific("m_frost_bolt", "Frost Bolt", "Ice projectile, slows target", "m_water", M,
+            manaCost: 18, cooldown: 1.2f, combat: new AttackConfig { Range = 220, DamageMultiplier = 1.4f, IsProjectile = true, ProjectileSpeed = 320, ProjectileTexture = Constants.Assets.FrostBoltProjectile, ProjectileScale = 1.0f, ProjectileTint = new Godot.Color("88DDFF"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("88DDFF") });
+        RegisterSpecific("m_freeze", "Freeze", "Immobilize target in ice", "m_water", M,
+            manaCost: 35, cooldown: 4.0f, combat: new AttackConfig { Range = 150, DamageMultiplier = 0.5f, IsProjectile = true, ProjectileSpeed = 400, ProjectileTexture = Constants.Assets.FrostBoltProjectile, ProjectileScale = 0.8f, ProjectileTint = new Godot.Color("AAEEFF"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("AAEEFF") });
+        RegisterSpecific("m_tidal_wave", "Tidal Wave", "Wide frontal wave", "m_water", M,
+            manaCost: 40, cooldown: 4.0f, combat: new AttackConfig { Range = 130, DamageMultiplier = 1.6f, TargetMode = TargetMode.Cone, ConeAngle = 90, AoeRadius = 130, MaxTargets = 8, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("4488FF") });
+        RegisterSpecific("m_mist_veil", "Mist Veil", "Obscuring mist, reduces accuracy", "m_water", M,
+            manaCost: 20, cooldown: 6.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
         // Arcane > Air
         RegisterBase("m_air", "Air", "Air and electricity magic", "mage_arcane", M, PassiveBonusType.AttackSpeed, 0.8f);
-        RegisterSpecific("m_lightning", "Lightning", "Fast bolt, high single-target damage", "m_air", M);
-        RegisterSpecific("m_gust", "Gust", "Knockback wind blast", "m_air", M);
-        RegisterSpecific("m_chain_shock", "Chain Shock", "Lightning jumps between enemies", "m_air", M);
-        RegisterSpecific("m_tempest", "Tempest", "Area storm, sustained damage", "m_air", M);
+        RegisterSpecific("m_lightning", "Lightning", "Fast bolt, high single-target damage", "m_air", M,
+            manaCost: 22, cooldown: 1.0f, combat: new AttackConfig { Range = 250, DamageMultiplier = 2.0f, IsProjectile = true, ProjectileSpeed = 600, ProjectileTexture = Constants.Assets.LightningProjectile, ProjectileScale = 1.0f, ProjectileTint = new Godot.Color("FFEE44"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("FFEE44") });
+        RegisterSpecific("m_gust", "Gust", "Knockback wind blast", "m_air", M,
+            manaCost: 15, cooldown: 2.0f, combat: new AttackConfig { Range = 100, DamageMultiplier = 0.6f, TargetMode = TargetMode.Cone, ConeAngle = 120, AoeRadius = 100, MaxTargets = 6, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("CCFFEE") });
+        RegisterSpecific("m_chain_shock", "Chain Shock", "Lightning jumps between enemies", "m_air", M,
+            manaCost: 30, cooldown: 2.5f, combat: new AttackConfig { Range = 200, DamageMultiplier = 1.3f, IsProjectile = true, ProjectileSpeed = 500, ProjectileTexture = Constants.Assets.LightningProjectile, ProjectileScale = 0.8f, TargetMode = TargetMode.MultiTarget, ChainCount = 4, ChainRange = 120, Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("FFEE44") });
+        RegisterSpecific("m_tempest", "Tempest", "Area storm, sustained damage", "m_air", M,
+            manaCost: 45, cooldown: 5.0f, combat: new AttackConfig { Range = 100, DamageMultiplier = 2.0f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 110, MaxTargets = 10, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("AADDFF") });
 
         // Arcane > Earth
         RegisterBase("m_earth", "Earth", "Earth and stone magic", "mage_arcane", M, PassiveBonusType.AttackSpeed, 0.8f);
-        RegisterSpecific("m_stone_spike", "Stone Spike", "Rock eruption, single-target", "m_earth", M);
-        RegisterSpecific("m_quake", "Quake", "Area tremor, damages and staggers", "m_earth", M);
-        RegisterSpecific("m_petrify", "Petrify", "Turn target to stone temporarily", "m_earth", M);
-        RegisterSpecific("m_earthen_armor", "Earthen Armor", "Stone coating, damage absorption", "m_earth", M);
+        RegisterSpecific("m_stone_spike", "Stone Spike", "Rock eruption, single-target", "m_earth", M,
+            manaCost: 20, cooldown: 1.4f, combat: new AttackConfig { Range = 180, DamageMultiplier = 1.6f, IsProjectile = true, ProjectileSpeed = 350, ProjectileTexture = Constants.Assets.StoneSpikeProjectile, ProjectileScale = 1.0f, ProjectileTint = new Godot.Color("8B6914"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("8B6914") });
+        RegisterSpecific("m_quake", "Quake", "Area tremor, damages and staggers", "m_earth", M,
+            manaCost: 35, cooldown: 4.0f, combat: new AttackConfig { Range = 100, DamageMultiplier = 1.8f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 100, MaxTargets = 8, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("8B4513") });
+        RegisterSpecific("m_petrify", "Petrify", "Turn target to stone temporarily", "m_earth", M,
+            manaCost: 30, cooldown: 5.0f, combat: new AttackConfig { Range = 150, DamageMultiplier = 0.3f, IsProjectile = true, ProjectileSpeed = 300, ProjectileTexture = Constants.Assets.StoneSpikeProjectile, ProjectileScale = 0.7f, Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("696969") });
+        RegisterSpecific("m_earthen_armor", "Earthen Armor", "Stone coating, damage absorption", "m_earth", M,
+            manaCost: 25, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
         // Arcane > Light
         RegisterBase("m_light", "Light", "Light and energy magic", "mage_arcane", M, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("m_energy_blast", "Energy Blast", "Concentrated energy projectile", "m_light", M);
-        RegisterSpecific("m_radiance", "Radiance", "Burst of light around caster", "m_light", M);
-        RegisterSpecific("m_heal", "Heal", "Restore HP to self", "m_light", M);
-        RegisterSpecific("m_purify", "Purify", "Remove debuffs from self", "m_light", M);
+        RegisterSpecific("m_energy_blast", "Energy Blast", "Concentrated energy projectile", "m_light", M,
+            manaCost: 28, cooldown: 1.8f, combat: new AttackConfig { Range = 220, DamageMultiplier = 2.2f, IsProjectile = true, ProjectileSpeed = 350, ProjectileTexture = Constants.Assets.EnergyBlastProjectile, ProjectileScale = 1.0f, ProjectileTint = new Godot.Color("FFD700"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("FFD700") });
+        RegisterSpecific("m_radiance", "Radiance", "Burst of light around caster", "m_light", M,
+            manaCost: 30, cooldown: 3.0f, combat: new AttackConfig { Range = 100, DamageMultiplier = 1.5f, TargetMode = TargetMode.PlayerCentricAoe, AoeRadius = 100, MaxTargets = 10, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("FFFACD") });
+        RegisterSpecific("m_heal", "Heal", "Restore HP to self", "m_light", M,
+            manaCost: 35, cooldown: 4.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_purify", "Purify", "Remove debuffs from self", "m_light", M,
+            manaCost: 20, cooldown: 6.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
         // Arcane > Dark
         RegisterBase("m_dark", "Dark", "Shadow and void magic", "mage_arcane", M, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("m_drain_life", "Drain Life", "Steal HP from target", "m_dark", M);
-        RegisterSpecific("m_curse", "Curse", "Debuff target damage and defense", "m_dark", M);
-        RegisterSpecific("m_shadow_bolt", "Shadow Bolt", "Dark projectile, high damage", "m_dark", M);
-        RegisterSpecific("m_void_zone", "Void Zone", "Area of darkness, damages enemies", "m_dark", M);
+        RegisterSpecific("m_drain_life", "Drain Life", "Steal HP from target", "m_dark", M,
+            manaCost: 20, cooldown: 2.0f, combat: new AttackConfig { Range = 150, DamageMultiplier = 1.0f, IsProjectile = true, ProjectileSpeed = 250, ProjectileTexture = Constants.Assets.ShadowBoltProjectile, ProjectileScale = 0.7f, ProjectileTint = new Godot.Color("880088"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("880088") });
+        RegisterSpecific("m_curse", "Curse", "Debuff target damage and defense", "m_dark", M,
+            manaCost: 25, cooldown: 5.0f, combat: new AttackConfig { Range = 150, DamageMultiplier = 0.3f, IsProjectile = true, ProjectileSpeed = 300, ProjectileTexture = Constants.Assets.ShadowBoltProjectile, ProjectileScale = 0.6f, ProjectileTint = new Godot.Color("660066"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("660066") });
+        RegisterSpecific("m_shadow_bolt", "Shadow Bolt", "Dark projectile, high damage", "m_dark", M,
+            manaCost: 30, cooldown: 1.5f, combat: new AttackConfig { Range = 200, DamageMultiplier = 2.4f, IsProjectile = true, ProjectileSpeed = 320, ProjectileTexture = Constants.Assets.ShadowBoltProjectile, ProjectileScale = 1.0f, ProjectileTint = new Godot.Color("4B0082"), Effect = VisualEffect.Projectile, EffectColor = new Godot.Color("4B0082") });
+        RegisterSpecific("m_void_zone", "Void Zone", "Area of darkness, damages enemies", "m_dark", M,
+            manaCost: 40, cooldown: 5.0f, combat: new AttackConfig { Range = 120, DamageMultiplier = 2.0f, TargetMode = TargetMode.AreaOfEffect, AoeRadius = 90, MaxTargets = 8, Effect = VisualEffect.Slash, EffectColor = new Godot.Color("2D0040") });
 
         // Conduit > Restoration
         RegisterBase("m_restoration", "Restoration", "Body defense and self-repair", "mage_conduit", M, PassiveBonusType.Regen, 0.3f);
-        RegisterSpecific("m_mend", "Mend", "Quick self-heal, low mana cost", "m_restoration", M);
-        RegisterSpecific("m_barrier", "Barrier", "Magical shield absorbs damage", "m_restoration", M);
-        RegisterSpecific("m_cleanse", "Cleanse", "Remove physical ailments", "m_restoration", M);
-        RegisterSpecific("m_regeneration", "Regeneration", "Sustained HP recovery", "m_restoration", M);
+        RegisterSpecific("m_mend", "Mend", "Quick self-heal, low mana cost", "m_restoration", M,
+            manaCost: 12, cooldown: 2.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_barrier", "Barrier", "Magical shield absorbs damage", "m_restoration", M,
+            manaCost: 30, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_cleanse", "Cleanse", "Remove physical ailments", "m_restoration", M,
+            manaCost: 18, cooldown: 6.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_regeneration", "Regeneration", "Sustained HP recovery", "m_restoration", M,
+            manaCost: 25, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
         // Conduit > Amplification
         RegisterBase("m_amplification", "Amplification", "Neural enhancement", "mage_conduit", M, PassiveBonusType.Regen, 0.3f);
-        RegisterSpecific("m_mana_surge", "Mana Surge", "Burst of mana recovery", "m_amplification", M);
-        RegisterSpecific("m_quick_cast", "Quick Cast", "Temporarily reduce cast time", "m_amplification", M);
-        RegisterSpecific("m_attunement", "Attunement", "Increase elemental affinity", "m_amplification", M);
-        RegisterSpecific("m_focus_channel", "Focus Channel", "Reduce mana cost while stationary", "m_amplification", M);
+        RegisterSpecific("m_mana_surge", "Mana Surge", "Burst of mana recovery", "m_amplification", M,
+            manaCost: 0, cooldown: 12.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_quick_cast", "Quick Cast", "Temporarily reduce cast time", "m_amplification", M,
+            manaCost: 20, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_attunement", "Attunement", "Increase elemental affinity", "m_amplification", M,
+            manaCost: 15, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_focus_channel", "Focus Channel", "Reduce mana cost while stationary", "m_amplification", M,
+            manaCost: 10, cooldown: 8.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
 
         // Conduit > Overcharge
         RegisterBase("m_overcharge", "Overcharge", "Push nervous system beyond limits", "mage_conduit", M, PassiveBonusType.Damage, 1.5f);
-        RegisterSpecific("m_neural_burn", "Neural Burn", "Boost spell damage, drains HP", "m_overcharge", M);
-        RegisterSpecific("m_mana_frenzy", "Mana Frenzy", "No mana cost, HP cost instead", "m_overcharge", M);
-        RegisterSpecific("m_pain_conduit", "Pain Conduit", "Convert damage into mana", "m_overcharge", M);
-        RegisterSpecific("m_last_resort", "Last Resort", "Near death: massively amplify all", "m_overcharge", M);
+        RegisterSpecific("m_neural_burn", "Neural Burn", "Boost spell damage, drains HP", "m_overcharge", M,
+            manaCost: 0, cooldown: 10.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_mana_frenzy", "Mana Frenzy", "No mana cost, HP cost instead", "m_overcharge", M,
+            manaCost: 0, cooldown: 15.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_pain_conduit", "Pain Conduit", "Convert damage into mana", "m_overcharge", M,
+            manaCost: 0, cooldown: 12.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
+        RegisterSpecific("m_last_resort", "Last Resort", "Near death: massively amplify all", "m_overcharge", M,
+            manaCost: 0, cooldown: 30.0f, combat: new AttackConfig { TargetMode = TargetMode.Self, Effect = VisualEffect.None });
     }
 }

@@ -18,6 +18,8 @@ public record SaveData
     public int Level { get; init; } = 1;
     public int Hp { get; init; } = 100;
     public int MaxHp { get; init; } = 100;
+    public int Mana { get; init; }
+    public int MaxMana { get; init; }
     public int Xp { get; init; }
     public int FloorNumber { get; init; } = 1;
     public int DeepestFloor { get; init; } = 1;

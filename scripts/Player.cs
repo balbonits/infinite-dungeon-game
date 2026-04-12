@@ -123,9 +123,25 @@ public partial class Player : CharacterBody2D
     }
 
     private float _regenAccumulator;
+    private float _manaRegenAccumulator;
 
     private void HandleHpRegen(double delta)
     {
+        // Mana regen (spec: stats.md — mana_regen_per_sec = effective_int * 0.2)
+        float manaRegen = GameState.Instance.Stats.ManaRegen;
+        if (manaRegen > 0 && GameState.Instance.Mana < GameState.Instance.MaxMana)
+        {
+            _manaRegenAccumulator += manaRegen * (float)delta;
+            if (_manaRegenAccumulator >= 1.0f)
+            {
+                int manaHeal = (int)_manaRegenAccumulator;
+                _manaRegenAccumulator -= manaHeal;
+                GameState.Instance.Mana = System.Math.Min(
+                    GameState.Instance.MaxMana,
+                    GameState.Instance.Mana + manaHeal);
+            }
+        }
+
         float regen = GameState.Instance.Stats.HpRegen;
         if (regen <= 0 || GameState.Instance.Hp >= GameState.Instance.MaxHp)
             return;
@@ -322,6 +338,37 @@ public partial class Player : CharacterBody2D
         }
 
         return nearest;
+    }
+
+    /// <summary>
+    /// Execute a skill from the hotbar. Deducts mana, finds target, applies damage/effect.
+    /// Called by SkillBarHud when a skill slot is activated.
+    /// Returns true if the skill was successfully cast.
+    /// </summary>
+    public bool ExecuteSkill(AttackConfig config, int manaCost)
+    {
+        // Check mana
+        if (GameState.Instance.Mana < manaCost)
+        {
+            Ui.Toast.Instance?.Info("Not enough mana");
+            return false;
+        }
+
+        // Find target (same as auto-attack)
+        Node2D? target = FindNearestEnemy();
+        if (target == null && config.TargetMode != TargetMode.Self && config.TargetMode != TargetMode.PlayerCentricAoe)
+        {
+            Ui.Toast.Instance?.Info("No target");
+            return false;
+        }
+
+        // Deduct mana
+        GameState.Instance.Mana -= manaCost;
+
+        // Execute through the same unified attack system
+        ExecuteAttack(config, target ?? (Node2D)this);
+
+        return true;
     }
 
     private void DrawSlash(Vector2 targetPos, Color? color = null)

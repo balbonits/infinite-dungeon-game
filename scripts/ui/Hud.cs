@@ -21,6 +21,6 @@ public partial class Hud : Control
     private void OnStatsChanged()
     {
         var gs = GameState.Instance;
-        _statsLabel.Text = Strings.Hud.Stats(gs.Hp, gs.MaxHp, gs.Xp, gs.Level, gs.FloorNumber, gs.PlayerInventory.Gold);
+        _statsLabel.Text = Strings.Hud.Stats(gs.Hp, gs.MaxHp, gs.Mana, gs.MaxMana, gs.Xp, gs.Level, gs.FloorNumber, gs.PlayerInventory.Gold);
     }
 }

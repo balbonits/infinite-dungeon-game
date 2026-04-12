@@ -36,6 +36,8 @@ public static class SaveSystem
             Level = gs.Level,
             Hp = gs.Hp,
             MaxHp = gs.MaxHp,
+            Mana = gs.Mana,
+            MaxMana = gs.MaxMana,
             Xp = gs.Xp,
             FloorNumber = gs.FloorNumber,
             DeepestFloor = gs.DeepestFloor,
@@ -96,6 +98,10 @@ public static class SaveSystem
         gs.DeepestFloor = deepest;
         gs.MaxHp = maxHp;
         gs.Hp = hp;
+        int maxMana = System.Math.Max(0, data.MaxMana);
+        int mana = System.Math.Clamp(data.Mana, 0, maxMana > 0 ? maxMana : 999);
+        gs.MaxMana = maxMana > 0 ? maxMana : Constants.PlayerStats.GetClassBaseMana(data.SelectedClass);
+        gs.Mana = mana > 0 ? mana : gs.MaxMana;
         gs.Xp = xp;
         gs.Level = level;
         gs.FloorNumber = floor;
