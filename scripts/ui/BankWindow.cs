@@ -173,25 +173,25 @@ public partial class BankWindow : Control
         for (int i = 0; i < bank.Storage.SlotCount; i++)
         {
             var stack = bank.Storage.GetSlot(i);
-            if (stack == null) continue;
-
-            int slotIndex = i;
-            var row = CreateItemRow(stack.Item.Name, stack.Count, Strings.Bank.Withdraw, () =>
+            if (stack != null)
             {
-                if (bank.Withdraw(backpack, slotIndex))
-                    Refresh();
-                else
-                    Toast.Instance?.Warning("Backpack is full!");
-            });
-            _bankList.AddChild(row);
-        }
-
-        if (bank.Storage.UsedSlots == 0)
-        {
-            var emptyLabel = new Label();
-            emptyLabel.Text = Strings.Bank.Empty;
-            UiTheme.StyleLabel(emptyLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            _bankList.AddChild(emptyLabel);
+                int slotIndex = i;
+                var row = CreateItemRow($"{i + 1:D2}  {stack.Item.Name}", stack.Count, Strings.Bank.Withdraw, () =>
+                {
+                    if (bank.Withdraw(backpack, slotIndex))
+                        Refresh();
+                    else
+                        Toast.Instance?.Warning("Backpack is full!");
+                });
+                _bankList.AddChild(row);
+            }
+            else
+            {
+                var emptyRow = new Label();
+                emptyRow.Text = $"{i + 1:D2}  — empty —";
+                UiTheme.StyleLabel(emptyRow, new Color(UiTheme.Colors.Muted, 0.4f), UiTheme.FontSizes.Small);
+                _bankList.AddChild(emptyRow);
+            }
         }
     }
 
@@ -203,25 +203,25 @@ public partial class BankWindow : Control
         for (int i = 0; i < backpack.SlotCount; i++)
         {
             var stack = backpack.GetSlot(i);
-            if (stack == null) continue;
-
-            int slotIndex = i;
-            var row = CreateItemRow(stack.Item.Name, stack.Count, Strings.Bank.Deposit, () =>
+            if (stack != null)
             {
-                if (bank.Deposit(backpack, slotIndex))
-                    Refresh();
-                else
-                    Toast.Instance?.Warning("Bank is full!");
-            });
-            _backpackList.AddChild(row);
-        }
-
-        if (backpack.UsedSlots == 0)
-        {
-            var emptyLabel = new Label();
-            emptyLabel.Text = "Backpack empty.";
-            UiTheme.StyleLabel(emptyLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            _backpackList.AddChild(emptyLabel);
+                int slotIndex = i;
+                var row = CreateItemRow($"{i + 1:D2}  {stack.Item.Name}", stack.Count, Strings.Bank.Deposit, () =>
+                {
+                    if (bank.Deposit(backpack, slotIndex))
+                        Refresh();
+                    else
+                        Toast.Instance?.Warning("Bank is full!");
+                });
+                _backpackList.AddChild(row);
+            }
+            else
+            {
+                var emptyRow = new Label();
+                emptyRow.Text = $"{i + 1:D2}  — empty —";
+                UiTheme.StyleLabel(emptyRow, new Color(UiTheme.Colors.Muted, 0.4f), UiTheme.FontSizes.Small);
+                _backpackList.AddChild(emptyRow);
+            }
         }
     }
 
