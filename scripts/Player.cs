@@ -354,21 +354,45 @@ public partial class Player : CharacterBody2D
             return false;
         }
 
-        // Find target (same as auto-attack)
-        Node2D? target = FindNearestEnemy();
-        if (target == null && config.TargetMode != TargetMode.Self && config.TargetMode != TargetMode.PlayerCentricAoe)
+        // Self/PlayerCentricAoe don't need a target
+        if (config.TargetMode == TargetMode.Self || config.TargetMode == TargetMode.PlayerCentricAoe)
         {
-            Ui.Toast.Instance?.Info("No target");
+            GameState.Instance.Mana -= manaCost;
+            ExecuteAttack(config, this);
+            return true;
+        }
+
+        // Find nearest enemy within the SKILL's range (not auto-attack range)
+        Node2D? target = FindNearestEnemyInRange(config.Range);
+        if (target == null)
+        {
+            Ui.Toast.Instance?.Info("No target in range");
             return false;
         }
 
-        // Deduct mana
         GameState.Instance.Mana -= manaCost;
-
-        // Execute through the same unified attack system
-        ExecuteAttack(config, target ?? (Node2D)this);
-
+        ExecuteAttack(config, target);
         return true;
+    }
+
+    /// <summary>Find nearest enemy within a specific range (for skills with different ranges).</summary>
+    private Node2D? FindNearestEnemyInRange(float range)
+    {
+        Node2D? nearest = null;
+        float nearestDist = range;
+
+        foreach (Node node in GetTree().GetNodesInGroup(Constants.Groups.Enemies))
+        {
+            if (node is not Node2D body) continue;
+            float dist = GlobalPosition.DistanceTo(body.GlobalPosition);
+            if (dist <= nearestDist)
+            {
+                nearestDist = dist;
+                nearest = body;
+            }
+        }
+
+        return nearest;
     }
 
     private void DrawSlash(Vector2 targetPos, Color? color = null)

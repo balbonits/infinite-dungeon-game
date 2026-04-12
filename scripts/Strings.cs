@@ -63,8 +63,8 @@ public static class Strings
     public static class Hud
     {
         public const string ControlsHint = "Move: Arrow keys\nAuto-attack: nearest enemy in range";
-        public static string Stats(int hp, int maxHp, int mana, int maxMana, int xp, int level, int floor, int gold) =>
-            $"HP: {hp}/{maxHp} | MP: {mana}/{maxMana} | XP: {xp} | LVL: {level} | Floor: {floor} | Gold: {gold}";
+        public static string Stats(int xp, int level, int floor, int gold) =>
+            $"XP: {xp} | LVL: {level} | Floor: {floor} | Gold: {gold}";
     }
 
     // --- Combat ---
