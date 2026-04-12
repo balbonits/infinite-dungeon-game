@@ -14,7 +14,6 @@ public partial class BackpackWindow : Control
     public static BackpackWindow? Instance { get; private set; }
 
     private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
     private Label _headerLabel = null!;
     private Label _detailLabel = null!;
     private ScrollContainer _scrollContainer = null!;
@@ -33,26 +32,10 @@ public partial class BackpackWindow : Control
 
     private void BuildUi()
     {
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.6f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
+        var (overlay, content) = UiTheme.CreateDialogWindow(400f);
+        _overlay = overlay;
         _overlay.Visible = false;
         AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(400, 0);
-        _center.AddChild(panel);
-
-        var content = new VBoxContainer();
-        content.AddThemeConstantOverride("separation", 6);
-        panel.AddChild(content);
 
         // Header
         _headerLabel = new Label();
@@ -111,14 +94,12 @@ public partial class BackpackWindow : Control
         GetTree().Paused = true;
         Refresh();
         _overlay.Visible = true;
-        _center.Visible = true;
     }
 
     public void Close()
     {
         _isOpen = false;
         _overlay.Visible = false;
-        _center.Visible = false;
         var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
         if (pauseMenu != null)
         {
@@ -136,7 +117,7 @@ public partial class BackpackWindow : Control
         var inv = GameState.Instance.PlayerInventory;
         _headerLabel.Text = $"BACKPACK ({inv.UsedSlots}/{inv.SlotCount})";
 
-        var goldLabel = _center.GetNodeOrNull<Label>("PanelContainer/VBoxContainer/GoldLabel");
+        var goldLabel = _overlay.GetNodeOrNull<Label>("CenterContainer/PanelContainer/VBoxContainer/GoldLabel");
         if (goldLabel != null)
             goldLabel.Text = $"Gold: {inv.Gold}";
 

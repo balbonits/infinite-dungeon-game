@@ -38,24 +38,8 @@ public partial class ControlsHelp : Control
         ProcessMode = ProcessModeEnum.Always;
         SetAnchorsPreset(LayoutPreset.FullRect);
 
-        var overlay = new ColorRect();
-        overlay.Color = new Color(0, 0, 0, 0.7f);
-        overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        overlay.MouseFilter = MouseFilterEnum.Stop;
+        var (overlay, vbox) = UiTheme.CreateDialogWindow(460f, 0.7f);
         AddChild(overlay);
-
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(460, 0);
-        center.AddChild(panel);
-
-        var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 6);
-        panel.AddChild(vbox);
 
         // Title
         var title = new Label();
