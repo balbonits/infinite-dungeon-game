@@ -83,10 +83,12 @@ public partial class TutorialPanel : Control
 
         _scrollContainer = new ScrollContainer();
         _scrollContainer.CustomMinimumSize = new Vector2(0, 400);
+        _scrollContainer.HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled;
         vbox.AddChild(_scrollContainer);
 
         _content = new VBoxContainer();
         _content.AddThemeConstantOverride("separation", 6);
+        _content.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         _scrollContainer.AddChild(_content);
 
         BuildTab(0);
@@ -219,6 +221,7 @@ public partial class TutorialPanel : Control
         actionLabel.Text = action;
         UiTheme.StyleLabel(actionLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
         actionLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        actionLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         row.AddChild(actionLabel);
 
         _content.AddChild(row);
