@@ -48,7 +48,23 @@ public partial class PauseMenu : Control
             return;
         }
 
-        if (Visible && KeyboardNav.HandleInput(@event, _buttonContainer))
+        if (!Visible) return;
+
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            OnResumePressed();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.HandleInput(@event, _buttonContainer))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Block ALL input when pause menu is open
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
     }
 

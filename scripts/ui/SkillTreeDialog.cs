@@ -110,9 +110,19 @@ public partial class SkillTreeDialog : Control
     public void Close()
     {
         _isOpen = false;
-        GetTree().Paused = false;
         _overlay.Visible = false;
         _center.Visible = false;
+        // Return to PauseMenu (which opened us) — keep game paused
+        var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
+        if (pauseMenu != null)
+        {
+            pauseMenu.Visible = true;
+            UiTheme.FocusFirstButton(pauseMenu.GetNode<VBoxContainer>("CenterContainer/PanelContainer/MarginContainer/VBoxContainer"));
+        }
+        else
+        {
+            GetTree().Paused = false;
+        }
     }
 
     private void RefreshSkillList()
@@ -301,7 +311,7 @@ public partial class SkillTreeDialog : Control
             return;
         }
 
-        if (KeyboardNav.ConsumeMovement(@event))
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
     }
 }

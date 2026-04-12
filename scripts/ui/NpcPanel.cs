@@ -156,7 +156,21 @@ public partial class NpcPanel : Control
         if (!_center.Visible)
             return;
 
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            _center.Visible = false;
+            _overlay.Visible = false;
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (KeyboardNav.HandleInput(@event, _serviceButtons))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
     }
 

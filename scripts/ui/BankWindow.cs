@@ -298,7 +298,7 @@ public partial class BankWindow : Control
             return;
         }
 
-        if (KeyboardNav.ConsumeMovement(@event))
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
     }
 }
