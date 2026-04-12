@@ -115,12 +115,16 @@ public partial class SplashScreen : Control
         }));
     }
 
+    private Control? _settingsOverlay;
+
     private void OpenSettings()
     {
         var overlay = new ColorRect();
         overlay.Color = new Color(0, 0, 0, 0.7f);
         overlay.SetAnchorsPreset(LayoutPreset.FullRect);
+        overlay.MouseFilter = MouseFilterEnum.Stop; // Block clicks to buttons behind
         AddChild(overlay);
+        _settingsOverlay = overlay;
 
         var center = new CenterContainer();
         center.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -167,7 +171,7 @@ public partial class SplashScreen : Control
         backBtn.FocusMode = FocusModeEnum.All;
         UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Body);
         backBtn.Connect(BaseButton.SignalName.Pressed,
-            Callable.From(() => overlay.QueueFree()));
+            Callable.From(() => { overlay.QueueFree(); _settingsOverlay = null; }));
         vbox.AddChild(backBtn);
 
         // Focus first interactive element
@@ -179,7 +183,27 @@ public partial class SplashScreen : Control
         if (!_ready || !Visible)
             return;
 
-        if (Visible && KeyboardNav.HandleInput(@event, this))
+        // If settings panel is open, handle input there instead
+        if (_settingsOverlay != null)
+        {
+            if (KeyboardNav.IsCancelPressed(@event))
+            {
+                _settingsOverlay.QueueFree();
+                _settingsOverlay = null;
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+            if (KeyboardNav.HandleInput(@event, _settingsOverlay))
+                GetViewport().SetInputAsHandled();
+            else if (KeyboardNav.ConsumeMovement(@event))
+                GetViewport().SetInputAsHandled();
+            // Block all input from reaching buttons behind
+            if (@event is InputEventKey key && key.Pressed)
+                GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.HandleInput(@event, this))
             GetViewport().SetInputAsHandled();
     }
 }
