@@ -39,9 +39,8 @@ public partial class Dungeon : Node2D
         _player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition) + new Vector2(0, 40);
         _entities.AddChild(_player);
 
-        // Spawn initial enemies
-        for (int i = 0; i < Constants.Spawning.InitialEnemies; i++)
-            SpawnEnemy();
+        // Spawn initial enemies — GUARANTEE the minimum count
+        SpawnInitialEnemies();
 
         PlaceStairs();
 
@@ -107,6 +106,10 @@ public partial class Dungeon : Node2D
         // Achievement: deepest floor
         GameState.Instance.Achievements.SetCounter("deepest_floor", GameState.Instance.FloorNumber);
 
+        // Reset floor state
+        _floorWiped = false;
+        _killCount = 0;
+
         // Clear all enemies
         foreach (Node child in _entities.GetChildren())
         {
@@ -134,9 +137,8 @@ public partial class Dungeon : Node2D
 
         UpdateCompass();
 
-        // Spawn enemies for new floor
-        for (int i = 0; i < Constants.Spawning.InitialEnemies; i++)
-            SpawnEnemy();
+        // Spawn enemies for new floor — GUARANTEE the minimum count
+        SpawnInitialEnemies();
     }
 
     private void SetupTileset()
@@ -319,6 +321,23 @@ public partial class Dungeon : Node2D
         return root;
     }
 
+    /// <summary>
+    /// Keep spawning until InitialEnemies are actually in the scene tree.
+    /// Never exits with fewer than the minimum.
+    /// </summary>
+    private void SpawnInitialEnemies()
+    {
+        int target = Constants.Spawning.InitialEnemies;
+        int maxAttempts = target * 10; // hard safety cap
+        int attempts = 0;
+
+        while (GetTree().GetNodesInGroup(Constants.Groups.Enemies).Count < target && attempts < maxAttempts)
+        {
+            SpawnEnemy();
+            attempts++;
+        }
+    }
+
     private void SpawnEnemy()
     {
         var player = GetTree().GetFirstNodeInGroup(Constants.Groups.Player) as Node2D;
@@ -447,6 +466,7 @@ public partial class Dungeon : Node2D
     }
 
     private bool _floorWiped;
+    private int _killCount;
 
     private void OnSpawnTimerTimeout()
     {
@@ -460,6 +480,8 @@ public partial class Dungeon : Node2D
 
     private async void OnEnemyDefeated(Vector2 position, int tier)
     {
+        _killCount++;
+
         // Track quest progress
         int currentFloor = GameState.Instance.FloorNumber;
         var completedQuest = GameState.Instance.Quests.RecordEnemyKill(currentFloor);
@@ -473,7 +495,8 @@ public partial class Dungeon : Node2D
 
         int remaining = GetTree().GetNodesInGroup(Constants.Groups.Enemies).Count;
 
-        if (remaining == 0 && !_floorWiped)
+        // Floor wipe requires: no enemies left AND at least InitialEnemies were killed
+        if (remaining == 0 && !_floorWiped && _killCount >= Constants.Spawning.InitialEnemies)
         {
             _floorWiped = true;
             _spawnTimer.Stop();
