@@ -46,6 +46,9 @@ public record SaveData
     // Achievements
     public SavedAchievementData? AchievementData { get; init; }
 
+    // Skill hotbar
+    public string?[]? SkillBarSlots { get; init; }
+
     // Endgame systems
     public SavedSaturationData? SaturationData { get; init; }
     public int[]? PactRanks { get; init; }

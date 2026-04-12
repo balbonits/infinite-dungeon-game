@@ -82,6 +82,9 @@ public partial class GameState : Node
     public QuestTracker Quests { get; set; } = new();
     public AchievementTracker Achievements { get; set; } = new();
 
+    // Skill hotbar (Diablo-style, keys 1-4)
+    public SkillBar SkillHotbar { get; set; } = new();
+
     // Endgame systems (END-01 through END-05)
     public ZoneSaturation Saturation { get; set; } = new();
     public DungeonPacts Pacts { get; set; } = new();
@@ -110,6 +113,7 @@ public partial class GameState : Node
         Quests = new QuestTracker();
         Quests.GenerateQuests(1);
         Achievements = new AchievementTracker();
+        SkillHotbar = new SkillBar();
         Saturation = new ZoneSaturation();
         Pacts = new DungeonPacts();
         Intelligence = new DungeonIntelligence();

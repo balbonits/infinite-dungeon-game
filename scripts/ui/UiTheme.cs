@@ -10,20 +10,29 @@ public static class UiTheme
 {
     public static class Colors
     {
+        // Backgrounds
         public static readonly Color BgDark = new(0.059f, 0.067f, 0.090f, 1.0f);       // #0f1117
         public static readonly Color BgPanel = new(0.086f, 0.106f, 0.157f, 1.0f);       // #161b28
-        public static readonly Color Ink = new(0.925f, 0.941f, 1.0f, 1.0f);             // #ecf0ff
-        public static readonly Color Muted = new(0.714f, 0.749f, 0.859f, 1.0f);         // #b6bfdb
-        public static readonly Color Accent = new(0.961f, 0.784f, 0.420f, 1.0f);        // #f5c86b
-        public static readonly Color Danger = new(1.0f, 0.435f, 0.435f, 1.0f);          // #ff6f6f
-        public static readonly Color Safe = new(0.420f, 1.0f, 0.537f, 1.0f);            // #6bff89
-        public static readonly Color Player = new(0.557f, 0.839f, 1.0f, 1.0f);          // #8ed6ff
 
+        // Text
+        public static readonly Color Ink = new(0.925f, 0.941f, 1.0f, 1.0f);             // #ecf0ff (body text)
+        public static readonly Color Muted = new(0.557f, 0.600f, 0.729f, 1.0f);         // #8e99ba (dim/disabled)
+
+        // Semantic colors (distinct roles)
+        public static readonly Color Accent = new(0.961f, 0.784f, 0.420f, 1.0f);        // #f5c86b (gold — titles, headings, rewards)
+        public static readonly Color Action = new(0.318f, 0.557f, 0.957f, 1.0f);        // #518ef4 (blue — buttons, interactive)
+        public static readonly Color ActionHover = new(0.420f, 0.655f, 1.0f, 1.0f);     // #6ba7ff (bright blue — hovered button)
+        public static readonly Color Danger = new(1.0f, 0.435f, 0.435f, 1.0f);          // #ff6f6f (red — damage, warnings)
+        public static readonly Color Safe = new(0.420f, 1.0f, 0.537f, 1.0f);            // #6bff89 (green — heals, success)
+        public static readonly Color Info = new(0.290f, 0.910f, 0.910f, 1.0f);          // #4ae8e8 (cyan — info, mana, stats)
+        public static readonly Color Player = new(0.557f, 0.839f, 1.0f, 1.0f);          // #8ed6ff (light blue — player)
+
+        // Panel chrome
         public static readonly Color PanelBg = new(0.086f, 0.106f, 0.157f, 0.75f);
         public static readonly Color PanelBgSolid = new(0.086f, 0.106f, 0.157f, 0.92f);
-        public static readonly Color PanelBorder = new(0.961f, 0.784f, 0.420f, 0.3f);
-        public static readonly Color PanelBorderBright = new(0.961f, 0.784f, 0.420f, 0.5f);
-        public static readonly Color BtnHover = new(0.98f, 0.85f, 0.55f, 1.0f);
+        public static readonly Color PanelBorder = new(0.290f, 0.420f, 0.620f, 0.4f);    // #4a6b9e — blue-grey border
+        public static readonly Color PanelBorderBright = new(0.318f, 0.557f, 0.957f, 0.6f); // blue border on focused panels
+        public static readonly Color BtnHover = new(0.420f, 0.655f, 1.0f, 1.0f);         // same as ActionHover
     }
 
     public static class FontSizes
@@ -49,11 +58,11 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Creates a StyleBoxFlat for buttons (gold bg, rounded).</summary>
+    /// <summary>Creates a StyleBoxFlat for buttons (blue bg, rounded).</summary>
     public static StyleBoxFlat CreateButtonStyle(bool hover = false)
     {
         var style = new StyleBoxFlat();
-        style.BgColor = hover ? Colors.BtnHover : Colors.Accent;
+        style.BgColor = hover ? Colors.ActionHover : Colors.Action;
         style.SetCornerRadiusAll(6);
         style.ContentMarginLeft = 16;
         style.ContentMarginRight = 16;
@@ -122,7 +131,7 @@ public static class UiTheme
     public static StyleBoxFlat CreateButtonFocusStyle()
     {
         var style = new StyleBoxFlat();
-        style.BgColor = Colors.Accent;
+        style.BgColor = Colors.ActionHover;
         style.BorderColor = Colors.Ink;
         style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(6);
