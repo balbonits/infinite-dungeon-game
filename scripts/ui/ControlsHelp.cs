@@ -36,6 +36,7 @@ public partial class ControlsHelp : Control
         ActiveInstance = this;
         _isOpen = true;
         ProcessMode = ProcessModeEnum.Always;
+        SetAnchorsPreset(LayoutPreset.FullRect);
 
         var overlay = new ColorRect();
         overlay.Color = new Color(0, 0, 0, 0.7f);
