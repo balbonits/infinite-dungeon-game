@@ -36,7 +36,9 @@ public partial class ControlsHelp : Control
         ActiveInstance = this;
         _isOpen = true;
         ProcessMode = ProcessModeEnum.Always;
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        AnchorsPreset = (int)LayoutPreset.FullRect;
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Size = GetViewportRect().Size;
 
         var (overlay, vbox) = UiTheme.CreateDialogWindow(460f, 0.7f);
         AddChild(overlay);

@@ -42,7 +42,9 @@ public partial class SettingsPanel : Control
         ActiveInstance = this;
         _isOpen = true;
         ProcessMode = ProcessModeEnum.Always;
-        SetAnchorsPreset(LayoutPreset.FullRect);
+        AnchorsPreset = (int)LayoutPreset.FullRect;
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        Size = GetViewportRect().Size;
 
         (_overlay, _content) = UiTheme.CreateDialogWindow(420f, 0.7f);
         _content.AddThemeConstantOverride("separation", 8);
