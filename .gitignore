@@ -7,33 +7,42 @@ export/
 bin/
 obj/
 *.csproj.old
+*.user
+
+# Build output
+build/
 
 # macOS
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Python
 __pycache__/
 *.pyc
-
-# IDE
-.vscode/
-*.swp
-*.swo
-*~
 
 # Test output
 tests/bin/
 tests/obj/
 tests/TestResults/
 
-# Unsorted raw asset downloads (large source files)
+# Unsorted raw asset downloads
 assets/to-be-sorted/
 
 # Isometric asset source files (Blender, GIMP, PSD)
 assets/isometric/source/
 
-# Visual evidence captures (screenshots & recordings)
+# Visual evidence captures
 docs/evidence/**/demo_screenshot_*.png
 docs/evidence/**/demo_recording_*.mov
 docs/evidence/**/frame_*.png
-build/
+
+# Logs
+*.log
+crash_reports/
