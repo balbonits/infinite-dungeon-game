@@ -132,7 +132,7 @@ public static class Constants
         public const float SpawnInterval = 2.8f;
         public const float RespawnDelay = 1.4f;
         public const float SafeSpawnRadius = 150.0f;
-        public const int MaxSpawnRetries = 10;
+        public const int MaxSpawnRetries = 50;
         public const int SpawnWallMargin = 5;
         public const float DespawnDistance = 800.0f;
     }
