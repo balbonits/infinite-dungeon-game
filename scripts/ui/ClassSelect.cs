@@ -105,7 +105,6 @@ public partial class ClassSelect : Control
         _confirmButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleButton(_confirmButton, UiTheme.FontSizes.Heading);
         _confirmButton.Disabled = true;
-        _confirmButton.Modulate = new Color(1, 1, 1, 0.3f);
         _confirmButton.Connect(BaseButton.SignalName.Pressed,
             Callable.From(OnConfirmPressed));
         mainVbox.AddChild(_confirmButton);
@@ -313,7 +312,6 @@ public partial class ClassSelect : Control
 
         // Enable confirm button (no layout-affecting animation)
         _confirmButton.Disabled = false;
-        _confirmButton.Modulate = Colors.White;
     }
 
     public override void _UnhandledInput(InputEvent @event)
