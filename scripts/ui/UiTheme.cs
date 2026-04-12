@@ -127,12 +127,12 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Creates a StyleBoxFlat for focused buttons — high contrast white border for visibility.</summary>
+    /// <summary>Creates a StyleBoxFlat for focused buttons — gold border on blue bg for high contrast.</summary>
     public static StyleBoxFlat CreateButtonFocusStyle()
     {
         var style = new StyleBoxFlat();
         style.BgColor = Colors.ActionHover;
-        style.BorderColor = Colors.Ink;
+        style.BorderColor = Colors.Accent;
         style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(6);
         style.ContentMarginLeft = 16;

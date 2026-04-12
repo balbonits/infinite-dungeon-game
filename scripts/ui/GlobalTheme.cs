@@ -17,17 +17,17 @@ public static class GlobalTheme
         theme.SetColor("font_color", "Label", UiTheme.Colors.Ink);
         theme.SetFontSize("font_size", "Label", UiTheme.FontSizes.Body);
 
-        // --- Default Button (Primary / Confirm / Action) ---
-        theme.SetColor("font_color", "Button", UiTheme.Colors.BgDark);
-        theme.SetColor("font_hover_color", "Button", UiTheme.Colors.BgDark);
-        theme.SetColor("font_focus_color", "Button", UiTheme.Colors.BgDark);
-        theme.SetColor("font_pressed_color", "Button", UiTheme.Colors.BgDark);
+        // --- Default Button (Primary / Confirm / Action) — blue for interactive elements ---
+        theme.SetColor("font_color", "Button", UiTheme.Colors.Ink);
+        theme.SetColor("font_hover_color", "Button", UiTheme.Colors.Ink);
+        theme.SetColor("font_focus_color", "Button", UiTheme.Colors.Ink);
+        theme.SetColor("font_pressed_color", "Button", UiTheme.Colors.Ink);
         theme.SetColor("font_disabled_color", "Button", new Color(UiTheme.Colors.Muted, 0.4f));
         theme.SetFontSize("font_size", "Button", UiTheme.FontSizes.Button);
-        theme.SetStylebox("normal", "Button", CreateButtonStylebox(UiTheme.Colors.Accent, false));
-        theme.SetStylebox("hover", "Button", CreateButtonStylebox(UiTheme.Colors.BtnHover, false));
-        theme.SetStylebox("pressed", "Button", CreateButtonStylebox(UiTheme.Colors.Accent, true));
-        theme.SetStylebox("focus", "Button", CreateFocusStylebox(UiTheme.Colors.Accent));
+        theme.SetStylebox("normal", "Button", CreateButtonStylebox(UiTheme.Colors.Action, false));
+        theme.SetStylebox("hover", "Button", CreateButtonStylebox(UiTheme.Colors.ActionHover, false));
+        theme.SetStylebox("pressed", "Button", CreateButtonStylebox(UiTheme.Colors.Action, true));
+        theme.SetStylebox("focus", "Button", CreateFocusStylebox(UiTheme.Colors.ActionHover));
         theme.SetStylebox("disabled", "Button", CreateButtonStylebox(new Color(UiTheme.Colors.Muted, 0.3f), false));
 
         // --- PanelContainer ---
@@ -59,7 +59,7 @@ public static class GlobalTheme
     {
         var style = new StyleBoxFlat();
         style.BgColor = bgColor;
-        style.BorderColor = UiTheme.Colors.Ink;
+        style.BorderColor = UiTheme.Colors.Accent; // Gold border on focus — high contrast against blue
         style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(6);
         style.ContentMarginLeft = 16;
