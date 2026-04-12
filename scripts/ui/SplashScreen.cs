@@ -115,67 +115,9 @@ public partial class SplashScreen : Control
         }));
     }
 
-    private Control? _settingsOverlay;
-
     private void OpenSettings()
     {
-        var overlay = new ColorRect();
-        overlay.Color = new Color(0, 0, 0, 0.7f);
-        overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        overlay.MouseFilter = MouseFilterEnum.Stop; // Block clicks to buttons behind
-        AddChild(overlay);
-        _settingsOverlay = overlay;
-
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        overlay.AddChild(center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(350, 0);
-        center.AddChild(panel);
-
-        var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 12);
-        panel.AddChild(vbox);
-
-        var heading = new Label();
-        heading.Text = "Settings";
-        UiTheme.StyleLabel(heading, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
-        heading.HorizontalAlignment = HorizontalAlignment.Center;
-        vbox.AddChild(heading);
-
-        // Combat numbers toggle
-        var combatRow = new HBoxContainer();
-        combatRow.AddThemeConstantOverride("separation", 12);
-        vbox.AddChild(combatRow);
-        var combatLabel = new Label();
-        combatLabel.Text = "Show Damage Numbers";
-        UiTheme.StyleLabel(combatLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
-        combatLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        combatRow.AddChild(combatLabel);
-        var combatToggle = new CheckButton();
-        combatToggle.ButtonPressed = GameSettings.ShowCombatNumbers;
-        combatToggle.FocusMode = FocusModeEnum.All;
-        combatToggle.Connect(BaseButton.SignalName.Toggled, Callable.From((bool on) =>
-            GameSettings.ShowCombatNumbers = on));
-        combatRow.AddChild(combatToggle);
-
-        vbox.AddChild(new HSeparator());
-
-        // Back button
-        var backBtn = new Button();
-        backBtn.Text = "Back";
-        backBtn.CustomMinimumSize = new Vector2(200, 38);
-        backBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        backBtn.FocusMode = FocusModeEnum.All;
-        UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Body);
-        backBtn.Connect(BaseButton.SignalName.Pressed,
-            Callable.From(() => { overlay.QueueFree(); _settingsOverlay = null; }));
-        vbox.AddChild(backBtn);
-
-        // Focus first interactive element
-        combatToggle.CallDeferred(Control.MethodName.GrabFocus);
+        SettingsPanel.Open(this);
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -183,25 +125,9 @@ public partial class SplashScreen : Control
         if (!_ready || !Visible)
             return;
 
-        // If settings panel is open, handle input there instead
-        if (_settingsOverlay != null)
-        {
-            if (KeyboardNav.IsCancelPressed(@event))
-            {
-                _settingsOverlay.QueueFree();
-                _settingsOverlay = null;
-                GetViewport().SetInputAsHandled();
-                return;
-            }
-            if (KeyboardNav.HandleInput(@event, _settingsOverlay))
-                GetViewport().SetInputAsHandled();
-            else if (KeyboardNav.ConsumeMovement(@event))
-                GetViewport().SetInputAsHandled();
-            // Block all input from reaching buttons behind
-            if (@event is InputEventKey key && key.Pressed)
-                GetViewport().SetInputAsHandled();
+        // SettingsPanel handles its own input when open
+        if (SettingsPanel.ActiveInstance?.IsOpen == true)
             return;
-        }
 
         if (KeyboardNav.HandleInput(@event, this))
             GetViewport().SetInputAsHandled();

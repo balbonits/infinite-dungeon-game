@@ -116,6 +116,7 @@ public partial class GameState : Node
     public override void _Ready()
     {
         Instance = this;
+        GameSettings.Load();
     }
 
     public void Reset()
