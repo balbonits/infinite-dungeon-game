@@ -1,10 +1,17 @@
-# A Dungeon in the Middle of Nowhere
+<p align="center">
+  <img src="icon.png" alt="A Dungeon in the Middle of Nowhere" width="128" />
+</p>
 
-A persistent, never-ending real-time action dungeon crawler built with **Godot 4 + C#**.
+<h1 align="center">A Dungeon in the Middle of Nowhere</h1>
 
-Inspired by Diablo 1's atmosphere, loot chase, and town hub — reimagined as an infinite descent into a living dungeon that feeds on adventurers.
+<p align="center">
+  A persistent, never-ending real-time action dungeon crawler built with <strong>Godot 4 + C#</strong>.<br/>
+  Inspired by Diablo 1's atmosphere, loot chase, and town hub — reimagined as an infinite descent into a living dungeon that feeds on adventurers.
+</p>
 
-> **Status:** In active development. Playable prototype with full game loop.
+<p align="center">
+  <strong>Status:</strong> In active development. Playable prototype with full game loop.
+</p>
 
 ## The Game
 
