@@ -91,6 +91,7 @@ public partial class TeleportDialog : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
 
         // Clear old buttons
@@ -135,6 +136,7 @@ public partial class TeleportDialog : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         GetTree().Paused = false;
         _overlay.Visible = false;
         _center.Visible = false;

@@ -182,6 +182,7 @@ public partial class ShopWindow : Control
     {
         _shopItems = shopInventory;
         _isOpen = true;
+        WindowStack.Push(this);
         _isBuyMode = true;
         GetTree().Paused = true;
         _overlay.Visible = true;
@@ -193,6 +194,7 @@ public partial class ShopWindow : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         GetTree().Paused = false;
         _overlay.Visible = false;
         _center.Visible = false;

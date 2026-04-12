@@ -73,6 +73,7 @@ public partial class AscendDialog : Control
             return;
 
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
 
         // Clear old buttons
@@ -166,6 +167,7 @@ public partial class AscendDialog : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         GetTree().Paused = false;
         GetChild<ColorRect>(0).Visible = false;
         GetChild<CenterContainer>(1).Visible = false;

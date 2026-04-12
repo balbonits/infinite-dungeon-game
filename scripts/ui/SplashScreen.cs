@@ -130,9 +130,8 @@ public partial class SplashScreen : Control
         if (!_ready || !Visible)
             return;
 
-        // Block ALL input when child panels are open
-        if (SettingsPanel.ActiveInstance?.IsOpen == true ||
-            ControlsHelp.ActiveInstance?.IsOpen == true)
+        // Block input when any child window is open (Settings, Controls, etc.)
+        if (WindowStack.HasModal)
         {
             if (@event is InputEventKey k && k.Pressed)
                 GetViewport().SetInputAsHandled();

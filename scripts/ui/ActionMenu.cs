@@ -57,6 +57,7 @@ public partial class ActionMenu : Control
 
         _onClose = onClose;
         _isOpen = true;
+        WindowStack.Push(this);
 
         // Clear old buttons
         foreach (Node child in _buttonList.GetChildren())
@@ -99,6 +100,7 @@ public partial class ActionMenu : Control
     {
         if (!_isOpen) return;
         _isOpen = false;
+        WindowStack.Pop(this);
         _overlay.Visible = false;
         _panel.Visible = false;
         _onClose?.Invoke();

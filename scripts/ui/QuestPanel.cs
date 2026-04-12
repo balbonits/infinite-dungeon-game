@@ -106,6 +106,7 @@ public partial class QuestPanel : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
 
         // Auto-generate quests if none exist
@@ -121,6 +122,7 @@ public partial class QuestPanel : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         GetTree().Paused = false;
         _overlay.Visible = false;
         _center.Visible = false;

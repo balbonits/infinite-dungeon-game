@@ -55,6 +55,7 @@ public partial class FloorWipeDialog : Control
             return;
 
         _isOpen = true;
+        WindowStack.Push(this);
         GetTree().Paused = true;
 
         int floor = GameState.Instance.FloorNumber;
@@ -133,6 +134,7 @@ public partial class FloorWipeDialog : Control
     private void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         _overlay.Visible = false;
         _center.Visible = false;
         GetTree().Paused = false;

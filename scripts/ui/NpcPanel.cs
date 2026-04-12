@@ -97,6 +97,7 @@ public partial class NpcPanel : Control
 
         _overlay.Visible = true;
         _center.Visible = true;
+        WindowStack.Push(this);
 
         // Auto-focus first button for keyboard nav
         UiTheme.FocusFirstButton(_serviceButtons);
@@ -156,10 +157,13 @@ public partial class NpcPanel : Control
         if (!_center.Visible)
             return;
 
+        if (KeyboardNav.BlockIfNotTopmost(this, @event)) return;
+
         if (KeyboardNav.IsCancelPressed(@event))
         {
             _center.Visible = false;
             _overlay.Visible = false;
+            WindowStack.Pop(this);
             GetViewport().SetInputAsHandled();
             return;
         }

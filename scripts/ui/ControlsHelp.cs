@@ -35,6 +35,7 @@ public partial class ControlsHelp : Control
     {
         ActiveInstance = this;
         _isOpen = true;
+        WindowStack.Push(this);
         ProcessMode = ProcessModeEnum.Always;
         AnchorsPreset = (int)LayoutPreset.FullRect;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
@@ -233,6 +234,7 @@ public partial class ControlsHelp : Control
     public void Close()
     {
         _isOpen = false;
+        WindowStack.Pop(this);
         ActiveInstance = null;
         _onClose?.Invoke();
         QueueFree();
