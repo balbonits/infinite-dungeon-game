@@ -84,6 +84,28 @@ public partial class SplashScreen : Control
             Callable.From(() => EmitSignal(SignalName.NewGamePressed)));
         btnBox.AddChild(newGameBtn);
 
+        // Settings button
+        var settingsBtn = new Button();
+        settingsBtn.Text = "Settings";
+        settingsBtn.CustomMinimumSize = new Vector2(300, 44);
+        settingsBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        settingsBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleSecondaryButton(settingsBtn, UiTheme.FontSizes.Button);
+        settingsBtn.Connect(BaseButton.SignalName.Pressed,
+            Callable.From(OpenSettings));
+        btnBox.AddChild(settingsBtn);
+
+        // Exit Game button
+        var exitBtn = new Button();
+        exitBtn.Text = "Exit Game";
+        exitBtn.CustomMinimumSize = new Vector2(300, 44);
+        exitBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        exitBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleDangerButton(exitBtn, UiTheme.FontSizes.Button);
+        exitBtn.Connect(BaseButton.SignalName.Pressed,
+            Callable.From(() => GetTree().Quit()));
+        btnBox.AddChild(exitBtn);
+
         // Auto-focus first button after short delay
         var timer = GetTree().CreateTimer(0.3);
         timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(() =>
@@ -91,6 +113,65 @@ public partial class SplashScreen : Control
             _ready = true;
             UiTheme.FocusFirstButton(btnBox);
         }));
+    }
+
+    private void OpenSettings()
+    {
+        var overlay = new ColorRect();
+        overlay.Color = new Color(0, 0, 0, 0.7f);
+        overlay.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(overlay);
+
+        var center = new CenterContainer();
+        center.SetAnchorsPreset(LayoutPreset.FullRect);
+        overlay.AddChild(center);
+
+        var panel = new PanelContainer();
+        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
+        panel.CustomMinimumSize = new Vector2(350, 0);
+        center.AddChild(panel);
+
+        var vbox = new VBoxContainer();
+        vbox.AddThemeConstantOverride("separation", 12);
+        panel.AddChild(vbox);
+
+        var heading = new Label();
+        heading.Text = "Settings";
+        UiTheme.StyleLabel(heading, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
+        heading.HorizontalAlignment = HorizontalAlignment.Center;
+        vbox.AddChild(heading);
+
+        // Combat numbers toggle
+        var combatRow = new HBoxContainer();
+        combatRow.AddThemeConstantOverride("separation", 12);
+        vbox.AddChild(combatRow);
+        var combatLabel = new Label();
+        combatLabel.Text = "Show Damage Numbers";
+        UiTheme.StyleLabel(combatLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
+        combatLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        combatRow.AddChild(combatLabel);
+        var combatToggle = new CheckButton();
+        combatToggle.ButtonPressed = GameSettings.ShowCombatNumbers;
+        combatToggle.FocusMode = FocusModeEnum.All;
+        combatToggle.Connect(BaseButton.SignalName.Toggled, Callable.From((bool on) =>
+            GameSettings.ShowCombatNumbers = on));
+        combatRow.AddChild(combatToggle);
+
+        vbox.AddChild(new HSeparator());
+
+        // Back button
+        var backBtn = new Button();
+        backBtn.Text = "Back";
+        backBtn.CustomMinimumSize = new Vector2(200, 38);
+        backBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        backBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Body);
+        backBtn.Connect(BaseButton.SignalName.Pressed,
+            Callable.From(() => overlay.QueueFree()));
+        vbox.AddChild(backBtn);
+
+        // Focus first interactive element
+        combatToggle.CallDeferred(Control.MethodName.GrabFocus);
     }
 
     public override void _UnhandledInput(InputEvent @event)
