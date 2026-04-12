@@ -82,6 +82,7 @@ public static class Strings
     {
         public static string FloorNumber(int floor) => $"Floor {floor}";
         public const string Descending = "Descending...";
+        public const string Entering = "Entering...";
         public const string StairsDown = "STAIRS DOWN";
         public const string StairsUp = "STAIRS UP";
     }
@@ -89,6 +90,8 @@ public static class Strings
     // --- Town ---
     public static class Town
     {
+        public const string Title = "TOWN";
+        public const string Arriving = "Arriving...";
         public const string DungeonEntrance = "DUNGEON";
         public const string EnteringDungeon = "Entering the dungeon...";
         public static string DungeonFloor(int floor) => $"Dungeon Floor {floor}";
