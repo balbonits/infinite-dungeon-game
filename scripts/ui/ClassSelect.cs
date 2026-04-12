@@ -36,7 +36,9 @@ public partial class ClassSelect : Control
     private PanelContainer? _selectedCard;
     private PlayerClass _selectedClass;
     private Button _confirmButton = null!;
+    private Button _backButton = null!;
     private int _focusIndex = -1;
+    private int _focusZone; // 0 = cards, 1 = confirm, 2 = back
     private readonly List<PanelContainer> _cards = new();
 
     private static readonly StyleBoxFlat DefaultCardStyle = CreateCardStyle(false, false);
@@ -109,12 +111,13 @@ public partial class ClassSelect : Control
         mainVbox.AddChild(_confirmButton);
 
         // Back button
-        var backBtn = new Button();
+        _backButton = new Button();
+        var backBtn = _backButton;
         backBtn.Text = "Back to Main Menu";
-        backBtn.CustomMinimumSize = new Vector2(200, 38);
+        backBtn.CustomMinimumSize = new Vector2(200, 48);
         backBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         backBtn.FocusMode = FocusModeEnum.All;
-        UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Body);
+        UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Heading);
         backBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
         {
             Visible = false;
@@ -318,25 +321,90 @@ public partial class ClassSelect : Control
         if (!Visible)
             return;
 
+        // Left/Right — navigate within cards (zone 0)
         if (@event.IsActionPressed(Constants.InputActions.MoveLeft))
         {
+            _focusZone = 0;
             MoveFocus(-1);
             GetViewport().SetInputAsHandled();
+            return;
         }
-        else if (@event.IsActionPressed(Constants.InputActions.MoveRight))
+        if (@event.IsActionPressed(Constants.InputActions.MoveRight))
         {
+            _focusZone = 0;
             MoveFocus(1);
             GetViewport().SetInputAsHandled();
+            return;
         }
-        else if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
-                 (@event is InputEventKey key && key.Pressed &&
-                  (key.Keycode == Key.Enter || key.Keycode == Key.Space)))
+
+        // Down — move to next zone (cards → confirm → back)
+        if (@event.IsActionPressed(Constants.InputActions.MoveDown))
         {
-            if (_selectedCard != null)
-                OnConfirmPressed();
-            else if (_focusIndex >= 0)
-                OnCardClicked(_cards[_focusIndex], Classes[_focusIndex].PlayerClass);
+            _focusZone = System.Math.Min(_focusZone + 1, 2);
+            UpdateZoneFocus();
             GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Up — move to previous zone (back → confirm → cards)
+        if (@event.IsActionPressed(Constants.InputActions.MoveUp))
+        {
+            _focusZone = System.Math.Max(_focusZone - 1, 0);
+            UpdateZoneFocus();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Confirm
+        if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
+            (@event is InputEventKey key && key.Pressed &&
+             (key.Keycode == Key.Enter || key.Keycode == Key.Space)))
+        {
+            if (_focusZone == 2)
+            {
+                _backButton.EmitSignal(BaseButton.SignalName.Pressed);
+            }
+            else if (_focusZone == 1 && _selectedCard != null)
+            {
+                OnConfirmPressed();
+            }
+            else if (_focusZone == 0 && _focusIndex >= 0)
+            {
+                OnCardClicked(_cards[_focusIndex], Classes[_focusIndex].PlayerClass);
+            }
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Cancel — back to main menu
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            _backButton.EmitSignal(BaseButton.SignalName.Pressed);
+            GetViewport().SetInputAsHandled();
+        }
+    }
+
+    private void UpdateZoneFocus()
+    {
+        // Remove button focus highlights
+        _confirmButton.ReleaseFocus();
+        _backButton.ReleaseFocus();
+
+        switch (_focusZone)
+        {
+            case 0: // Cards
+                if (_focusIndex < 0 && _cards.Count > 0)
+                {
+                    _focusIndex = 0;
+                    _cards[0].AddThemeStyleboxOverride("panel", HoverCardStyle);
+                }
+                break;
+            case 1: // Confirm
+                _confirmButton.GrabFocus();
+                break;
+            case 2: // Back
+                _backButton.GrabFocus();
+                break;
         }
     }
 
