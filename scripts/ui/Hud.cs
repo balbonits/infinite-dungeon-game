@@ -39,7 +39,7 @@ public partial class Hud : Control
         AddChild(hpContainer);
 
         _hpOrb = new OrbDisplay();
-        _hpOrb.Configure(OrbSize, new Color("CC2222"), new Color("882222"));
+        _hpOrb.Configure(OrbSize, new Color("CC2222"), Constants.Assets.OrbHp);
         hpContainer.AddChild(_hpOrb);
 
         _hpText = new Label();
@@ -59,7 +59,7 @@ public partial class Hud : Control
         AddChild(mpContainer);
 
         _mpOrb = new OrbDisplay();
-        _mpOrb.Configure(OrbSize, new Color("2244CC"), new Color("223388"));
+        _mpOrb.Configure(OrbSize, new Color("2244CC"), Constants.Assets.OrbMp);
         mpContainer.AddChild(_mpOrb);
 
         _mpText = new Label();
