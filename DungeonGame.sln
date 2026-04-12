@@ -1,0 +1,22 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DungeonGame", "DungeonGame.csproj", "{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		ExportDebug|Any CPU = ExportDebug|Any CPU
+		ExportRelease|Any CPU = ExportRelease|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
+		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
+		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+	EndGlobalSection
+EndGlobal

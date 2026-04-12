@@ -36,3 +36,4 @@ assets/isometric/source/
 docs/evidence/**/demo_screenshot_*.png
 docs/evidence/**/demo_recording_*.mov
 docs/evidence/**/frame_*.png
+build/
