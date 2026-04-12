@@ -15,10 +15,10 @@ public partial class SettingsPanel : Control
 
     private ColorRect _overlay = null!;
     private VBoxContainer _content = null!;
-    private Label _tabLabel = null!;
+    private HBoxContainer _tabBar = null!;
+    private readonly Button[] _tabButtons = new Button[4];
     private ScrollContainer _scrollContainer = null!;
     private VBoxContainer _settingsList = null!;
-    private Label _hintLabel = null!;
 
     private int _currentTab;
     private bool _isOpen;
@@ -69,27 +69,32 @@ public partial class SettingsPanel : Control
         title.HorizontalAlignment = HorizontalAlignment.Center;
         _content.AddChild(title);
 
-        // Tab bar (shows current tab name + Q/E hints)
-        var tabBar = new HBoxContainer();
-        tabBar.AddThemeConstantOverride("separation", 8);
-        tabBar.Alignment = BoxContainer.AlignmentMode.Center;
-        _content.AddChild(tabBar);
+        // Tab bar — actual clickable/focusable tab buttons like D2R
+        _tabBar = new HBoxContainer();
+        _tabBar.AddThemeConstantOverride("separation", 0);
+        _tabBar.Alignment = BoxContainer.AlignmentMode.Center;
+        _content.AddChild(_tabBar);
 
-        var leftHint = new Label();
-        leftHint.Text = $"[{GetActionKeyName(Constants.InputActions.ShoulderLeft)}]";
-        UiTheme.StyleLabel(leftHint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        tabBar.AddChild(leftHint);
+        for (int i = 0; i < TabNames.Length; i++)
+        {
+            var tabBtn = new Button();
+            tabBtn.Text = TabNames[i];
+            tabBtn.CustomMinimumSize = new Vector2(90, 32);
+            tabBtn.FocusMode = FocusModeEnum.All;
+            int capturedIndex = i;
+            tabBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => BuildTab(capturedIndex)));
+            _tabBar.AddChild(tabBtn);
+            _tabButtons[i] = tabBtn;
+        }
 
-        _tabLabel = new Label();
-        _tabLabel.CustomMinimumSize = new Vector2(140, 0);
-        _tabLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        UiTheme.StyleLabel(_tabLabel, UiTheme.Colors.Action, UiTheme.FontSizes.Label);
-        tabBar.AddChild(_tabLabel);
-
-        var rightHint = new Label();
-        rightHint.Text = $"[{GetActionKeyName(Constants.InputActions.ShoulderRight)}]";
-        UiTheme.StyleLabel(rightHint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        tabBar.AddChild(rightHint);
+        // Q/E hint below tabs
+        var tabHint = new Label();
+        string lKey = GetActionKeyName(Constants.InputActions.ShoulderLeft);
+        string rKey = GetActionKeyName(Constants.InputActions.ShoulderRight);
+        tabHint.Text = $"[{lKey}] / [{rKey}] switch tabs";
+        UiTheme.StyleLabel(tabHint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        tabHint.HorizontalAlignment = HorizontalAlignment.Center;
+        _content.AddChild(tabHint);
 
         _content.AddChild(new HSeparator());
 
@@ -103,13 +108,6 @@ public partial class SettingsPanel : Control
         _scrollContainer.AddChild(_settingsList);
 
         _content.AddChild(new HSeparator());
-
-        // Hint label
-        _hintLabel = new Label();
-        _hintLabel.Text = "Up/Down: navigate | S: toggle | D: back";
-        UiTheme.StyleLabel(_hintLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        _hintLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _content.AddChild(_hintLabel);
 
         // Back button
         var backBtn = new Button();
@@ -127,7 +125,30 @@ public partial class SettingsPanel : Control
     private void BuildTab(int tabIndex)
     {
         _currentTab = tabIndex;
-        _tabLabel.Text = $"< {TabNames[tabIndex]} >";
+
+        // Style tabs: active = bright solid, inactive = dim outline
+        for (int i = 0; i < _tabButtons.Length; i++)
+        {
+            if (i == tabIndex)
+            {
+                _tabButtons[i].AddThemeStyleboxOverride("normal", CreateTabStyle(true));
+                _tabButtons[i].AddThemeStyleboxOverride("hover", CreateTabStyle(true));
+                _tabButtons[i].AddThemeStyleboxOverride("focus", CreateTabStyle(true));
+                _tabButtons[i].AddThemeColorOverride("font_color", UiTheme.Colors.BgDark);
+                _tabButtons[i].AddThemeColorOverride("font_hover_color", UiTheme.Colors.BgDark);
+                _tabButtons[i].AddThemeColorOverride("font_focus_color", UiTheme.Colors.BgDark);
+            }
+            else
+            {
+                _tabButtons[i].AddThemeStyleboxOverride("normal", CreateTabStyle(false));
+                _tabButtons[i].AddThemeStyleboxOverride("hover", CreateTabStyle(false));
+                _tabButtons[i].AddThemeStyleboxOverride("focus", CreateTabStyle(false));
+                _tabButtons[i].AddThemeColorOverride("font_color", UiTheme.Colors.Muted);
+                _tabButtons[i].AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
+                _tabButtons[i].AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
+            }
+            _tabButtons[i].AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        }
 
         foreach (Node child in _settingsList.GetChildren())
             child.QueueFree();
@@ -141,6 +162,31 @@ public partial class SettingsPanel : Control
         }
 
         CallDeferred(MethodName.FocusFirstSetting);
+    }
+
+    private static StyleBoxFlat CreateTabStyle(bool active)
+    {
+        var style = new StyleBoxFlat();
+        if (active)
+        {
+            style.BgColor = UiTheme.Colors.Action;
+            style.BorderColor = UiTheme.Colors.Action;
+        }
+        else
+        {
+            style.BgColor = new Color(UiTheme.Colors.BgPanel, 0.6f);
+            style.BorderColor = new Color(UiTheme.Colors.Muted, 0.3f);
+        }
+        style.SetBorderWidthAll(1);
+        style.BorderWidthBottom = active ? 3 : 1;
+        style.SetCornerRadiusAll(0);
+        style.CornerRadiusTopLeft = 4;
+        style.CornerRadiusTopRight = 4;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 6;
+        style.ContentMarginBottom = 6;
+        return style;
     }
 
     private void FocusFirstSetting()
