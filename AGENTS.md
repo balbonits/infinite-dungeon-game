@@ -180,7 +180,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Entity System | Static C# classes | EntityData + 6 systems (Vital, Stat, Combat, Effect, Progression, Skill) |
 | Physics | Built-in 2D | CharacterBody2D + Area2D |
 | Perspective | Isometric 2D | 2:1 diamond tiles — floors 64×32, wall blocks 64×64 (ISS standard) |
-| UI | Control nodes | Built-in UI, Theme resources |
+| UI | Control nodes | GameWindow base, TabBar, ScrollList, ContentSection, WindowStack |
 | Persistence | FileAccess + JSON/MessagePack | user:// directory |
 | Platform | Desktop native | macOS primary, Windows/Linux supported |
 
