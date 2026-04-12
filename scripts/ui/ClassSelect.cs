@@ -107,6 +107,22 @@ public partial class ClassSelect : Control
         _confirmButton.Connect(BaseButton.SignalName.Pressed,
             Callable.From(OnConfirmPressed));
         mainVbox.AddChild(_confirmButton);
+
+        // Back button
+        var backBtn = new Button();
+        backBtn.Text = "Back to Main Menu";
+        backBtn.CustomMinimumSize = new Vector2(200, 38);
+        backBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        backBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Body);
+        backBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            Visible = false;
+            QueueFree();
+            GetTree().Paused = true;
+            GetTree().ReloadCurrentScene();
+        }));
+        mainVbox.AddChild(backBtn);
     }
 
     private PanelContainer CreateClassCard(ClassData data)
