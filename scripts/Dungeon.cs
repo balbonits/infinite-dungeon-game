@@ -349,6 +349,21 @@ public partial class Dungeon : Node2D
             break;
         }
 
+        // Guarantee spawn: if safe position not found, use any valid floor tile
+        if (!foundSafe)
+        {
+            for (int attempt = 0; attempt < Constants.Spawning.MaxSpawnRetries; attempt++)
+            {
+                spawnPos = GetRandomFloorPosition();
+                Vector2I tileCoord = _tileMap.LocalToMap(spawnPos);
+                if (IsFloorTile(tileCoord))
+                {
+                    foundSafe = true;
+                    break;
+                }
+            }
+        }
+
         if (!foundSafe)
             return;
 
