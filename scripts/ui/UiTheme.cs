@@ -167,6 +167,35 @@ public static class UiTheme
         return null;
     }
 
+    /// <summary>
+    /// Standard dialog window layout: dark overlay + centered panel + content VBox.
+    /// Returns (overlay, content) — add children to content. Caller adds overlay to their node.
+    /// Every dialog should use this instead of manually building overlay/center/panel.
+    /// </summary>
+    public static (ColorRect overlay, VBoxContainer content) CreateDialogWindow(
+        float width = 420f, float overlayAlpha = 0.6f)
+    {
+        var overlay = new ColorRect();
+        overlay.Color = new Color(0, 0, 0, overlayAlpha);
+        overlay.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        overlay.MouseFilter = Control.MouseFilterEnum.Stop;
+
+        var center = new CenterContainer();
+        center.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        overlay.AddChild(center);
+
+        var panel = new PanelContainer();
+        panel.AddThemeStyleboxOverride("panel", CreatePanelStyle(0.95f, true));
+        panel.CustomMinimumSize = new Vector2(width, 0);
+        center.AddChild(panel);
+
+        var content = new VBoxContainer();
+        content.AddThemeConstantOverride("separation", 6);
+        panel.AddChild(content);
+
+        return (overlay, content);
+    }
+
     /// <summary>Applies standard label styling.</summary>
     public static void StyleLabel(Label label, Color color, int fontSize = FontSizes.Body)
     {

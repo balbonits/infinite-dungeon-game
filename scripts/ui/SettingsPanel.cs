@@ -44,24 +44,9 @@ public partial class SettingsPanel : Control
         ProcessMode = ProcessModeEnum.Always;
         SetAnchorsPreset(LayoutPreset.FullRect);
 
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.7f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        AddChild(_overlay);
-
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(420, 0);
-        center.AddChild(panel);
-
-        _content = new VBoxContainer();
+        (_overlay, _content) = UiTheme.CreateDialogWindow(420f, 0.7f);
         _content.AddThemeConstantOverride("separation", 8);
-        panel.AddChild(_content);
+        AddChild(_overlay);
 
         // Title
         var title = new Label();
