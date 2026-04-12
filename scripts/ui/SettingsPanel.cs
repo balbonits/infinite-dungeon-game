@@ -204,7 +204,6 @@ public partial class SettingsPanel : Control
         AddToggle("Auto-Loot Pickups", GameSettings.AutoLoot, v => GameSettings.AutoLoot = v);
         AddToggle("Confirm Floor Descent", GameSettings.ConfirmFloorDescent, v => GameSettings.ConfirmFloorDescent = v);
         AddToggle("Toast Notifications", GameSettings.ShowToastNotifications, v => GameSettings.ShowToastNotifications = v);
-        AddChoice("Difficulty", new[] { "Easy", "Normal", "Hard" }, GameSettings.DifficultyLevel, v => GameSettings.DifficultyLevel = v);
     }
 
     private void BuildDisplayTab()

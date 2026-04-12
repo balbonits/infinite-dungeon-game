@@ -14,7 +14,6 @@ public static class GameSettings
     public static bool AutoLoot { get; set; } = true;
     public static bool ConfirmFloorDescent { get; set; } = true;
     public static bool ShowToastNotifications { get; set; } = true;
-    public static int DifficultyLevel { get; set; } = 1; // 0=easy, 1=normal, 2=hard
 
     // --- Display ---
     public static bool CameraShakeOnDamage { get; set; } = false; // off by default per user preference
@@ -51,7 +50,6 @@ public static class GameSettings
             AutoLoot = AutoLoot,
             ConfirmFloorDescent = ConfirmFloorDescent,
             ShowToastNotifications = ShowToastNotifications,
-            DifficultyLevel = DifficultyLevel,
             CameraShakeOnDamage = CameraShakeOnDamage,
             ShowMinimap = ShowMinimap,
             ScreenFlash = ScreenFlash,
@@ -87,7 +85,6 @@ public static class GameSettings
             AutoLoot = data.AutoLoot;
             ConfirmFloorDescent = data.ConfirmFloorDescent;
             ShowToastNotifications = data.ShowToastNotifications;
-            DifficultyLevel = data.DifficultyLevel;
             CameraShakeOnDamage = data.CameraShakeOnDamage;
             ShowMinimap = data.ShowMinimap;
             ScreenFlash = data.ScreenFlash;
@@ -114,7 +111,6 @@ public static class GameSettings
         public bool AutoLoot { get; init; } = true;
         public bool ConfirmFloorDescent { get; init; } = true;
         public bool ShowToastNotifications { get; init; } = true;
-        public int DifficultyLevel { get; init; } = 1;
         public bool CameraShakeOnDamage { get; init; }
         public bool ShowMinimap { get; init; } = true;
         public bool ScreenFlash { get; init; } = true;
