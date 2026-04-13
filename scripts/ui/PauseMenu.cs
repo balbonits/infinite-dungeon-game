@@ -15,7 +15,7 @@ public partial class PauseMenu : Control
         var statsButton = _buttonContainer.GetNode<Button>("StatsButton");
         var skillsButton = _buttonContainer.GetNode<Button>("SkillsButton");
         var ledgerButton = _buttonContainer.GetNode<Button>("LedgerButton");
-        var tutorialButton = _buttonContainer.GetNode<Button>("ControlsButton");
+        var tutorialButton = _buttonContainer.GetNode<Button>("TutorialButton");
         var settingsButton = _buttonContainer.GetNode<Button>("SettingsButton");
         var mainMenuButton = _buttonContainer.GetNode<Button>("MainMenuButton");
         var quitButton = _buttonContainer.GetNode<Button>("QuitButton");
@@ -105,7 +105,7 @@ public partial class PauseMenu : Control
     private void OnLedgerPressed()
     {
         Visible = false;
-        FatedLedger.Instance?.Show();
+        DungeonLedger.Instance?.Show();
     }
 
     private void OnTutorialPressed()

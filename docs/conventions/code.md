@@ -200,7 +200,7 @@ A script does one thing. If it handles movement AND combat AND inventory, it is 
 | Avoided | Why |
 |---|---|
 | ECS (Entity Component System) | Game scope does not justify it. Godot's scene/node model is sufficient. |
-| Heavy frameworks (Chickensoft, etc.) | Adds indirection and learning curve with no payoff at this scale. |
+| Heavy frameworks (Chickensoft, etc.) in game code | Adds indirection and learning curve with no payoff at this scale. Exception: Chickensoft packages allowed for testing tools only (`scripts/testing/`). |
 | GDScript | C# for type safety, IDE tooling, NuGet ecosystem, and AI code generation quality. |
 | Multiple scripting languages | C# everywhere. No mixing. |
 | Paid assets | Free/open-source only (CC0, CC-BY 3.0, CC-BY 4.0). |

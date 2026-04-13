@@ -4,6 +4,102 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 12 — Fix & Expand Test Suite (2026-04-12)
+
+### What Happened
+
+**Started from:** `feat/testing-setup` branch had 4 commits scaffolding test infrastructure, but tests didn't compile.
+
+**Ended with:** 302 tests passing (291 unit + 11 integration). Full coverage of all pure-C# logic systems.
+
+### Bugs Found & Fixed
+
+1. **Missing `using Xunit;`** in all 5 test files — `[Fact]` attributes couldn't resolve. Added the import to each file.
+2. **SaveSystem.cs references `Autoloads.GameState`** — pulled in by `scripts/logic/*.cs` wildcard in test .csproj files. `Autoloads` is a Godot-specific autoload class, not available in test projects. Fixed by excluding `SaveSystem.cs` from both test project compile lists.
+3. **No .NET 8 runtime installed** — only .NET 10 available. Test projects targeted `net8.0` but couldn't run the test host. Fixed by adding `<RollForward>LatestMajor</RollForward>` to both test .csproj files.
+
+### Flow Docs, GodotTestDriver, Debug Telemetry, Versioning
+
+**Flow documentation:** Created `docs/flows/` with 14 step-by-step flow docs covering every player interaction: splash screen, class selection (3 focus zones, confirm tween timing), town (NPC positions, dungeon entrance trigger), NPC panel, shop, bank, blacksmith, dungeon (spawning, stairs, floor wipe), combat (auto-attack, skill hotbar), death (3-step UI), pause menu, progression, save/load, screen transition timing. Each doc traced from actual code, not guessed.
+
+**GodotTestDriver:** Integrated v3.1.66 — AutoPilotActions now wraps GodotTestDriver's `StartAction`/`EndAction` instead of hand-rolled `Input.ParseInputEvent`. Chickensoft ban lifted for testing tools only (convention docs updated).
+
+**Debug telemetry:** `DebugTelemetry.cs` (`#if DEBUG`) — tracks input consumption, signal emissions, state snapshots (every 2s), scene changes. Per-session JSONL output. AutoPilot auto-starts it during walkthroughs.
+
+**Walkthrough rewrite:** FullRunSandbox now runs 3 complete sessions (Warrior, Ranger, Mage). Each does: splash → class select → town → NPC interaction → pause menu → dungeon → combat → achievement check → force death → respawn → verify. Flow doc references in every step.
+
+**Versioning:** SemVer + git tags. Pre-1.0 development. Spec at `docs/conventions/versioning.md`.
+
+### GodotTestDriver Integration Decision
+
+Researched automated testing tools for Godot 4 + C#. Evaluated:
+- **GodotTestDriver** (Chickensoft) — MIT license, NuGet package, C# native. Provides input simulation (`PressAction`, `HoldActionFor`, `ClickMouseAt`), drivers for all Godot node types, fixture management, waiting extensions. Same team as `setup-godot` (already in our CI).
+- **godot-ui-automation** — Record/playback framework. Good for capturing human input, but less useful for scripted walkthroughs.
+- **Hand-built AutoPilot** — Built 3 files (`AutoPilot.cs`, `AutoPilotActions.cs`, `AutoPilotAssertions.cs`) but hit async timing issues with scene changes and paused game state.
+
+**Decision:** Adopt GodotTestDriver as the foundation. Our AutoPilot becomes a thin game-specific wrapper (GameState assertions, NPC interaction helpers) on top of GodotTestDriver's proven primitives. Replaces hand-rolled `Input.ParseInputEvent` with battle-tested `PressAction`/`HoldActionFor`.
+
+Tickets: TEST-06 (integrate package), TEST-07 (game-specific drivers), TEST-08 (full-run walkthrough), TEST-09 (per-sandbox scripts).
+
+### AutoPilot — Player Emulation Library
+
+Built a standalone testing/debugging tool that emulates a human player. Lives in `scripts/testing/` — separate from game code.
+
+**Three files:**
+- `AutoPilot.cs` — core Node: step runner, logging, pass/fail assertions, lifecycle
+- `AutoPilotActions.cs` — input simulation: `Press()`, `Hold()`, `Release()`, `MoveDirection()`, `MoveToward()`, `WaitFrames()`, `WaitUntil()`, `WaitForTransition()`, `ClickButton()`, `FindButton()`
+- `AutoPilotAssertions.cs` — state checks: `Alive()`, `OnFloor()`, `HasGoldAtLeast()`, `EnemiesExist()`, `InventoryHas()`, `AchievementUnlocked()`
+
+**How it works:** AutoPilot attaches to `GetTree().Root` (survives scene changes), injects input via `InputEventAction` + `Input.ParseInputEvent()`, clicks UI buttons via `EmitSignal(BaseButton.SignalName.Pressed)`, and uses Godot's `ToSignal()` async pattern for frame/time waits.
+
+**FullRunSandbox rewritten:** Now launches the real game (`main.tscn`) and AutoPilot plays through: splash → class select → town walk → NPC interaction → pause menu → dungeon entry → combat.
+
+Reusable for any sandbox (combat skill testing, inventory automation) or live game debugging.
+
+### Full-Run Integration Test
+
+Built a railed integration test that simulates a complete play session across 10 phases:
+
+1. Character creation (all 3 classes)
+2. Town shopping (buy/sell/stack)
+3. Bank (deposit/withdraw/expand)
+4. Crafting (affixes, limits, recycling, display names)
+5. Dungeon & combat (seeded floor gen, damage calc, loot, saturation)
+6. Progression (level-up, stat allocation, skill bar, cooldowns, skill XP)
+7. Quest completion (generate, kill/clear/depth, AllComplete)
+8. Death & penalty (XP/item loss, idol, bank survival)
+9. Save/load (per-subsystem CaptureState/RestoreState round-trips)
+10. Endgame (pacts, saturation decay, attunement tree pathing, gear tier rolls)
+
+Two layers:
+- **C# logic**: `tests/unit/FullRunTests.cs` — 13 tests, runs via `make test-unit`
+- **Godot sandbox**: `scripts/sandbox/FullRunSandbox.cs` — runs via `make sandbox-headless SCENE=full-run`
+
+Includes a `FullSession_WarriorPlaythrough_AllSystemsIntegrate` test that chains all phases into one continuous play session with shared state.
+
+### Tests Added (199 new unit tests)
+
+| File | System | Tests |
+|------|--------|-------|
+| `DungeonPactsTests.cs` | DungeonPacts | 18 |
+| `ZoneSaturationTests.cs` | ZoneSaturation | 19 |
+| `SkillBarTests.cs` | SkillBar | 19 |
+| `SkillStateTests.cs` | SkillState | 14 |
+| `AchievementSystemTests.cs` | AchievementTracker | 15 |
+| `CraftingTests.cs` | Crafting + AffixDatabase | 16 |
+| `QuestSystemTests.cs` | QuestTracker | 10 |
+| `DepthGearTierTests.cs` | DepthGearTiers | 15 |
+| `LootTableTests.cs` | LootTable | 4 |
+| `MagiculeAttunementTests.cs` | MagiculeAttunement | 21 |
+
+### What We Learned
+
+1. **Test project wildcard includes need exclusion lists.** `scripts/logic/*.cs` is convenient but pulls in files with Godot-specific dependencies like `Autoloads`. Always check what the wildcard catches.
+2. **Timestamp-based tests need care.** ZoneSaturation's decay logic guards against `LastDecayTimestamp <= 0`, so tests must use positive timestamps.
+3. **`RollForward` is the clean fix for runtime version mismatches** when you can't install the exact target framework.
+
+---
+
 ## Session 11 — Endgame Systems, Mana, Skill Execution, UI Overhaul (2026-04-11)
 
 ### What Happened
@@ -123,9 +219,9 @@ arrow, magic_bolt, fireball, frost_bolt, lightning, stone_spike, energy_blast, s
 - Quest tracking: enemy kills, floor clears, floor descent all update quest progress
 - Full save/load support
 
-#### SYS-09: Achievement System (Fated Ledger)
+#### SYS-09: Achievement System (Dungeon Ledger)
 - `AchievementSystem.cs` — counter-based tracker, 30 achievements across 5 categories (Combat/Exploration/Progression/Economy/Mastery)
-- `FatedLedger.cs` — achievement browser UI with progress bars and unlock status
+- `DungeonLedger.cs` — achievement browser UI with progress bars and unlock status
 - Counter updates wired to enemy kills, level-ups, floor descent, floor wipes
 - Gold rewards auto-applied on unlock with toast notifications
 - Full save/load support
@@ -157,7 +253,7 @@ arrow, magic_bolt, fireball, frost_bolt, lightning, stone_spike, energy_blast, s
 | `scripts/ui/BankWindow.cs` | 230 | Bank deposit/withdraw UI |
 | `scripts/ui/BlacksmithWindow.cs` | 200 | Blacksmith crafting UI |
 | `scripts/ui/QuestPanel.cs` | 200 | Quest list UI |
-| `scripts/ui/FatedLedger.cs` | 200 | Achievement browser UI |
+| `scripts/ui/DungeonLedger.cs` | 200 | Achievement browser UI |
 
 ---
 
@@ -1374,7 +1470,7 @@ Every step of this loop is now implemented in code.
 
 **4. Alternative Item Approaches (10 explored)** — Monster trophies, evolving items, synergy sets, conditional effects, sacrifice/transmutation, curse/blessing duality, procedural uniques, lore-bound items, socket abilities, corruption/blessing. Top 5 fits: Monster Trophies (perfect lore), Evolving Items (matches skill philosophy), Conditional Effects (casual+theorycrafter), Synergy Sets (10 ring slots), Sacrifice/Transmutation (extends Blacksmith).
 
-**5. Achievement Systems** — Hades prophecies (achievements = resource rewards), Isaac (achievements unlock content), WoW meta-achievements, Grim Dawn devotions (exploration = permanent power). Proposed: "The Fated Ledger" with 4 tiers (Chronicle/Trials/Whispers/Sagas), Insight Points for permanent bonuses, hybrid account/per-character scope.
+**5. Achievement Systems** — Hades prophecies (achievements = resource rewards), Isaac (achievements unlock content), WoW meta-achievements, Grim Dawn devotions (exploration = permanent power). Proposed: "The Dungeon Ledger" with 4 tiers (Chronicle/Trials/Whispers/Sagas), Insight Points for permanent bonuses, hybrid account/per-character scope.
 
 **6. Endgame Progression (11 systems)** — D3 Paragon, PoE Atlas, Hades Heat, LE Corruption, prestige/ascension, NG+, mastery systems, infinite scaling (GR/Delve/VS), power fantasy engineering, single-player seasons, adaptive dungeon intelligence. Top recommendations: Dungeon Pacts (voluntary difficulty), Magicule Attunement (post-cap passive tree), Dungeon Intelligence (adaptive AI Director), Zone Saturation (per-zone infinite scaling).
 

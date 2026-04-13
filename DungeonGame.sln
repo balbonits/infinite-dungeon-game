@@ -5,6 +5,12 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DungeonGame", "DungeonGame.csproj", "{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DungeonGame.Tests.Unit", "tests/unit/DungeonGame.Tests.Unit.csproj", "{B1234001-0000-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DungeonGame.Tests.Integration", "tests/integration/DungeonGame.Tests.Integration.csproj", "{B1234002-0000-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DungeonGame.Tests.E2E", "tests/e2e/DungeonGame.Tests.E2E.csproj", "{B1234003-0000-0000-0000-000000000003}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +24,17 @@ Global
 		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
 		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
 		{AEBF0036-DA76-4CB8-B044-B0C2D1B92D6E}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+		{B1234001-0000-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234001-0000-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1234001-0000-0000-0000-000000000001}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234001-0000-0000-0000-000000000001}.ExportRelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234002-0000-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234002-0000-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1234002-0000-0000-0000-000000000002}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234002-0000-0000-0000-000000000002}.ExportRelease|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234003-0000-0000-0000-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234003-0000-0000-0000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1234003-0000-0000-0000-000000000003}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1234003-0000-0000-0000-000000000003}.ExportRelease|Any CPU.ActiveCfg = Debug|Any CPU
 	EndGlobalSection
 EndGlobal

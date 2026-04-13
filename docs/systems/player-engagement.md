@@ -111,7 +111,7 @@ A player who gets no rare drops should still feel they progressed (XP, materials
 
 **Bad luck protection / pity timer:** Guarantee a notable drop after N kills without one. Hidden from the player, but prevents excessively dry streaks. The player should never go more than ~15 minutes without *something* worth picking up.
 
-**Blacksmith recycling** (see [classes.md](classes.md)): Class-locked gear the player can't use is recycled into crafting materials. No wasted loot — every drop has value.
+**Blacksmith recycling** (see [classes.md](classes.md)): Off-affinity gear the player doesn't want is recycled into crafting materials. No wasted loot — every drop has value.
 
 ### Moment-to-Moment Engagement
 

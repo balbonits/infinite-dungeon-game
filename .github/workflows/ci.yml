@@ -1,0 +1,222 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  COVERAGE_THRESHOLD: 90  # Minimum % required to pass
+
+jobs:
+  # ─── Job 1: Build ────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore DungeonGame.sln
+
+      - name: Build (game only — no Godot needed)
+        run: dotnet build DungeonGame.csproj --no-restore --configuration Release
+
+  # ─── Job 2: Unit Tests ───────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore tests/unit/DungeonGame.Tests.Unit.csproj
+
+      - name: Run unit tests with coverage
+        run: |
+          dotnet test tests/unit/DungeonGame.Tests.Unit.csproj \
+            --no-restore \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage/unit \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage
+          path: ./coverage/unit
+
+  # ─── Job 3: Integration Tests ────────────────────────────────────────────────
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore tests/integration/DungeonGame.Tests.Integration.csproj
+
+      - name: Run integration tests
+        run: |
+          dotnet test tests/integration/DungeonGame.Tests.Integration.csproj \
+            --no-restore \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage/integration
+
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-coverage
+          path: ./coverage/integration
+
+  # ─── Job 4: Coverage Gate ────────────────────────────────────────────────────
+  coverage-check:
+    name: Coverage Gate (${{ env.COVERAGE_THRESHOLD }}% min)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Download unit coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-coverage
+          path: ./coverage/unit
+
+      - name: Download integration coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-coverage
+          path: ./coverage/integration
+
+      - name: Merge and generate coverage report
+        run: |
+          reportgenerator \
+            -reports:"./coverage/**/*.xml" \
+            -targetdir:"./coverage/report" \
+            -reporttypes:"TextSummary;Html" \
+            -assemblyfilters:"+DungeonGame"
+
+      - name: Check coverage threshold
+        run: |
+          SUMMARY=$(cat ./coverage/report/Summary.txt)
+          echo "$SUMMARY"
+          LINE_COVERAGE=$(echo "$SUMMARY" | grep "Line coverage" | grep -oP '\d+\.\d+')
+          echo "Line coverage: $LINE_COVERAGE%"
+          if (( $(echo "$LINE_COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            echo "❌ Coverage $LINE_COVERAGE% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+            exit 1
+          fi
+          echo "✅ Coverage $LINE_COVERAGE% meets threshold"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage/report
+
+  # ─── Job 5: E2E / GdUnit4 Scene Tests (main push only) ──────────────────────
+  e2e-tests:
+    name: E2E / GdUnit4 Scene Tests
+    runs-on: ubuntu-latest
+    needs: coverage-check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Godot (mono/.NET)
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.3.0
+          use-dotnet: true
+
+      - name: Restore dependencies
+        run: dotnet restore tests/e2e/DungeonGame.Tests.E2E.csproj
+
+      - name: Rebuild Godot import cache
+        run: godot --path ./ -e --headless --quit-after 2000
+
+      - name: Run GdUnit4 E2E tests (headless)
+        run: |
+          dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj \
+            --no-restore \
+            --settings .runsettings-ci \
+            --verbosity normal \
+            -m:1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: TestResults/
+
+  # ─── Job 6: Sandbox Headless Checks (main push only) ─────────────────────────
+  sandbox-checks:
+    name: Sandbox Headless Checks
+    runs-on: ubuntu-latest
+    needs: e2e-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Godot (mono/.NET)
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.3.0
+          use-dotnet: true
+
+      - name: Build
+        run: dotnet build DungeonGame.csproj
+
+      - name: Rebuild Godot import cache
+        run: godot --path ./ -e --headless --quit-after 2000
+
+      - name: Run all sandbox headless checks
+        run: |
+          for scene in floor-gen inventory loot-table bank death-penalty; do
+            echo "── Sandbox: $scene ──"
+            godot --headless --path . \
+              --main-scene "res://scenes/sandbox/systems/${scene}.tscn" \
+              --quit-after 10 2>&1 || true
+          done
+

@@ -132,7 +132,7 @@ public partial class TutorialPanel : Control
         ContentSection.AddDivider(list);
 
         ContentSection.AddHeading(list, "Pause Menu");
-        ContentSection.AddNote(list, "Resume, Backpack, Stats, Skills, Fated Ledger, Settings.");
+        ContentSection.AddNote(list, "Resume, Backpack, Stats, Skills, Dungeon Ledger, Settings.");
         ContentSection.AddNote(list, "Backpack is accessible anywhere — dungeon or town.");
         ContentSection.AddDivider(list);
 

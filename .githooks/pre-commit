@@ -11,7 +11,7 @@ fi
 echo "Checking C# formatting..."
 
 if command -v dotnet >/dev/null 2>&1; then
-    dotnet format --verify-no-changes 2>&1 || {
+    dotnet format DungeonGame.sln --verify-no-changes 2>&1 || {
         echo "Format check failed. Run 'dotnet format' to fix."
         exit 1
     }

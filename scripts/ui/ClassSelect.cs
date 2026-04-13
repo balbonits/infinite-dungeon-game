@@ -377,7 +377,7 @@ public partial class ClassSelect : Control
         // Cancel — back to main menu
         if (KeyboardNav.IsCancelPressed(@event))
         {
-            _backButton.EmitSignal(BaseButton.SignalName.Pressed);
+            _backButton?.EmitSignal(BaseButton.SignalName.Pressed);
             GetViewport().SetInputAsHandled();
         }
     }

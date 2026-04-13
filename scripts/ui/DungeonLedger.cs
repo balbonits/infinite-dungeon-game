@@ -4,13 +4,13 @@ using DungeonGame.Autoloads;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Fated Ledger UI — the achievement browser.
+/// Dungeon Ledger UI — the achievement browser.
 /// Accessible from pause menu. Shows all achievements by category
 /// with progress bars and unlock status.
 /// </summary>
-public partial class FatedLedger : Control
+public partial class DungeonLedger : Control
 {
-    public static FatedLedger Instance { get; private set; } = null!;
+    public static DungeonLedger Instance { get; private set; } = null!;
 
     private ColorRect _overlay = null!;
     private CenterContainer _center = null!;

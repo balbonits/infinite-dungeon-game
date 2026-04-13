@@ -8,4 +8,7 @@
   <ItemGroup>
     <Compile Remove="tests/**" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Chickensoft.GodotTestDriver" Version="3.1.66" />
+  </ItemGroup>
 </Project>

@@ -148,7 +148,7 @@ public static class Strings
     // --- Achievements ---
     public static class Achievements
     {
-        public const string Title = "FATED LEDGER";
+        public const string Title = "DUNGEON LEDGER";
     }
 
     // --- Quests ---

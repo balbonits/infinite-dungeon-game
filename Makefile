@@ -4,7 +4,7 @@
 GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 
-.PHONY: help build run run-headless import test kill clean clean-all status verify doctor branch squash done
+.PHONY: help build run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit sandbox sandbox-headless kill clean clean-all status verify doctor branch squash done
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -12,7 +12,7 @@ help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 build: ## Build C# project (dotnet build)
-	@dotnet build 2>&1 | tail -5
+	@dotnet build DungeonGame.csproj 2>&1 | tail -5
 
 run: build ## Build and launch the game (windowed)
 	@$(GODOT) --path . &
@@ -23,8 +23,80 @@ run-headless: build ## Build and run headless (auto-quits, for CI/testing)
 import: ## Run Godot import (required after adding new assets/scenes)
 	@$(GODOT) --headless --import --quit 2>&1
 
-test: ## Run unit tests (xUnit, no Godot needed)
-	@dotnet test --verbosity minimal 2>&1
+test: ## Run ALL tests (unit + integration)
+	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity minimal 2>&1
+	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity minimal 2>&1
+
+test-unit: ## Run unit tests only
+	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity normal 2>&1
+
+test-integration: ## Run integration tests only
+	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity normal 2>&1
+
+test-e2e: ## Run E2E tests (requires GODOT_BIN set)
+	@dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj --verbosity normal 2>&1
+
+test-coverage: ## Run tests + generate HTML coverage report (./coverage/report/index.html)
+	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj \
+		--collect:"XPlat Code Coverage" --results-directory ./coverage/unit 2>&1
+	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj \
+		--collect:"XPlat Code Coverage" --results-directory ./coverage/integration 2>&1
+	@dotnet tool run reportgenerator \
+		-reports:"./coverage/**/*.xml" \
+		-targetdir:"./coverage/report" \
+		-reporttypes:"Html" 2>&1
+	@echo "Coverage report: ./coverage/report/index.html"
+
+test-gdunit: ## Run GdUnit4 E2E/scene tests (requires GODOT_BIN or Godot on PATH)
+	@dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj \
+		--settings .runsettings \
+		--verbosity normal \
+		-m:1 2>&1
+
+# ─── Sandbox ─────────────────────────────────────────────────────────────────
+# SCENE values: sprite-viewer, tile-viewer, projectile-viewer,
+#               floor-gen, inventory, loot-table, bank, death-penalty, skill-tree,
+#               combat, movement, enemy, stats
+
+sandbox: build ## Launch a sandbox scene visually: make sandbox SCENE=floor-gen
+	@[ -z "$(SCENE)" ] && echo "Usage: make sandbox SCENE=<name>" && exit 1 || true
+	@$(GODOT) --path . --main-scene "res://scenes/sandbox/$$(make -s _sandbox-path SCENE=$(SCENE))" &
+
+sandbox-headless: build ## Run a sandbox headless (console output): make sandbox-headless SCENE=floor-gen
+	@[ -z "$(SCENE)" ] && echo "Usage: make sandbox-headless SCENE=<name>" && exit 1 || true
+	@$(GODOT) --headless --path . \
+		--main-scene "res://scenes/sandbox/$$(make -s _sandbox-path SCENE=$(SCENE))" \
+		--quit-after 18000 2>&1; \
+	EXIT=$$?; \
+	[ $$EXIT -eq 0 ] && echo "✅ Sandbox passed" || echo "❌ Sandbox failed (exit $$EXIT)"; \
+	exit $$EXIT
+
+sandbox-headless-all: build ## Run ALL sandbox headless checks in sequence
+	@for scene in sprite-viewer tile-viewer floor-gen inventory loot-table bank death-penalty combat movement enemy stats full-run; do \
+		echo ""; echo "── $$scene ──"; \
+		$(MAKE) sandbox-headless SCENE=$$scene || true; \
+	done
+
+# Internal: resolve SCENE name → relative path under scenes/sandbox/
+_sandbox-path:
+	@case "$(SCENE)" in \
+		sprite-viewer)    echo "assets/SpriteViewer.tscn" ;; \
+		tile-viewer)      echo "assets/TileViewer.tscn" ;; \
+		projectile-viewer) echo "assets/ProjectileViewer.tscn" ;; \
+		floor-gen)        echo "systems/FloorGenSandbox.tscn" ;; \
+		inventory)        echo "systems/InventorySandbox.tscn" ;; \
+		loot-table)       echo "systems/LootTableSandbox.tscn" ;; \
+		bank)             echo "systems/BankSandbox.tscn" ;; \
+		death-penalty)    echo "systems/DeathPenaltySandbox.tscn" ;; \
+		skill-tree)       echo "systems/SkillTreeSandbox.tscn" ;; \
+		combat)           echo "mechanics/CombatSandbox.tscn" ;; \
+		movement)         echo "mechanics/MovementSandbox.tscn" ;; \
+		enemy)            echo "mechanics/EnemySandbox.tscn" ;; \
+		stats)            echo "mechanics/StatsSandbox.tscn" ;; \
+		full-run)         echo "FullRunSandbox.tscn" ;; \
+		launcher)         echo "SandboxLauncher.tscn" ;; \
+		*)                echo "ERROR: unknown SCENE '$(SCENE)'" >&2; exit 1 ;; \
+	esac
 
 # ─── Utilities ───────────────────────────────────────────────────────────────
 
@@ -33,12 +105,12 @@ kill: ## Kill all running Godot processes
 
 status: ## Show project status (git, build, godot version)
 	@echo "=== Git ===" && git status --short && echo "" \
-	&& echo "=== Build ===" && dotnet build --nologo -v q 2>&1 | tail -3 && echo "" \
+	&& echo "=== Build ===" && dotnet build DungeonGame.csproj --nologo -v q 2>&1 | tail -3 && echo "" \
 	&& echo "=== Godot ===" && $(GODOT) --version 2>&1 && echo "" \
 	&& echo "=== .NET ===" && dotnet --version 2>&1
 
 verify: build ## Build, run headless, confirm C# executes and exits cleanly
-	@echo "Building..." && dotnet build --nologo -v q 2>&1 | tail -1 \
+	@echo "Building..." && dotnet build DungeonGame.csproj --nologo -v q 2>&1 | tail -1 \
 	&& echo "Running headless..." && $(GODOT) --headless --path . 2>&1 \
 	&& echo "✓ Verify passed"
 
@@ -55,7 +127,7 @@ doctor: ## Check if dev environment is healthy
 	&& echo -n "Godot .NET: " && ($(GODOT) --version 2>&1 || echo "NOT FOUND") \
 	&& echo -n ".NET SDK:   " && (dotnet --version 2>&1 || echo "NOT FOUND") \
 	&& echo -n ".csproj:    " && ([ -f $(PROJECT).csproj ] && echo "OK" || echo "MISSING") \
-	&& echo -n "Build:      " && (dotnet build --nologo -v q 2>&1 | grep -q "succeeded" && echo "OK" || echo "FAILED") \
+	&& echo -n "Build:      " && (dotnet build DungeonGame.csproj --nologo -v q 2>&1 | grep -q "succeeded" && echo "OK" || echo "FAILED") \
 	&& echo -n "Main scene: " && (grep -q "run/main_scene" project.godot && echo "OK" || echo "NOT SET") \
 	&& echo -n "Input Map:  " && (grep -q "\[input\]" project.godot && echo "OK" || echo "NOT SET") \
 	&& echo "" && echo "Done."

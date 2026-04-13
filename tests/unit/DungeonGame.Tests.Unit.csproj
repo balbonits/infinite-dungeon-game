@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RollForward>LatestMajor</RollForward>
+    <RootNamespace>DungeonGame.Tests.Unit</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- xUnit test framework -->
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+
+    <!-- Code coverage -->
+    <PackageReference Include="coverlet.collector" Version="6.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.msbuild" Version="6.0.3">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+
+    <!-- FluentAssertions for readable assertions -->
+    <PackageReference Include="FluentAssertions" Version="6.12.2" />
+  </ItemGroup>
+
+  <!-- Reference pure logic scripts (no Godot dependency) -->
+  <ItemGroup>
+    <Compile Include="../../scripts/logic/*.cs" />
+    <Compile Remove="../../scripts/logic/SaveSystem.cs" />
+    <Compile Include="../../scripts/Constants.cs" />
+  </ItemGroup>
+
+  <!-- Exclude Godot SDK from logic files -->
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="4.3.0" />
+  </ItemGroup>
+</Project>

@@ -195,4 +195,4 @@ Access bank storage and purchase bank expansions. See [bank.md](../inventory/ban
 | Social elements? | None. Single-player game. |
 | Town growth? | Static at launch (all NPCs from start). Future feature: town expands as player reaches deeper floors, attracting new settlers. Not in MVP scope. |
 | Town well? | Decorative only. The well asset (`assets/tiles/town/well.png`) is a visual landmark — no gameplay interaction, no HP restore, no wishing mechanic. |
-| Item Shop class filtering? | The Item Shop filters displayed items by the player's current class. Class-restricted items for other classes are hidden (not greyed out — hidden entirely). Scrolls show all-class spells plus the player's class spells. |
+| Item Shop class filtering? | The Item Shop filters displayed items by relevance to the player's class (affinity-matched items shown first). Any item can be purchased and equipped — there are no class restrictions. Scrolls show all-class spells plus the player's class spells. |

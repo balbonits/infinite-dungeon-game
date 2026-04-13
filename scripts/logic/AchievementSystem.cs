@@ -5,7 +5,7 @@ using System.Linq;
 namespace DungeonGame;
 
 /// <summary>
-/// Achievement system — the Fated Ledger.
+/// Achievement system — the Dungeon Ledger.
 /// Tracks player milestones across combat, exploration, progression, and economy.
 /// Counter-based: progress derived from persistent stat counters.
 /// Pure logic — no Godot dependency.

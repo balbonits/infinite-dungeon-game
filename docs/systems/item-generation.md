@@ -82,7 +82,7 @@ Body armor receives a 1.3x multiplier to base defense (primary slot bonus).
 | 50 | 42 | 64 | 54-83 |
 | 100 | 82 | 124 | 106-161 |
 
-Armor slots: Head, Body, Legs, Feet, OffHand (selected randomly).
+Armor generation covers 5 body slots: Head, Body, Arms, Legs, Feet (selected randomly). Accessories (Neck, Rings) and weapon slots (Main Hand, Off Hand, Ammo) are generated separately. See `docs/systems/equipment.md` for the full 10-slot / 19-position layout.
 
 ### Item Gold Value
 

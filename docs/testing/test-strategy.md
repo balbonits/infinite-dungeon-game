@@ -6,7 +6,19 @@ Testing approach for "A Dungeon in the Middle of Nowhere" using Godot 4 + C#. Co
 
 ## Current State
 
-> **Design spec.** No tests currently exist — all 480 unit tests and test infrastructure were deleted in the Session 8 fresh start. The testing approach described below remains the target strategy for reimplementation.
+> **Active implementation** (branch: `feat/testing-setup`). Unit and integration tests are live. E2E is scaffolded but not yet automated. Screenshots and recordings are not yet set up.
+
+| Layer | Status | Location |
+|-------|--------|----------|
+| Unit tests (xUnit) | ✅ Live | `tests/unit/` |
+| Integration tests (xUnit) | ✅ Live | `tests/integration/` |
+| E2E / regression | 🔲 Scaffolded, not automated | `tests/e2e/` |
+| Screenshots (automated) | 🔲 Not yet set up | — |
+| Recordings (automated) | 🔲 Not yet set up | — |
+| CI pipeline | ✅ Live | `.github/workflows/ci.yml` |
+| Coverage gate | ✅ 90% minimum enforced in CI | — |
+
+Run `make test` for current test counts.
 
 ## Design
 
@@ -244,7 +256,7 @@ No hard coverage targets — this is a learning project. Coverage is a tool for 
 - **Symmetry proofs** -- damage then heal returns to original, apply then remove effect is clean
 - **Regression guards** -- specific bug scenarios that were caught and prevented from recurring
 
-**Total test count:** 219 (51 legacy game logic tests + 168 entity framework tests).
+**Total test count:** Run `make test` for current count. Unit tests cover all pure-C# logic systems: StatBlock, Inventory, Bank, DeathPenalty, DungeonPacts, ZoneSaturation, SkillBar, SkillState, AchievementTracker, Crafting, QuestTracker, DepthGearTiers, LootTable, MagiculeAttunement.
 
 ## Implementation Notes
 
@@ -253,6 +265,18 @@ No hard coverage targets — this is a learning project. Coverage is a tool for 
 - Timer-based tests may need `await` with `ToSignal()` to advance time; use sparingly
 - Camera shake and visual effects are not tested automatically -- rely on manual testing
 - xUnit tests run without Godot entirely — fast, parallelizable, CI-friendly
+
+## Future: File I/O Test Doubles
+
+When save/load and seed persistence start writing to disk, the file I/O layer needs abstracting for testability. See tickets TEST-01 through TEST-03 in `docs/dev-tracker.md`.
+
+**Pattern:**
+- Extract `ISaveStorage` interface (`Read`, `Write`, `Exists`)
+- Real implementation: Godot `FileAccess`
+- Test implementation: in-memory `Dictionary<string, string>`
+- SaveSystem methods accept `ISaveStorage` parameter instead of doing I/O directly
+
+**Triggers:** implement when SaveSystem gains real file persistence, or when seed files are added for replay/sharing.
 
 ## Resolved Questions
 

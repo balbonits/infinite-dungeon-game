@@ -72,7 +72,7 @@ These values live in `project.godot` under `[display]`:
 | C++ (GDExtension) | For performance-critical code we don't need. C# with object pooling and async generation is sufficient. |
 | 3D rendering | The game is 2D isometric. No 3D meshes, no 3D physics, no 3D camera. All depth is faked via tile stacking and draw order. |
 | External physics engines | Godot's built-in 2D physics handles everything. No Box2D, no Rapier, no custom physics. |
-| Heavy frameworks | No Chickensoft, no ECS. The game's scope doesn't justify framework overhead. |
+| Heavy frameworks | No Chickensoft in game code, no ECS. The game's scope doesn't justify framework overhead. Chickensoft packages (GodotTestDriver) are allowed for testing tools only (`scripts/testing/`). |
 | Multiple scripting languages | C# everywhere. No mixing C# with GDScript. One language, one way to do things. |
 
 ### Migration Comparison: Phaser 3 vs Godot 4

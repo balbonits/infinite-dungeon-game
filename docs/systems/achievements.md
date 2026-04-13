@@ -1,8 +1,8 @@
-# Achievement System — The Fated Ledger
+# Achievement System — The Dungeon Ledger
 
 ## Summary
 
-A permanent record of player accomplishments, tracked per save slot. Achievements are called entries in the **Fated Ledger** — a magical record that writes itself as the player acts, kept by the Adventure Guild. Five categories, 42 achievements, each with a concrete trigger condition and a reward (gold, title, or unique item). Achievements are never lost, even on death.
+A permanent record of player accomplishments, tracked per save slot. Achievements are called entries in the **Dungeon Ledger** — a magical record that writes itself as the player acts, kept by the Adventure Guild. Five categories, 42 achievements, each with a concrete trigger condition and a reward (gold, title, or unique item). Achievements are never lost, even on death.
 
 ## Current State
 
@@ -14,7 +14,7 @@ A permanent record of player accomplishments, tracked per save slot. Achievement
 
 ### Lore
 
-The Fated Ledger is a magical tome maintained by the Adventure Guild. It was brought to the frontier settlement specifically to document the first expedition into the infinite dungeon. The book writes itself — ink appears on its pages the moment an adventurer accomplishes something noteworthy. The Guild Master keeps the original copy; the player can review their own entries at any time.
+The Dungeon Ledger is a magical tome maintained by the Adventure Guild. It was brought to the frontier settlement specifically to document the first expedition into the infinite dungeon. The book writes itself — ink appears on its pages the moment an adventurer accomplishes something noteworthy. The Guild Master keeps the original copy; the player can review their own entries at any time.
 
 Lore justification for permanence: the Ledger records what *happened*, not what the adventurer currently possesses. The dungeon can eat memories (XP) and steal belongings (items), but it cannot rewrite history. Once ink appears on the page, it stays.
 
@@ -214,7 +214,7 @@ Base gold values are listed per achievement in the tables above. Gold is added d
 
 #### Titles
 
-Titles are cosmetic strings displayed after the character name in the HUD and pause menu. Format: `"CharacterName, the {Title}"`. Only one title is active at a time. The player can change their active title in the Fated Ledger UI.
+Titles are cosmetic strings displayed after the character name in the HUD and pause menu. Format: `"CharacterName, the {Title}"`. Only one title is active at a time. The player can change their active title in the Dungeon Ledger UI.
 
 Earned titles are stored as a string array in the save file. The active title is a separate field.
 
@@ -244,13 +244,13 @@ Full item stat definitions are deferred to the unique items spec (SYS-08). The v
 
 ---
 
-### UI — The Fated Ledger Panel
+### UI — The Dungeon Ledger Panel
 
 #### Access Points
 
 | Location | How to Open |
 |----------|-------------|
-| **Pause Menu** | "Fated Ledger" button in the pause menu list |
+| **Pause Menu** | "Dungeon Ledger" button in the pause menu list |
 | **Guild Master NPC** | "View Ledger" service option in the Guild Master's NPC panel |
 
 Both open the same panel. The Guild Master route is the lore-canonical way; the pause menu route is for convenience.
@@ -259,7 +259,7 @@ Both open the same panel. The Guild Master route is the lore-canonical way; the 
 
 ```
 ┌─────────────────────────────────────────────┐
-│  THE FATED LEDGER           [X Close]       │
+│  THE DUNGEON LEDGER           [X Close]       │
 │  ─────────────────────────────────────────  │
 │  [Combat] [Exploration] [Progression]       │
 │  [Economy] [Mastery]                        │
@@ -359,7 +359,7 @@ Achievement data is stored per save slot, inside the existing save JSON structur
 1. All 42 achievements are defined as `AchievementDef` records and loadable at startup.
 2. Each achievement's progress updates correctly when its mapped signal fires.
 3. Unlocking an achievement grants the specified reward (gold, title, or item) exactly once.
-4. The Fated Ledger panel opens from both the pause menu and the Guild Master NPC.
+4. The Dungeon Ledger panel opens from both the pause menu and the Guild Master NPC.
 5. Category tabs filter achievements correctly.
 6. Hidden achievements display "???" until unlocked.
 7. Progress bars show `progress / threshold` for cumulative achievements.
@@ -378,7 +378,7 @@ Achievement data is stored per save slot, inside the existing save JSON structur
 - Achievement definitions should be static data, not loaded from files. A `Dictionary<string, AchievementDef>` initialized in code is sufficient — 42 entries do not warrant a JSON data file.
 - The `stats` block counters must be incremented *before* the achievement check runs, so the check sees the updated value.
 - `FloorsInSession` is the only transient counter. It resets when the game loads (not on death — death does not end a session). It does not need to be saved.
-- The Fated Ledger panel is a `Control` node added to the pause menu scene. It should be a separate scene instanced into the pause menu to keep the scene tree clean.
+- The Dungeon Ledger panel is a `Control` node added to the pause menu scene. It should be a separate scene instanced into the pause menu to keep the scene tree clean.
 - For the `FloorClearedNoHit` achievement, `damage_taken_this_floor` is reset to 0 in the floor transition handler, before enemies spawn. Any `PlayerDamaged` signal increments it. When `FloorWiped` fires, check if it is still 0.
 - Save version migration: the v2 -> v3 migration adds `stats` (all zeros) and `achievements` (empty unlocked dict, empty title, empty earned_titles array). Existing v2 data is untouched.
 

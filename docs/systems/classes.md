@@ -95,7 +95,7 @@ Each class has its own unique skill tree. Skills are **designed now, built post-
 
 Key design decisions:
 - **Infinite skill leveling** — every base skill and specific skill has no level cap
-- **Strictly class-locked** — skills are unique to each class. No skill sharing between classes.
+- **Strictly class-exclusive** — skills are unique to each class. No skill sharing between classes.
 - **Hierarchical** — base skills gate specific skills (inspired by Project Zomboid's skill system)
 - Full skill tree design: **[skills.md](skills.md)**
 
@@ -105,11 +105,13 @@ Skill tree status:
 - **Mage:** Designed — 9 base skills (Arcane: Fire, Water, Air, Earth, Light, Dark / Conduit: Restoration, Amplification, Overcharge)
 - **Innate (all classes):** 3 standalone skills (Haste, Sense, Fortify) — see [magic.md](magic.md)
 
-### Equipment Restrictions
+### Equipment Affinity
 
-Equipment has **class-locked gear** — some items can only be equipped by specific classes. When a class-restricted item drops that the player can't use, it can be taken to the **blacksmith for recycling** (harvest materials from unwanted gear).
+**No class-locked gear.** Any class can equip any item. Items have a `ClassAffinity` field — when the player's class matches, all stat bonuses on the item get **+25%**. Mismatched gear still works, just without the bonus. Unwanted gear can be recycled at the Blacksmith for materials.
 
 **No imbued/magical equipment drops from monsters or bosses.** All equipment drops are base items. Magical/enchanted gear comes exclusively from player-driven crafting and enchanting systems.
+
+See `docs/systems/equipment.md` for full slot layout, equip flow, and starting gear.
 
 #### Ranger: Bow & Quiver System
 

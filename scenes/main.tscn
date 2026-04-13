@@ -19,7 +19,7 @@
 [ext_resource type="Script" path="res://scripts/ui/BankWindow.cs" id="18_bank"]
 [ext_resource type="Script" path="res://scripts/ui/BlacksmithWindow.cs" id="19_blacksmith"]
 [ext_resource type="Script" path="res://scripts/ui/QuestPanel.cs" id="20_quests"]
-[ext_resource type="Script" path="res://scripts/ui/FatedLedger.cs" id="21_ledger"]
+[ext_resource type="Script" path="res://scripts/ui/DungeonLedger.cs" id="21_ledger"]
 [ext_resource type="Script" path="res://scripts/ui/SkillBarHud.cs" id="22_skillbar"]
 [ext_resource type="Script" path="res://scripts/ui/ActionMenu.cs" id="23_actionmenu"]
 [ext_resource type="Script" path="res://scripts/ui/BackpackWindow.cs" id="24_backpack"]
@@ -199,7 +199,7 @@ mouse_filter = 2
 process_mode = 3
 script = ExtResource("20_quests")
 
-[node name="FatedLedger" type="Control" parent="UILayer"]
+[node name="DungeonLedger" type="Control" parent="UILayer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

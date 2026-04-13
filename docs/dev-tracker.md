@@ -49,7 +49,7 @@ Current state of the game. Updated as work completes. Run `make build` to verify
 | SYS-06 | Blacksmith crafting UI | Done | BlacksmithWindow with Craft/Recycle tabs, AffixDatabase (28 affixes, tiers 1-4), deterministic affix application, gear recycling for gold. |
 | SYS-07 | Bank UI | Done | BankWindow with deposit/withdraw, 50 start slots, expansion purchasing (500*N^2), persistent save/load. |
 | SYS-08 | Items & affix system | Done | AffixDef/AffixDatabase, CraftableItem model, Crafting logic (max 3 prefix + 3 suffix), BaseQuality enum. Unique items catalog pending. |
-| SYS-09 | Achievement system (Fated Ledger) | Done | AchievementTracker with 30 achievements across 5 categories, counter-based tracking, gold/title rewards, FatedLedger UI in pause menu. |
+| SYS-09 | Achievement system (Dungeon Ledger) | Done | AchievementTracker with 30 achievements across 5 categories, counter-based tracking, gold/title rewards, DungeonLedger UI in pause menu. |
 | SYS-10 | Monster families (zone-exclusive creature sets) | Done | Constants.Zones with 10-floor zone system, zone-gated species spawning. Zone 1: Skeleton+Bat, Zone 2: Goblin+Wolf, Zone 3: Orc+Spider, Zone 4: DarkMage mix, Zone 5+: all. |
 
 ---
@@ -160,10 +160,28 @@ These systems were implemented during visual-first development but were not part
 | END-03 | Dungeon Intelligence (adaptive AI Director) | Done | `DungeonIntelligence.cs` — 4 metrics, pressure score, spawn/aggro/elite modifiers |
 | END-04 | Zone Saturation (per-zone difficulty dial) | Done | `ZoneSaturation.cs` — per-zone saturation, decay, stat/reward multipliers |
 | END-05 | Depth gear tiers (new rarity at floor 50/100/150) | Done | `DepthGearTier.cs` — BaseQuality extended to 6 tiers, quality roll with floor shift |
+| UI-01 | Pause menu tabbed redesign | To Do | 7 tabs: Inventory, Equipment, Skills, Quests, Ledger, Stats, System. Q/E tab nav, Resume always visible. Spec: `docs/ui/pause-menu-tabs.md`. Blocked by SYS-11. |
+| SYS-11 | Equipment system (10-slot, 19 equippable) | To Do | Head, Body, Arms, Legs, Feet, Neck, 10 Rings, Main Hand, Off Hand, Ammo. No class-lock — +25% class affinity bonus instead. Bow without quiver = melee. Starting gear per class. Spec: `docs/systems/equipment.md`. |
 | POL-01 | Audio system (SFX + music + ambient) | To Do | Skipped per user — no audio/sound tasks |
 | POL-02 | Real sprite animations (AnimatedSprite2D) | To Do | 8-directional static rotations done; animation frames not yet |
 | POL-03 | Zone visual themes (per-zone floor/wall textures) | Done | `Constants.Assets.GetZoneTheme()` — 5 themes cycling for zone 6+ |
 | POL-04 | Shader effects (hit flash, outline, glow) | Partial | FlashFx uses Modulate tinting; no custom shaders yet |
+
+---
+
+## Testing Infrastructure
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| TEST-01 | ISaveStorage interface + file I/O abstraction | To Do | P2 | Extract file I/O from SaveSystem behind `ISaveStorage` interface. Real impl uses Godot `FileAccess`, test impl uses in-memory `Dictionary<string, string>`. Enables unit testing save/load round-trips without disk. |
+| TEST-02 | Save/load round-trip unit tests | To Do | P2 | Blocked by TEST-01. Test full `SaveSystem.CaptureState` → serialize → deserialize → `RestoreState` via `FakeSaveStorage`. Verify all fields survive: stats, inventory, bank, skills, quests, achievements, pacts, saturation, attunement. |
+| TEST-03 | Seed file persistence tests | To Do | P3 | When game seeds are persisted to disk for replay/sharing, add tests that write seed → read seed → generate same floor. Uses same `ISaveStorage` abstraction from TEST-01. |
+| TEST-04 | E2E scene-runner tests (GdUnit4) | To Do | P2 | Wire up scaffolded `tests/e2e/` tests to actually run scene transitions via GdUnit4 `ISceneRunner`. Requires Godot binary in CI. |
+| TEST-05 | CI screenshot capture on E2E failure | To Do | P3 | `GetViewport().GetTexture().GetImage().SavePng()` in GdUnit4 tests, uploaded as CI artifacts on failure. |
+| TEST-06 | Integrate GodotTestDriver (Chickensoft) | Done | P1 | Added `Chickensoft.GodotTestDriver` v3.1.66. AutoPilotActions wraps `StartAction`/`EndAction`. Convention updated: Chickensoft allowed for testing only. |
+| TEST-07 | Create game-specific test drivers | To Do | P1 | Blocked by TEST-06. Build drivers for game nodes: PlayerDriver, NpcDriver, ShopWindowDriver, BankWindowDriver, PauseMenuDriver, DungeonDriver. Compose from GodotTestDriver's built-in ButtonDriver, LabelDriver, etc. |
+| TEST-08 | Full-run walkthrough via drivers | To Do | P1 | Blocked by TEST-07. Rewrite FullRunSandbox walkthrough to use driver-based interaction instead of raw input injection. Must auto-play: splash → class select → town → dungeon → combat → verify state. `make sandbox-headless SCENE=full-run` exits 0/1. |
+| TEST-09 | Per-sandbox automated scripts | To Do | P2 | Blocked by TEST-06. Add AutoPilot-driven scripts to individual sandboxes (combat: cast all skills in 8 directions, inventory: buy/sell/stack sequences, etc.). Reuse GodotTestDriver drivers. |
 
 ---
 
@@ -183,10 +201,13 @@ These systems were implemented during visual-first development but were not part
 
 ## Test Summary
 
-| Suite | Count | Command |
-|-------|-------|---------|
-| Unit tests (xUnit) | 0 | `make test` |
-| Visual test scenes | 0 | -- |
+| Suite | Command | Notes |
+|-------|---------|-------|
+| Unit tests (xUnit) | `make test-unit` | Run `make test-unit` for current count |
+| Integration tests (xUnit) | `make test-integration` | Cross-system flow tests |
+| Full-run integration | `make sandbox-headless SCENE=full-run` | End-to-end play session |
+| Sandbox scenes (14) | `make sandbox-headless-all` | Headless checks per system |
+| E2E (GdUnit4) | `make test-gdunit` | Scaffolded, pending wiring (TEST-04) |
 
 ---
 

@@ -2,13 +2,120 @@
 
 ## Summary
 
-Planned automated test suite for "A Dungeon in the Middle of Nowhere" using the GdUnit4 testing framework for C#. Contains unit tests for game state logic, enemy stat formulas, player damage calculations, and movement math, plus integration tests for combat flow, spawning, and death/restart.
+Automated test suite for Infinite Dungeon Game using xUnit (unit + integration) and a scaffolded E2E project for future Godot headless testing. CI runs on every push/PR via GitHub Actions.
 
 ## Current State
 
-- Tests are planned but not yet implemented (game is being rebuilt with visual-first development after the Session 8 fresh start)
-- All test code below is ready to be placed in the `tests/` directory once the corresponding game systems are built
-- Tests reference a `GameState` autoload singleton and enemy/player scenes that will be created during migration
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `tests/unit/` | ✅ Live | xUnit, no Godot needed |
+| `tests/integration/` | ✅ Live | xUnit, cross-system flows |
+| `tests/e2e/` | 🔲 Scaffolded | Pending Godot headless + GdUnit4 wiring |
+| Screenshots (automated) | 🔲 Planned | Via Godot `get_viewport().get_texture()` in test scenes |
+| Recordings (automated) | 🔲 Planned | Via `ffmpeg` triggered from CI on E2E runs |
+| CI pipeline | ✅ Live | `.github/workflows/ci.yml` |
+| Coverage gate | ✅ 90% minimum | Enforced in CI via ReportGenerator |
+
+## What's Live Now
+
+### Unit Tests (`tests/unit/`)
+
+| File | System | Count |
+|------|--------|-------|
+| `StatBlockTests.cs` | `StatBlock` (PlayerStats) | 27 |
+| `InventoryTests.cs` | `Inventory` | 26 |
+| `DeathPenaltyTests.cs` | `DeathPenalty` | 23 |
+| `BankTests.cs` | `Bank` | 18 |
+| `DungeonPactsTests.cs` | `DungeonPacts` | 18 |
+| `ZoneSaturationTests.cs` | `ZoneSaturation` | 19 |
+| `SkillBarTests.cs` | `SkillBar` | 19 |
+| `SkillStateTests.cs` | `SkillState` | 14 |
+| `AchievementSystemTests.cs` | `AchievementTracker` | 15 |
+| `CraftingTests.cs` | `Crafting` + `AffixDatabase` | 16 |
+| `QuestSystemTests.cs` | `QuestTracker` | 10 |
+| `DepthGearTierTests.cs` | `DepthGearTiers` + `AffixDatabase` | 15 |
+| `LootTableTests.cs` | `LootTable` | 4 |
+| `MagiculeAttunementTests.cs` | `MagiculeAttunement` | 21 |
+
+| `FullRunTests.cs` | Full session walkthrough (all systems) | 13 |
+
+**Total: 304 unit tests** (run `make test-unit` for current count)
+
+Run with: `make test-unit`
+
+### Integration Tests (`tests/integration/`)
+
+| Class | What it covers |
+|-------|---------------|
+| `DeathFlowTests` | Death → item/XP loss → bank survival |
+| `StatProgressionTests` | Class leveling across multiple levels |
+| `EconomyFlowTests` | Buy/sell gold spread, inventory cycle |
+
+Run with: `make test-integration`
+
+### CI Pipeline (`.github/workflows/ci.yml`)
+
+Jobs run in order on every push/PR to `main`:
+
+```
+build → unit-tests → integration-tests → coverage-gate → e2e-tests (main only)
+```
+
+Coverage gate fails the PR if line coverage drops below 90%.
+
+## Planned: E2E / Screenshots / Recordings
+
+### E2E Approach (not yet implemented)
+
+E2E tests launch Godot in headless mode and verify full game flows:
+
+```csharp
+// Future pattern — tests/e2e/
+[Fact]
+public void SmokeTest_GameLaunchesAndExitsCleanly()
+{
+    var result = GodotRunner.Run("res://scenes/tests/test_smoke.tscn");
+    result.ExitCode.Should().Be(0);
+}
+```
+
+Requires: Godot binary on `GODOT_BIN` env var (handled in CI via workflow).
+
+### Screenshots (planned)
+
+Godot test scenes can capture screenshots using:
+
+```csharp
+// Inside a GdUnit4 test scene
+var image = GetViewport().GetTexture().GetImage();
+image.SavePng($"tests/e2e/screenshots/{testName}.png");
+```
+
+Screenshots will be uploaded as CI artifacts on failure for visual regression review.
+
+### Recordings (planned)
+
+CI will use `ffmpeg` to record headless Godot runs during E2E:
+
+```yaml
+- name: Record E2E run
+  run: |
+    ffmpeg -f x11grab -video_size 1280x720 -i :99 \
+      tests/e2e/recordings/${{ github.run_id }}.mp4 &
+    $GODOT_BIN --headless --path . ...
+```
+
+Recordings uploaded as CI artifacts. Ignored by `.gitignore`.
+
+## Running Tests Locally
+
+```bash
+make test           # unit + integration
+make test-unit      # unit only
+make test-integration  # integration only
+make test-e2e       # e2e (requires GODOT_BIN)
+make test-coverage  # generates ./coverage/report/index.html
+```
 
 ## Design
 

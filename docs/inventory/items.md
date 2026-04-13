@@ -61,7 +61,8 @@ Item {
   type:             enum      // Equipment | Consumable | Material | Special
   slot:             enum      // Head | Body | Neck | Ring | Arms | Legs | Feet |
                               // MainHand | OffHand | Ammo | None
-  class_restriction: enum     // Warrior | Ranger | Mage | All
+  class_affinity:    enum     // Warrior | Ranger | Mage | null (universal)
+                              // No restriction — any class can equip. +25% stat bonus when matched.
   item_level:       int       // Floor it dropped on — gates affix availability
   base_quality:     enum      // Normal | Superior | Elite
   base_stats:       dict      // { damage?, defense?, stat_bonus? }
@@ -121,7 +122,7 @@ Affixes are the core of item depth. They are **never** found on drops — all af
 | Utility | Energizing (+mana), Flowing (+mana regen) | of Swiftness (+move speed), of Learning (+XP bonus) |
 | Elemental | Fiery (+fire damage), Frozen (+frost damage), Shocking (+lightning) | of Flame Resist, of Frost Resist, of Storm Resist |
 
-*Full affix list to be defined in a separate affix table document. The categories above are representative, not exhaustive.*
+*Affix definitions are implemented in `AffixDatabase.cs` (28 affixes across tiers 1-4). The categories above are representative — see code for the complete list.*
 
 ### Crafting at the Blacksmith
 
@@ -138,11 +139,11 @@ The Blacksmith is the only source of magical (affixed) equipment. Crafting is **
 - Monster drops (common materials)
 - Boss kills (rare materials, first-kill only)
 - Treasure room chests (floor-appropriate materials)
-- Recycling class-locked gear at the Blacksmith (see below)
+- Recycling off-affinity gear at the Blacksmith (see below)
 
 **Materials are generic.** Crafting materials are not species-specific — there is no "Goblin Bone" vs. "Skeleton Bone." Materials are tiered by floor depth (e.g., "Iron Ore" from floors 1-10, "Mithril Ore" from floors 25+). Any enemy on a given floor range drops from the same material pool.
 
-**Recycling:** Bring class-locked gear you can't use → Blacksmith breaks it down into materials. Material yield scales with item level and quality. This ensures no drop feels wasted.
+**Recycling:** Bring off-affinity gear you don't want → Blacksmith breaks it down into materials. Material yield scales with item level and quality. This ensures no drop feels wasted.
 
 ### Loot System
 
@@ -150,7 +151,7 @@ Loot tables and drop rates are defined in SPEC-06b (separate ticket). High-level
 
 - **Monsters drop base items only** (no affixes, no magic)
 - **Drop quality scales with floor depth** (deeper = more Superior/Elite drops)
-- **Class-restricted items can drop for any class** (recycle what you can't use)
+- **Class-affinity items drop for any class** (+25% bonus if matched, recyclable if not)
 - **Materials drop alongside equipment** (monsters also drop crafting materials directly)
 - **Boss first-kills drop guaranteed rare materials**
 - **Treasure rooms contain material chests** (no equipment, just crafting ingredients)
@@ -210,7 +211,7 @@ When an item drops, its quality tier is rolled:
 
 #### Item Type Distribution
 
-When an equipment item drops, the slot is rolled with equal weight across all valid slots for the enemy's floor. Class-restricted items drop for any class — recycle what you can't use.
+When an equipment item drops, the slot is rolled with equal weight across all valid slots for the enemy's floor. Class-affinity items drop for any class — +25% bonus if matched, recyclable at Blacksmith if not.
 
 #### Material Drops
 

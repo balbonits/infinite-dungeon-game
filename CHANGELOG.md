@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 12 — Fix & Expand Test Suite + Full-Run Integration Test (2026-04-12)
+
+#### Added (Flow Docs + Testing Infrastructure)
+- `docs/flows/` — 14 step-by-step flow docs covering every player interaction
+- GodotTestDriver v3.1.66 integrated (Chickensoft allowed for testing only)
+- `scripts/testing/DebugTelemetry.cs` — full audit trail (#if DEBUG): input, signals, state, scenes
+- FullRunSandbox rewritten: 3-class walkthrough (Warrior, Ranger, Mage), death flow, achievement checks
+- `docs/conventions/versioning.md` — SemVer + git tags strategy
+
+#### Added (AutoPilot Player Emulation Library)
+- `scripts/testing/AutoPilot.cs` — core player emulation node (step runner, logging, assertions)
+- `scripts/testing/AutoPilotActions.cs` — input simulation: press/hold/release, movement, UI clicks, waiting
+- `scripts/testing/AutoPilotAssertions.cs` — game state verification: HP, level, floor, inventory, enemies
+- `docs/testing/autopilot.md` — spec for the AutoPilot library
+- FullRunSandbox rewritten: now launches the real game and plays through it via AutoPilot
+- Reusable for any sandbox or debug scenario — not tied to testing infrastructure
+
+#### Added (Full-Run Integration Test)
+- `docs/testing/full-run-test.md` — spec for the full-run integration test
+- `tests/unit/FullRunTests.cs` — 13 tests: 10 phase tests + 3 class-parameterized init tests + 1 full session chain
+- `scripts/sandbox/FullRunSandbox.cs` + `scenes/sandbox/FullRunSandbox.tscn` — Godot sandbox layer with all 10 phases
+- `make sandbox-headless SCENE=full-run` — one-command full game smoke test
+- Registered in SandboxLauncher under new "Integration" category
+
+#### Fixed
+- Unit and integration tests now compile and pass (added missing `using Xunit;` to all 5 test files)
+- Excluded `SaveSystem.cs` from test project compilation (references Godot-specific `Autoloads` class)
+- Added `RollForward` to test .csproj files for .NET 10 runtime compatibility
+
+#### Added
+- 199 new unit tests across 10 test files covering all untested pure-C# logic systems:
+  - DungeonPacts (18 tests): rank management, heat calculation, reward scaling, pact effects, serialization
+  - ZoneSaturation (19 tests): kill tracking, time decay, stat multipliers, reward bonuses, serialization
+  - SkillBar (19 tests): slot assignment, cooldowns, activation, serialization
+  - SkillState (14 tests): XP curves, level-up, skill points, passive bonuses, diminishing returns
+  - AchievementSystem (15 tests): counters, evaluation, progress tracking, save/load
+  - Crafting + AffixDatabase (16 tests): affix eligibility, application, recycling, display names
+  - QuestSystem (10 tests): quest generation, kill/clear/depth progress, completion, save/load
+  - DepthGearTiers (15 tests): floor gates, stat ranges, affix slots, quality rolls, tier lookup
+  - LootTable (4 tests): gold drop formulas, level scaling
+  - MagiculeAttunement (21 tests): floor clearing, node pathing, keystones, stat bonuses, serialization
+
 ### Session 11 — Endgame + Mana + Skills + UI Overhaul (2026-04-11)
 
 #### Added
@@ -50,7 +92,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Bank system: 50 start slots, deposit/withdraw UI, expansion purchasing at 500*N^2
 - Blacksmith crafting: deterministic affix system (28 affixes, tiers 1-4), equipment recycling
 - Quest system: radiant quests (Kill/ClearFloor/DepthPush), 3 active quests, QuestPanel UI
-- Achievement system (Fated Ledger): 30 achievements, counter-based tracking, FatedLedger UI
+- Achievement system (Dungeon Ledger): 30 achievements, counter-based tracking, DungeonLedger UI
 - Teleporter NPC floor-select UI with zone labels
 - Procedural floor generation: BSP rooms + Drunkard's Walk corridors + Cellular Automata smoothing
 - Zone-based monster families: zone-exclusive species spawning per 10-floor block

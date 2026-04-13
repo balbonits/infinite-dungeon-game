@@ -32,6 +32,26 @@ tests/bin/
 tests/obj/
 tests/TestResults/
 
+# Code coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# CI artifacts (screenshots, recordings from E2E runs)
+tests/e2e/screenshots/
+tests/e2e/recordings/
+tests/e2e/artifacts/
+
+# Sandbox artifacts
+scenes/sandbox/screenshots/
+scenes/sandbox/recordings/
+
+# GdUnit4 test results
+TestResults/
+
+# dotnet tool manifest restore
+.config/
+
 # Unsorted raw asset downloads
 assets/to-be-sorted/
 
