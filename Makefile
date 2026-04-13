@@ -98,6 +98,20 @@ _sandbox-path:
 		*)                echo "ERROR: unknown SCENE '$(SCENE)'" >&2; exit 1 ;; \
 	esac
 
+# ─── Export / Build Executables ──────────────────────────────────────────────
+
+export-all: build ## Export executables for all platforms (macOS, Windows, Linux) → build/
+	@./scripts/build.sh
+
+export-mac: build ## Export macOS app → build/DungeonGame.app
+	@mkdir -p build && $(GODOT) --headless --path . --export-debug "macOS" build/DungeonGame.app 2>&1 | tail -3
+
+export-win: build ## Export Windows exe → build/DungeonGame.exe
+	@mkdir -p build && $(GODOT) --headless --path . --export-debug "Windows Desktop" build/DungeonGame.exe 2>&1 | tail -3
+
+export-linux: build ## Export Linux binary → build/DungeonGame.x86_64
+	@mkdir -p build && $(GODOT) --headless --path . --export-debug "Linux" build/DungeonGame.x86_64 2>&1 | tail -3
+
 # ─── Utilities ───────────────────────────────────────────────────────────────
 
 kill: ## Kill all running Godot processes
