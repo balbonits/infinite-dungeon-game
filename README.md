@@ -42,34 +42,70 @@ You control a single permanent character — **Warrior**, **Ranger**, or **Mage*
 | Art | PixelLab AI + Screaming Brain Studios (CC0) |
 | Platform | macOS (Apple Silicon + Intel), Windows, Linux |
 
-## Building from Source
+## Quick Start
+
+```bash
+# Clone and build
+git clone https://github.com/balbonits/infinite-dungeon-game.git
+cd infinite-dungeon-game
+
+# Export executables for all platforms (macOS, Windows, Linux)
+make export-all
+
+# Or export a single platform
+make export-mac
+make export-win
+make export-linux
+
+# Executables land in build/ (gitignored)
+```
 
 ### Requirements
 
 - [.NET 8+ SDK](https://dotnet.microsoft.com/download)
-- [Godot 4.6 .NET edition](https://godotengine.org/download)
+- [Godot 4.6 .NET edition](https://godotengine.org/download) with export templates installed
+  - Open Godot → Editor → Manage Export Templates → Download and Install
 
-### Run
+### Run from Source
 
 ```bash
-# Build
-dotnet build
-
-# Run in Godot
-/path/to/Godot --path .
-
-# Export (macOS)
-# Open Godot editor → Project → Export → macOS → Export Project
+make build      # Compile C#
+make run        # Build and launch in Godot
 ```
 
-### Make targets
+### Testing
 
 ```bash
-make build      # dotnet build
-make run        # Build and launch
-make test       # Run tests
-make lint       # Format check
-make clean      # Remove build artifacts
+make test                              # 315 unit + integration tests
+make sandbox-headless SCENE=full-run   # Automated 3-class playthrough (54 assertions)
+make sandbox-headless-all              # All 14 sandbox checks
+```
+
+### All Make Targets
+
+```bash
+# Build & Run
+make build            # dotnet build
+make run              # Build and launch in Godot
+
+# Export
+make export-all       # All 3 platforms → build/
+make export-mac       # macOS → build/DungeonGame.app
+make export-win       # Windows → build/DungeonGame.exe
+make export-linux     # Linux → build/DungeonGame.x86_64
+
+# Test
+make test             # Unit + integration tests
+make test-unit        # Unit tests only
+make test-integration # Integration tests only
+make sandbox SCENE=X  # Launch sandbox visually
+make sandbox-headless SCENE=X  # Run sandbox headless
+
+# Utilities
+make status           # Git, build, Godot version
+make doctor           # Check dev environment health
+make clean            # Remove build artifacts
+make kill             # Kill Godot processes
 ```
 
 ## Project Structure
