@@ -111,6 +111,13 @@ public partial class SplashScreen : Control
             Callable.From(() => GetTree().Quit()));
         btnBox.AddChild(exitBtn);
 
+        // Control hints
+        var hints = UiTheme.CreateHintBar(
+            ("Up/Down", "Navigate"),
+            (Constants.InputActions.ActionCross, "Select"),
+            ("Enter", "Select"));
+        vbox.AddChild(hints);
+
         // Auto-focus first button after short delay
         var timer = GetTree().CreateTimer(0.3);
         timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(() =>

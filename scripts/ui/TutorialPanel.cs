@@ -36,7 +36,6 @@ public partial class TutorialPanel : Control
         WindowStack.Push(this);
         ProcessMode = ProcessModeEnum.Always;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Size = GetViewportRect().Size;
 
         var (overlay, content) = UiTheme.CreateDialogWindow(560f, 0.7f);
         AddChild(overlay);

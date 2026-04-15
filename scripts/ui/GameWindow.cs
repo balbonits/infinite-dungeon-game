@@ -48,7 +48,6 @@ public partial class GameWindow : Control
     {
         ProcessMode = ProcessModeEnum.Always;
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Size = GetViewportRect().Size;
 
         var (overlay, content) = UiTheme.CreateDialogWindow(_width);
         _overlay = overlay;

@@ -57,7 +57,7 @@ Defined as static readonly fields in `ClassAttacks` (`scripts/logic/ClassAttacks
 | DamageMultiplier | 1.0 | -- |
 | IsProjectile | true | -- |
 | ProjectileSpeed | 400.0 px/s | `Constants.ClassCombat.ArrowSpeed` |
-| ProjectileTexture | `res://assets/projectiles/arrow.png` | `Constants.Assets.ArrowProjectile` |
+| ProjectileTexture | `res://assets/projectiles/arrow_8dir.png` | `Constants.Assets.ArrowProjectile` |
 | ProjectileScale | 0.6 | `Constants.ClassCombat.ArrowScale` |
 
 **MageMagicBolt (ranged projectile):**
@@ -69,7 +69,7 @@ Defined as static readonly fields in `ClassAttacks` (`scripts/logic/ClassAttacks
 | DamageMultiplier | 1.3 | Higher damage, slower fire rate |
 | IsProjectile | true | -- |
 | ProjectileSpeed | 300.0 px/s | `Constants.ClassCombat.MagicBoltSpeed` |
-| ProjectileTexture | `res://assets/projectiles/magic_bolt.png` | `Constants.Assets.MagicBoltProjectile` |
+| ProjectileTexture | `res://assets/projectiles/magic_bolt_8dir.png` | `Constants.Assets.MagicBoltProjectile` |
 | ProjectileScale | 0.8 | `Constants.ClassCombat.MagicBoltScale` |
 | ProjectileTint | #4AE8E8 | Cyan tint |
 | EffectColor | #4AE8E8 | Cyan |
