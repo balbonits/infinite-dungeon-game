@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 13 — Skill & Spell Icon Sprite Sheets (2026-04-14)
+
+#### Added
+- `assets/icons/skills_icons.png` — 512x512 sprite sheet with 73 skill icons (Warrior + Ranger + Innate, 32x32 each)
+- `assets/icons/spells_icons.png` — 512x512 sprite sheet with 45 spell icons (Mage Arcane + Conduit, 32x32 each)
+- `assets/icons/skills_icons.json` — JSON atlas index for skill icons (name → x, y, w, h)
+- `assets/icons/spells_icons.json` — JSON atlas index for spell icons (name → x, y, w, h)
+- `scripts/generate_icons.py` — Pillow-based icon sprite sheet generator (re-runnable)
+
 ### Session 12 — Fix & Expand Test Suite + Full-Run Integration Test (2026-04-12)
 
 #### Added (Flow Docs + Testing Infrastructure)

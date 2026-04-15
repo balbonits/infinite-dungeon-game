@@ -4,6 +4,35 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 13 — Skill & Spell Icon Sprite Sheets (2026-04-14)
+
+### What Happened
+
+**Created skill and spell icon sprite sheets** for the skill tree UI and shortcuts bar.
+
+- `assets/icons/skills_icons.png` — 512x512 sprite sheet with 73 icons (32x32 each) covering all Warrior, Ranger, and Innate skills
+- `assets/icons/spells_icons.png` — 512x512 sprite sheet with 45 icons (32x32 each) covering all Mage Arcane and Conduit spells
+- `assets/icons/skills_icons.json` — JSON index mapping skill names to grid positions (x, y, w, h, col, row)
+- `assets/icons/spells_icons.json` — JSON index mapping spell names to grid positions
+- `scripts/generate_icons.py` — Pillow-based generator script; re-run to regenerate sheets
+
+### Layout
+
+Icons are arranged in rows of 5: `[base skill] [specific1] [specific2] [specific3] [specific4]`. Color-coded by category:
+
+**Skills sheet:** Gold (Warrior Body), Purple (Warrior Mind), Green (Ranger Arms), Teal (Ranger Instinct), Silver-blue (Innate)
+
+**Spells sheet:** Red (Fire), Blue (Water), Cyan (Air), Brown (Earth), Gold (Light), Purple (Dark), Green (Restoration), Blue (Amplification), Orange (Overcharge)
+
+### Technical Notes
+
+- Attempted PixelLab MCP for generation but tools weren't accessible from subagents. Used Pillow pixel-art drawing instead.
+- Icons are pixel-art style on dark backgrounds (#0f1117), matching the existing icon assets.
+- JSON index files allow code to look up any icon by name and get its atlas region.
+- Script is re-runnable: `python3 scripts/generate_icons.py` regenerates both sheets.
+
+---
+
 ## Session 12 — Fix & Expand Test Suite (2026-04-12)
 
 ### What Happened

@@ -1,0 +1,659 @@
+{
+  "unarmed": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "punch": {
+    "x": 32,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "kick": {
+    "x": 64,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "grapple": {
+    "x": 96,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "elbow_knee": {
+    "x": 128,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "bladed": {
+    "x": 160,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "slash": {
+    "x": 192,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "thrust": {
+    "x": 224,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "cleave": {
+    "x": 256,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "parry": {
+    "x": 288,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "blunt": {
+    "x": 320,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "smash": {
+    "x": 352,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "sweep": {
+    "x": 384,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "crush": {
+    "x": 416,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 13,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "shatter": {
+    "x": 448,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 14,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "polearms": {
+    "x": 480,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 15,
+    "row": 0,
+    "sheet": "skills_icons.png"
+  },
+  "thrust_pole": {
+    "x": 0,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "sweep_pole": {
+    "x": 32,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "brace": {
+    "x": 64,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "vault": {
+    "x": 96,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "shields": {
+    "x": 128,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "block": {
+    "x": 160,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "shield_bash": {
+    "x": 192,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "deflect": {
+    "x": 224,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "bulwark": {
+    "x": 256,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "inner": {
+    "x": 288,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "battle_focus": {
+    "x": 320,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "pain_tolerance": {
+    "x": 352,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "second_wind": {
+    "x": 384,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "iron_will": {
+    "x": 416,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 13,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "outer": {
+    "x": 448,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 14,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "war_cry": {
+    "x": 480,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 15,
+    "row": 1,
+    "sheet": "skills_icons.png"
+  },
+  "intimidate": {
+    "x": 0,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "menacing_presence": {
+    "x": 32,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "battle_roar": {
+    "x": 64,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "drawn": {
+    "x": 96,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "power_shot": {
+    "x": 128,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "rapid_fire": {
+    "x": 160,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "arc_shot": {
+    "x": 192,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "pin_shot": {
+    "x": 224,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "thrown": {
+    "x": 256,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "knife_throw": {
+    "x": 288,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "axe_throw": {
+    "x": 320,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "fan_throw": {
+    "x": 352,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "bounce_shot": {
+    "x": 384,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "firearms": {
+    "x": 416,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 13,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "quick_draw": {
+    "x": 448,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 14,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "steady_shot": {
+    "x": 480,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 15,
+    "row": 2,
+    "sheet": "skills_icons.png"
+  },
+  "burst_fire": {
+    "x": 0,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "snipe": {
+    "x": 32,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "melee_ranger": {
+    "x": 64,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "parry_ranger": {
+    "x": 96,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "block_ranger": {
+    "x": 128,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "riposte": {
+    "x": 160,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "disarm": {
+    "x": 192,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "precision": {
+    "x": 224,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "steady_aim": {
+    "x": 256,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "weak_spot": {
+    "x": 288,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "range_calc": {
+    "x": 320,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "lead_shot": {
+    "x": 352,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "awareness": {
+    "x": 384,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "threat_sense": {
+    "x": 416,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 13,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "dodge_roll": {
+    "x": 448,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 14,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "disengage": {
+    "x": 480,
+    "y": 96,
+    "w": 32,
+    "h": 32,
+    "col": 15,
+    "row": 3,
+    "sheet": "skills_icons.png"
+  },
+  "tumble": {
+    "x": 0,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "trapping": {
+    "x": 32,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "snare": {
+    "x": 64,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "tripwire": {
+    "x": 96,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "decoy": {
+    "x": 128,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "ambush": {
+    "x": 160,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "haste": {
+    "x": 192,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "sense": {
+    "x": 224,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  },
+  "fortify": {
+    "x": 256,
+    "y": 128,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 4,
+    "sheet": "skills_icons.png"
+  }
+}
