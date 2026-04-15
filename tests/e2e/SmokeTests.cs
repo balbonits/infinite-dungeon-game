@@ -1,4 +1,5 @@
 using GdUnit4;
+using System.Threading.Tasks;
 using static GdUnit4.Assertions;
 
 namespace DungeonGame.Tests.E2E;

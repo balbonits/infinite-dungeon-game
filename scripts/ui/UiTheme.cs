@@ -223,4 +223,38 @@ public static class UiTheme
     {
         return CreateSlotStyle(new Color(0.08f, 0.08f, 0.12f, 0.6f), false);
     }
+
+    /// <summary>
+    /// Create a control hint bar showing available keys. Hidden if ShowControlHints is off.
+    /// Each hint is (actionNameOrRawKey, description). InputMap actions are resolved dynamically.
+    /// </summary>
+    public static Label CreateHintBar(params (string key, string desc)[] hints)
+    {
+        var label = new Label();
+        if (!GameSettings.ShowControlHints)
+        {
+            label.Visible = false;
+            return label;
+        }
+
+        var parts = new System.Collections.Generic.List<string>();
+        foreach (var (key, desc) in hints)
+        {
+            string keyName = Godot.InputMap.HasAction(key) ? GetKeyName(key) : key;
+            parts.Add($"[{keyName}] {desc}");
+        }
+        label.Text = string.Join("   ", parts);
+        StyleLabel(label, Colors.Muted, FontSizes.Small);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
+        return label;
+    }
+
+    private static string GetKeyName(string action)
+    {
+        var events = Godot.InputMap.ActionGetEvents(action);
+        foreach (var ev in events)
+            if (ev is InputEventKey keyEv)
+                return Godot.OS.GetKeycodeString(keyEv.Keycode);
+        return "?";
+    }
 }

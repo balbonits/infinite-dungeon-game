@@ -48,8 +48,9 @@ public static class KeyboardNav
             return true;
         }
 
-        // S (cross) = confirm / press the focused button
-        if (@event.IsActionPressed(Constants.InputActions.ActionCross))
+        // S (cross) or Enter = confirm / press the focused button
+        if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
+            (keyEvent.Keycode == Key.Enter))
         {
             if (currentIndex >= 0)
             {

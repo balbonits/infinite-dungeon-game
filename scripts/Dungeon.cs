@@ -225,7 +225,18 @@ public partial class Dungeon : Node2D
             {
                 if (_floorGen.Grid[col, row] == FloorGenerator.Tile.Floor)
                 {
-                    int sourceId = _floorSourceBaseId + (int)(GD.Randi() % _floorSourceCount);
+                    // Weighted variant selection — base tiles dominate for visual cohesion.
+                    // variant 0: 50%, variant 1: 25%, remaining variants split 25%.
+                    float roll = GD.Randf();
+                    int variant;
+                    if (_floorSourceCount <= 2 || roll < 0.50f)
+                        variant = 0;
+                    else if (roll < 0.75f)
+                        variant = 1;
+                    else
+                        variant = 2 + (int)(GD.Randi() % (_floorSourceCount - 2));
+
+                    int sourceId = _floorSourceBaseId + variant;
                     _tileMap.SetCell(new Vector2I(col, row), sourceId, Constants.Tiles.AtlasCoords);
                 }
                 else if (IsAdjacentToFloor(col, row))

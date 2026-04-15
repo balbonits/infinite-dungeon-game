@@ -39,6 +39,14 @@ public partial class PauseMenu : Control
         settingsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSettingsPressed));
         mainMenuButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnMainMenuPressed));
         quitButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnQuitPressed));
+
+        // Control hints
+        var hints = UiTheme.CreateHintBar(
+            ("Up/Down", "Navigate"),
+            (Constants.InputActions.ActionCross, "Select"),
+            (Constants.InputActions.ActionCircle, "Back"),
+            ("Esc", "Resume"));
+        _buttonContainer.AddChild(hints);
     }
 
     public override void _UnhandledInput(InputEvent @event)

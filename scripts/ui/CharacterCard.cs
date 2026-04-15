@@ -140,7 +140,8 @@ public partial class CharacterCard : PanelContainer
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!HasFocus()) return;
-        if (@event.IsActionPressed(Constants.InputActions.ActionCross))
+        if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
+            (@event is InputEventKey k && k.Pressed && k.Keycode == Key.Enter))
         {
             _onPressed?.Invoke();
             GetViewport().SetInputAsHandled();

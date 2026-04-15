@@ -278,15 +278,16 @@ public static class Constants
             "res://assets/characters/player/mage/rotations/south.png",
         };
 
-        // Projectiles
-        public const string ArrowProjectile = "res://assets/projectiles/arrow.png";
-        public const string MagicBoltProjectile = "res://assets/projectiles/magic_bolt.png";
-        public const string FireballProjectile = "res://assets/projectiles/fireball.png";
-        public const string FrostBoltProjectile = "res://assets/projectiles/frost_bolt.png";
-        public const string LightningProjectile = "res://assets/projectiles/lightning.png";
-        public const string StoneSpikeProjectile = "res://assets/projectiles/stone_spike.png";
-        public const string EnergyBlastProjectile = "res://assets/projectiles/energy_blast.png";
-        public const string ShadowBoltProjectile = "res://assets/projectiles/shadow_bolt.png";
+        // Projectiles — 8-direction sheets where available, single-frame fallback otherwise
+        public const string ArrowProjectile = "res://assets/projectiles/arrow_8dir.png";
+        public const string MagicArrowProjectile = "res://assets/projectiles/magic_arrow_8dir.png";
+        public const string MagicBoltProjectile = "res://assets/projectiles/magic_bolt_8dir.png";
+        public const string FireballProjectile = "res://assets/projectiles/fireball_8dir.png";
+        public const string FrostBoltProjectile = "res://assets/projectiles/frost_bolt_8dir.png";
+        public const string LightningProjectile = "res://assets/projectiles/lightning_8dir.png";
+        public const string StoneSpikeProjectile = "res://assets/projectiles/stone_spike_8dir.png";
+        public const string EnergyBlastProjectile = "res://assets/projectiles/energy_blast_8dir.png";
+        public const string ShadowBoltProjectile = "res://assets/projectiles/shadow_bolt_8dir.png";
 
         // HUD orbs
         public const string OrbHp = "res://assets/ui/orb_hp.png";
