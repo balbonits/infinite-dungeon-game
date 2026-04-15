@@ -13,7 +13,7 @@ Complete file organization for the Godot 4 migration of "A Dungeon in the Middle
 ### Full Directory Tree
 
 ```
-dungeon-web-game/
+infinite-dungeon-game/
 ├── DungeonGame.sln                        — .NET solution file
 ├── DungeonGame.csproj                     — Main project (Godot.NET.Sdk, NuGet refs)
 ├── project.godot                          — Godot 4 project config (.NET edition)

@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
 **Usage:**
 ```bash
-cd /path/to/dungeon-web-game
+cd /path/to/infinite-dungeon-game
 python3 scripts/generate_tiles.py
 ```
 

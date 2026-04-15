@@ -1,6 +1,6 @@
 # AGENTS.md — AI Coding Assistant Reference
 
-This is the single reference file for any AI coding tool helping with **A Dungeon in the Middle of Nowhere** (repo: `dungeon-web-game`).
+This is the single reference file for any AI coding tool helping with **A Dungeon in the Middle of Nowhere** (repo: `infinite-dungeon-game`).
 
 For detailed game design, see the [`docs/`](docs/) folder.
 

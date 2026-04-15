@@ -70,7 +70,7 @@ code --install-extension geequlim.godot-tools
 ### 4. Project Setup
 
 ```bash
-cd dungeon-web-game
+cd infinite-dungeon-game
 
 # Configure git hooks
 make setup
