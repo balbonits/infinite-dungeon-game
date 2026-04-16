@@ -740,23 +740,25 @@ def icon_quick_draw(draw, c, ox, oy):
     draw_line_px(draw, 4, 18, 12, 16, c["accent"], ox, oy)
     draw_pixel(draw, 13, 13, c["highlight"], ox, oy)
 
-def icon_steady_shot(draw, c, ox, oy):
-    """Steady Shot -- aimed shot."""
-    draw_circle_outline(draw, 16, 15, 8, c["primary"], ox, oy)
-    draw_line_px(draw, 16, 4, 16, 10, c["accent"], ox, oy)
-    draw_line_px(draw, 16, 20, 16, 26, c["accent"], ox, oy)
-    draw_line_px(draw, 5, 15, 11, 15, c["accent"], ox, oy)
-    draw_line_px(draw, 21, 15, 27, 15, c["accent"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
+def icon_bead(draw, c, ox, oy):
+    """Bead -- draw a bead, tight crosshair."""
+    draw_circle_outline(draw, 16, 15, 6, c["primary"], ox, oy)
+    draw_line_px(draw, 16, 6, 16, 11, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 19, 16, 24, c["accent"], ox, oy)
+    draw_line_px(draw, 7, 15, 12, 15, c["accent"], ox, oy)
+    draw_line_px(draw, 20, 15, 25, 15, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 15, c["highlight"], ox, oy)
 
-def icon_burst_fire(draw, c, ox, oy):
-    """Burst Fire -- three rapid shots."""
-    for i in range(3):
-        x = 8 + i * 6
-        draw_circle_filled(draw, x + 6, 15, 2, c["accent"], ox, oy)
-        draw_pixel(draw, x + 8, 15, c["highlight"], ox, oy)
-    # muzzle flash
-    draw_rect(draw, 4, 12, 8, 18, c["primary"], ox, oy)
+def icon_spray(draw, c, ox, oy):
+    """Spray -- scattered rapid shots."""
+    # scattered projectiles in fan pattern
+    draw_circle_filled(draw, 20, 10, 2, c["accent"], ox, oy)
+    draw_circle_filled(draw, 24, 14, 2, c["accent"], ox, oy)
+    draw_circle_filled(draw, 22, 18, 2, c["accent"], ox, oy)
+    draw_circle_filled(draw, 26, 12, 1, c["highlight"], ox, oy)
+    draw_circle_filled(draw, 19, 20, 1, c["highlight"], ox, oy)
+    # muzzle
+    draw_rect(draw, 4, 12, 10, 18, c["primary"], ox, oy)
     draw_pixel(draw, 3, 14, c["highlight"], ox, oy)
     draw_pixel(draw, 3, 16, c["highlight"], ox, oy)
 
@@ -797,12 +799,14 @@ def icon_cqc_parry(draw, c, ox, oy):
     draw_pixel(draw, 15, 13, c["highlight"], ox, oy)
     draw_pixel(draw, 17, 15, c["highlight"], ox, oy)
 
-def icon_guard(draw, c, ox, oy):
-    """Guard -- defensive stance."""
-    draw_rect(draw, 10, 8, 22, 22, c["primary"], ox, oy)
-    draw_rect(draw, 12, 10, 20, 20, c["secondary"], ox, oy)
-    draw_line_px(draw, 16, 10, 16, 20, c["accent"], ox, oy)
-    draw_line_px(draw, 12, 15, 20, 15, c["accent"], ox, oy)
+def icon_hunker(draw, c, ox, oy):
+    """Hunker -- crouched behind cover."""
+    # low cover/barricade
+    draw_rect(draw, 6, 18, 26, 24, c["secondary"], ox, oy)
+    draw_line_px(draw, 6, 18, 26, 18, c["primary"], ox, oy)
+    # crouched figure behind cover
+    draw_circle_filled(draw, 16, 12, 3, c["accent"], ox, oy)
+    draw_rect(draw, 13, 15, 19, 18, c["primary"], ox, oy)
 
 def icon_riposte(draw, c, ox, oy):
     """Riposte -- counter-attack blade."""
@@ -1455,14 +1459,14 @@ ROW_LAYOUT = [
     ]),
     (11, "firearms", C_RANGER_WEAPONRY, icon_firearms_mastery, [
         ("quick_draw", icon_quick_draw),
-        ("steady_shot", icon_steady_shot),
-        ("burst_fire", icon_burst_fire),
+        ("bead", icon_bead),
+        ("spray", icon_spray),
         ("snipe", icon_snipe),
         ("shock_round", icon_shock_round),
     ]),
     (12, "cqc", C_RANGER_WEAPONRY, icon_cqc_mastery, [
         ("cqc_parry", icon_cqc_parry),
-        ("guard", icon_guard),
+        ("hunker", icon_hunker),
         ("riposte", icon_riposte),
         ("shiv", icon_shiv),
     ]),
