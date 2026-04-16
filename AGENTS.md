@@ -1,8 +1,10 @@
 # AGENTS.md — AI Coding Assistant Reference
 
-This is the **single canonical reference** for any AI coding tool helping with **A Dungeon in the Middle of Nowhere** (repo: `infinite-dungeon-game`). All guidelines, rules, conventions, and context live here. Tool-specific entry files (e.g., `CLAUDE.md`) point to this document.
+**Context chain:** `docs/` (source of truth) → **AGENTS.md** (you are here — the AI-readable index) → `CLAUDE.md` (fast navigation) → AI output.
 
-For detailed game design, see the [`docs/`](docs/) folder.
+This file is the **AI-readable index into `docs/`**. It organizes and points to the canonical design specs in the `docs/` folder — it does not replace them. Every rule here is derived from or references material in `docs/`. When code behavior comes up, always trace back to the relevant `docs/systems/`, `docs/flows/`, or `docs/world/` spec.
+
+Tool-specific entry files (e.g., `CLAUDE.md`) point to this document. This document points to `docs/`. Never shortcut the chain.
 
 ---
 
