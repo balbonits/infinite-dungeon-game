@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 14 — Skills & Abilities System Complete (2026-04-15)
+
+#### Added
+- `docs/world/class-lore.md` — Class backstories and magic philosophy for Warrior, Ranger, Mage
+- `docs/systems/point-economy.md` — SP/AP rates, sources, and total budget at key levels
+- `docs/systems/synergy-bonuses.md` — Mastery threshold bonuses (Lv.5/10/25/50/100) with per-mastery procs
+- `docs/systems/ability-affinity.md` — Cosmetic use-based milestones (100/500/1,000/5,000 uses)
+- `assets/icons/abilities_icons.png` — Combined 512x1024 sprite sheet with 131 icons (all 3 classes + innate)
+- `assets/icons/abilities_icons.json` — Icon atlas index for combined sheet
+
+#### Changed
+- `docs/systems/skills.md` — Complete rewrite: dual system (Skills + Abilities), all 3 class trees, SP/AP split
+- `docs/systems/magic.md` — Mage: Arcane→Elemental, added Aether, Conduit→Attunement; Armor innate added
+- `docs/systems/classes.md` — Updated mastery structure, SP/AP terminology
+- `docs/ui/pause-menu-tabs.md` — 7→8 tabs, new Abilities tab (class-specific)
+- `docs/systems/combat.md` — Skill Hotbar→Ability Hotbar, dual XP tracking
+- `docs/systems/leveling.md` — SP/AP references replace old "skill points"
+- `docs/ui/hud.md` — Ability cooldown overlays, status effect icons
+- `docs/ui/controls.md` — Abilities terminology for hotbar
+- `docs/flows/combat.md` — Ability activation flow
+- `docs/flows/progression.md` — SP/AP allocation flows
+- `docs/dev-tracker.md` — SPEC-13 tickets added
+- `AGENTS.md` — New doc references
+- `scripts/generate_icons.py` — Rewritten for combined abilities sheet
+- Ranger ability renames: Steady Shot→Bead, Burst Fire→Spray, Guard→Hunker
+
 ### Session 13 — Skill & Spell Icon Sprite Sheets (2026-04-14)
 
 #### Added

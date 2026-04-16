@@ -349,8 +349,8 @@ Pistols, rifles, and other guns. The loud option. Passive bonuses: firearm damag
 | Ability | Description |
 |---------|-------------|
 | Quick Draw | Fast shot from holster, short range. Surprise encounters. |
-| Steady Shot | Aimed shot, high accuracy. The patient shooter. |
-| Burst Fire | Multiple rapid shots, spread increases. Suppressive. |
+| Bead | Aimed shot, high accuracy. Draw a bead on 'em. |
+| Spray | Multiple rapid shots, spread increases. Suppressive. |
 | Snipe | Long-range precision, high damage, long cooldown. THE shot. |
 | Shock Round | Lightning-imbued bullet, chains to nearby enemy. Tinkered. |
 
@@ -361,7 +361,7 @@ Close Quarters Combat. The backup plan -- when prey gets too close, survive and 
 | Ability | Description |
 |---------|-------------|
 | Parry | Deflect incoming melee attack. Buy time. |
-| Guard | Reduce damage with offhand buckler. Absorb what you can't dodge. |
+| Hunker | Reduce damage with offhand buckler. Absorb what you can't dodge. |
 | Riposte | Counter-strike after parry/guard. Punish their approach. |
 | Shiv | Quick dirty stab, chance to stagger. Create an opening to escape. |
 

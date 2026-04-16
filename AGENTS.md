@@ -396,8 +396,11 @@ docs/
 ├── systems/
 │   ├── stats.md               — STR/DEX/STA/INT
 │   ├── classes.md             — Warrior/Ranger/Mage
-│   ├── skills.md              — Skill trees per class (hierarchical, infinite leveling)
-│   ├── SKILLS_AND_ABILITIES_SYSTEMS.md — Skills/Abilities redesign (passive masteries + active combat actions)
+│   ├── skills.md              — Skills & Abilities (passive masteries + active combat actions, all class trees)
+│   ├── point-economy.md       — SP/AP rates, sources, budget
+│   ├── synergy-bonuses.md     — Mastery threshold bonuses (Lv.5/10/25/50/100)
+│   ├── ability-affinity.md    — Cosmetic use-based milestones
+│   ├── SKILLS_AND_ABILITIES_SYSTEMS.md — ARCHIVED working document
 │   ├── color-system.md        — Unified color gradient (cool→warm, level-relative)
 │   ├── combat.md              — Auto-targeting, cooldowns, damage
 │   ├── leveling.md            — XP curve, rested XP, floor-scaling enemy XP

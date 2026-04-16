@@ -4,6 +4,66 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 14 — Skills & Abilities System Complete (2026-04-15)
+
+### What Happened
+
+**Completed the full Skills & Abilities system redesign** — from research through locked specs. This session finalized the Mage class tree, defined class lore for all three classes, locked Ranger abilities, rewrote all specs, and created synergy bonus and ability affinity systems.
+
+### Design Decisions Made
+
+1. **Mage magic lore framework:** Three types of magic — Elemental (nature manipulation, sensory experience), Aether (cosmic force, light+dark as one), Attunement (internal mana science). Light and Dark merged into single Aether mastery based on astronomy (star = light + gravity).
+2. **Light healing = welding.** Raw energy fuses wounds shut. Expensive, powerful, forceful. Distinct from Restoration's gentle self-repair.
+3. **Dark = gravity.** The magnetic force, the black hole. Limited spells, powerful and mysterious.
+4. **Mage categories renamed:** Arcane → Elemental, Conduit → Attunement, new Aether category added.
+5. **Class lore defined for all three classes:** Warrior (mercenary from combat stable, duty), Ranger (wilderness hunter/tinkerer, thrill of the hunt), Mage (scholar from magic creed, curiosity).
+6. **Naming personality per class:** Warrior = blunt (Smash, Shout), Ranger = whimsical (Tip Toes, Flick, Chuck), Mage = academic (Neural Burn, Singularity).
+7. **Ranger abilities redrawn from lore:** Dead Eye, Pepper, Lob, Pin, Flick, Chuck, Shiv, Bait, Frag. Indirect combat philosophy throughout.
+8. **Synergy bonuses:** Hybrid system — universal Lv.5 (-15% mana cost), per-mastery Lv.10/25 (stat bonuses), Lv.50 (visual + proc), Lv.100 (Master title + unique effect). Informed by PoE, Last Epoch, Grim Dawn research.
+9. **Ability affinity:** Cosmetic-only milestones at 100/500/1,000/5,000 uses. No stats, just visual flair.
+10. **Ranger name audit:** Steady Shot → Bead, Burst Fire → Spray, Guard → Hunker.
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `docs/world/class-lore.md` | Class backstories and magic philosophy for all 3 classes |
+| `docs/systems/point-economy.md` | SP/AP rates, sources, and budget |
+| `docs/systems/synergy-bonuses.md` | Threshold bonuses per mastery (Lv.5/10/25/50/100) |
+| `docs/systems/ability-affinity.md` | Cosmetic use-based milestones |
+| `assets/icons/abilities_icons.png` | Combined sprite sheet (131 icons, 512x1024) |
+| `assets/icons/abilities_icons.json` | Icon atlas index |
+
+### Files Updated
+
+| File | Changes |
+|------|---------|
+| `docs/systems/skills.md` | Complete rewrite — dual system, all 3 class trees, SP/AP, architecture |
+| `docs/systems/magic.md` | Elemental/Aether/Attunement, Armor innate, all class sections |
+| `docs/systems/classes.md` | New mastery structure, SP/AP terminology |
+| `docs/systems/leveling.md` | SP/AP references |
+| `docs/systems/combat.md` | Ability Hotbar, dual XP tracking |
+| `docs/ui/pause-menu-tabs.md` | 7→8 tabs, Abilities tab spec |
+| `docs/ui/hud.md` | Cooldown overlays, status effects |
+| `docs/ui/controls.md` | Terminology pass |
+| `docs/flows/combat.md` | Ability activation terminology |
+| `docs/flows/progression.md` | SP/AP allocation flows |
+| `docs/inventory/items.md` | Terminology fix |
+| `docs/dev-tracker.md` | SPEC-13 tickets added |
+| `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md` | Archived |
+| `AGENTS.md` | New doc references |
+| `scripts/generate_icons.py` | Rewritten for combined sheet |
+
+### System Totals
+
+- **Warrior:** 8 masteries, 33 abilities (Body 6 + Mind 2)
+- **Ranger:** 7 masteries, 37 abilities (Weaponry 4 + Survival 3)
+- **Mage:** 8 masteries, 33 abilities (Elemental 4 + Aether 1 + Attunement 3)
+- **Innate:** 4 skills (Haste, Sense, Fortify, Armor)
+- **Grand total:** 23 masteries, 103 abilities, 4 innate skills
+
+---
+
 ## Session 13 — Skill & Spell Icon Sprite Sheets (2026-04-14)
 
 ### What Happened
