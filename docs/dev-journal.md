@@ -41,6 +41,14 @@ A running log of everything we build, test, learn, and decide — from zero to g
 - 374 unit tests passing, 0 failing
 - 72 new tests for MasteryState, AbilityState, SkillAbilityDatabase, ProgressionTracker
 
+### UI Refactor — GameWindow Migration
+Migrated all 14 modal windows to use the GameWindow base class, removing 671 lines of duplicate boilerplate (overlay creation, WindowStack push/pop, input blocking, pause toggle). Every window now gets consistent open/close/focus behavior from one shared base class.
+
+Windows migrated: ShopWindow, BlacksmithWindow, BankWindow, TeleportDialog, QuestPanel, BackpackWindow, DungeonLedger, SettingsPanel, TutorialPanel, StatAllocDialog, AscendDialog, FloorWipeDialog, NpcPanel, ActionMenu.
+
+### Godot 4 Engine Research
+Created `docs/reference/godot4-engine-reference.md` cataloging all built-in engine systems and their usage status. Key findings: Theme resources could replace hundreds of manual style overrides, RichTextLabel with BBCode for formatted ability text, SceneTreeTimer for one-shot delays without nodes, async/await with ToSignal for cleaner coroutines.
+
 ---
 
 ## Session 14 — Skills & Abilities System Complete (2026-04-15)

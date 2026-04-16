@@ -383,7 +383,8 @@ docs/
 │   ├── godot-basics.md        — Godot concepts for web devs
 │   ├── game-dev-concepts.md   — Game dev fundamentals (C#)
 │   ├── game-development.md    — Research journal (accumulated learnings)
-│   └── subagent-research.md   — AI agent design research
+│   ├── subagent-research.md   — AI agent design research
+│   └── godot4-engine-reference.md — Built-in engine systems, what to use vs custom
 ├── objects/
 │   ├── player.md              — Player node, script, movement, attack
 │   ├── enemies.md             — Enemy tiers, AI, damage

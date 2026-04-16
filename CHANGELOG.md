@@ -27,6 +27,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Removed
 - Old skill system: `SkillDef.cs`, `SkillDatabase.cs`, `SkillState.cs`, `SkillTracker.cs`
+- 671 lines of duplicate window boilerplate (all 14 windows migrated to GameWindow base)
+
+#### Documentation
+- `docs/reference/godot4-engine-reference.md` — comprehensive catalog of built-in engine systems and usage status
 
 ### Session 14 — Skills & Abilities System Complete (2026-04-15)
 
