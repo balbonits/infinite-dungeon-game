@@ -81,11 +81,16 @@ public partial class TeleportDialog : GameWindow
 
     private void TeleportToFloor(int floor)
     {
-        Close();
         GameState.Instance.FloorNumber = floor;
+        // Keep dialog visible so ScreenTransition fades over it; close inside midpoint
+        // callback (when overlay is opaque) to prevent any flash of empty viewport.
         ScreenTransition.Instance.Play(
             Strings.Floor.FloorNumber(floor),
-            () => Scenes.Main.Instance.LoadDungeon(),
+            () =>
+            {
+                Close();
+                Scenes.Main.Instance.LoadDungeon();
+            },
             Strings.Teleport.Teleporting);
     }
 

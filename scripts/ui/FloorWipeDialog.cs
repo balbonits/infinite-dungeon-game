@@ -66,11 +66,14 @@ public partial class FloorWipeDialog : GameWindow
         // Choices
         AddButton(Strings.FloorWipe.NextFloor(floor + 1), () =>
         {
-            Close();
             GameState.Instance.FloorNumber = floor + 1;
             ScreenTransition.Instance.Play(
                 Strings.Floor.FloorNumber(floor + 1),
-                () => Scenes.Main.Instance.LoadDungeon(),
+                () =>
+                {
+                    Close();
+                    Scenes.Main.Instance.LoadDungeon();
+                },
                 Strings.Floor.Descending);
         });
 
@@ -91,10 +94,13 @@ public partial class FloorWipeDialog : GameWindow
 
         AddButton(Strings.FloorWipe.ReturnToTown, () =>
         {
-            Close();
             ScreenTransition.Instance.Play(
                 Strings.Town.DungeonEntrance,
-                () => Scenes.Main.Instance.LoadTown(),
+                () =>
+                {
+                    Close();
+                    Scenes.Main.Instance.LoadTown();
+                },
                 Strings.Ascend.ReturningToTown);
         });
 

@@ -50,10 +50,13 @@ public partial class AscendDialog : GameWindow
         // Option: Return to Town (always available)
         AddButton(Strings.Ascend.ReturnToTown, UiTheme.Colors.Safe, () =>
         {
-            Close();
             ScreenTransition.Instance.Play(
                 Strings.Town.DungeonEntrance,
-                () => Scenes.Main.Instance.LoadTown(),
+                () =>
+                {
+                    Close();
+                    Scenes.Main.Instance.LoadTown();
+                },
                 Strings.Ascend.ReturningToTown);
         });
 
@@ -63,11 +66,14 @@ public partial class AscendDialog : GameWindow
             int targetFloor = currentFloor - 1;
             AddButton(Strings.Ascend.GoUpOneFloor(targetFloor), UiTheme.Colors.Ink, () =>
             {
-                Close();
                 GameState.Instance.FloorNumber = targetFloor;
                 ScreenTransition.Instance.Play(
                     Strings.Floor.FloorNumber(targetFloor),
-                    () => Scenes.Main.Instance.LoadDungeon(),
+                    () =>
+                    {
+                        Close();
+                        Scenes.Main.Instance.LoadDungeon();
+                    },
                     Strings.Ascend.Ascending);
             });
         }
@@ -101,7 +107,6 @@ public partial class AscendDialog : GameWindow
                 : Strings.Floor.FloorNumber(targetFloor);
             AddButton(label, UiTheme.Colors.Ink, () =>
             {
-                Close();
                 if (targetFloor == 1)
                 {
                     GameState.Instance.FloorNumber = 1;
@@ -112,7 +117,11 @@ public partial class AscendDialog : GameWindow
                 }
                 ScreenTransition.Instance.Play(
                     Strings.Floor.FloorNumber(targetFloor),
-                    () => Scenes.Main.Instance.LoadDungeon(),
+                    () =>
+                    {
+                        Close();
+                        Scenes.Main.Instance.LoadDungeon();
+                    },
                     Strings.Ascend.Ascending);
             });
         }

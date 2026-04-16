@@ -165,9 +165,17 @@ public partial class DeathScreen : Control
         gs.Hp = gs.MaxHp;
         gs.FloorNumber = 1;
 
-        Visible = false;
-        GetTree().Paused = false;
-        Scenes.Main.Instance.LoadTown();
+        // Use ScreenTransition so the dungeon→town swap is hidden behind the fade-to-black.
+        // Hide/unpause happen at midpoint when overlay is fully opaque.
+        Ui.ScreenTransition.Instance.Play(
+            Strings.Town.Title,
+            () =>
+            {
+                Visible = false;
+                GetTree().Paused = false;
+                Scenes.Main.Instance.LoadTown();
+            },
+            Strings.Town.Arriving);
     }
 
     // --- UI helpers ---
