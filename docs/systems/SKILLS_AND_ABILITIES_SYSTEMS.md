@@ -2,7 +2,7 @@
 
 Working document for the Skills/Abilities redesign. Research, decisions, and class breakdowns.
 
-**Status:** In progress. Warrior locked. Ranger masteries set, abilities pending review. Mage locked (pending gameplay refinement).
+**Status:** All three classes locked (pending gameplay refinement). Ready for spec updates.
 
 ---
 
@@ -241,70 +241,74 @@ Innate synergies affect ALL abilities at threshold levels (details TBD).
 
 ---
 
-## Ranger — IN PROGRESS
+## Ranger — LOCKED (pending gameplay refinement)
 
 **Categories:** Weaponry (4 masteries) + Survival (3 masteries)
 **Tab name:** Ranger Crafts
 **Precision removed** — aim/crit handled by Weaponry mastery passives
-**Total: 7 masteries, 36 abilities (abilities pending review except Awareness)**
+**Total: 7 masteries, 37 abilities**
 
 *Class lore and magic philosophy: see [class-lore.md](../world/class-lore.md#ranger)*
 
 ### Weaponry
 
-#### Bowmanship (5 abilities) — NEEDS REVIEW
+#### Bowmanship (5 abilities)
 
-Covers bows + crossbows. No auto-crossbows in the game for now.
-
-| Ability | Description |
-|---------|-------------|
-| Power Shot | High-damage single shot, slow draw |
-| Rapid Fire | Fast consecutive shots, reduced per-hit damage |
-| Arc Shot | Arcing trajectory, hits behind cover |
-| Pin Shot | Pins enemy in place, movement denial |
-| Flame Arrow | Fire-imbued shot, DoT on impact (imbue) |
-
-#### Throwing (5 abilities) — NEEDS REVIEW
+The identity weapon. Silent, precise. Covers bows + crossbows. No auto-crossbows in the game for now.
 
 | Ability | Description |
 |---------|-------------|
-| Knife Throw | Fast, low-damage, quick cooldown |
-| Axe Throw | Slower, heavier, higher damage |
-| Fan Throw | Multiple projectiles in spread arc |
-| Ricochet | Bounces between enemies |
-| Frost Blade | Cold-imbued throw, slows target (imbue) |
+| Dead Eye | Aimed shot, high damage, slow draw. The kill shot. |
+| Pepper | Fast consecutive shots, reduced per-hit damage. When stealth breaks. |
+| Lob | Arcing trajectory, hits behind cover or obstacles |
+| Pin | Pins enemy in place, movement denial. The prey doesn't run. |
+| Flame Arrow | Fire-imbued shot, DoT on impact. Tinkered. |
 
-#### Firearms (5 abilities) — NEEDS REVIEW
+#### Throwing (5 abilities)
 
-| Ability | Description |
-|---------|-------------|
-| Quick Draw | Fast shot from holster, short-range |
-| Steady Shot | Aimed shot, high accuracy |
-| Burst Fire | Multiple rapid shots, spread increases |
-| Snipe | Long-range precision, high damage, long cooldown |
-| Shock Round | Lightning-imbued bullet, chains to nearby enemy (imbue) |
-
-#### CQC (4 abilities) — NEEDS REVIEW
-
-Close Quarters Combat. Offhand defensive weapons — knives, bucklers, gauntlets.
+Quick deployment tools from the belt. Close-mid range solutions.
 
 | Ability | Description |
 |---------|-------------|
-| Parry | Deflect incoming melee attack |
-| Guard | Reduce damage with offhand buckler |
-| Riposte | Counter-attack after parry/guard |
-| Disarm | Knock weapon from enemy grip |
+| Flick | Fast knife throw, low damage, quick cooldown. The quick option. |
+| Chuck | Heavy throw (axe), higher damage, slower. For bigger targets. |
+| Fan | Multiple projectiles in spread arc. Group coverage. |
+| Ricochet | Bounces between enemies. The trick shot. |
+| Frost Blade | Cold-imbued throw, slows target. Tinkered. |
+
+#### Firearms (5 abilities)
+
+The loud option. When stealth doesn't matter and you need stopping power.
+
+| Ability | Description |
+|---------|-------------|
+| Quick Draw | Fast shot from holster, short range. Surprise encounters. |
+| Steady Shot | Aimed shot, high accuracy. The patient shooter. |
+| Burst Fire | Multiple rapid shots, spread increases. Suppressive. |
+| Snipe | Long-range precision, high damage, long cooldown. THE shot. |
+| Shock Round | Lightning-imbued bullet, chains to nearby enemy. Tinkered. |
+
+#### CQC (4 abilities)
+
+Close Quarters Combat. The backup plan — when prey gets too close, survive and get back to range.
+
+| Ability | Description |
+|---------|-------------|
+| Parry | Deflect incoming melee attack. Buy time. |
+| Guard | Reduce damage with offhand buckler. Absorb what you can't dodge. |
+| Riposte | Counter-strike after parry/guard. Punish their approach. |
+| Shiv | Quick dirty stab, chance to stagger. Create an opening to escape. |
 
 ### Survival
 
-#### Awareness (8 abilities) — LOCKED
+#### Awareness (8 abilities)
 
-Absorbed the removed Precision mastery. 4 passive + 4 active.
+The ghillie suit. See without being seen. 4 passive + 4 active.
 
 | Ability | Behavior | Description |
 |---------|----------|-------------|
 | Keen Senses | Passive | Increased detection range |
-| Tip Toes | Toggle | Active evasion effect (turn on/off) |
+| Tip Toes | Toggle | Active evasion/concealment effect (turn on/off) |
 | Disengage | Active | Step back 1 tile + i-frames. Level-up adds duration, max 1.5s |
 | Steady Breathing | Passive | Slight HP recovery, better MP recovery. Sniper calming breath |
 | Rangefinding | Passive | Better hit & crit chance while standing still |
@@ -317,26 +321,29 @@ Design tensions:
 - Steady Aim (burst precision) vs Weak Spot (sustained bonus) — two precision modes
 - Tip Toes (sustained evasion) vs Disengage (burst escape) — two defensive modes
 
-#### Trapping (4 abilities) — NEEDS REVIEW
+#### Trapping (5 abilities)
+
+The patient hunter's toolkit. Why fight directly when the terrain can do it for you?
 
 | Ability | Description |
 |---------|-------------|
-| Snare | Place trap that roots enemies |
-| Tripwire | Line trap triggers knockdown |
-| Decoy | Dummy that draws enemy attention |
-| Ambush | Bonus damage on first strike against unaware enemies |
+| Snare | Place trap that roots enemies. Hold the prey. |
+| Tripwire | Line trap triggers knockdown on contact. Area denial. |
+| Decoy | Dummy that draws enemy attention. Misdirection. |
+| Bait | Lure that attracts enemies to a specific spot. Sets up kill zones. |
+| Ambush | Bonus damage on first strike against unaware enemies. The hunter's advantage. |
 
-#### Sapping (5 abilities) — NEEDS REVIEW
+#### Sapping (5 abilities)
 
-Explosives and area denial. Grenades improve the "boom," not the throw.
+The tinkerer's workshop. Homemade explosives and area denial devices.
 
 | Ability | Description |
 |---------|-------------|
-| Frag Grenade | AoE explosion damage |
-| Smoke Bomb | Obscure area, reduces enemy accuracy |
-| Flashbang | AoE blind/stun, brief |
-| Caltrops | Scatter on ground, slows enemies in area |
-| Sticky Bomb | Attach to enemy, delayed explosion |
+| Frag | AoE explosion damage. Simple, effective boom. |
+| Smoke Bomb | Obscure area, reduces enemy accuracy. Cover for escape or repositioning. |
+| Flashbang | AoE blind/stun, brief. Disorient and reposition. |
+| Caltrops | Scatter on ground, slows enemies in area. Passive area denial. |
+| Sticky Bomb | Attach to enemy, delayed explosion. Targeted demolition. |
 
 ---
 
@@ -497,7 +504,7 @@ Exact rates TBD.
 
 ## TODO
 
-- [ ] Review remaining Ranger abilities (Bowmanship, Throwing, Firearms, CQC, Trapping, Sapping)
+- [x] Review remaining Ranger abilities (Bowmanship, Throwing, Firearms, CQC, Trapping, Sapping)
 - [x] Full Mage class redesign
 - [ ] Define synergy bonus specifics per mastery
 - [ ] Define ability affinity cosmetic tiers
