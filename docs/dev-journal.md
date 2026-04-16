@@ -4,6 +4,45 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 15 — Skills & Abilities Code Implementation (2026-04-16)
+
+### What Happened
+
+**Implemented the full Skills & Abilities system in code.** Scrapped old skill system (SkillDef/Database/State/Tracker) and rebuilt from locked specs with new data layer, UI, and integration.
+
+### Code Written
+
+**Data layer (pure C#, no Godot):**
+- `MasteryDef.cs` + `AbilityDef.cs` — immutable definition records
+- `MasteryState.cs` + `AbilityState.cs` — mutable runtime state with XP/leveling/affinity
+- `SkillAbilityDatabase.cs` — static registry with 130 registrations (23 masteries + 103 abilities + 4 innate)
+- `ProgressionTracker.cs` — SP + AP allocation, dual XP tracking, category AP, use counting
+
+**UI framework:**
+- `GameWindow.cs` — unified base class for all game windows (overlay, WindowStack, input blocking, cancel/close)
+- `GameTabPanel.cs` — reusable Q/E tab system for tabbed windows
+- `SkillTreeDialog.cs` — Skills tab using GameWindow + GameTabPanel
+- `AbilitiesDialog.cs` — Class-specific abilities tab (Warrior Arts / Ranger Crafts / Arcane Spells)
+
+**Integration:**
+- `GameState.cs` — SP (2/level) + AP (3/level) awards on level-up
+- `SaveData.cs` + `SaveSystem.cs` — new fields for masteries, abilities, use counts, category AP
+- `SkillBarHud.cs` — ability lookup via SkillAbilityDatabase
+- `Player.cs` — movement blocked when any UI window is open
+- `DebugConsole.cs` — +10 SP and +10 AP debug commands
+
+### Bug Fixes
+- ScrollContainer `FollowFocus = true` on all 13 scroll containers (keyboard nav auto-scrolls)
+- Button focus retained on SP/AP allocation (in-place label updates via closure)
+- Player movement blocked when WindowStack has any modal open
+- Shop panel: fixed resizing, moved Buy/Sell to right panel, green/red color coding
+
+### Tests
+- 374 unit tests passing, 0 failing
+- 72 new tests for MasteryState, AbilityState, SkillAbilityDatabase, ProgressionTracker
+
+---
+
 ## Session 14 — Skills & Abilities System Complete (2026-04-15)
 
 ### What Happened

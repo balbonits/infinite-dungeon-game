@@ -14,6 +14,7 @@ public partial class PauseMenu : Control
         var backpackButton = _buttonContainer.GetNode<Button>("BackpackButton");
         var statsButton = _buttonContainer.GetNode<Button>("StatsButton");
         var skillsButton = _buttonContainer.GetNode<Button>("SkillsButton");
+        var abilitiesButton = _buttonContainer.GetNode<Button>("AbilitiesButton");
         var ledgerButton = _buttonContainer.GetNode<Button>("LedgerButton");
         var tutorialButton = _buttonContainer.GetNode<Button>("TutorialButton");
         var settingsButton = _buttonContainer.GetNode<Button>("SettingsButton");
@@ -24,6 +25,7 @@ public partial class PauseMenu : Control
         backpackButton.FocusMode = FocusModeEnum.All;
         statsButton.FocusMode = FocusModeEnum.All;
         skillsButton.FocusMode = FocusModeEnum.All;
+        abilitiesButton.FocusMode = FocusModeEnum.All;
         ledgerButton.FocusMode = FocusModeEnum.All;
         tutorialButton.FocusMode = FocusModeEnum.All;
         settingsButton.FocusMode = FocusModeEnum.All;
@@ -34,6 +36,7 @@ public partial class PauseMenu : Control
         backpackButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnBackpackPressed));
         statsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnStatsPressed));
         skillsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSkillsPressed));
+        abilitiesButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnAbilitiesPressed));
         ledgerButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnLedgerPressed));
         tutorialButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnTutorialPressed));
         settingsButton.Connect(BaseButton.SignalName.Pressed, new Callable(this, MethodName.OnSettingsPressed));

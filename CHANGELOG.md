@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 15 — Skills & Abilities Code Implementation (2026-04-16)
+
+#### Added
+- New data layer: `MasteryDef`, `AbilityDef`, `MasteryState`, `AbilityState`, `SkillAbilityDatabase` (130 registrations), `ProgressionTracker`
+- `GameWindow.cs` — unified base class for all game windows
+- `GameTabPanel.cs` — reusable Q/E tab switching system
+- `AbilitiesDialog.cs` — class-specific abilities tab (Warrior Arts / Ranger Crafts / Arcane Spells)
+- AbilitiesDialog node in `main.tscn`, Abilities button in `pause_menu.tscn`
+- 72 new unit tests for data layer
+
+#### Changed
+- `SkillTreeDialog.cs` — rewritten on GameWindow + GameTabPanel, shows masteries only
+- `GameState.cs` — awards SP (2/lvl) + AP (3/lvl) on level-up
+- `SaveData.cs` + `SaveSystem.cs` — new fields for masteries, abilities, use counts, category AP
+- `Player.cs` — movement blocked when any modal window is open
+- `ShopWindow.cs` — Buy/Sell merged into colored buttons, fixed panel resizing
+- `UiTheme.cs` — added `CreateTabStyle`, made `CreateColoredButtonStyle` public
+- All 13 ScrollContainers — `FollowFocus = true` for keyboard navigation
+
+#### Removed
+- Old skill system: `SkillDef.cs`, `SkillDatabase.cs`, `SkillState.cs`, `SkillTracker.cs`
+
 ### Session 14 — Skills & Abilities System Complete (2026-04-15)
 
 #### Added
