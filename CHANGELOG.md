@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 16 — Tabbed PauseMenu, GoDotTest Rewrite, Transition Fixes, SoulsBorne Death (2026-04-17)
+
+#### Added
+- **Tabbed PauseMenu** (Diablo 2-style, 8 tabs: Inventory, Equip, Skills, Abilities*, Quests, Ledger, Stats, System) — replaces the old flat button list. Q/E cycles tabs, Esc toggles open/close, D closes.
+- **GoDotTest** (`Chickensoft.GoDotTest` v2.0.28) as the in-game UI test framework. Replaces the old AutoPilot/FullRunSandbox system entirely.
+- **Test infrastructure**: `GameTestBase`, `InputHelper` (keyboard/action sim via GodotTestDriver), `UiHelper` (focus/window/pause queries)
+- **Test suites** (all keyboard-only, all tied to `docs/flows/*.md` specs):
+  - `SplashTests`, `ClassSelectTests`, `TownTests`, `PauseMenuTests`, `NpcTests`, `DeathTests`, `TransitionTests`, `DeathCinematicTests`
+- **SoulsBorne "YOU DIED" cinematic** on player death — 6.3s dramatic sequence (overlay fade, red text appears, holds, fades, menu reveals). See `docs/flows/death.md`.
+- **`docs/development-paradigm.md`** — public-facing doc on the AI+Human natural-language programming paradigm
+- **Prominent README section** describing the paradigm on the GitHub front page
+- **Resource leak monitoring** in DebugPanel: orphan node count, node count, modal count (via Godot's `Performance.Monitor`)
+- **Auto mode** configured as default via `.claude/settings.local.json`
+- Makefile targets: `test-ui`, `test-ui-suite`
+
+#### Fixed
+- **Screen transition flash bug** — Every caller using `ScreenTransition.Play()` to swap worlds now hides source content INSIDE the midpoint callback (when overlay is opaque), never before `Play()` starts. Prevents the new scene from briefly rendering under a translucent overlay. Applied to: ClassSelect, splash Continue, TeleportDialog, AscendDialog (3 buttons), FloorWipeDialog (2 buttons), DeathScreen respawn. Verified by `TransitionTests` asserting `OverlayAlpha ≥ 0.99` when new world enters tree.
+- **DeathScreen respawn had no transition** — Now uses ScreenTransition so the dungeon→town swap is hidden behind fade-to-black.
+- **Resource leaks at exit** — Orphaned Scroll nodes freed in GameWindow._ExitTree(), Theme and tab styles cached as singletons. RID leaks reduced dramatically at shutdown.
+
+#### Changed
+- `ScreenTransition.OverlayAlpha` public property added for test inspection
+- `WindowStack.Count` and `TopTypeName` added for test assertions
+- `UiTheme.CreateGameTheme()` + `CreateTabStyle()` cached as static singletons
+- `GameWindow.Close()` only unpauses if `!WindowStack.HasModal` (fixes NPC→Shop race)
+- `FocusFirstButton` skips buttons with `FocusMode.None`
+- PauseMenu is now a programmatic GameWindow subclass (old `pause_menu.tscn` removed)
+
+#### Removed
+- `scripts/testing/AutoPilot*.cs` — replaced by GoDotTest infrastructure
+- `scripts/sandbox/FullRunSandbox.cs` + `scenes/sandbox/FullRunSandbox.tscn`
+- `scenes/pause_menu.tscn`
+- Custom `KeyboardNav.HandleInput` method — replaced by Godot's built-in focus system
+
 ### Session 15 — Skills & Abilities Code Implementation (2026-04-16)
 
 #### Added

@@ -160,7 +160,7 @@ These systems were implemented during visual-first development but were not part
 | END-03 | Dungeon Intelligence (adaptive AI Director) | Done | `DungeonIntelligence.cs` — 4 metrics, pressure score, spawn/aggro/elite modifiers |
 | END-04 | Zone Saturation (per-zone difficulty dial) | Done | `ZoneSaturation.cs` — per-zone saturation, decay, stat/reward multipliers |
 | END-05 | Depth gear tiers (new rarity at floor 50/100/150) | Done | `DepthGearTier.cs` — BaseQuality extended to 6 tiers, quality roll with floor shift |
-| UI-01 | Pause menu tabbed redesign | To Do | 8 tabs: Inventory, Equipment, Skills, Abilities (class-specific), Quests, Ledger, Stats, System. Q/E tab nav, Resume always visible. Spec: `docs/ui/pause-menu-tabs.md`. Blocked by SYS-11. |
+| UI-01 | Pause menu tabbed redesign | Done | 8 tabs: Inventory, Equip, Skills, Abilities*, Quests, Ledger, Stats, System. Q/E cycles tabs. PauseMenu rewritten as programmatic `GameWindow` + `GameTabPanel`. Equipment tab shows "Coming Soon" placeholder until SYS-11 lands. |
 | SYS-11 | Equipment system (10-slot, 19 equippable) | To Do | Head, Body, Arms, Legs, Feet, Neck, 10 Rings, Main Hand, Off Hand, Ammo. No class-lock — +25% class affinity bonus instead. Bow without quiver = melee. Starting gear per class. Spec: `docs/systems/equipment.md`. |
 | POL-01 | Audio system (SFX + music + ambient) | To Do | Skipped per user — no audio/sound tasks |
 | POL-02 | Real sprite animations (AnimatedSprite2D) | To Do | 8-directional static rotations done; animation frames not yet |
@@ -194,10 +194,11 @@ These systems were implemented during visual-first development but were not part
 | TEST-03 | Seed file persistence tests | To Do | P3 | When game seeds are persisted to disk for replay/sharing, add tests that write seed → read seed → generate same floor. Uses same `ISaveStorage` abstraction from TEST-01. |
 | TEST-04 | E2E scene-runner tests (GdUnit4) | To Do | P2 | Wire up scaffolded `tests/e2e/` tests to actually run scene transitions via GdUnit4 `ISceneRunner`. Requires Godot binary in CI. |
 | TEST-05 | CI screenshot capture on E2E failure | To Do | P3 | `GetViewport().GetTexture().GetImage().SavePng()` in GdUnit4 tests, uploaded as CI artifacts on failure. |
-| TEST-06 | Integrate GodotTestDriver (Chickensoft) | Done | P1 | Added `Chickensoft.GodotTestDriver` v3.1.66. AutoPilotActions wraps `StartAction`/`EndAction`. Convention updated: Chickensoft allowed for testing only. |
-| TEST-07 | Create game-specific test drivers | To Do | P1 | Blocked by TEST-06. Build drivers for game nodes: PlayerDriver, NpcDriver, ShopWindowDriver, BankWindowDriver, PauseMenuDriver, DungeonDriver. Compose from GodotTestDriver's built-in ButtonDriver, LabelDriver, etc. |
-| TEST-08 | Full-run walkthrough via drivers | To Do | P1 | Blocked by TEST-07. Rewrite FullRunSandbox walkthrough to use driver-based interaction instead of raw input injection. Must auto-play: splash → class select → town → dungeon → combat → verify state. `make sandbox-headless SCENE=full-run` exits 0/1. |
-| TEST-09 | Per-sandbox automated scripts | To Do | P2 | Blocked by TEST-06. Add AutoPilot-driven scripts to individual sandboxes (combat: cast all skills in 8 directions, inventory: buy/sell/stack sequences, etc.). Reuse GodotTestDriver drivers. |
+| TEST-06 | Integrate GodotTestDriver (Chickensoft) | Done | P1 | `Chickensoft.GodotTestDriver` v3.1.66 wraps keyboard/action input simulation. Used by `InputHelper`. |
+| TEST-07 | Create game-specific test drivers | To Do | P2 | Optional convenience — write typed drivers (PauseMenuDriver, ShopDriver, NpcDriver) that wrap keyboard flows. Current `InputHelper` + `UiHelper` already cover the bases. |
+| TEST-08 | GoDotTest + keyboard-nav test suite | Done | P1 | Added `Chickensoft.GoDotTest` v2.0.28. `Main.cs` boots tests via `--run-tests`. Test suites in `scripts/testing/tests/`: Splash, ClassSelect, Town, PauseMenu, Npc, Death, Transition, DeathCinematic — all use keyboard-only input, all verify specs in `docs/flows/*.md`. Run via `make test-ui`. |
+| TEST-09 | Cross-suite state isolation | To Do | P1 | Once one suite transitions splash→town, subsequent suites fail setup. Fix via per-suite `GameState.Reset()` + scene reload, or linear ordering. |
+| TEST-10 | CI integration for make test-ui | To Do | P2 | Add GoDotTest suite to `.github/workflows/ci.yml` so every PR runs keyboard-nav tests. |
 
 ---
 

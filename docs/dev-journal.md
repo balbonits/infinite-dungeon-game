@@ -4,6 +4,82 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 16 — Tabbed PauseMenu, GoDotTest Rewrite, Transition Fixes, SoulsBorne Death (2026-04-17)
+
+### What Happened
+
+Big session. Four major threads:
+1. **Rebuilt the PauseMenu as Diablo 2-style tabbed panels** (8 tabs: Inventory / Equip / Skills / Abilities* / Quests / Ledger / Stats / System).
+2. **Scrapped the old sandbox-based E2E test system** (AutoPilot + FullRunSandbox) and replaced it with Chickensoft **GoDotTest** running inside the live game, driving it via simulated keyboard input. Wrote fresh test suites for every major flow.
+3. **Fixed a flash-of-new-content bug in every screen transition** — when opening town from splash/class-select/death, the town briefly rendered under a translucent overlay before the loading screen covered it. Traced to the pattern "`Close()` dialog, then call `ScreenTransition.Play()`" which left the viewport empty during the fade-out.
+4. **Added a SoulsBorne-style "YOU DIED" cinematic** before the death menu appears.
+
+Also: configured auto mode as the default Claude Code permission mode, published a prominent README section + `docs/development-paradigm.md` documenting the AI+Human natural-language programming approach the entire repo is built on.
+
+### Code Written / Changed
+
+**PauseMenu:**
+- `scripts/ui/PauseMenu.cs` — full rewrite as `GameWindow` subclass + `GameTabPanel` with 8 tabs, built programmatically (old `pause_menu.tscn` deleted)
+- Each tab builds its own content inline (Inventory grid, Skills list, Abilities list, etc.) using the same patterns as standalone windows
+
+**Testing infrastructure:**
+- `scripts/testing/GameTestBase.cs` — abstract base providing `Expect()` + `WaitUntil()`
+- `scripts/testing/InputHelper.cs` — keyboard simulation wrapping GodotTestDriver (`PressKey`, `NavUp/Down/Left/Right`, `PressEnter`, `Confirm`, `Cancel`, `TabLeft/Right`, `Move`)
+- `scripts/testing/UiHelper.cs` — focus/window/pause state queries (`FocusedControl`, `ModalCount`, `PauseMenuOpen`, `IsOpen<T>`, `Paused`, `InputBlocked`, `FindNodeOfType<T>`)
+- `scripts/Main.cs` — hooks GoDotTest via `--run-tests` flag; attaches to SceneTree root (not Main) so tests survive scene changes
+
+**Test suites written** (all keyboard-only, all in `scripts/testing/tests/`):
+- `SplashTests` — 5 assertions, all pass
+- `ClassSelectTests` — 9 assertions, 7 pass
+- `TownTests`, `PauseMenuTests`, `NpcTests`, `DeathTests` — written, await timing polish
+- `TransitionTests` — 10/10 pass, verifies overlay opacity invariant
+- `DeathCinematicTests` — 6/8 pass, verifies cinematic plays and menu hidden during it
+
+**Transition fix** (every caller using `ScreenTransition.Play` to swap worlds now puts Close() inside the midpoint callback):
+- `scripts/ui/ClassSelect.cs` OnConfirmPressed
+- `scripts/Main.cs` splash Continue handler
+- `scripts/ui/TeleportDialog.cs` TeleportToFloor
+- `scripts/ui/AscendDialog.cs` (3 buttons: Return to Town, Go Up One Floor, Select Floor)
+- `scripts/ui/FloorWipeDialog.cs` (2 buttons: Next Floor, Return to Town)
+- `scripts/ui/DeathScreen.cs` respawn (previously had NO transition — added one)
+
+**SoulsBorne death cinematic:**
+- `scripts/ui/DeathScreen.cs` — new `PlayYouDiedCinematic()` method, `IsPlayingCinematic` public flag, tween with `TweenPauseMode.Process` so it runs while tree is paused
+- 5-phase sequence: overlay fade (1.2s) → "YOU DIED" text fade-in (1.5s) → hold (2.5s) → fade-out (0.8s) → menu reveal (0.3s) = ~6.3s total
+
+**Other:**
+- `scripts/ui/ScreenTransition.cs` — exposed `OverlayAlpha` public getter for test inspection
+- `scripts/ui/WindowStack.cs` — added `Count` + `TopTypeName`
+- `scripts/ui/DebugPanel.cs` — added orphan/node/modal counters using Godot's `Performance.Monitor`
+- `DungeonGame.csproj` — added `Chickensoft.GoDotTest` v2.0.28 NuGet package
+- `Makefile` — `test-ui` and `test-ui-suite SUITE=<name>` targets
+- `.claude/settings.local.json` — `defaultMode: "auto"`
+- `README.md` — full paradigm section on the GitHub front page
+- `docs/development-paradigm.md` — full write-up of the AI+Human NLP approach
+
+### Deleted (clean slate on tests)
+- `scripts/testing/AutoPilot.cs`, `AutoPilotActions.cs`, `AutoPilotAssertions.cs`, `DebugTelemetry.cs`
+- `scripts/sandbox/FullRunSandbox.cs`
+- `scenes/sandbox/FullRunSandbox.tscn`
+- `scenes/pause_menu.tscn`
+
+### Key Decisions
+
+1. **GoDotTest replaces AutoPilot, not supplements it.** User explicitly wanted to scrap the old test system. GoDotTest is more idiomatic for Godot — runs inside the engine, has proper lifecycle attributes (`[Setup]`/`[Test]`/`[Cleanup]`), integrates with VSCode debugging.
+2. **Test helpers separate from test runner.** InputHelper + UiHelper are pure utility classes reusable across any test framework. If we later swap GoDotTest for something else, the helpers stay.
+3. **Transitions must cover source content.** The generic rule: never hide a screen before `ScreenTransition.Play()`. Always hide inside the midpoint callback. Codified in `docs/flows/screen-transition.md` as a critical invariant.
+4. **SoulsBorne death cinematic uses `TweenPauseMode.Process`.** Main pauses the tree on `PlayerDied`, but the cinematic tween needs to keep running. This is the correct Godot pattern — tween pause mode is independent of node process mode.
+5. **Paradigm doc on the README front page.** Repo is public — needs to be upfront that every line is AI-built, human-directed. Developers reviewing the code need context on why specs are source of truth.
+
+### What's Not Done
+
+- Test state isolation across suites. Once tests transition splash→town, subsequent suites that expect splash fail their setup. Needs either per-suite `GameState.Reset()` + scene reload, or linear ordering.
+- Full test coverage. Still missing suites for: Shop keyboard nav, Blacksmith keyboard nav, Bank keyboard nav, Save/Load round trip, combat XP gain, achievement unlocks.
+- CI integration for `make test-ui` — not yet in `.github/workflows/ci.yml`.
+- Equipment tab content in PauseMenu — placeholder, blocked by SYS-11.
+
+---
+
 ## Session 15 — Skills & Abilities Code Implementation (2026-04-16)
 
 ### What Happened

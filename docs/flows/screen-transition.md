@@ -39,10 +39,44 @@ ScreenTransition.Instance.Play(
 | Dungeon → Town | `Strings.Town.Title` | `Main.DoLoadTown()` |
 | Floor descent | `Strings.Floor.FloorNumber(n+1)` | `Dungeon.PerformFloorDescent()` |
 | Floor 1 stairs up | `"Dungeon Entrance"` | `Main.LoadTown()` |
+| ClassSelect → Town | `Strings.Town.Title` | hide ClassSelect + `LoadTown()` |
+| Continue (from splash) → Town | `Strings.Town.Title` | hide splash + load save + `LoadTown()` |
+| DeathScreen respawn | `Strings.Town.Title` | hide DeathScreen + `LoadTown()` |
+| NPC dialog → Shop/etc. | n/a — direct modal, no scene swap | n/a |
 
-## AutoPilot Wait Pattern
+## Critical Invariant: No Flash of New Content
 
+**When a caller uses `Play()` to swap worlds, the overlay MUST be fully opaque before the new world is instantiated.**
+
+The current content (whatever screen the player is on) must remain visible during the fade-to-black phase so the overlay has something to fade *over*. Any `Close()`, `Visible = false`, or `QueueFree()` on the source screen must happen **inside the midpoint callback**, never before `Play()` starts.
+
+✅ Correct pattern (matches `Dungeon.OnStairsUpEntered`, all fixed callers):
 ```csharp
-await act.WaitForTransition(); // polls IsTransitioning until false
-await act.WaitSeconds(0.5);    // settle time
+// Dungeon is still visible on-screen; the overlay fades over it.
+ScreenTransition.Instance.Play(
+    "Town",
+    () =>
+    {
+        // Midpoint — overlay is at alpha = 1.0 now, safe to swap.
+        Close();
+        Scenes.Main.Instance.LoadTown();
+    },
+    "Returning to town");
 ```
+
+❌ Wrong pattern (causes a flash of the new world):
+```csharp
+// Dialog closes → viewport is empty → new world renders during fade-to-black.
+Close();
+ScreenTransition.Instance.Play(
+    "Town",
+    () => Scenes.Main.Instance.LoadTown(),
+    "Returning to town");
+```
+
+This invariant is verified by `TransitionTests.ClassSelect_ConfirmLoadsTownWithOpaqueOverlay` which asserts `OverlayAlpha >= 0.99` at the moment `Town` is added to the scene tree.
+
+## Test API
+
+- `ScreenTransition.Instance.OverlayAlpha` — current alpha of the black overlay (0 transparent, 1 opaque). Used by `TransitionTests` to sample mid-transition state.
+- `ScreenTransition.Instance.IsTransitioning` — true while a transition is in progress.

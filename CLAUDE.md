@@ -18,15 +18,34 @@ For development progress tracking, see [docs/dev-tracker.md](docs/dev-tracker.md
 
 ## Current Mode
 
-**Fresh start.** All 26 specs are locked. All code, scenes, and tests were deleted (see dev-journal Session 8). Rebuilding from scratch with visual-first development.
+**Active development.** All 26 specs are locked. Full game loop playable: splash → class select → town → NPCs → dungeon → combat → death → respawn. Tabbed PauseMenu (Diablo 2-style, 8 tabs) with keyboard-only navigation. See `docs/dev-tracker.md` for feature status.
 
-**Stack:** Godot 4 + C# (.NET 8+). No code exists yet. See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
+**Stack:** Godot 4.6 + C# (.NET 8+). See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
+
+## Paradigm
+
+This repo is a real-world experiment in **AI+Human natural-language programming**. The user directs in English; AI writes all code, tests, docs, art, commits. **Specs in `docs/` are the source of truth** — if code and specs disagree, one needs updating. See [`docs/development-paradigm.md`](docs/development-paradigm.md).
+
+## Testing
+
+Three layers, all runnable from the Makefile:
+
+| Layer | Framework | Command | Purpose |
+|-------|-----------|---------|---------|
+| Unit | xUnit | `make test-unit` | Pure C# logic, no Godot runtime |
+| Integration | xUnit | `make test-integration` | Cross-system logic flows |
+| E2E (scene) | GdUnit4 | `make test-gdunit` | Scene loading, asset validation |
+| UI (in-game) | GoDotTest | `make test-ui` | Keyboard-driven full-game tests via `--run-tests` in live Godot runtime |
+
+In-game UI tests live in `scripts/testing/tests/*.cs` (extend `GameTestBase`). Drive the game via `InputHelper` (keyboard simulation using `GodotTestDriver`) and verify state via `UiHelper` (focus, windows, pause state). Tests assert specs from `docs/flows/*.md`.
+
+`ScreenTransition.Play()` has a critical invariant: **overlay must be opaque before new worlds are swapped in**. Always put `Close()`/hide work INSIDE the midpoint callback, never before `Play()` starts. See `docs/flows/screen-transition.md`.
 
 ## AI Teams
 
 Specialized team leads are defined in `.claude/agents/`. Route work to the right team automatically, or @mention a lead directly. See [docs/conventions/teams.md](docs/conventions/teams.md).
 
-Active now: `@design-lead`, `@qa-lead`, `@devops-lead`
+Active: `@design-lead`, `@qa-lead`, `@devops-lead`, `@art-lead`
 
 ## Critical Rules
 

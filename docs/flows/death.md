@@ -15,7 +15,27 @@
 4. Main.OnPlayerDied():
    a. GetTree().Paused = true
    b. DeathScreen.ShowDeathFlow()
+5. DeathScreen plays the SoulsBorne cinematic, THEN shows the menu.
 ```
+
+## "YOU DIED" Cinematic
+
+Inspired by FromSoftware's Souls games. Plays for ~6.3 seconds before the mitigation menu appears. The menu panel is completely hidden (`Modulate.A = 0`, `Visible = false`) during this cinematic.
+
+| Phase | Duration | What happens |
+|-------|----------|--------------|
+| 1. Overlay fade | 1.2s | Black overlay with subtle red tint fades in over the scene |
+| 2. Text fade in | 1.5s | Big red "YOU DIED" text fades in slowly — drama beat |
+| 3. Hold | 2.5s | Player absorbs the loss; no input accepted |
+| 4. Text fade out | 0.8s | "YOU DIED" disappears; overlay stays dark |
+| 5. Panel reveal | 0.3s | Mitigation menu panel fades in, first button auto-focused |
+
+During the cinematic:
+- `DeathScreen.IsPlayingCinematic` returns `true`
+- The tween uses `Tween.TweenPauseMode.Process` so it runs even though the tree is paused
+- No keyboard input is accepted (menu isn't focusable yet)
+
+Once the panel appears, the normal 3-step flow begins.
 
 ## 3-Step UI Flow
 

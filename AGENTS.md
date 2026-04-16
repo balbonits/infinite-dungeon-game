@@ -172,7 +172,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Engine | Godot 4.x (.NET edition) | Separate download from standard Godot |
 | Language | C# / .NET 8+ | Strong typing, PascalCase, partial classes |
 | Renderer | GL Compatibility | Broadest hardware support |
-| Testing | GdUnit4 + xUnit | GdUnit4 for Godot scene tests, xUnit for pure logic |
+| Testing | GoDotTest + GdUnit4 + xUnit | GoDotTest (in-game UI/keyboard tests) + GdUnit4 (scene/asset) + xUnit (pure logic) |
 | Serialization (saves) | System.Text.Json | Source-generated, human-readable, AOT-friendly |
 | Serialization (cache) | MessagePack-CSharp v3 | Binary, ~10x faster, source generator support |
 | Object pooling | Microsoft.Extensions.ObjectPool | Pool enemies, effects, projectiles — avoid GC |
@@ -184,19 +184,26 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Persistence | FileAccess + JSON/MessagePack | user:// directory |
 | Platform | Desktop native | macOS primary, Windows/Linux supported |
 
-**Target NuGet dependencies** (not yet in .csproj — will be added as features are implemented):
+**Current testing dependencies:**
 ```xml
-<ItemGroup>
-  <PackageReference Include="gdUnit4.api" Version="5.1.0" />
-  <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
-  <PackageReference Include="gdUnit4.analyzers" Version="1.0.0" />
-  <PackageReference Include="xunit" Version="2.9.3" />
-  <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
-  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-  <PackageReference Include="MessagePack" Version="3.1.4" />
-  <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.0" />
-</ItemGroup>
+<!-- DungeonGame.csproj -->
+<PackageReference Include="Chickensoft.GodotTestDriver" Version="3.1.66" />
+<PackageReference Include="Chickensoft.GoDotTest" Version="2.0.28" />
+
+<!-- tests/e2e/DungeonGame.Tests.E2E.csproj -->
+<PackageReference Include="gdUnit4.api" Version="5.0.0" />
+<PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+
+<!-- tests/unit + tests/integration -->
+<PackageReference Include="xunit" Version="2.9.3" />
+<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
 ```
+
+**Testing layers:**
+- **xUnit** (`tests/unit/`, `tests/integration/`) — pure C# logic, no Godot runtime. Fast.
+- **GdUnit4** (`tests/e2e/`) — scene loading, asset validation, system verification. Runs with `make test-gdunit`.
+- **GoDotTest** (`scripts/testing/tests/*.cs`) — in-game UI tests driven by simulated keyboard input. Runs via `godot --headless --run-tests --quit-on-finish` (see `Main.cs`). Run with `make test-ui` or `make test-ui-suite SUITE=<Name>`. Built on `GodotTestDriver` for input simulation + `InputHelper`/`UiHelper` helpers in `scripts/testing/`.
 
 **Known limitation:** C# web export is not supported as of Godot 4.6. Desktop-only.
 
