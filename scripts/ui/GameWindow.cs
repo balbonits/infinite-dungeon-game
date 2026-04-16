@@ -4,95 +4,99 @@ using System;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Reusable game window base. Handles:
-/// - Dark overlay + centered panel + content VBox
-/// - WindowStack push/pop
-/// - Input blocking (cancel, keyboard nav, block remaining)
-/// - Open/close with optional pause/unpause
-/// - Optional return-to-PauseMenu on close
+/// Base class for ALL game windows and dialogs. Handles:
+/// - Dark overlay + centered panel + scrollable content
+/// - WindowStack push/pop (input routing)
+/// - Pause on open, unpause on close
+/// - Cancel (D/Esc) to close
+/// - Keyboard navigation (Up/Down + S confirm) within scrollable content
+/// - Q/E tab switching (override HandleTabInput)
+/// - Return to PauseMenu on close (optional)
+/// - Block all key events so nothing bleeds through
 ///
-/// Usage: subclass and override BuildContent(VBoxContainer content),
-/// or use GameWindow.Create() for one-off windows.
+/// Subclass and override: BuildContent(), OnShow(), OnRefresh(), HandleTabInput()
 /// </summary>
 public partial class GameWindow : Control
 {
-    private ColorRect _overlay = null!;
-    private VBoxContainer _contentBox = null!;
+    protected ColorRect Overlay = null!;
+    protected VBoxContainer ContentBox = null!;
+    protected ScrollContainer Scroll = null!;
+    protected VBoxContainer ScrollContent = null!;
+
     private bool _isOpen;
-    private bool _pauseOnOpen;
-    private bool _returnToPauseMenu;
-    private Action? _onClose;
+    private bool _returnToPauseMenu = true;
+    private float _windowWidth = 440f;
 
     public bool IsOpen => _isOpen;
-    public VBoxContainer Content => _contentBox;
 
-    /// <summary>Create a GameWindow, add it to UILayer, and open it.</summary>
-    public static GameWindow Create(float width = 420f, bool pauseOnOpen = true,
-        bool returnToPauseMenu = false, Action? onClose = null)
-    {
-        var win = new GameWindow();
-        win._pauseOnOpen = pauseOnOpen;
-        win._returnToPauseMenu = returnToPauseMenu;
-        win._onClose = onClose;
-        win._width = width;
-
-        var uiLayer = win.GetUILayer();
-        if (uiLayer != null)
-            uiLayer.AddChild(win);
-        return win;
-    }
-
-    private float _width = 420f;
+    /// <summary>Set in subclass constructor or _Ready before base._Ready.</summary>
+    protected float WindowWidth { get => _windowWidth; set => _windowWidth = value; }
+    protected bool ReturnToPauseMenu { get => _returnToPauseMenu; set => _returnToPauseMenu = value; }
 
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Size = GetViewportRect().Size;
+        MouseFilter = MouseFilterEnum.Ignore;
 
-        var (overlay, content) = UiTheme.CreateDialogWindow(_width);
-        _overlay = overlay;
-        _contentBox = content;
-        AddChild(_overlay);
+        var (overlay, content) = UiTheme.CreateDialogWindow(_windowWidth);
+        Overlay = overlay;
+        ContentBox = content;
+        Overlay.Visible = false;
+        AddChild(Overlay);
 
-        _isOpen = true;
-        WindowStack.Push(this);
-        if (_pauseOnOpen)
-            GetTree().Paused = true;
+        // Scrollable content area — subclasses add to ScrollContent
+        Scroll = new ScrollContainer { FollowFocus = true };
+        Scroll.CustomMinimumSize = new Vector2(0, 300);
 
-        BuildContent(_contentBox);
+        ScrollContent = new VBoxContainer();
+        ScrollContent.AddThemeConstantOverride("separation", 4);
+        Scroll.AddChild(ScrollContent);
+
+        BuildContent(ContentBox);
     }
 
-    /// <summary>Override to populate the window content.</summary>
+    /// <summary>Override to build the window UI. Add Scroll to ContentBox when you need scrolling.</summary>
     protected virtual void BuildContent(VBoxContainer content) { }
+
+    /// <summary>Override for logic when the window is shown (refresh data, etc.).</summary>
+    protected virtual void OnShow() { }
+
+    /// <summary>Override for Q/E tab handling. Return true if handled.</summary>
+    protected virtual bool HandleTabInput(InputEvent @event) => false;
+
+    /// <summary>Override for any additional input handling. Return true if handled.</summary>
+    protected virtual bool HandleExtraInput(InputEvent @event) => false;
+
+    public new void Show()
+    {
+        if (_isOpen) return;
+        _isOpen = true;
+        WindowStack.Push(this);
+        GetTree().Paused = true;
+
+        OnShow();
+        Overlay.Visible = true;
+    }
 
     public void Close()
     {
         if (!_isOpen) return;
         _isOpen = false;
         WindowStack.Pop(this);
+        Overlay.Visible = false;
 
         if (_returnToPauseMenu)
         {
-            var pauseMenu = GetTree().Root.GetNodeOrNull<Control>("Main/UILayer/PauseMenu");
+            var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
             if (pauseMenu != null)
             {
                 pauseMenu.Visible = true;
                 UiTheme.FocusFirstButton(pauseMenu.GetNode<VBoxContainer>(
                     "CenterContainer/PanelContainer/MarginContainer/VBoxContainer"));
-            }
-            else
-            {
-                GetTree().Paused = false;
+                return;
             }
         }
-        else if (_pauseOnOpen)
-        {
-            GetTree().Paused = false;
-        }
-
-        _onClose?.Invoke();
-        QueueFree();
+        GetTree().Paused = false;
     }
 
     public override void _UnhandledInput(InputEvent @event)
@@ -100,6 +104,7 @@ public partial class GameWindow : Control
         if (!_isOpen) return;
         if (KeyboardNav.BlockIfNotTopmost(this, @event)) return;
 
+        // Cancel closes the window
         if (KeyboardNav.IsCancelPressed(@event))
         {
             Close();
@@ -107,21 +112,29 @@ public partial class GameWindow : Control
             return;
         }
 
-        if (HandleWindowInput(@event))
+        // Tab switching (Q/E)
+        if (HandleTabInput(@event))
         {
             GetViewport().SetInputAsHandled();
             return;
         }
 
+        // Custom input
+        if (HandleExtraInput(@event))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Keyboard navigation within scroll content
+        if (KeyboardNav.HandleInput(@event, ScrollContent))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        // Block ALL remaining key events
         if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
-    }
-
-    /// <summary>Override for custom input handling (tab switching, etc.). Return true if handled.</summary>
-    protected virtual bool HandleWindowInput(InputEvent @event) => false;
-
-    private Node? GetUILayer()
-    {
-        return GetTree()?.Root?.GetNodeOrNull("Main/UILayer");
     }
 }

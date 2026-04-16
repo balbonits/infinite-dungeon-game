@@ -127,6 +127,32 @@ public static class UiTheme
         return style;
     }
 
+    /// <summary>Tab button style (active = bright accent, inactive = muted).</summary>
+    public static StyleBoxFlat CreateTabStyle(bool active)
+    {
+        var style = new StyleBoxFlat();
+        if (active)
+        {
+            style.BgColor = Colors.Action;
+            style.BorderColor = Colors.Action;
+        }
+        else
+        {
+            style.BgColor = new Color(Colors.BgPanel, 0.6f);
+            style.BorderColor = new Color(Colors.Muted, 0.3f);
+        }
+        style.SetBorderWidthAll(1);
+        style.BorderWidthBottom = active ? 3 : 1;
+        style.SetCornerRadiusAll(0);
+        style.CornerRadiusTopLeft = 4;
+        style.CornerRadiusTopRight = 4;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 4;
+        style.ContentMarginBottom = 4;
+        return style;
+    }
+
     /// <summary>Creates a StyleBoxFlat for focused buttons — gold border on blue bg for high contrast.</summary>
     public static StyleBoxFlat CreateButtonFocusStyle()
     {
