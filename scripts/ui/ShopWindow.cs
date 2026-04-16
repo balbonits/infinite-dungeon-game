@@ -19,8 +19,8 @@ public partial class ShopWindow : Control
     private Label _descName = null!;
     private Label _descText = null!;
     private Label _descStats = null!;
-    private Button _actionButton = null!;
-    private Label _tabIndicator = null!;
+    private Button _buyButton = null!;
+    private Button _sellButton = null!;
 
     private List<ItemDef> _shopItems = new();
     private ItemDef? _selectedItem;
@@ -136,43 +136,44 @@ public partial class ShopWindow : Control
         spacer.SizeFlagsVertical = SizeFlags.ExpandFill;
         descVbox.AddChild(spacer);
 
-        _actionButton = new Button();
-        _actionButton.CustomMinimumSize = new Vector2(140, 36);
-        _actionButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        UiTheme.StyleButton(_actionButton, UiTheme.FontSizes.Body);
-        _actionButton.Connect(BaseButton.SignalName.Pressed, Callable.From(OnActionPressed));
-        _actionButton.Visible = false;
-        descVbox.AddChild(_actionButton);
-
-        descVbox.AddChild(new HSeparator());
-
-        // Buy/Sell toggle buttons
+        // Buy/Sell buttons — these ARE the action buttons
         var modeRow = new HBoxContainer();
         modeRow.AddThemeConstantOverride("separation", 8);
         modeRow.Alignment = BoxContainer.AlignmentMode.Center;
         descVbox.AddChild(modeRow);
 
-        var buyTab = new Button();
-        buyTab.Text = Strings.Shop.BuyTab;
-        buyTab.CustomMinimumSize = new Vector2(80, 28);
-        UiTheme.StyleButton(buyTab, UiTheme.FontSizes.Small);
-        buyTab.AddThemeStyleboxOverride("normal", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, false));
-        buyTab.AddThemeStyleboxOverride("hover", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
-        buyTab.AddThemeStyleboxOverride("focus", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
-        buyTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(true)));
-        modeRow.AddChild(buyTab);
+        _buyButton = new Button();
+        _buyButton.Text = Strings.Shop.BuyTab;
+        _buyButton.CustomMinimumSize = new Vector2(120, 36);
+        _buyButton.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
+        _buyButton.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
+        _buyButton.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
+        _buyButton.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        _buyButton.AddThemeStyleboxOverride("normal", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, false));
+        _buyButton.AddThemeStyleboxOverride("hover", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
+        _buyButton.AddThemeStyleboxOverride("focus", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
+        _buyButton.FocusMode = FocusModeEnum.All;
+        _buyButton.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            if (_isBuyMode && _selectedItem != null)
+                OnActionPressed();
+            else
+                SetMode(true);
+        }));
+        modeRow.AddChild(_buyButton);
 
-        var sellTab = new Button();
-        sellTab.Text = Strings.Shop.SellTab;
-        sellTab.CustomMinimumSize = new Vector2(80, 28);
-        UiTheme.StyleDangerButton(sellTab, UiTheme.FontSizes.Small);
-        sellTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(false)));
-        modeRow.AddChild(sellTab);
-
-        _tabIndicator = new Label();
-        UiTheme.StyleLabel(_tabIndicator, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        _tabIndicator.HorizontalAlignment = HorizontalAlignment.Center;
-        descVbox.AddChild(_tabIndicator);
+        _sellButton = new Button();
+        _sellButton.Text = Strings.Shop.SellTab;
+        _sellButton.CustomMinimumSize = new Vector2(120, 36);
+        UiTheme.StyleDangerButton(_sellButton, UiTheme.FontSizes.Body);
+        _sellButton.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            if (!_isBuyMode && _selectedItem != null)
+                OnActionPressed();
+            else
+                SetMode(false);
+        }));
+        modeRow.AddChild(_sellButton);
 
         // Close button
         outerVbox.AddChild(new HSeparator());
@@ -222,11 +223,13 @@ public partial class ShopWindow : Control
             child.QueueFree();
 
         UpdateGold();
-        _tabIndicator.Text = _isBuyMode ? Strings.Shop.BuyMode : Strings.Shop.SellMode;
+        // Update button text to reflect current mode
+        _buyButton.Text = Strings.Shop.BuyTab;
+        _sellButton.Text = Strings.Shop.SellTab;
         _descName.Text = "";
         _descText.Text = Strings.Shop.SelectItem;
         _descStats.Text = "";
-        _actionButton.Visible = false;
+        _selectedItem = null;
 
         if (_isBuyMode)
         {
@@ -307,10 +310,11 @@ public partial class ShopWindow : Control
         if (item.ProjectileDamageMultiplier > 1) stats.AppendLine($"Damage: x{item.ProjectileDamageMultiplier:F1}");
         _descStats.Text = stats.ToString();
 
-        _actionButton.Visible = true;
-        _actionButton.Text = _isBuyMode
-            ? Strings.Shop.Buy(item.BuyPrice)
-            : Strings.Shop.Sell(item.SellPrice);
+        // Update Buy/Sell button text with price
+        if (_isBuyMode)
+            _buyButton.Text = Strings.Shop.Buy(item.BuyPrice);
+        else
+            _sellButton.Text = Strings.Shop.Sell(item.SellPrice);
     }
 
     private void OnActionPressed()
