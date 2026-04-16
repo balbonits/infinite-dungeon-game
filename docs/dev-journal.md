@@ -4,6 +4,46 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 18 — Shop/Forge UX Polish, Branch Wind-Down (2026-04-17)
+
+### What Happened
+
+Three bugs reported against the Shop window screenshot:
+
+1. **Focus highlight made item text black/unreadable.** The focused row in the shop's item list rendered with black text on a dark-brown highlight. Diagnosis: list-item buttons only overrode `font_color` (normal state). The GameWindow theme defaults `font_focus_color` and `font_hover_color` to `BgDark`, which bled through when the row was focused.
+2. **Buy button stayed active at 0 gold.** No affordability check.
+3. **Keyboard nav broken in Forge/Quests/Bank/Teleport** — reported as "still can't navigate." Root cause wasn't the nav itself (Godot's built-in focus system was working) but initial focus: when a list is empty (no craftable items, no quests), `FocusFirstButton(ScrollContent)` found nothing, so no focus was set at all. With no starting point, arrow keys did nothing, and the Close button was keyboard-unreachable.
+
+All three share a common root: the GameWindow framework made good defaults, but list-item creation code in each window was re-implementing styles and focus setup inconsistently.
+
+### Fixes
+
+Added two reusable helpers to `UiTheme`:
+
+- `StyleListItemButton(Button)` — one-call style for list rows. Transparent bg, accent-tinted hover/focus, white text in ALL four font color states. Shop + Blacksmith now use it; replaced ~25 lines of per-window styling in each.
+- `FocusFirstButton(...)` now returns `bool` + new `FocusFirstButtonOrFallback(primary, fallback)` — tries primary container, falls back to a broader one if empty. Applied in Blacksmith / Quests / Teleport (fallback to `ContentBox` = whole window), and in BankWindow (tries bank list → backpack list → whole window).
+
+ShopWindow's `UpdateDescription` now also checks affordability and disables the Buy button when `gold < price`, re-checking after each purchase.
+
+### User Direction: Close This Branch
+
+Mid-session, the user said: *"we'll try & close out this branch, it's lived through too many lifecycles, it needs to be closed."*
+
+The `feat/skills-and-spells-tree-update` branch started as "implement the Skills & Abilities code" but grew across ~15 sessions to include: GameWindow unification, tabbed PauseMenu, GoDotTest test framework rewrite, screen transition fixes, SoulsBorne death cinematic, work-discipline convention, and now this UX polish. That's far beyond the branch's stated scope. Wrapping now, then opening a PR to main.
+
+### Deferred (to other branches)
+
+- **Bank redesign**: user wants bank to use the same slot-grid UI as the backpack. Deferred to a separate branch per user direction ("let's discuss the bank system on a different branch").
+
+### Metrics
+
+- 4 files changed: ShopWindow, BlacksmithWindow, BankWindow, TeleportDialog, QuestPanel, UiTheme
+- Net code removed from BlacksmithWindow.CreateItemButton: ~20 lines → 5 lines
+- Net code removed from ShopWindow.AddItemRow: ~25 lines → 5 lines
+- 385 xUnit tests still pass
+
+---
+
 ## Session 17 — Work Discipline Codified (2026-04-17)
 
 ### What Happened

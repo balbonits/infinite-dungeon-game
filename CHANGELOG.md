@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 18 — Shop/Forge UX Polish (2026-04-17)
+
+#### Fixed
+- **Focus highlight made item text unreadable.** Shop/Blacksmith list item buttons only overrode `font_color` (normal state). The GameWindow theme's `font_focus_color`/`font_hover_color` (both `BgDark`) bleed through when a row was focused, rendering black text on a dark-accent highlight. Fix: new `UiTheme.StyleListItemButton()` helper overrides all four font color states (normal/hover/focus/pressed) to `Colors.Ink` (white) so list rows stay legible under any state.
+- **Buy button stayed enabled when player couldn't afford.** `ShopWindow.UpdateDescription()` now checks `gold >= item.BuyPrice` and sets `_buyButton.Disabled` accordingly. After a purchase, affordability is re-checked (gold dropped). Applies in both Buy and Sell modes.
+- **Keyboard nav dead-end in Forge/Quests/Bank/Teleport when list is empty.** Each window called `FocusFirstButton(ScrollContent)` which found nothing when the list was empty (no craftable items, no quests, etc.), leaving no initial focus — keyboard users couldn't even reach the Cancel/Close button. Fix: new `UiTheme.FocusFirstButtonOrFallback(primary, fallback)` helper tries the primary list first, falls back to `ContentBox` (whole window) if empty. `FocusFirstButton` now returns `bool` so callers can compose fallbacks.
+
+#### Added
+- `UiTheme.StyleListItemButton(Button)` — consistent styling for list rows across Shop, Blacksmith, and future windows. Accent-tinted highlight + white text in all states.
+- `UiTheme.FocusFirstButtonOrFallback(Control primary, Control fallback)` — guarantees keyboard users can always reach SOME button on window open, even when the primary list is empty.
+
 ### Session 17 — Work Discipline Codified (2026-04-17)
 
 #### Added

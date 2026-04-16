@@ -231,31 +231,8 @@ public partial class ShopWindow : GameWindow
     {
         var row = new Button();
         row.Text = $"  {item.Name}    {price}";
-        row.Alignment = HorizontalAlignment.Left;
         row.CustomMinimumSize = new Vector2(0, 28);
-        row.FocusMode = FocusModeEnum.All;
-
-        var normal = new StyleBoxFlat();
-        normal.BgColor = new Color(0, 0, 0, 0.01f);
-        normal.SetCornerRadiusAll(4);
-        normal.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("normal", normal);
-
-        var hover = new StyleBoxFlat();
-        hover.BgColor = new Color(UiTheme.Colors.Accent, 0.15f);
-        hover.SetCornerRadiusAll(4);
-        hover.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("hover", hover);
-
-        // FF-style: focused row is clearly highlighted (cursor)
-        var focus = new StyleBoxFlat();
-        focus.BgColor = new Color(UiTheme.Colors.Accent, 0.25f);
-        focus.SetCornerRadiusAll(4);
-        focus.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("focus", focus);
-
-        row.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
-        row.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        UiTheme.StyleListItemButton(row);
 
         // FF-style: description updates on FOCUS (cursor move), not on press
         int capturedIndex = index;
@@ -289,11 +266,20 @@ public partial class ShopWindow : GameWindow
         if (item.ProjectileDamageMultiplier > 1) stats.AppendLine($"Damage: x{item.ProjectileDamageMultiplier:F1}");
         _descStats.Text = stats.ToString();
 
-        // Update Buy/Sell button text with price
+        // Update Buy/Sell button text with price + disable when unaffordable
+        int gold = GameState.Instance.PlayerInventory.Gold;
         if (_isBuyMode)
+        {
             _buyButton.Text = Strings.Shop.Buy(item.BuyPrice);
+            _buyButton.Disabled = gold < item.BuyPrice;
+            _sellButton.Disabled = false; // sell mode switch always allowed
+        }
         else
+        {
             _sellButton.Text = Strings.Shop.Sell(item.SellPrice);
+            _sellButton.Disabled = false; // selling never blocked by affordability
+            _buyButton.Disabled = false;
+        }
     }
 
     private void OnActionPressed()
@@ -308,6 +294,8 @@ public partial class ShopWindow : GameWindow
             {
                 Toast.Instance.Success($"Bought {_selectedItem.Name}");
                 UpdateGold();
+                // Re-check affordability after purchase (gold dropped)
+                UpdateDescription(_selectedItem, _selectedIndex);
             }
             else
             {

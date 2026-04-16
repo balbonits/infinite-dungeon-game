@@ -142,7 +142,10 @@ public partial class BankWindow : GameWindow
 
         RefreshBankList(bank, backpack);
         RefreshBackpackList(bank, backpack);
-        UiTheme.FocusFirstButton(_bankList);
+        // Bank list → backpack list → whole window (so keyboard can always reach Close).
+        if (!UiTheme.FocusFirstButton(_bankList) &&
+            !UiTheme.FocusFirstButton(_backpackList))
+            UiTheme.FocusFirstButton(ContentBox);
     }
 
     private void RefreshBankList(Bank bank, Inventory backpack)

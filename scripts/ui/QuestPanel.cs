@@ -160,6 +160,7 @@ public partial class QuestPanel : GameWindow
                 ScrollContent.AddChild(new HSeparator());
         }
 
-        UiTheme.FocusFirstButton(ScrollContent);
+        // Fall back to bottom-row buttons (Refresh/Close) if no claim buttons exist.
+        UiTheme.FocusFirstButtonOrFallback(ScrollContent, ContentBox);
     }
 }

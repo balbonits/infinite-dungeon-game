@@ -76,7 +76,8 @@ public partial class TeleportDialog : GameWindow
             }
         }
 
-        UiTheme.FocusFirstButton(ScrollContent);
+        // Fall back to the Cancel button if the floor list is empty.
+        UiTheme.FocusFirstButtonOrFallback(ScrollContent, ContentBox);
     }
 
     private void TeleportToFloor(int floor)

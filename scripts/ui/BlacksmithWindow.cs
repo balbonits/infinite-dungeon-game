@@ -119,7 +119,9 @@ public partial class BlacksmithWindow : GameWindow
         else
             ShowRecyclableItems(inv);
 
-        UiTheme.FocusFirstButton(ScrollContent);
+        // Prefer focusing an item in the list, but fall back to the Close button
+        // (in ContentBox) if the list is empty — so keyboard users can always exit.
+        UiTheme.FocusFirstButtonOrFallback(ScrollContent, ContentBox);
     }
 
     private void ShowCraftableItems(Inventory inv)
@@ -180,30 +182,8 @@ public partial class BlacksmithWindow : GameWindow
     {
         var btn = new Button();
         btn.Text = $"  {text}";
-        btn.Alignment = HorizontalAlignment.Left;
         btn.CustomMinimumSize = new Vector2(0, 32);
-        btn.FocusMode = FocusModeEnum.All;
-
-        var normal = new StyleBoxFlat();
-        normal.BgColor = new Color(0, 0, 0, 0.01f);
-        normal.SetCornerRadiusAll(4);
-        normal.ContentMarginLeft = 8;
-        btn.AddThemeStyleboxOverride("normal", normal);
-
-        var hover = new StyleBoxFlat();
-        hover.BgColor = new Color(UiTheme.Colors.Accent, 0.15f);
-        hover.SetCornerRadiusAll(4);
-        hover.ContentMarginLeft = 8;
-        btn.AddThemeStyleboxOverride("hover", hover);
-
-        var focus = new StyleBoxFlat();
-        focus.BgColor = new Color(UiTheme.Colors.Accent, 0.25f);
-        focus.SetCornerRadiusAll(4);
-        focus.ContentMarginLeft = 8;
-        btn.AddThemeStyleboxOverride("focus", focus);
-
-        btn.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
-        btn.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        UiTheme.StyleListItemButton(btn);
         btn.Connect(BaseButton.SignalName.Pressed, Callable.From(onPress));
         return btn;
     }
