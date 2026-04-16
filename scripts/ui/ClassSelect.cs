@@ -438,14 +438,18 @@ public partial class ClassSelect : Control
         GameState.Instance.SelectedClass = _selectedClass;
         GameState.Instance.Reset();
 
-        var tween = CreateTween();
-        tween.TweenProperty(this, "modulate:a", 0.0f, 0.4f);
-        tween.TweenCallback(Callable.From(() =>
-        {
-            Visible = false;
-            Modulate = Colors.White;
-            GetTree().Paused = false;
-            Scenes.Main.Instance.LoadTown();
-        }));
+        // Let ScreenTransition cover ClassSelect with the fade-to-black.
+        // At midpoint (overlay fully opaque), hide ClassSelect and swap in the town.
+        // This prevents the town from flashing into view before the loading screen.
+        ScreenTransition.Instance.Play(
+            Strings.Town.Title,
+            () =>
+            {
+                Visible = false;
+                QueueFree();
+                GetTree().Paused = false;
+                Scenes.Main.Instance.LoadTown();
+            },
+            Strings.Town.Arriving);
     }
 }

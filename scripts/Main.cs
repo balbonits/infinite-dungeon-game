@@ -65,11 +65,20 @@ public partial class Main : Node
 
         splash.Connect(Ui.SplashScreen.SignalName.ContinuePressed, Callable.From(() =>
         {
-            splash.Visible = false;
-            splash.QueueFree();
-            Autoloads.SaveManager.Instance.Load();
-            GetTree().Paused = false;
-            LoadTown();
+            // Let ScreenTransition cover the splash screen during fade-to-black,
+            // then hide splash, load save, and swap in the town — all while the
+            // overlay is fully opaque. Prevents the town from flashing into view.
+            Ui.ScreenTransition.Instance.Play(
+                Strings.Town.Title,
+                () =>
+                {
+                    splash.Visible = false;
+                    splash.QueueFree();
+                    Autoloads.SaveManager.Instance.Load();
+                    GetTree().Paused = false;
+                    LoadTown();
+                },
+                Strings.Town.Arriving);
         }));
 
         GetNode<CanvasLayer>("UILayer").AddChild(splash);
