@@ -23,6 +23,7 @@ public partial class AbilitiesDialog : Control
 
     private string[] _categories = System.Array.Empty<string>();
     private Button[] _tabButtons = System.Array.Empty<Button>();
+    private readonly System.Collections.Generic.List<Button> _allocButtons = new();
     private int _currentTab;
 
     public bool IsOpen => _isOpen;
@@ -162,6 +163,7 @@ public partial class AbilitiesDialog : Control
 
     private void RefreshAbilityList()
     {
+        _allocButtons.Clear();
         foreach (Node child in _abilityList.GetChildren())
             child.QueueFree();
 
@@ -204,6 +206,8 @@ public partial class AbilitiesDialog : Control
         UiTheme.FocusFirstButton(_abilityList);
     }
 
+
+
     private HBoxContainer CreateAbilityRow(AbilityDef def, AbilityState? state,
         ProgressionTracker tracker, bool unlocked, string parentName)
     {
@@ -234,12 +238,13 @@ public partial class AbilitiesDialog : Control
         row.AddChild(nameLabel);
 
         // Mana cost
+        Label? costLabelRef = null;
         if (def.ManaCost > 0)
         {
-            var costLabel = new Label();
-            costLabel.Text = $"{def.ManaCost}MP";
-            UiTheme.StyleLabel(costLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            row.AddChild(costLabel);
+            costLabelRef = new Label();
+            costLabelRef.Text = $"{def.ManaCost}MP";
+            UiTheme.StyleLabel(costLabelRef, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+            row.AddChild(costLabelRef);
         }
 
         // [+] AP allocate button
@@ -250,12 +255,26 @@ public partial class AbilitiesDialog : Control
         UiTheme.StyleButton(allocBtn, UiTheme.FontSizes.Small);
         allocBtn.Disabled = !unlocked || tracker.AbilityPoints <= 0;
         string capturedId = def.Id;
+        string capturedParent = parentName;
         allocBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
         {
-            tracker.AllocateAP(capturedId);
-            RefreshAbilityList();
+            if (!tracker.AllocateAP(capturedId)) return;
+
+            // Update this row's labels in-place
+            var s = tracker.GetAbility(capturedId);
+            int lvl = s?.Level ?? 0;
+            nameLabel.Text = $"  {def.Name} [Lv.{lvl}]";
+            nameLabel.AddThemeColorOverride("font_color", lvl > 0 ? UiTheme.Colors.Ink : UiTheme.Colors.Muted);
+
+            _pointsLabel.Text = $"AP: {tracker.AbilityPoints} available";
+            _detailLabel.Text = BuildAbilityDetail(def, s, true, capturedParent);
+
+            if (tracker.AbilityPoints <= 0)
+                foreach (var btn in _allocButtons)
+                    btn.Disabled = true;
         }));
         row.AddChild(allocBtn);
+        _allocButtons.Add(allocBtn);
 
         // [▶] Hotbar assign button (only if unlocked and leveled)
         if (unlocked && level >= 1)

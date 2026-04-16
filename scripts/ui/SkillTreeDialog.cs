@@ -26,6 +26,7 @@ public partial class SkillTreeDialog : Control
 
     // Extra tab index for Innate
     private bool _showingInnate;
+    private readonly System.Collections.Generic.List<Button> _allocButtons = new();
 
     public bool IsOpen => _isOpen;
 
@@ -169,6 +170,7 @@ public partial class SkillTreeDialog : Control
 
     private void RefreshMasteryList()
     {
+        _allocButtons.Clear();
         foreach (Node child in _skillList.GetChildren())
             child.QueueFree();
 
@@ -215,6 +217,8 @@ public partial class SkillTreeDialog : Control
         UiTheme.FocusFirstButton(_skillList);
     }
 
+
+
     private HBoxContainer CreateMasteryRow(MasteryDef def, MasteryState? state, ProgressionTracker tracker)
     {
         var row = new HBoxContainer();
@@ -230,25 +234,25 @@ public partial class SkillTreeDialog : Control
         nameLabel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         row.AddChild(nameLabel);
 
-        // XP progress
+        // XP progress (always create, hide if level 0)
+        var xpLabel = new Label();
+        UiTheme.StyleLabel(xpLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         if (level > 0 && state != null)
         {
-            var xpLabel = new Label();
             int xpNeeded = state.XpToNextLevel;
             xpLabel.Text = xpNeeded > 0 ? $"{state.Xp}/{xpNeeded}" : "";
-            UiTheme.StyleLabel(xpLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            row.AddChild(xpLabel);
         }
+        row.AddChild(xpLabel);
 
-        // Passive bonus display
+        // Passive bonus display (always create, hide if level 0)
+        var bonusLabel = new Label();
+        UiTheme.StyleLabel(bonusLabel, UiTheme.Colors.Safe, UiTheme.FontSizes.Small);
         if (level > 0 && state != null)
         {
-            var bonusLabel = new Label();
             float bonus = state.GetPassiveBonus(def.PassiveMultiplier);
             bonusLabel.Text = $"+{bonus:F1}%";
-            UiTheme.StyleLabel(bonusLabel, UiTheme.Colors.Safe, UiTheme.FontSizes.Small);
-            row.AddChild(bonusLabel);
         }
+        row.AddChild(bonusLabel);
 
         // [+] SP allocate button
         var allocBtn = new Button();
@@ -258,12 +262,34 @@ public partial class SkillTreeDialog : Control
         UiTheme.StyleButton(allocBtn, UiTheme.FontSizes.Small);
         allocBtn.Disabled = tracker.SkillPoints <= 0;
         string capturedId = def.Id;
+        float capturedMult = def.PassiveMultiplier;
         allocBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
         {
-            tracker.AllocateSP(capturedId);
-            RefreshMasteryList();
+            if (!tracker.AllocateSP(capturedId)) return;
+
+            // Update this row's labels in-place — no rebuild
+            var s = tracker.GetMastery(capturedId);
+            int lvl = s?.Level ?? 0;
+            nameLabel.Text = $"▸ {def.Name} [Lv.{lvl}]";
+            nameLabel.AddThemeColorOverride("font_color", lvl > 0 ? UiTheme.Colors.Ink : UiTheme.Colors.Muted);
+
+            if (s != null && lvl > 0)
+            {
+                int xpNeeded = s.XpToNextLevel;
+                xpLabel.Text = xpNeeded > 0 ? $"{s.Xp}/{xpNeeded}" : "";
+                bonusLabel.Text = $"+{s.GetPassiveBonus(capturedMult):F1}%";
+            }
+
+            _pointsLabel.Text = $"SP: {tracker.SkillPoints} available";
+            _detailLabel.Text = BuildMasteryDetail(def, s);
+
+            // Disable all [+] buttons if SP ran out
+            if (tracker.SkillPoints <= 0)
+                foreach (var btn in _allocButtons)
+                    btn.Disabled = true;
         }));
         row.AddChild(allocBtn);
+        _allocButtons.Add(allocBtn);
 
         // Detail on focus/hover
         string detail = BuildMasteryDetail(def, state);
