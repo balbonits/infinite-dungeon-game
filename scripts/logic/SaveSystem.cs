@@ -48,8 +48,12 @@ public static class SaveSystem
             FreePoints = gs.Stats.FreePoints,
             Gold = gs.PlayerInventory.Gold,
             Items = items.ToArray(),
-            SkillPoints = gs.Skills.SkillPoints,
-            SkillStates = gs.Skills.CaptureStates(),
+            SkillPoints = gs.Progression.SkillPoints,
+            AbilityPoints = gs.Progression.AbilityPoints,
+            MasteryStates = gs.Progression.CaptureMasteries(),
+            AbilityStates = gs.Progression.CaptureAbilities(),
+            CategoryUseCounts = gs.Progression.CaptureCategoryUseCounts(),
+            CategoryApSpent = gs.Progression.CaptureCategoryApSpent(),
             BankData = gs.PlayerBank.CaptureState(),
             QuestData = gs.Quests.CaptureState(),
             AchievementData = gs.Achievements.CaptureState(),
@@ -116,11 +120,13 @@ public static class SaveSystem
                 gs.PlayerInventory.TryAdd(itemDef, System.Math.Max(1, savedItem.Count));
         }
 
-        // Restore skills
-        gs.Skills = new SkillTracker(gs.SelectedClass);
-        gs.Skills.SkillPoints = System.Math.Max(0, data.SkillPoints);
-        if (data.SkillStates.Length > 0)
-            gs.Skills.RestoreStates(data.SkillStates);
+        // Restore progression (skills + abilities)
+        gs.Progression = new ProgressionTracker(gs.SelectedClass);
+        gs.Progression.SkillPoints = System.Math.Max(0, data.SkillPoints);
+        gs.Progression.AbilityPoints = System.Math.Max(0, data.AbilityPoints);
+        gs.Progression.RestoreMasteries(data.MasteryStates);
+        gs.Progression.RestoreAbilities(data.AbilityStates);
+        gs.Progression.RestoreCategoryTracking(data.CategoryUseCounts, data.CategoryApSpent);
 
         // Restore bank
         gs.PlayerBank = new Bank();

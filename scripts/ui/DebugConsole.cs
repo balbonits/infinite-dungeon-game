@@ -172,8 +172,13 @@ public partial class DebugConsole : Control
         });
         AddCmd("+10 Skill Points", () =>
         {
-            GameState.Instance.Skills.SkillPoints += 10;
-            Status("+10 skill pts");
+            GameState.Instance.Progression.SkillPoints += 10;
+            Status("+10 SP");
+        });
+        AddCmd("+10 Ability Points", () =>
+        {
+            GameState.Instance.Progression.AbilityPoints += 10;
+            Status("+10 AP");
         });
         AddCmd("+5 Stat Points", () =>
         {

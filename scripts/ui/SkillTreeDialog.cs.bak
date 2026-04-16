@@ -197,12 +197,13 @@ public partial class SkillTreeDialog : Control
         UiTheme.FocusFirstButton(_skillList);
     }
 
-    private HBoxContainer CreateSkillRow(SkillDef def, SkillState? state, SkillTracker tracker, bool isBase)
+    // IMPL-10: CreateSkillRow and BuildDetailText will be rewritten for new mastery/ability system
+    private HBoxContainer CreateSkillRow(MasteryDef def, MasteryState? state, ProgressionTracker tracker)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
 
-        if (!isBase)
+        if (false) // placeholder — IMPL-10 will rewrite
         {
             var indent = new Control();
             indent.CustomMinimumSize = new Vector2(20, 0);

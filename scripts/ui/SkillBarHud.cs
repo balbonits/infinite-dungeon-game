@@ -118,7 +118,7 @@ public partial class SkillBarHud : Control
         if (slotIndex < 0) return;
 
         var bar = GameState.Instance.SkillHotbar;
-        var def = bar.GetSlot(slotIndex) != null ? SkillDatabase.Get(bar.GetSlot(slotIndex)!) : null;
+        var def = bar.GetSlot(slotIndex) != null ? SkillAbilityDatabase.GetAbility(bar.GetSlot(slotIndex)!) : null;
         if (def?.CombatConfig == null)
             return;
 
@@ -135,7 +135,7 @@ public partial class SkillBarHud : Control
         {
             // Skill cast succeeded — start cooldown and record use
             bar.TryActivate(slotIndex, def.Cooldown);
-            GameState.Instance.Skills.RecordUse(def.Id, GameState.Instance.FloorNumber);
+            GameState.Instance.Progression.RecordAbilityUse(def.Id, GameState.Instance.FloorNumber);
         }
         GetViewport().SetInputAsHandled();
     }
@@ -182,7 +182,7 @@ public partial class SkillBarHud : Control
             string? skillId = bar.GetSlot(i);
             if (skillId != null)
             {
-                var def = SkillDatabase.Get(skillId);
+                var def = SkillAbilityDatabase.GetAbility(skillId);
                 _nameLabels[i].Text = def?.Name ?? "???";
                 _nameLabels[i].AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
             }

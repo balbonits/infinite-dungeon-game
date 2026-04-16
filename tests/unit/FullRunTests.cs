@@ -46,8 +46,9 @@ public class FullRunTests
         var achievements = new AchievementTracker();
         achievements.Unlocked.Should().BeEmpty();
 
-        var tracker = new SkillTracker(cls);
-        tracker.AllStates.Should().NotBeEmpty();
+        var tracker = new ProgressionTracker(cls);
+        tracker.AllMasteries.Should().NotBeEmpty();
+        tracker.AllAbilities.Should().NotBeEmpty();
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -230,19 +231,19 @@ public class FullRunTests
         skillBar.Update(1.5f); // tick full cooldown
         skillBar.IsReady(0).Should().BeTrue();
 
-        // Skill state: XP and leveling
-        var skillState = new SkillState("warrior_slash");
-        skillState.Level.Should().Be(0);
-        int levelsGained = skillState.AddXp(1); // level 0→1 is instant
+        // Mastery state: XP and leveling
+        var masteryState = new MasteryState("w_bladed");
+        masteryState.Level.Should().Be(0);
+        int levelsGained = masteryState.AddXp(1); // level 0→1 is instant
         levelsGained.Should().BeGreaterOrEqualTo(1);
-        skillState.Level.Should().BeGreaterOrEqualTo(1);
+        masteryState.Level.Should().BeGreaterOrEqualTo(1);
 
         // Skill point allocation
-        skillState.AddSkillPoint();
-        skillState.Xp.Should().BeGreaterThan(0);
+        masteryState.AddSkillPoint();
+        masteryState.Xp.Should().BeGreaterThan(0);
 
         // Passive bonus at level
-        skillState.GetPassiveBonus(1.5f).Should().BeGreaterThan(0);
+        masteryState.GetPassiveBonus(1.5f).Should().BeGreaterThan(0);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -503,7 +504,7 @@ public class FullRunTests
         var inv = new Inventory(25) { Gold = 2000 };
         var bank = new Bank();
         var skillBar = new SkillBar();
-        var tracker = new SkillTracker(PlayerClass.Warrior);
+        var tracker = new ProgressionTracker(PlayerClass.Warrior);
         var quests = new QuestTracker();
         var achievements = new AchievementTracker();
         var saturation = new ZoneSaturation();
@@ -560,8 +561,8 @@ public class FullRunTests
         stats.FreePoints -= 2;
 
         // ── Skills ───────────────────────────────────────────────────────────
-        var firstSkill = tracker.AllStates.First();
-        skillBar.SetSlot(0, firstSkill.SkillId);
+        var firstAbility = tracker.AllAbilities.First();
+        skillBar.SetSlot(0, firstAbility.AbilityId);
         skillBar.IsReady(0).Should().BeTrue();
         skillBar.TryActivate(0, 1.0f).Should().NotBeNull();
         skillBar.Update(1.0f);
@@ -617,6 +618,6 @@ public class FullRunTests
         ach2.IsUnlocked("c_first_blood").Should().BeTrue();
         pacts2.GetRank(0).Should().Be(1);
         sat2.GetSaturation(1).Should().BeGreaterThan(0);
-        bar2.GetSlot(0).Should().Be(firstSkill.SkillId);
+        bar2.GetSlot(0).Should().Be(firstAbility.AbilityId);
     }
 }
