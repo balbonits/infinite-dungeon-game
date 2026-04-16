@@ -8,72 +8,39 @@ namespace DungeonGame.Ui;
 /// Blacksmith crafting UI. Apply affixes to equipment, recycle gear.
 /// Two tabs: Craft (apply affixes) and Recycle (break down gear).
 /// </summary>
-public partial class BlacksmithWindow : Control
+public partial class BlacksmithWindow : GameWindow
 {
     public static BlacksmithWindow Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
-    private VBoxContainer _contentBox = null!;
     private Label _goldLabel = null!;
     private Label _detailLabel = null!;
-    private ScrollContainer _scrollContainer = null!;
-    private VBoxContainer _itemList = null!;
-    private bool _isOpen;
     private bool _isCraftMode = true;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-        BuildUi();
+        ReturnToPauseMenu = false;
+        base._Ready();
     }
 
-    private void BuildUi()
+    protected override void BuildContent(VBoxContainer content)
     {
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.6f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(420, 0);
-        _center.AddChild(panel);
-
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
-        _contentBox = new VBoxContainer();
-        _contentBox.AddThemeConstantOverride("separation", 8);
-        margin.AddChild(_contentBox);
-
         var title = new Label();
         title.Text = Strings.Blacksmith.Title;
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        _contentBox.AddChild(title);
+        content.AddChild(title);
 
         _goldLabel = new Label();
         UiTheme.StyleLabel(_goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
         _goldLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _contentBox.AddChild(_goldLabel);
+        content.AddChild(_goldLabel);
 
         // Tab buttons
         var tabRow = new HBoxContainer();
         tabRow.AddThemeConstantOverride("separation", 8);
         tabRow.Alignment = BoxContainer.AlignmentMode.Center;
-        _contentBox.AddChild(tabRow);
+        content.AddChild(tabRow);
 
         var craftTab = new Button();
         craftTab.Text = Strings.Blacksmith.CraftTab;
@@ -89,21 +56,15 @@ public partial class BlacksmithWindow : Control
         recycleTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => { _isCraftMode = false; Refresh(); }));
         tabRow.AddChild(recycleTab);
 
-        _contentBox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
         _detailLabel = new Label();
         UiTheme.StyleLabel(_detailLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         _detailLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _detailLabel.CustomMinimumSize = new Vector2(0, 30);
-        _contentBox.AddChild(_detailLabel);
+        content.AddChild(_detailLabel);
 
-        _scrollContainer = new ScrollContainer { FollowFocus = true };
-        _scrollContainer.CustomMinimumSize = new Vector2(0, 300);
-        _contentBox.AddChild(_scrollContainer);
-
-        _itemList = new VBoxContainer();
-        _itemList.AddThemeConstantOverride("separation", 4);
-        _scrollContainer.AddChild(_itemList);
+        content.AddChild(Scroll);
 
         var closeBtn = new Button();
         closeBtn.Text = Strings.Ui.Cancel;
@@ -111,33 +72,40 @@ public partial class BlacksmithWindow : Control
         closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Body);
         closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Close()));
-        _contentBox.AddChild(closeBtn);
+        content.AddChild(closeBtn);
     }
 
     public void Open()
     {
-        if (_isOpen) return;
-        _isOpen = true;
-        WindowStack.Push(this);
         _isCraftMode = true;
-        GetTree().Paused = true;
-        _overlay.Visible = true;
-        _center.Visible = true;
+        Show();
+    }
+
+    protected override void OnShow()
+    {
         Refresh();
     }
 
-    public void Close()
+    protected override bool HandleTabInput(InputEvent @event)
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        GetTree().Paused = false;
-        _overlay.Visible = false;
-        _center.Visible = false;
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            _isCraftMode = true;
+            Refresh();
+            return true;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            _isCraftMode = false;
+            Refresh();
+            return true;
+        }
+        return false;
     }
 
     private void Refresh()
     {
-        foreach (Node child in _itemList.GetChildren())
+        foreach (Node child in ScrollContent.GetChildren())
             child.QueueFree();
 
         var inv = GameState.Instance.PlayerInventory;
@@ -151,7 +119,7 @@ public partial class BlacksmithWindow : Control
         else
             ShowRecyclableItems(inv);
 
-        UiTheme.FocusFirstButton(_itemList);
+        UiTheme.FocusFirstButton(ScrollContent);
     }
 
     private void ShowCraftableItems(Inventory inv)
@@ -172,11 +140,11 @@ public partial class BlacksmithWindow : Control
             {
                 _detailLabel.Text = $"{stack.Item.Name}\n{stack.Item.Description}\nMax affix tier: {maxTier}";
             });
-            _itemList.AddChild(btn);
+            ScrollContent.AddChild(btn);
         }
 
-        if (_itemList.GetChildCount() == 0)
-            _itemList.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoCraftable));
+        if (ScrollContent.GetChildCount() == 0)
+            ScrollContent.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoCraftable));
     }
 
     private void ShowRecyclableItems(Inventory inv)
@@ -201,11 +169,11 @@ public partial class BlacksmithWindow : Control
                 Toast.Instance?.Success($"Recycled for {recycleGold}g");
                 Refresh();
             });
-            _itemList.AddChild(btn);
+            ScrollContent.AddChild(btn);
         }
 
-        if (_itemList.GetChildCount() == 0)
-            _itemList.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoRecyclable));
+        if (ScrollContent.GetChildCount() == 0)
+            ScrollContent.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoRecyclable));
     }
 
     private static Button CreateItemButton(string text, System.Action onPress)
@@ -246,42 +214,5 @@ public partial class BlacksmithWindow : Control
         label.Text = text;
         UiTheme.StyleLabel(label, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
         return label;
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen) return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (KeyboardNav.HandleInput(@event, _itemList))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Q/E switch Craft/Recycle tabs
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
-        {
-            _isCraftMode = true;
-            Refresh();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
-        {
-            _isCraftMode = false;
-            Refresh();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 }

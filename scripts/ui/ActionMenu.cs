@@ -8,34 +8,27 @@ namespace DungeonGame.Ui;
 /// FF/SNES-style contextual action menu. Appears as a small popup with a list of
 /// actions when the player confirms on an item, skill, or interactable.
 /// Keyboard navigable: Up/Down to select, S/Cross to confirm, D/Circle to cancel.
+///
+/// Extends GameWindow for lifecycle/WindowStack/input blocking, but uses custom
+/// positioning (not the standard centered overlay panel).
 /// </summary>
-public partial class ActionMenu : Control
+public partial class ActionMenu : GameWindow
 {
     public static ActionMenu? Instance { get; private set; }
 
-    private ColorRect _overlay = null!;
     private PanelContainer _panel = null!;
     private VBoxContainer _buttonList = null!;
-    private bool _isOpen;
 
     private Action? _onClose;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
+        ReturnToPauseMenu = false;
+        base._Ready();
         Visible = true;
 
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.3f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
+        // Custom positioned panel (not using GameWindow's centered ContentBox)
         _panel = new PanelContainer();
         _panel.AddThemeStyleboxOverride("panel", CreateMenuStyle());
         _panel.Visible = false;
@@ -45,6 +38,9 @@ public partial class ActionMenu : Control
         _buttonList = new VBoxContainer();
         _buttonList.AddThemeConstantOverride("separation", 2);
         _panel.AddChild(_buttonList);
+
+        // Hide the standard centered content — we use our own positioned panel
+        ContentBox.Visible = false;
     }
 
     /// <summary>
@@ -53,11 +49,9 @@ public partial class ActionMenu : Control
     /// </summary>
     public void Show(Vector2 position, (string label, Action action)[] actions, Action? onClose = null)
     {
-        if (_isOpen) Close();
+        if (IsOpen) CloseMenu();
 
         _onClose = onClose;
-        _isOpen = true;
-        WindowStack.Push(this);
 
         // Clear old buttons
         foreach (Node child in _buttonList.GetChildren())
@@ -76,7 +70,7 @@ public partial class ActionMenu : Control
             Action capturedAction = action;
             btn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
             {
-                Close();
+                CloseMenu();
                 capturedAction();
             }));
             _buttonList.AddChild(btn);
@@ -84,8 +78,10 @@ public partial class ActionMenu : Control
 
         // Position the panel near the trigger
         _panel.Position = position;
-        _overlay.Visible = true;
         _panel.Visible = true;
+
+        // GameWindow.Show() handles overlay visibility, WindowStack, pause
+        Show();
 
         // Focus first button on next frame (after buttons are in tree)
         CallDeferred(MethodName.FocusFirst);
@@ -96,36 +92,49 @@ public partial class ActionMenu : Control
         UiTheme.FocusFirstButton(_buttonList);
     }
 
-    public void Close()
+    /// <summary>
+    /// Close the menu and invoke the onClose callback.
+    /// </summary>
+    public void CloseMenu()
     {
-        if (!_isOpen) return;
-        _isOpen = false;
-        WindowStack.Pop(this);
-        _overlay.Visible = false;
+        if (!IsOpen) return;
         _panel.Visible = false;
-        _onClose?.Invoke();
+        var callback = _onClose;
         _onClose = null;
+        Close();
+        callback?.Invoke();
     }
 
+    protected override bool HandleExtraInput(InputEvent @event)
+    {
+        if (KeyboardNav.HandleInput(@event, _buttonList))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Override to use CloseMenu (with _onClose callback) instead of plain Close.
+    /// </summary>
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!_isOpen) return;
+        if (!IsOpen) return;
+        if (KeyboardNav.BlockIfNotTopmost(this, @event)) return;
 
         if (KeyboardNav.IsCancelPressed(@event))
         {
-            Close();
+            CloseMenu();
             GetViewport().SetInputAsHandled();
             return;
         }
 
-        if (KeyboardNav.HandleInput(@event, _buttonList))
+        if (HandleExtraInput(@event))
         {
             GetViewport().SetInputAsHandled();
             return;
         }
 
-        // Block all input while open
-        if (@event is InputEventKey key && key.Pressed)
+        if (@event is InputEventKey k && k.Pressed)
             GetViewport().SetInputAsHandled();
     }
 

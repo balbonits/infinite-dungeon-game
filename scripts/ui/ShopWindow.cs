@@ -8,12 +8,10 @@ namespace DungeonGame.Ui;
 /// JRPG-style shop window. Two-panel layout: item list (left) + description (right).
 /// Buy tab shows shop inventory, Sell tab shows player backpack.
 /// </summary>
-public partial class ShopWindow : Control
+public partial class ShopWindow : GameWindow
 {
     public static ShopWindow Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
     private Label _goldLabel = null!;
     private VBoxContainer _itemList = null!;
     private Label _descName = null!;
@@ -26,47 +24,20 @@ public partial class ShopWindow : Control
     private ItemDef? _selectedItem;
     private int _selectedIndex = -1;
     private bool _isBuyMode = true;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-        BuildUi();
+        WindowWidth = 600f;
+        ReturnToPauseMenu = false;
+        base._Ready();
     }
 
-    private void BuildUi()
+    protected override void BuildContent(VBoxContainer content)
     {
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.5f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var mainPanel = new PanelContainer();
-        mainPanel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        mainPanel.CustomMinimumSize = new Vector2(600, 400);
-        _center.AddChild(mainPanel);
-
-        var margin = new MarginContainer();
-        mainPanel.AddChild(margin);
-
-        var outerVbox = new VBoxContainer();
-        outerVbox.AddThemeConstantOverride("separation", 8);
-        margin.AddChild(outerVbox);
-
         // Header: title + gold
         var header = new HBoxContainer();
-        outerVbox.AddChild(header);
+        content.AddChild(header);
 
         var shopTitle = new Label();
         shopTitle.Text = Strings.Shop.Title;
@@ -78,13 +49,13 @@ public partial class ShopWindow : Control
         UiTheme.StyleLabel(_goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Button);
         header.AddChild(_goldLabel);
 
-        outerVbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
-        // Two-panel layout (Buy/Sell buttons moved to right panel)
+        // Two-panel layout (own scroll, not GameWindow's Scroll)
         var panels = new HBoxContainer();
         panels.AddThemeConstantOverride("separation", 12);
         panels.SizeFlagsVertical = SizeFlags.ExpandFill;
-        outerVbox.AddChild(panels);
+        content.AddChild(panels);
 
         // Left: item list (scrollable)
         var leftPanel = new PanelContainer();
@@ -176,36 +147,51 @@ public partial class ShopWindow : Control
         modeRow.AddChild(_sellButton);
 
         // Close button
-        outerVbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
         var closeBtn = new Button();
         closeBtn.Text = Strings.Shop.Close;
         closeBtn.CustomMinimumSize = new Vector2(120, 36);
         closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleButton(closeBtn, UiTheme.FontSizes.Body);
-        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(Close));
-        outerVbox.AddChild(closeBtn);
+        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Close()));
+        content.AddChild(closeBtn);
     }
 
     public void Open(List<ItemDef> shopInventory)
     {
         _shopItems = shopInventory;
-        _isOpen = true;
-        WindowStack.Push(this);
         _isBuyMode = true;
-        GetTree().Paused = true;
-        _overlay.Visible = true;
-        _center.Visible = true;
+        Show();
+    }
+
+    protected override void OnShow()
+    {
         RefreshList();
         UiTheme.FocusFirstButton(_itemList);
     }
 
-    public void Close()
+    protected override bool HandleTabInput(InputEvent @event)
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        GetTree().Paused = false;
-        _overlay.Visible = false;
-        _center.Visible = false;
+        // Q/E (shoulder) switch Buy/Sell tabs
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            SetMode(true);
+            return true;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            SetMode(false);
+            return true;
+        }
+        return false;
+    }
+
+    protected override bool HandleExtraInput(InputEvent @event)
+    {
+        // Up/Down navigate the item list (cursor), description follows via FocusEntered
+        if (KeyboardNav.HandleInput(@event, _itemList))
+            return true;
+        return false;
     }
 
     private void SetMode(bool buyMode)
@@ -349,43 +335,5 @@ public partial class ShopWindow : Control
     private void UpdateGold()
     {
         _goldLabel.Text = Strings.Shop.GoldDisplay(GameState.Instance.PlayerInventory.Gold);
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen) return;
-
-        // FF-style: D (circle) or Esc = cancel/close
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Up/Down navigate the item list (cursor), description follows via FocusEntered
-        if (KeyboardNav.HandleInput(@event, _itemList))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Q/E (shoulder) switch Buy/Sell tabs
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
-        {
-            SetMode(true);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
-        {
-            SetMode(false);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Block ALL input when open — nothing passes through to game or panels behind
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 }

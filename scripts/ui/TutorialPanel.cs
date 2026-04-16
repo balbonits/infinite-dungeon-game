@@ -7,18 +7,15 @@ namespace DungeonGame.Ui;
 /// Static tutorial reference. Uses GameWindow + TabBar + ScrollList + ContentSection.
 /// No guided tour — readable reference accessible from title screen and pause menu.
 /// </summary>
-public partial class TutorialPanel : Control
+public partial class TutorialPanel : GameWindow
 {
     public static TutorialPanel? ActiveInstance { get; private set; }
 
-    private bool _isOpen;
     private TabBar _tabBar = null!;
     private ScrollList _scrollList = null!;
     private Action? _onClose;
 
     private static readonly string[] TabNames = { "Movement", "Combat", "Menus", "Town" };
-
-    public bool IsOpen => _isOpen;
 
     public static TutorialPanel Open(Node parent, Action? onClose = null)
     {
@@ -32,15 +29,16 @@ public partial class TutorialPanel : Control
     public override void _Ready()
     {
         ActiveInstance = this;
-        _isOpen = true;
-        WindowStack.Push(this);
-        ProcessMode = ProcessModeEnum.Always;
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        Size = GetViewportRect().Size;
+        WindowWidth = 560f;
+        base._Ready();
 
-        var (overlay, content) = UiTheme.CreateDialogWindow(560f, 0.7f);
-        AddChild(overlay);
+        // Auto-show on ready since this is dynamically created
+        Show();
+        BuildTab(0);
+    }
 
+    protected override void BuildContent(VBoxContainer content)
+    {
         // Title
         var title = new Label();
         title.Text = "TUTORIAL";
@@ -64,8 +62,6 @@ public partial class TutorialPanel : Control
         // Scrollable content
         _scrollList = ScrollList.Create(400f, 6);
         content.AddChild(_scrollList);
-
-        BuildTab(0);
     }
 
     private void BuildTab(int tab)
@@ -166,41 +162,22 @@ public partial class TutorialPanel : Control
         ContentSection.AddNote(list, "Bank items are always safe. Buy Sacrificial Idols for protection.");
     }
 
-    public void Close()
+    public new void Close()
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
         ActiveInstance = null;
+        base.Close();
         _onClose?.Invoke();
         QueueFree();
     }
 
-    public override void _UnhandledInput(InputEvent @event)
+    protected override bool HandleTabInput(InputEvent @event)
     {
-        if (!_isOpen) return;
-        if (KeyboardNav.BlockIfNotTopmost(this, @event)) return;
+        return _tabBar.HandleTabInput(@event);
+    }
 
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (_tabBar.HandleTabInput(@event))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (_scrollList.HandleScrollInput(@event))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
+    protected override bool HandleExtraInput(InputEvent @event)
+    {
+        return _scrollList.HandleScrollInput(@event);
     }
 
     private static string GetKey(string action)

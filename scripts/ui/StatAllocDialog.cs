@@ -7,17 +7,11 @@ namespace DungeonGame.Ui;
 /// Stat allocation dialog. Spend free stat points on STR/DEX/STA/INT.
 /// Opens from pause menu or level-up notification.
 /// </summary>
-public partial class StatAllocDialog : Control
+public partial class StatAllocDialog : GameWindow
 {
     public static StatAllocDialog Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
-    private VBoxContainer _content = null!;
     private Label _freePointsLabel = null!;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     private static readonly (string name, string description)[] StatInfo =
     {
@@ -30,48 +24,24 @@ public partial class StatAllocDialog : Control
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.5f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(340, 0);
-        _center.AddChild(panel);
-
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
-        _content = new VBoxContainer();
-        _content.AddThemeConstantOverride("separation", 10);
-        margin.AddChild(_content);
+        WindowWidth = 340f;
+        base._Ready();
     }
 
-    public new void Show()
+    protected override void BuildContent(VBoxContainer content)
     {
-        if (_isOpen) return;
-        _isOpen = true;
-        WindowStack.Push(this);
-        GetTree().Paused = true;
+        content.AddThemeConstantOverride("separation", 10);
+        // ContentBox is dynamically populated by Rebuild in OnShow
+    }
+
+    protected override void OnShow()
+    {
         Rebuild();
-        _overlay.Visible = true;
-        _center.Visible = true;
     }
 
     private void Rebuild()
     {
-        foreach (Node child in _content.GetChildren())
+        foreach (Node child in ContentBox.GetChildren())
             child.QueueFree();
 
         var stats = GameState.Instance.Stats;
@@ -81,16 +51,16 @@ public partial class StatAllocDialog : Control
         title.Text = Strings.Stats.Title;
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        _content.AddChild(title);
+        ContentBox.AddChild(title);
 
         // Free points
         _freePointsLabel = new Label();
         _freePointsLabel.Text = Strings.Stats.FreePoints(stats.FreePoints);
         UiTheme.StyleLabel(_freePointsLabel, UiTheme.Colors.Safe, UiTheme.FontSizes.Button);
         _freePointsLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        _content.AddChild(_freePointsLabel);
+        ContentBox.AddChild(_freePointsLabel);
 
-        _content.AddChild(new HSeparator());
+        ContentBox.AddChild(new HSeparator());
 
         // Stat rows
         AddStatRow("STR", stats.Str, StatInfo[0].description, () => { stats.Str++; stats.FreePoints--; OnStatChanged(); });
@@ -98,7 +68,7 @@ public partial class StatAllocDialog : Control
         AddStatRow("STA", stats.Sta, StatInfo[2].description, () => { stats.Sta++; stats.FreePoints--; OnStatChanged(); });
         AddStatRow("INT", stats.Int, StatInfo[3].description, () => { stats.Int++; stats.FreePoints--; OnStatChanged(); });
 
-        _content.AddChild(new HSeparator());
+        ContentBox.AddChild(new HSeparator());
 
         // Close button
         var closeBtn = new Button();
@@ -107,7 +77,7 @@ public partial class StatAllocDialog : Control
         closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Body);
         closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(Close));
-        _content.AddChild(closeBtn);
+        ContentBox.AddChild(closeBtn);
     }
 
     private void AddStatRow(string name, int value, string desc, System.Action onAllocate)
@@ -141,7 +111,7 @@ public partial class StatAllocDialog : Control
         addBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(onAllocate));
         row.AddChild(addBtn);
 
-        _content.AddChild(row);
+        ContentBox.AddChild(row);
     }
 
     private void OnStatChanged()
@@ -151,45 +121,13 @@ public partial class StatAllocDialog : Control
         gs.MaxHp = Constants.PlayerStats.GetMaxHp(gs.Level) + gs.Stats.BonusMaxHp;
         gs.EmitSignal(GameState.SignalName.StatsChanged);
         Rebuild();
-        UiTheme.FocusFirstButton(_content);
+        UiTheme.FocusFirstButton(ContentBox);
     }
 
-    private void Close()
+    protected override bool HandleExtraInput(InputEvent @event)
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        _overlay.Visible = false;
-        _center.Visible = false;
-        var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
-        if (pauseMenu != null)
-        {
-            pauseMenu.Visible = true;
-            UiTheme.FocusFirstButton(pauseMenu.GetNode<VBoxContainer>("CenterContainer/PanelContainer/MarginContainer/VBoxContainer"));
-        }
-        else
-        {
-            GetTree().Paused = false;
-        }
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen) return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (KeyboardNav.HandleInput(@event, _content))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
+        if (KeyboardNav.HandleInput(@event, ContentBox))
+            return true;
+        return false;
     }
 }

@@ -10,72 +10,37 @@ namespace DungeonGame.Ui;
 /// - Select a specific upper floor (floor 3+, dropdown)
 /// - Cancel
 /// </summary>
-public partial class AscendDialog : Control
+public partial class AscendDialog : GameWindow
 {
     public static AscendDialog Instance { get; private set; } = null!;
 
-    private PanelContainer _panel = null!;
     private VBoxContainer _buttonContainer = null!;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-        BuildUi();
+        ReturnToPauseMenu = false;
+        WindowWidth = 300;
+        base._Ready();
     }
 
-    private void BuildUi()
+    protected override void BuildContent(VBoxContainer content)
     {
-        var overlay = new ColorRect();
-        overlay.Color = new Color(0, 0, 0, 0.5f);
-        overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        overlay.Visible = false;
-        overlay.MouseFilter = MouseFilterEnum.Stop;
-        AddChild(overlay);
-
-        var center = new CenterContainer();
-        center.SetAnchorsPreset(LayoutPreset.FullRect);
-        center.Visible = false;
-        AddChild(center);
-
-        _panel = new PanelContainer();
-        _panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        _panel.CustomMinimumSize = new Vector2(300, 0);
-        center.AddChild(_panel);
-
-        var margin = new MarginContainer();
-        _panel.AddChild(margin);
-
-        var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 12);
-        margin.AddChild(vbox);
-
         var title = new Label();
         title.Text = Strings.Ascend.Title;
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        vbox.AddChild(title);
+        content.AddChild(title);
 
-        vbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
         _buttonContainer = new VBoxContainer();
         _buttonContainer.AddThemeConstantOverride("separation", 8);
-        vbox.AddChild(_buttonContainer);
+        content.AddChild(_buttonContainer);
     }
 
-    public new void Show()
+    protected override void OnShow()
     {
-        if (_isOpen)
-            return;
-
-        _isOpen = true;
-        WindowStack.Push(this);
-        GetTree().Paused = true;
-
         // Clear old buttons
         foreach (Node child in _buttonContainer.GetChildren())
             child.QueueFree();
@@ -119,9 +84,6 @@ public partial class AscendDialog : Control
         // Cancel
         AddButton(Strings.Ui.Cancel, UiTheme.Colors.Muted, Close);
 
-        // Show
-        GetChild<ColorRect>(0).Visible = true;
-        GetChild<CenterContainer>(1).Visible = true;
         UiTheme.FocusFirstButton(_buttonContainer);
     }
 
@@ -164,15 +126,6 @@ public partial class AscendDialog : Control
         });
     }
 
-    public void Close()
-    {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        GetTree().Paused = false;
-        GetChild<ColorRect>(0).Visible = false;
-        GetChild<CenterContainer>(1).Visible = false;
-    }
-
     private void AddButton(string text, Color textColor, System.Action action)
     {
         var button = new Button();
@@ -181,27 +134,5 @@ public partial class AscendDialog : Control
         UiTheme.StyleButton(button, UiTheme.FontSizes.Body);
         button.Connect(BaseButton.SignalName.Pressed, Callable.From(action));
         _buttonContainer.AddChild(button);
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen)
-            return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (KeyboardNav.HandleInput(@event, _buttonContainer))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 }
