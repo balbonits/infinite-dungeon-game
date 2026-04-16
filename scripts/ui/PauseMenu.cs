@@ -99,8 +99,13 @@ public partial class PauseMenu : Control
     private void OnSkillsPressed()
     {
         Visible = false;
-        // IMPL-10: Will wire to new Skills tab dialog
-        // SkillTreeDialog.Instance?.Show();
+        SkillTreeDialog.Instance?.Show();
+    }
+
+    private void OnAbilitiesPressed()
+    {
+        Visible = false;
+        AbilitiesDialog.Instance?.Show();
     }
 
     private void OnLedgerPressed()
