@@ -130,14 +130,6 @@ public partial class BankWindow : GameWindow
         return false;
     }
 
-    protected override bool HandleExtraInput(InputEvent @event)
-    {
-        // Up/Down + S navigate and confirm within whichever list has focus
-        if (KeyboardNav.HandleInput(@event, _bankList) ||
-            KeyboardNav.HandleInput(@event, _backpackList))
-            return true;
-        return false;
-    }
 
     private void Refresh()
     {

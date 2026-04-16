@@ -46,6 +46,15 @@ Migrated all 14 modal windows to use the GameWindow base class, removing 671 lin
 
 Windows migrated: ShopWindow, BlacksmithWindow, BankWindow, TeleportDialog, QuestPanel, BackpackWindow, DungeonLedger, SettingsPanel, TutorialPanel, StatAllocDialog, AscendDialog, FloorWipeDialog, NpcPanel, ActionMenu.
 
+### Bug Fixes (Session 15b)
+- **NPC crash:** `Npc.cs` called `NpcPanel.Instance?.Hide()` (Godot built-in) instead of `Close()` — left WindowStack corrupted and game permanently paused. Fixed to use `GameWindow.Close()`.
+- **Resource leaks at exit (72 CanvasItem RIDs, 15 textures):** Three sources fixed:
+  - GameWindow: 12/16 subclasses never added `Scroll`/`ScrollContent` to the tree — orphaned nodes. Added `_ExitTree()` cleanup.
+  - SkillTreeDialog: `_tabs` removed from parent but never freed on each `OnShow()`. Added `Free()` before recreation.
+  - UiTheme: `CreateGameTheme()` and `CreateTabStyle()` created new resources every call. Cached as static singletons.
+- **Keyboard nav replaced with Godot built-in:** Removed custom `KeyboardNav.HandleInput` (60-line reimplementation of Godot's focus system). Arrow key navigation now handled by Godot's native `ui_up`/`ui_down` + `ScrollContainer.FollowFocus`. Only kept `HandleConfirm` for S-key → focused button bridge.
+- **Focus warnings:** `FocusFirstButton` tried to grab focus on buttons with `FocusMode.None`. Added focusability check.
+
 ### Godot 4 Engine Research
 Created `docs/reference/godot4-engine-reference.md` cataloging all built-in engine systems and their usage status. Key findings: Theme resources could replace hundreds of manual style overrides, RichTextLabel with BBCode for formatted ability text, SceneTreeTimer for one-shot delays without nodes, async/await with ToSignal for cleaner coroutines.
 

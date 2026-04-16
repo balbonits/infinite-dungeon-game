@@ -56,6 +56,13 @@ public partial class GameWindow : Control
         BuildContent(ContentBox);
     }
 
+    public override void _ExitTree()
+    {
+        // Free scroll container if it was never added to the scene tree by a subclass
+        if (Scroll is { } scroll && !scroll.IsInsideTree())
+            scroll.Free();
+    }
+
     /// <summary>Override to build the window UI. Add Scroll to ContentBox when you need scrolling.</summary>
     protected virtual void BuildContent(VBoxContainer content) { }
 
@@ -127,8 +134,8 @@ public partial class GameWindow : Control
             return;
         }
 
-        // Keyboard navigation within scroll content
-        if (KeyboardNav.HandleInput(@event, ScrollContent))
+        // S/cross confirms the focused button (arrow key nav is built-in)
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
         {
             GetViewport().SetInputAsHandled();
             return;

@@ -228,7 +228,7 @@ public partial class DeathScreen : Control
         if (!Visible)
             return;
 
-        if (KeyboardNav.HandleInput(@event, _content))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
         {
             GetViewport().SetInputAsHandled();
             return;

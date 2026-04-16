@@ -46,13 +46,13 @@ public partial class SkillTreeDialog : GameWindow
 
     protected override void OnShow()
     {
-        // Clear old tabs and rebuild for current class
+        // Free old tabs (RemoveChild alone orphans the node)
         _tabs.GetParent()?.RemoveChild(_tabs);
+        _tabs.Free();
         _detailLabel.GetParent()?.RemoveChild(_detailLabel);
 
         var categories = SkillAbilityDatabase.GetCategories(GameState.Instance.SelectedClass);
 
-        // Remove old tabs, create fresh
         _tabs = new GameTabPanel();
         foreach (string catId in categories)
         {

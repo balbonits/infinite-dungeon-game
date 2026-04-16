@@ -306,7 +306,7 @@ public partial class DebugConsole : Control
             return;
         }
 
-        if (KeyboardNav.HandleInput(@event, _buttonList))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
         {
             GetViewport().SetInputAsHandled();
             return;

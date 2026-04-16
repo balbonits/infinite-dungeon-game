@@ -69,7 +69,7 @@ public partial class PauseMenu : Control
             return;
         }
 
-        if (KeyboardNav.HandleInput(@event, _buttonContainer))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
         {
             GetViewport().SetInputAsHandled();
             return;

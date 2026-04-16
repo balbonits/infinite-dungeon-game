@@ -365,12 +365,6 @@ public partial class SettingsPanel : GameWindow
         return false;
     }
 
-    protected override bool HandleExtraInput(InputEvent @event)
-    {
-        if (KeyboardNav.HandleInput(@event, _settingsList))
-            return true;
-        return false;
-    }
 
     private static string GetActionKeyName(string action)
     {

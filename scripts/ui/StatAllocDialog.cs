@@ -124,10 +124,4 @@ public partial class StatAllocDialog : GameWindow
         UiTheme.FocusFirstButton(ContentBox);
     }
 
-    protected override bool HandleExtraInput(InputEvent @event)
-    {
-        if (KeyboardNav.HandleInput(@event, ContentBox))
-            return true;
-        return false;
-    }
 }

@@ -127,8 +127,17 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Tab button style (active = bright accent, inactive = muted).</summary>
+    private static StyleBoxFlat? _activeTabStyle;
+    private static StyleBoxFlat? _inactiveTabStyle;
+
+    /// <summary>Tab button style (active = bright accent, inactive = muted). Cached — shared across all tabs.</summary>
     public static StyleBoxFlat CreateTabStyle(bool active)
+    {
+        if (active) return _activeTabStyle ??= BuildTabStyle(true);
+        return _inactiveTabStyle ??= BuildTabStyle(false);
+    }
+
+    private static StyleBoxFlat BuildTabStyle(bool active)
     {
         var style = new StyleBoxFlat();
         if (active)
@@ -182,7 +191,7 @@ public static class UiTheme
     {
         foreach (Node child in node.GetChildren())
         {
-            if (child is Button btn && !btn.Disabled && btn.Visible)
+            if (child is Button btn && !btn.Disabled && btn.Visible && btn.FocusMode != Control.FocusModeEnum.None)
                 return btn;
             if (child is Control ctrl)
             {
@@ -193,12 +202,16 @@ public static class UiTheme
         return null;
     }
 
+    private static Theme? _cachedGameTheme;
+
     /// <summary>
-    /// Creates a Godot Theme resource with all standard UI styles.
+    /// Returns the shared Godot Theme resource with all standard UI styles.
     /// Apply to a root Control (e.g., GameWindow overlay) so all children inherit
     /// consistent button/label/panel styling without per-node overrides.
     /// </summary>
-    public static Theme CreateGameTheme()
+    public static Theme CreateGameTheme() => _cachedGameTheme ??= BuildGameTheme();
+
+    private static Theme BuildGameTheme()
     {
         var theme = new Theme();
 

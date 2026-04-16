@@ -138,7 +138,7 @@ public partial class SplashScreen : Control
             return;
         }
 
-        if (KeyboardNav.HandleInput(@event, this))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
             GetViewport().SetInputAsHandled();
     }
 }

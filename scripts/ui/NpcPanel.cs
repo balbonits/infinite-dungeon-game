@@ -120,7 +120,7 @@ public partial class NpcPanel : GameWindow
             return;
         }
 
-        if (KeyboardNav.HandleInput(@event, _serviceButtons))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
         {
             GetViewport().SetInputAsHandled();
             return;

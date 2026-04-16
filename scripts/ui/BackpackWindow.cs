@@ -211,13 +211,4 @@ public partial class BackpackWindow : GameWindow
         ActionMenu.Instance?.Show(position, actions.ToArray());
     }
 
-    protected override bool HandleExtraInput(InputEvent @event)
-    {
-        if (ActionMenu.Instance?.IsOpen == true) return true;
-
-        if (KeyboardNav.HandleInput(@event, _itemList))
-            return true;
-
-        return false;
-    }
 }

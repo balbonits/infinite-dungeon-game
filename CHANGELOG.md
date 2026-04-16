@@ -16,6 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - AbilitiesDialog node in `main.tscn`, Abilities button in `pause_menu.tscn`
 - 72 new unit tests for data layer
 
+#### Fixed
+- NPC crash: `Npc.cs` called `Hide()` instead of `Close()`, corrupting WindowStack and freezing game
+- Resource leaks at exit: orphaned Scroll nodes, unreleased GameTabPanel, uncached Theme/StyleBox resources
+- Keyboard nav: replaced custom `KeyboardNav.HandleInput` with Godot's built-in focus system (`ui_up`/`ui_down` + `FollowFocus`)
+- Focus warnings: `FocusFirstButton` now skips buttons with `FocusMode.None`
+
 #### Changed
 - `SkillTreeDialog.cs` — rewritten on GameWindow + GameTabPanel, shows masteries only
 - `GameState.cs` — awards SP (2/lvl) + AP (3/lvl) on level-up

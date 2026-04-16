@@ -105,14 +105,6 @@ public partial class ActionMenu : GameWindow
         callback?.Invoke();
     }
 
-    protected override bool HandleExtraInput(InputEvent @event)
-    {
-        if (KeyboardNav.HandleInput(@event, _buttonList))
-            return true;
-
-        return false;
-    }
-
     /// <summary>
     /// Override to use CloseMenu (with _onClose callback) instead of plain Close.
     /// </summary>
@@ -128,7 +120,7 @@ public partial class ActionMenu : GameWindow
             return;
         }
 
-        if (HandleExtraInput(@event))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
         {
             GetViewport().SetInputAsHandled();
             return;

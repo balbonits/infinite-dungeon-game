@@ -186,13 +186,6 @@ public partial class ShopWindow : GameWindow
         return false;
     }
 
-    protected override bool HandleExtraInput(InputEvent @event)
-    {
-        // Up/Down navigate the item list (cursor), description follows via FocusEntered
-        if (KeyboardNav.HandleInput(@event, _itemList))
-            return true;
-        return false;
-    }
 
     private void SetMode(bool buyMode)
     {
