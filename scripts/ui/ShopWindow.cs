@@ -127,10 +127,12 @@ public partial class ShopWindow : Control
         _itemList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         scroll.AddChild(_itemList);
 
-        // Right: description panel
+        // Right: description panel (fixed height to prevent resizing)
         var rightPanel = new PanelContainer();
         rightPanel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.5f));
         rightPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        rightPanel.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+        rightPanel.CustomMinimumSize = new Vector2(0, 260);
         panels.AddChild(rightPanel);
 
         var rightMargin = new MarginContainer();
