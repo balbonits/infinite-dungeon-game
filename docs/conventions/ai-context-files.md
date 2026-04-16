@@ -2,7 +2,7 @@
 
 ## Summary
 
-This doc formalizes the pattern for any AI-tool-specific context file in this repo (e.g., `CLAUDE.md`, `CURSOR.md`, `COPILOT.md`, `GEMINI.md`, etc.). The goal is to keep all AI assistants "in line" — working from the same source of truth — while still giving each tool a fast, focused entry point tuned to how it's used.
+This doc formalizes the pattern for any AI-tool-specific context file in this repo. The goal is to keep all AI assistants "in line" — working from the same source of truth — while still giving each tool a fast, focused entry point tuned to how it's used.
 
 ## The Context Chain
 
@@ -18,6 +18,25 @@ AI output
 
 **Precedence:** `docs/` > `AGENTS.md` > `<TOOL>.md`. Higher wins any conflict.
 
+## Which Filenames Are Real
+
+Each AI coding tool auto-loads a specific filename. We can only add tool-specific files for real conventions — verified from official docs. As of 2026:
+
+| Tool | Filename(s) | Notes |
+|------|-------------|-------|
+| **Claude Code** | `CLAUDE.md` + `.claude/` memory dir | Project root. Auto-loaded into every session. |
+| **Gemini CLI** | `GEMINI.md` | Project root + global at `~/.gemini/GEMINI.md`. Supports hierarchical loading (subdirectories). |
+| **GitHub Copilot** | `.github/copilot-instructions.md` | Repository-wide. Also supports `.github/instructions/*.instructions.md` with glob patterns. Copilot code review reads only first 4,000 characters. |
+| **Cursor** | `.cursor/rules/*.mdc` (current) | Legacy `.cursorrules` is deprecated but still supported. |
+| **Aider** | `CONVENTIONS.md` + `.aider.conf.yml` | `CONVENTIONS.md` is loaded via `/read` or `--read`. Config file searched in home/repo/cwd. |
+| **OpenAI Codex CLI** | `AGENTS.md` | Reads AGENTS.md natively. |
+
+### About `AGENTS.md`
+
+`AGENTS.md` is the closest thing to a cross-tool standard, stewarded by the Linux Foundation's Agentic AI Foundation. It's read natively by **OpenAI Codex CLI, GitHub Copilot, Cursor, Windsurf, Amp, and Devin**. **Claude Code and Gemini CLI do not read `AGENTS.md` natively** — they use their own files (`CLAUDE.md`, `GEMINI.md`). That's why this repo keeps `AGENTS.md` as the canonical source and mirrors a thin `CLAUDE.md` pointer into it.
+
+If you're adding support for a new tool, **look up the tool's official docs first** and confirm the exact filename before creating a file. Do not guess.
+
 ## Rules
 
 ### 1. `AGENTS.md` is canonical.
@@ -30,7 +49,7 @@ Game design, systems, flows, world lore — all of that lives in `docs/`. `AGENT
 
 ### 3. Tool-specific `.md` files are navigation indices, not rulebooks.
 
-`CLAUDE.md`, `CURSOR.md`, etc. exist because each tool auto-loads a specific filename. Their job is to help that tool navigate the canonical sources quickly — not to replicate content.
+`CLAUDE.md`, `GEMINI.md`, etc. exist because each tool auto-loads a specific filename. Their job is to help that tool navigate the canonical sources quickly — not to replicate content.
 
 A tool-specific file should contain:
 
@@ -59,7 +78,17 @@ Never add a rule to `CLAUDE.md` / `<TOOL>.md` as a shortcut. Rules in tool-speci
 
 ### 5. When a tool-specific file conflicts with AGENTS.md, fix the tool file.
 
-If Claude reads `CLAUDE.md` and gets different guidance than what `AGENTS.md` says, that's a bug in `CLAUDE.md`. Update the tool file to match AGENTS.md (usually by removing the conflicting content and pointing to AGENTS.md instead).
+If an AI tool reads its context file and gets different guidance than what `AGENTS.md` says, that's a bug in the tool file. Update it to match AGENTS.md (usually by removing the conflicting content and pointing to AGENTS.md instead).
+
+### 6. Verify before adding.
+
+Before creating a new tool-specific file:
+
+1. Confirm the exact filename in the tool's official documentation.
+2. Confirm the tool doesn't already read `AGENTS.md` natively (if it does, no new file needed).
+3. Only then copy the template below and commit.
+
+Do not guess filenames.
 
 ## Template for a New Tool-Specific File
 
@@ -107,21 +136,32 @@ This file is a jump-index into AGENTS.md. Never answer from this file alone — 
 **Precedence:** `docs/` > `AGENTS.md` > `<Tool>.md`. Higher wins any conflict. New rules go in AGENTS.md — not here.
 ```
 
-## Current Tool-Specific Files
+## Current Tool-Specific Files In This Repo
 
 | File | Tool | Purpose |
 |------|------|---------|
 | [CLAUDE.md](../../CLAUDE.md) | Claude Code | Jump-index for Claude Code CLI sessions |
 
-When a new tool is onboarded, add a new row here.
+When a new tool is onboarded, add it here after verifying the filename.
 
 ## Why This Pattern Works
 
 - **Single source of truth.** `docs/` holds game specs. `AGENTS.md` holds AI workflow rules. No parallel rulebooks drift.
-- **Fast context for each tool.** Each tool's entry file is tuned to how that tool loads context (e.g., Claude auto-loads `CLAUDE.md`; another tool might auto-load its own).
-- **Consistency across tools.** Every AI assistant follows the same chain back to the same specs. No tool gets "different rules."
-- **Easy to onboard new tools.** Copy the template, fill in tool-specific quick commands, commit.
-- **Failure-tolerant.** If a tool-specific file drifts, AGENTS.md and `docs/` are still correct. Humans and AIs can always recover the truth by following the chain upward.
+- **Fast context for each tool.** Each tool's entry file is tuned to how that tool loads context.
+- **Consistency across tools.** Every AI assistant follows the same chain back to the same specs.
+- **Easy to onboard new tools.** Verify filename → copy template → commit.
+- **Failure-tolerant.** If a tool-specific file drifts, AGENTS.md and `docs/` are still correct.
+
+## Sources
+
+Verified against official documentation in 2026:
+
+- [Claude Code docs](https://code.claude.com/docs)
+- [Gemini CLI — GEMINI.md docs](https://geminicli.com/docs/cli/gemini-md/)
+- [GitHub Copilot — Adding repository custom instructions](https://docs.github.com/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot)
+- [Cursor — Rules for AI](https://docs.cursor.com/context/rules)
+- [Aider — Specifying coding conventions](https://aider.chat/docs/usage/conventions.html)
+- [OpenAI Codex CLI Reference](https://developers.openai.com/codex/cli/reference)
 
 ## See Also
 

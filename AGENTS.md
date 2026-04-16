@@ -120,7 +120,7 @@ When the user says "update docs," that means ALL of: relevant spec(s), `dev-jour
 - **Journal first, then commit.** The dev journal entry must exist before the git commit.
 - **CHANGELOG.md must stay current.** Every commit that changes behavior gets a changelog entry.
 - **New systems need docs.** If you create a new system (new .cs files with game logic), create a corresponding spec in `docs/systems/` or `docs/world/`.
-- **AGENTS.md is the canonical reference.** Tool-specific files (`CLAUDE.md`, etc.) must delegate to it, not duplicate it. When adding a new tool-specific context file (e.g., `CURSOR.md`, `COPILOT.md`, `GEMINI.md`), follow the pattern in [docs/conventions/ai-context-files.md](docs/conventions/ai-context-files.md).
+- **AGENTS.md is the canonical reference.** Tool-specific files must delegate to it, not duplicate it. Each AI tool has its own context filename (e.g., Claude Code reads `CLAUDE.md`; Gemini CLI reads `GEMINI.md`; GitHub Copilot reads `.github/copilot-instructions.md`). Before adding a new tool file, **verify the filename in the tool's official docs first** — do not guess. Then follow the pattern in [docs/conventions/ai-context-files.md](docs/conventions/ai-context-files.md).
 
 ### 3. Development Principles
 

@@ -56,4 +56,4 @@ make run            # Launch Godot
 
 **Precedence:** `docs/` > `AGENTS.md` > `CLAUDE.md`. If any two disagree, the higher-precedence source wins. Add new rules to `AGENTS.md` (or the relevant `docs/` file) — not here.
 
-**Adding a new AI tool's context file** (e.g., `CURSOR.md`, `COPILOT.md`, `GEMINI.md`)? Follow the pattern in [docs/conventions/ai-context-files.md](docs/conventions/ai-context-files.md) — template provided.
+**Adding a new AI tool's context file?** Each tool has its own convention (Claude Code: `CLAUDE.md`; Gemini CLI: `GEMINI.md`; Copilot: `.github/copilot-instructions.md`; Cursor: `.cursor/rules/*.mdc`; etc.). Verify the filename in the tool's official docs first — do not guess. Template and full guidance in [docs/conventions/ai-context-files.md](docs/conventions/ai-context-files.md).
