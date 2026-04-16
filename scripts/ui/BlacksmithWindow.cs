@@ -121,9 +121,9 @@ public partial class BlacksmithWindow : Control
         WindowStack.Push(this);
         _isCraftMode = true;
         GetTree().Paused = true;
-        Refresh();
         _overlay.Visible = true;
         _center.Visible = true;
+        Refresh();
     }
 
     public void Close()

@@ -113,6 +113,7 @@ public partial class NpcPanel : Control
         if (!_center.Visible)
             return;
 
+        WindowStack.Pop(this);
         var tween = CreateTween();
         tween.TweenProperty(_center, "modulate:a", 0.0f, 0.1f);
         tween.TweenCallback(Callable.From(() =>
