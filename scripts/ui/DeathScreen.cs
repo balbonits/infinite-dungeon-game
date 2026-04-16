@@ -12,31 +12,62 @@ namespace DungeonGame.Ui;
 public partial class DeathScreen : Control
 {
     private VBoxContainer _content = null!;
+    private ColorRect _overlay = null!;
+    private PanelContainer _panel = null!;
+    private Label _youDiedLabel = null!;
     private bool _protectXp;
     private bool _protectBackpack;
     private bool _hasIdol;
+
+    // SoulsBorne-style "YOU DIED" cinematic constants
+    private const float DeathFadeInDuration = 1.2f;   // overlay fades to red-black
+    private const float YouDiedFadeInDuration = 1.5f; // text appears slowly, dramatically
+    private const float YouDiedHoldDuration = 2.5f;   // hold the moment
+    private const float YouDiedFadeOutDuration = 0.8f; // text fades before menu appears
+
+    /// <summary>True while the "YOU DIED" cinematic is playing (before menu shows). For tests.</summary>
+    public bool IsPlayingCinematic { get; private set; }
 
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
 
-        // Full-screen overlay
-        var overlay = new ColorRect();
-        overlay.Color = new Color(0, 0, 0, 0.8f);
-        overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        AddChild(overlay);
+        // Full-screen overlay — starts transparent, animates to red-tinted black during death cinematic
+        _overlay = new ColorRect();
+        _overlay.Color = new Color(0, 0, 0, 0);
+        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
+        AddChild(_overlay);
 
+        // "YOU DIED" cinematic text — centered, above the menu panel
+        var youDiedCenter = new CenterContainer();
+        youDiedCenter.SetAnchorsPreset(LayoutPreset.FullRect);
+        youDiedCenter.MouseFilter = MouseFilterEnum.Ignore;
+        AddChild(youDiedCenter);
+
+        _youDiedLabel = new Label();
+        _youDiedLabel.Text = "YOU DIED";
+        _youDiedLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        _youDiedLabel.AddThemeColorOverride("font_color", new Color(0.8f, 0.05f, 0.05f, 1.0f));
+        _youDiedLabel.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 1));
+        _youDiedLabel.AddThemeConstantOverride("outline_size", 12);
+        _youDiedLabel.AddThemeFontSizeOverride("font_size", 96);
+        _youDiedLabel.Modulate = new Color(1, 1, 1, 0); // start invisible
+        youDiedCenter.AddChild(_youDiedLabel);
+
+        // Menu panel (shown AFTER cinematic)
         var center = new CenterContainer();
         center.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(center);
 
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(400, 0);
-        center.AddChild(panel);
+        _panel = new PanelContainer();
+        _panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
+        _panel.CustomMinimumSize = new Vector2(400, 0);
+        _panel.Modulate = new Color(1, 1, 1, 0); // hidden initially
+        _panel.Visible = false;
+        center.AddChild(_panel);
 
         var margin = new MarginContainer();
-        panel.AddChild(margin);
+        _panel.AddChild(margin);
 
         _content = new VBoxContainer();
         _content.AddThemeConstantOverride("separation", 12);
@@ -49,7 +80,50 @@ public partial class DeathScreen : Control
         _protectXp = false;
         _protectBackpack = false;
         _hasIdol = DeathPenalty.HasSacrificialIdol(GameState.Instance.PlayerInventory);
-        ShowStep1();
+
+        // Reset states
+        _overlay.Color = new Color(0, 0, 0, 0);
+        _youDiedLabel.Modulate = new Color(1, 1, 1, 0);
+        _panel.Modulate = new Color(1, 1, 1, 0);
+        _panel.Visible = false;
+
+        PlayYouDiedCinematic();
+    }
+
+    /// <summary>
+    /// SoulsBorne-style death cinematic: fade screen to dark, show "YOU DIED" in red,
+    /// hold dramatically, fade out, then reveal the mitigation menu.
+    /// </summary>
+    private void PlayYouDiedCinematic()
+    {
+        IsPlayingCinematic = true;
+
+        var tween = CreateTween();
+        // Game is paused when player dies (see Main.OnPlayerDied); force tween to keep
+        // running anyway so the cinematic plays to completion.
+        tween.SetPauseMode(Tween.TweenPauseMode.Process);
+
+        // Phase 1: overlay fades to near-black (with subtle red tint)
+        tween.TweenProperty(_overlay, "color",
+            new Color(0.08f, 0.02f, 0.02f, 0.95f), DeathFadeInDuration);
+
+        // Phase 2: "YOU DIED" text fades in slowly for dramatic effect
+        tween.TweenProperty(_youDiedLabel, "modulate:a", 1.0f, YouDiedFadeInDuration);
+
+        // Phase 3: hold the moment
+        tween.TweenInterval(YouDiedHoldDuration);
+
+        // Phase 4: text fades out
+        tween.TweenProperty(_youDiedLabel, "modulate:a", 0.0f, YouDiedFadeOutDuration);
+
+        // Phase 5: reveal the menu panel
+        tween.TweenCallback(Callable.From(() =>
+        {
+            IsPlayingCinematic = false;
+            _panel.Visible = true;
+            ShowStep1();
+        }));
+        tween.TweenProperty(_panel, "modulate:a", 1.0f, 0.3f);
     }
 
     private void ClearContent()
