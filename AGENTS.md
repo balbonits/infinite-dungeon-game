@@ -1,8 +1,18 @@
 # AGENTS.md — AI Coding Assistant Reference
 
-This is the single reference file for any AI coding tool helping with **A Dungeon in the Middle of Nowhere** (repo: `infinite-dungeon-game`).
+This is the **single canonical reference** for any AI coding tool helping with **A Dungeon in the Middle of Nowhere** (repo: `infinite-dungeon-game`). All guidelines, rules, conventions, and context live here. Tool-specific entry files (e.g., `CLAUDE.md`) point to this document.
 
 For detailed game design, see the [`docs/`](docs/) folder.
+
+---
+
+## Paradigm — Read This First
+
+This repo is a real-world experiment in **AI+Human natural-language programming**. The user is a product owner who does not write code. Every line of code, test, doc, and piece of art in this repo is produced by AI, directed by the user in natural-language conversation.
+
+**Specs in `docs/` are the source of truth.** If code and specs disagree, one must be updated. When in doubt, read the spec first, code second.
+
+Full write-up: [`docs/development-paradigm.md`](docs/development-paradigm.md).
 
 ---
 
@@ -86,6 +96,29 @@ Follow this cycle for every task. Do not skip steps.
 One task = one focused change = one commit. Prefer small, reviewable diffs over large batches.
 
 See [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md) for the full workflow reference.
+
+### 2a. Post-Task Protocol
+
+After any code change, before committing (non-negotiable):
+
+1. **Test** — Run `make test` (unit + integration). For UI changes, also consider `make test-ui`.
+2. **Docs** — Update the relevant spec in `docs/` if game behavior changed.
+3. **Journal** — Add what changed to `docs/dev-journal.md` under today's session.
+4. **Changelog** — Add a summary entry to `CHANGELOG.md`.
+5. **Counts** — Update test counts / feature status in `docs/dev-tracker.md` if tests/features were added/removed.
+6. **Commit** — Use conventional format: `type(scope): description`
+   - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+   - Example: `feat(combat): add elemental damage system`
+
+When the user says "update docs," that means ALL of: relevant spec(s), `dev-journal.md`, `dev-tracker.md`, `CHANGELOG.md` — plus `AGENTS.md`/`CLAUDE.md` if conventions changed.
+
+### 2b. Documentation Maintenance
+
+- **Never hardcode volatile numbers** in AGENTS.md or CLAUDE.md (test counts, file counts, step counts). Reference commands instead: "Run `make test` for current count."
+- **Journal first, then commit.** The dev journal entry must exist before the git commit.
+- **CHANGELOG.md must stay current.** Every commit that changes behavior gets a changelog entry.
+- **New systems need docs.** If you create a new system (new .cs files with game logic), create a corresponding spec in `docs/systems/` or `docs/world/`.
+- **AGENTS.md is the canonical reference.** Tool-specific files (`CLAUDE.md`, etc.) must delegate to it, not duplicate it.
 
 ### 3. Development Principles
 
