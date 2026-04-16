@@ -114,6 +114,12 @@ public partial class NpcPanel : Control
             return;
 
         WindowStack.Pop(this);
+
+        // Release focus immediately so the next window can grab it
+        foreach (Node child in _serviceButtons.GetChildren())
+            if (child is Button btn)
+                btn.FocusMode = FocusModeEnum.None;
+
         var tween = CreateTween();
         tween.TweenProperty(_center, "modulate:a", 0.0f, 0.1f);
         tween.TweenCallback(Callable.From(() =>
