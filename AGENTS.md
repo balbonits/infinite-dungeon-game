@@ -307,9 +307,11 @@ Detailed design docs live in `docs/`. Here's a summary with links.
 - **3 classes:** Warrior (STR/STA), Ranger (DEX), Mage (INT) — [docs/systems/classes.md](docs/systems/classes.md)
 - **Persistent character** — no rerolls, one character forever
 
-### Skills
+### Skills & Abilities
 
 Hierarchical skill trees per class with unique category names, hybrid leveling (use-based + point-based), infinite scaling — [docs/systems/skills.md](docs/systems/skills.md)
+
+Skills/Abilities redesign (separating passive masteries from active combat actions) — [docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md](docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md)
 
 ### Color System
 
@@ -330,6 +332,10 @@ Feedback loops, session pacing, juice/feel, retention hooks — [docs/systems/pl
 ### Death Penalties
 
 Scale by deepest floor achieved. Gold buyout mitigates EXP and backpack loss. Sacrificial Idol negates backpack loss — [docs/systems/death.md](docs/systems/death.md)
+
+### Class Lore
+
+Class backstories, magic philosophy per class, and how lore shapes each skill tree — [docs/world/class-lore.md](docs/world/class-lore.md)
 
 ### Dungeon
 
@@ -391,6 +397,7 @@ docs/
 │   ├── stats.md               — STR/DEX/STA/INT
 │   ├── classes.md             — Warrior/Ranger/Mage
 │   ├── skills.md              — Skill trees per class (hierarchical, infinite leveling)
+│   ├── SKILLS_AND_ABILITIES_SYSTEMS.md — Skills/Abilities redesign (passive masteries + active combat actions)
 │   ├── color-system.md        — Unified color gradient (cool→warm, level-relative)
 │   ├── combat.md              — Auto-targeting, cooldowns, damage
 │   ├── leveling.md            — XP curve, rested XP, floor-scaling enemy XP
@@ -403,7 +410,8 @@ docs/
 ├── world/
 │   ├── dungeon.md             — Infinite descent, floor generation, caching
 │   ├── town.md                — Town hub, NPC list, interaction
-│   └── monsters.md            — Enemy types, danger tiers, spawning
+│   ├── monsters.md            — Enemy types, danger tiers, spawning
+│   └── class-lore.md          — Class backstories, magic philosophy, skill tree rationale
 ├── inventory/
 │   ├── backpack.md            — Risky carry storage (25 slots)
 │   ├── bank.md                — Safe town storage (15 slots)

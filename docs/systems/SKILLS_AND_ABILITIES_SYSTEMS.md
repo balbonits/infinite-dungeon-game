@@ -2,7 +2,7 @@
 
 Working document for the Skills/Abilities redesign. Research, decisions, and class breakdowns.
 
-**Status:** In progress. Warrior locked. Ranger masteries set, abilities pending review. Mage not started.
+**Status:** In progress. Warrior locked. Ranger masteries set, abilities pending review. Mage locked (pending gameplay refinement).
 
 ---
 
@@ -98,6 +98,7 @@ Each Ability belongs to exactly one parent Skill. The Skill provides passive mas
 | Decision | Choice |
 |----------|--------|
 | Tab names | **Warrior Arts** / **Ranger Crafts** / **Arcane Spells** |
+| Mage categories | **Elemental** (nature) / **Aether** (cosmic) / **Attunement** (internal mana) |
 | Innate skills location | **Skills tab** as universal masteries |
 | Point pools | **Separate**: SP (Skill Points) & AP (Ability Points) |
 | AP sources | Leveling (primary ~60%) + combat milestones (~25%) + use-based per-category (~15%) |
@@ -158,6 +159,8 @@ Innate synergies affect ALL abilities at threshold levels (details TBD).
 **Categories:** Body (6 masteries) + Mind (2 masteries)
 **Tab name:** Warrior Arts
 **Total: 8 masteries, 33 abilities**
+
+*Class lore and magic philosophy: see [class-lore.md](../world/class-lore.md#warrior)*
 
 ### Body
 
@@ -244,6 +247,8 @@ Innate synergies affect ALL abilities at threshold levels (details TBD).
 **Tab name:** Ranger Crafts
 **Precision removed** — aim/crit handled by Weaponry mastery passives
 **Total: 7 masteries, 36 abilities (abilities pending review except Awareness)**
+
+*Class lore and magic philosophy: see [class-lore.md](../world/class-lore.md#ranger)*
 
 ### Weaponry
 
@@ -335,18 +340,107 @@ Explosives and area denial. Grenades improve the "boom," not the throw.
 
 ---
 
-## Mage — NOT STARTED
+## Mage — LOCKED (pending gameplay refinement)
 
+**Categories:** Elemental (4 masteries) + Aether (1 mastery) + Attunement (3 masteries)
 **Tab name:** Arcane Spells
-**Current categories (from old spec):** Arcane (Fire, Water, Air, Earth, Light, Dark) + Conduit (Restoration, Amplification, Overcharge)
-**Current totals:** 9 masteries, 36 abilities
+**Total: 8 masteries, 33 abilities**
 
-To do: Full redesign following the same process as Warrior and Ranger — review mastery structure, rename/add/remove, then flesh out abilities.
+*Class lore and magic philosophy: see [class-lore.md](../world/class-lore.md#mage)*
 
 **Mage-specific mechanics:**
 - Spell acquisition via spell books (direct) and scroll osmosis (learning by repeated use)
 - Unlearned spells show as grayed out "Unknown Spell" in Abilities tab
 - Three states: Unknown → Learning (scroll progress bar) → Learned
+
+### Elemental
+
+Nature manipulation. Mental models built on everyday sensory experience.
+
+#### Fire (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Fireball | Projectile explosion, area damage on impact |
+| Flame Wall | Line of fire, damages enemies passing through |
+| Ignite | Set target ablaze, damage over time |
+| Inferno | Large area sustained fire, high mana cost |
+
+#### Water (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Frost Bolt | Ice projectile, slows target on hit |
+| Freeze | Immobilize target in ice, duration scales with level |
+| Tidal Wave | Wide frontal wave, pushes and damages |
+| Mist Veil | Obscuring mist, reduces enemy accuracy in area |
+
+#### Air (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Lightning | Fast bolt, high single-target damage |
+| Gust | Knockback wind blast, repositions enemies |
+| Chain Shock | Lightning jumps between nearby enemies |
+| Tempest | Area storm, sustained damage and disruption |
+
+#### Earth (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Stone Spike | Rock eruption from ground, single-target |
+| Quake | Area tremor, damages and staggers nearby |
+| Petrify | Turn target to stone temporarily, hard CC |
+| Earthen Armor | Coat self in stone, temporary damage absorption |
+
+### Aether
+
+Cosmic force — light and dark as two expressions of one phenomenon. Star and black hole. Push and pull. High mana cost, limited but powerful.
+
+#### Aether (5 abilities)
+
+| Ability | Direction | Description |
+|---------|-----------|-------------|
+| Nova | Light | Radiant energy burst around caster, AoE damage |
+| Weld | Light | Burst heal — fuses wounds shut with raw energy. Expensive, powerful |
+| Purify | Light | Cleanse all debuffs and status effects with purifying energy |
+| Drain | Dark | Gravitational pull on target's life force, heals caster |
+| Singularity | Dark | Gravity well at target location, pulls enemies in and damages over time |
+
+**Purify vs Cleanse:** Purify (Aether) removes ALL debuffs including magical curses, high cost. Cleanse (Attunement: Restoration) removes physical ailments only (poison, bleed), low cost. Emergency miracle vs routine maintenance.
+
+**Earthen Armor vs Barrier:** Earthen Armor is literal stone coating (nature manipulation). Barrier is a pure mana shield (internal magic). Different sources, can stack, different visuals.
+
+### Attunement
+
+The science of internal mana. Training the brain and body to process magic better. The Mage's scholarly advantage — understanding what Warriors and Rangers do instinctively.
+
+#### Restoration (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Mend | Quick self-heal, low mana cost, short cooldown |
+| Barrier | Magical shield that absorbs incoming damage |
+| Cleanse | Remove physical ailments (poison, bleed, burn) |
+| Regeneration | Sustained HP recovery over time, longer duration |
+
+#### Amplification (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Mana Surge | Burst mana recovery, cooldown-based |
+| Quick Cast | Temporarily reduce cast time of all spells |
+| Resonance | Boost damage of an attuned element |
+| Focus Channel | Reduce mana cost of all spells while stationary |
+
+#### Overcharge (4 abilities)
+
+| Ability | Description |
+|---------|-------------|
+| Neural Burn | Greatly boost spell damage, drains HP over time |
+| Mana Frenzy | Eliminate mana costs temporarily, HP damage per cast instead |
+| Pain Gate | Convert incoming damage into mana, risk/reward tradeoff |
+| Last Resort | Near death → massively amplify all abilities for a short burst |
 
 ---
 
@@ -404,7 +498,7 @@ Exact rates TBD.
 ## TODO
 
 - [ ] Review remaining Ranger abilities (Bowmanship, Throwing, Firearms, CQC, Trapping, Sapping)
-- [ ] Full Mage class redesign
+- [x] Full Mage class redesign
 - [ ] Define synergy bonus specifics per mastery
 - [ ] Define ability affinity cosmetic tiers
 - [ ] Define SP/AP exact rates and milestone schedule
