@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 19 — Load Game Spec (2026-04-17)
+
+#### Documentation
+- NEW: `docs/flows/load-game.md` — full spec for the Load Game screen (3 slots, Class-Select-style layout, delete-with-confirmation dialog, SaveManager multi-slot API, splash-to-LoadGame interaction).
+- UPDATED: `docs/flows/splash-screen.md` — button order now Continue (above New Game) / Tutorial / Settings / Exit. Inline CharacterCard removed.
+- UPDATED: `docs/flows/save-load.md` — documents the 3-slot save file layout (`user://save_0.json` through `save_2.json`) and `SaveManager` multi-slot methods.
+- NEW tickets in `docs/dev-tracker.md`: UI-02 (Load Game implementation, new branch) and ART-01 (splash background image, blocked on PixelLab MCP reconnection).
+
+(Implementation deferred to new branches per the current branch's wind-down directive.)
+
 ### Session 18 — Shop/Forge UX Polish (2026-04-17)
 
 #### Fixed

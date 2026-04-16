@@ -140,7 +140,11 @@ public partial class CharacterCard : PanelContainer
     public override void _UnhandledInput(InputEvent @event)
     {
         if (!HasFocus()) return;
-        if (@event.IsActionPressed(Constants.InputActions.ActionCross))
+        // Accept S (action_cross) AND Enter/Space (ui_accept). CharacterCard is a
+        // PanelContainer, not a Button, so Godot's built-in ui_accept handling on
+        // focused Buttons doesn't apply — we have to route Enter ourselves.
+        if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
+            @event.IsActionPressed("ui_accept"))
         {
             _onPressed?.Invoke();
             GetViewport().SetInputAsHandled();

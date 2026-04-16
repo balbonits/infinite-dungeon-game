@@ -4,6 +4,36 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 19 — Load Game Spec + Splash Redesign (2026-04-17)
+
+### What Happened
+
+User asked why Enter worked on splash buttons but not on the saved-character card. Answer: CharacterCard is a `PanelContainer`, not a `Button` — Godot's built-in `ui_accept` only fires on Buttons. A 2-line fix would have added `ui_accept` to CharacterCard's input handler.
+
+Instead, the user pivoted to a bigger redesign: replace the single-card splash UI with a proper 3-slot "Load Game" screen, with delete-with-confirmation, modeled on Class Select. The Load Game button is labeled **"Continue"** and sits **above** New Game on the splash.
+
+Also requested: a proper splash screen background image generated from the icon.
+
+### Spec Work Delivered (this branch)
+
+1. **`docs/flows/load-game.md`** — NEW. Full spec for the Load Game screen: 3 save slots, layout, keyboard navigation (same model as Class Select — zone-based with Left/Right cycling cards, Down to Load/Back buttons), delete confirmation dialog, save file layout (`user://save_0.json` through `save_2.json`), SaveManager API additions, interaction with New Game (first empty slot, toast error if full).
+2. **`docs/flows/splash-screen.md`** — UPDATED. Button order changed: Continue (top) → New Game → Tutorial → Settings → Exit. Continue is greyed out when no saves exist. Removed the inline Character Card. Added note about `splash_background.png`.
+3. **`docs/flows/save-load.md`** — UPDATED. Added "Save Slots" section documenting the 3-slot filesystem layout and `SaveManager` multi-slot API (`HasSave`, `LoadSlot`, `SaveToSlot`, `DeleteSlot`, `FindFirstEmptySlot`).
+4. **`docs/dev-tracker.md`** — NEW tickets:
+   - **UI-02**: Load Game screen implementation (new branch)
+   - **ART-01**: Splash screen background image (blocked on PixelLab MCP reconnection)
+
+### Deferred (separate branches / later sessions)
+
+- **UI-02 implementation** — `LoadGameScreen.cs`, `DeleteConfirmDialog.cs`, CharacterCard delete-X button, SaveManager slot API, SplashScreen button reshuffle. All tracked; implementation on a new branch per the branch wind-down directive.
+- **ART-01 splash background** — art-lead attempted generation but PixelLab MCP server wasn't connected in this session. The agent's recommended approach (PixelLab-generated archway + rocks, Pillow-composited into a 1920x1080 scene with gradient background + radial gold glow + starfield noise) is captured in the ticket for when PixelLab is available.
+
+### Why Spec-Only On This Branch
+
+The user said the `feat/skills-and-spells-tree-update` branch has "lived through too many lifecycles" and needs to close. New features go on new branches. Spec work is safe to land here — it's documentation that reflects the decided design but doesn't touch compiled code.
+
+---
+
 ## Session 18 — Shop/Forge UX Polish, Branch Wind-Down (2026-04-17)
 
 ### What Happened
