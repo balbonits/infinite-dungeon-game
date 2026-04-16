@@ -159,6 +159,13 @@ public partial class Player : CharacterBody2D
 
     private void HandleMovement()
     {
+        // Don't move while any UI window is open
+        if (GetTree().Paused || Ui.WindowStack.HasModal)
+        {
+            Velocity = Vector2.Zero;
+            return;
+        }
+
         Vector2 inputDir = Input.GetVector(
             Constants.InputActions.MoveLeft,
             Constants.InputActions.MoveRight,
