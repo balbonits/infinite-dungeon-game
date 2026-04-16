@@ -141,7 +141,9 @@ public partial class SkillTreeDialog : GameWindow
         allocBtn.Text = "+";
         allocBtn.CustomMinimumSize = new Vector2(32, 28);
         allocBtn.FocusMode = FocusModeEnum.All;
-        UiTheme.StyleButton(allocBtn, UiTheme.FontSizes.Small);
+        // Button inherits blue/dark styling from GameWindow theme;
+        // only override font size since this button is smaller than default.
+        allocBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Small);
         allocBtn.Disabled = tracker.SkillPoints <= 0;
         string capturedId = def.Id;
         float capturedMult = def.PassiveMultiplier;

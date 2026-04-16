@@ -194,6 +194,49 @@ public static class UiTheme
     }
 
     /// <summary>
+    /// Creates a Godot Theme resource with all standard UI styles.
+    /// Apply to a root Control (e.g., GameWindow overlay) so all children inherit
+    /// consistent button/label/panel styling without per-node overrides.
+    /// </summary>
+    public static Theme CreateGameTheme()
+    {
+        var theme = new Theme();
+
+        // --- Button (primary/action — blue bg, dark text) ---
+        theme.SetStylebox("normal", "Button", CreateButtonStyle(false));
+        theme.SetStylebox("hover", "Button", CreateButtonStyle(true));
+        theme.SetStylebox("focus", "Button", CreateButtonFocusStyle());
+        theme.SetStylebox("pressed", "Button", CreateButtonStyle(true));
+        theme.SetStylebox("disabled", "Button", CreateColoredButtonStyle(Colors.Muted, false));
+        theme.SetColor("font_color", "Button", Colors.BgDark);
+        theme.SetColor("font_hover_color", "Button", Colors.BgDark);
+        theme.SetColor("font_focus_color", "Button", Colors.BgDark);
+        theme.SetColor("font_pressed_color", "Button", Colors.BgDark);
+        theme.SetColor("font_disabled_color", "Button", new Color(Colors.Muted, 0.4f));
+        theme.SetFontSize("font_size", "Button", FontSizes.Button);
+
+        // --- Label ---
+        theme.SetColor("font_color", "Label", Colors.Ink);
+        theme.SetFontSize("font_size", "Label", FontSizes.Body);
+
+        // --- PanelContainer ---
+        theme.SetStylebox("panel", "PanelContainer", CreatePanelStyle(0.95f, true));
+
+        // --- HSeparator ---
+        var sepStyle = new StyleBoxLine();
+        sepStyle.Color = Colors.PanelBorder;
+        sepStyle.Thickness = 1;
+        theme.SetStylebox("separator", "HSeparator", sepStyle);
+        theme.SetConstant("separation", "HSeparator", 8);
+
+        // --- ScrollContainer (hide scrollbar visual noise) ---
+        var emptyStylebox = new StyleBoxEmpty();
+        theme.SetStylebox("scroll", "ScrollContainer", emptyStylebox);
+
+        return theme;
+    }
+
+    /// <summary>
     /// Standard dialog window layout: dark overlay + centered panel + content VBox.
     /// Returns (overlay, content) — add children to content. Caller adds overlay to their node.
     /// Every dialog should use this instead of manually building overlay/center/panel.

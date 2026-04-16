@@ -204,7 +204,9 @@ public partial class AbilitiesDialog : GameWindow
         allocBtn.Text = "+";
         allocBtn.CustomMinimumSize = new Vector2(32, 28);
         allocBtn.FocusMode = FocusModeEnum.All;
-        UiTheme.StyleButton(allocBtn, UiTheme.FontSizes.Small);
+        // Button inherits blue/dark styling from GameWindow theme;
+        // only override font size since this button is smaller than default.
+        allocBtn.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Small);
         allocBtn.Disabled = !unlocked || tracker.AbilityPoints <= 0;
         string capturedId = def.Id;
         string capturedParent = parentName;

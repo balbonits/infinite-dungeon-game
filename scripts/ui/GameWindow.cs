@@ -41,6 +41,7 @@ public partial class GameWindow : Control
         var (overlay, content) = UiTheme.CreateDialogWindow(_windowWidth);
         Overlay = overlay;
         ContentBox = content;
+        Overlay.Theme = UiTheme.CreateGameTheme();
         Overlay.Visible = false;
         AddChild(Overlay);
 
