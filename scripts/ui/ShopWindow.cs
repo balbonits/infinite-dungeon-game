@@ -80,32 +80,7 @@ public partial class ShopWindow : Control
 
         outerVbox.AddChild(new HSeparator());
 
-        // Tab buttons
-        var tabs = new HBoxContainer();
-        tabs.AddThemeConstantOverride("separation", 8);
-        outerVbox.AddChild(tabs);
-
-        var buyTab = new Button();
-        buyTab.Text = Strings.Shop.BuyTab;
-        buyTab.CustomMinimumSize = new Vector2(100, 30);
-        UiTheme.StyleButton(buyTab, UiTheme.FontSizes.Body);
-        buyTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(true)));
-        tabs.AddChild(buyTab);
-
-        var sellTab = new Button();
-        sellTab.Text = Strings.Shop.SellTab;
-        sellTab.CustomMinimumSize = new Vector2(100, 30);
-        UiTheme.StyleButton(sellTab, UiTheme.FontSizes.Body);
-        sellTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(false)));
-        tabs.AddChild(sellTab);
-
-        _tabIndicator = new Label();
-        UiTheme.StyleLabel(_tabIndicator, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        _tabIndicator.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        _tabIndicator.HorizontalAlignment = HorizontalAlignment.Right;
-        tabs.AddChild(_tabIndicator);
-
-        // Two-panel layout
+        // Two-panel layout (Buy/Sell buttons moved to right panel)
         var panels = new HBoxContainer();
         panels.AddThemeConstantOverride("separation", 12);
         panels.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -168,6 +143,33 @@ public partial class ShopWindow : Control
         _actionButton.Connect(BaseButton.SignalName.Pressed, Callable.From(OnActionPressed));
         _actionButton.Visible = false;
         descVbox.AddChild(_actionButton);
+
+        descVbox.AddChild(new HSeparator());
+
+        // Buy/Sell toggle buttons
+        var modeRow = new HBoxContainer();
+        modeRow.AddThemeConstantOverride("separation", 8);
+        modeRow.Alignment = BoxContainer.AlignmentMode.Center;
+        descVbox.AddChild(modeRow);
+
+        var buyTab = new Button();
+        buyTab.Text = Strings.Shop.BuyTab;
+        buyTab.CustomMinimumSize = new Vector2(80, 28);
+        UiTheme.StyleButton(buyTab, UiTheme.FontSizes.Small);
+        buyTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(true)));
+        modeRow.AddChild(buyTab);
+
+        var sellTab = new Button();
+        sellTab.Text = Strings.Shop.SellTab;
+        sellTab.CustomMinimumSize = new Vector2(80, 28);
+        UiTheme.StyleButton(sellTab, UiTheme.FontSizes.Small);
+        sellTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(false)));
+        modeRow.AddChild(sellTab);
+
+        _tabIndicator = new Label();
+        UiTheme.StyleLabel(_tabIndicator, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        _tabIndicator.HorizontalAlignment = HorizontalAlignment.Center;
+        descVbox.AddChild(_tabIndicator);
 
         // Close button
         outerVbox.AddChild(new HSeparator());
