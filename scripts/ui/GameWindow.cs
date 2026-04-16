@@ -60,7 +60,10 @@ public partial class GameWindow : Control
     {
         // Free scroll container if it was never added to the scene tree by a subclass
         if (Scroll is { } scroll && !scroll.IsInsideTree())
+        {
+            GD.Print($"[GameWindow] Freed orphaned Scroll in {GetType().Name}");
             scroll.Free();
+        }
     }
 
     /// <summary>Override to build the window UI. Add Scroll to ContentBox when you need scrolling.</summary>
@@ -84,6 +87,7 @@ public partial class GameWindow : Control
 
         OnShow();
         Overlay.Visible = true;
+        GD.Print($"[Window] Open: {GetType().Name} | Stack: {WindowStack.Count} | Paused: {GetTree().Paused}");
     }
 
     public void Close()
@@ -92,19 +96,19 @@ public partial class GameWindow : Control
         _isOpen = false;
         WindowStack.Pop(this);
         Overlay.Visible = false;
+        GD.Print($"[Window] Close: {GetType().Name} | Stack: {WindowStack.Count} | Paused: {GetTree().Paused}");
 
         if (_returnToPauseMenu)
         {
-            var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
+            var pauseMenu = GetNodeOrNull<PauseMenu>("../PauseMenu");
             if (pauseMenu != null)
             {
-                pauseMenu.Visible = true;
-                UiTheme.FocusFirstButton(pauseMenu.GetNode<VBoxContainer>(
-                    "CenterContainer/PanelContainer/MarginContainer/VBoxContainer"));
+                pauseMenu.Show();
                 return;
             }
         }
-        GetTree().Paused = false;
+        if (!WindowStack.HasModal)
+            GetTree().Paused = false;
     }
 
     public override void _UnhandledInput(InputEvent @event)

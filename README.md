@@ -13,6 +13,16 @@
   <strong>Status:</strong> In active development. Playable prototype with full game loop.
 </p>
 
+## About This Repo — Read Before You Judge the Code
+
+This repository is a **real-world experiment in AI+Human natural-language programming**. Every line of code, every test, every pixel of art, and every design document in this repo was produced by AI — directed by a human product owner in natural-language conversation. **The human has never written, edited, or debugged code in this repo.**
+
+The human directs. The AI builds, tests, commits, and pushes. Specs are the source of truth.
+
+See **[docs/development-paradigm.md](docs/development-paradigm.md)** for the full story — what we're trying to prove, how it works, what's worked well, and where it breaks.
+
+If you're a developer reviewing this code: read the specs in `docs/systems/` first. The code implements them. The tests verify them. If you see code that looks weird, it's usually because the spec says it should work that way.
+
 ## The Game
 
 You control a single permanent character — **Warrior**, **Ranger**, or **Mage** — that grows stronger across all sessions. There are no rerolls. The dungeon descends infinitely with escalating difficulty, and the dungeon itself is a living entity that wants you to grow strong before it harvests you.

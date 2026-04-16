@@ -42,6 +42,12 @@ public static class WindowStack
     /// <summary>Check if ANY modal is open (parent should block input).</summary>
     public static bool HasModal => _stack.Count > 0;
 
+    /// <summary>Number of modals currently in the stack.</summary>
+    public static int Count => _stack.Count;
+
+    /// <summary>Type name of the topmost modal, or null if empty. For test assertions.</summary>
+    public static string? TopTypeName => _stack.Count > 0 ? _stack.Peek().GetType().Name : null;
+
     /// <summary>Check if this specific modal or anything above it is blocking.</summary>
     public static bool IsBlocked(Godot.Control potentialParent) =>
         _stack.Count > 0 && _stack.Peek() != potentialParent;

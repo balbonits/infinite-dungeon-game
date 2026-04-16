@@ -30,10 +30,6 @@ public partial class SandboxLauncher : Control
             new("Death Penalty",      "XP/item loss calculator + idol logic",             "res://scenes/sandbox/systems/DeathPenaltySandbox.tscn"),
             new("Skill Tree",         "Class skill graphs + stat preview",                "res://scenes/sandbox/systems/SkillTreeSandbox.tscn"),
         ]),
-        new("🧪  Integration", new Color(0.6f, 1f, 0.6f),
-        [
-            new("Full Run", "End-to-end play session — all systems, all phases", "res://scenes/sandbox/FullRunSandbox.tscn"),
-        ]),
         new("⚔️  Mechanics", new Color(1f, 0.4f, 0.4f),
         [
             new("Combat",    "Attack configs, damage, cooldowns, DPS",    "res://scenes/sandbox/mechanics/CombatSandbox.tscn"),

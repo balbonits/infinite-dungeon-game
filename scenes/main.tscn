@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/Main.cs" id="1_script"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://scenes/death_screen.tscn" id="4_death"]
-[ext_resource type="PackedScene" path="res://scenes/pause_menu.tscn" id="5_pause"]
+[ext_resource type="Script" path="res://scripts/ui/PauseMenu.cs" id="5_pause"]
 [ext_resource type="Script" path="res://scripts/ui/ScreenTransition.cs" id="6_transition"]
 [ext_resource type="Script" path="res://scripts/ui/DebugPanel.cs" id="7_debug"]
 [ext_resource type="Script" path="res://scripts/ui/NpcPanel.cs" id="8_npc_panel"]
@@ -37,7 +37,16 @@ layer = 100
 
 [node name="DeathScreen" parent="UILayer" instance=ExtResource("4_death")]
 
-[node name="PauseMenu" parent="UILayer" instance=ExtResource("5_pause")]
+[node name="PauseMenu" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+process_mode = 3
+script = ExtResource("5_pause")
 
 [node name="ScreenTransition" type="Control" parent="UILayer"]
 layout_mode = 3
