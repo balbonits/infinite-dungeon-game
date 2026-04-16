@@ -1,8 +1,13 @@
 # Skills & Abilities Systems
 
-Working document for the Skills/Abilities redesign. Research, decisions, and class breakdowns.
+**ARCHIVED** — Working document for the Skills/Abilities redesign. Research, decisions, and class breakdowns.
 
-**Status:** All three classes locked (pending gameplay refinement). Ready for spec updates.
+This document served as the design workspace. The locked specs are now the source of truth:
+- [skills.md](skills.md) — full Skills & Abilities spec (all class trees, formulas, architecture)
+- [point-economy.md](point-economy.md) — SP/AP rates and sources
+- [class-lore.md](../world/class-lore.md) — class backstories and magic philosophy
+
+**Status:** ARCHIVED. All three classes locked. All specs updated.
 
 ---
 

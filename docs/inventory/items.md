@@ -48,7 +48,7 @@ Characters have the following equipment slots. Some item types are class-specifi
 - Neck and rings are shared across all classes
 - 10 ring slots is notably generous — encourages build diversity through ring stacking
 - Ranger ammo is unlimited but requires a magazine item equipped in the ammo slot
-- Mage offhand items (grimoires, ward orbs) passively enhance existing skills — no dedicated base skill
+- Mage offhand items (grimoires, ward orbs) passively enhance existing Skills — no dedicated mastery
 
 ### Item Data Model
 

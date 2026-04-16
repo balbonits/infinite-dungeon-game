@@ -1,172 +1,149 @@
 #!/usr/bin/env python3
-"""Generate skill and spell icon sprite sheets (512x512 each).
+"""Generate combined abilities icon sprite sheet (512x1024).
 
 Draws pixel-art icons using Pillow. Each icon is 32x32 on a dark background.
 Output:
-  assets/icons/skills_icons.png  — Warrior + Ranger + Innate (73 icons)
-  assets/icons/spells_icons.png  — Mage Arcane + Conduit (45 icons)
+  assets/icons/abilities_icons.png  -- combined sprite sheet
+  assets/icons/abilities_icons.json -- atlas index
 
-Layout: 16 columns x 16 rows grid. Each row of 5 = [base skill] + [4 specifics].
-Icons are grouped by class → category → base skill.
+Layout: 16 columns x 32 rows grid.
+Each row = one mastery: [mastery icon] [ability 1] [ability 2] ... [remaining empty]
 
 Run: python3 scripts/generate_icons.py
 """
 
+import json
+import math
 import os
 from PIL import Image, ImageDraw
 
-# ── Constants ───────────────────────────────────────────────────────────────
+# -- Constants ---------------------------------------------------------------
 
 ICON_SIZE = 32
-SHEET_SIZE = 512
-COLS = SHEET_SIZE // ICON_SIZE  # 16
-ROWS = SHEET_SIZE // ICON_SIZE  # 16
+SHEET_W = 512
+SHEET_H = 1024
+COLS = SHEET_W // ICON_SIZE   # 16
+ROWS = SHEET_H // ICON_SIZE   # 32
 BG_COLOR = (15, 17, 23, 255)  # #0f1117
-OUTLINE = (0, 0, 0, 255)
 
-# ── Color palettes ──────────────────────────────────────────────────────────
+# -- Color palettes ----------------------------------------------------------
 
-# Warrior: warm golds, browns, reds
-C_WARRIOR_BODY = {
-    "primary": (210, 170, 90),    # gold
-    "secondary": (180, 130, 60),  # dark gold
-    "accent": (240, 200, 120),    # bright gold
-    "highlight": (255, 220, 150), # cream
-}
-C_WARRIOR_MIND = {
-    "primary": (160, 130, 200),   # purple-ish
-    "secondary": (120, 100, 170), # dark purple
-    "accent": (200, 170, 240),    # light purple
-    "highlight": (220, 200, 255), # pale purple
-}
-
-# Ranger: greens, browns, earthy
-C_RANGER_ARMS = {
-    "primary": (130, 170, 80),    # green
-    "secondary": (100, 140, 60),  # dark green
-    "accent": (170, 200, 110),    # light green
-    "highlight": (200, 230, 150), # pale green
-}
-C_RANGER_INSTINCT = {
-    "primary": (100, 160, 160),   # teal
-    "secondary": (70, 130, 130),  # dark teal
-    "accent": (140, 200, 200),    # light teal
-    "highlight": (180, 230, 230), # pale teal
-}
-
-# Innate: silver/blue
 C_INNATE = {
-    "primary": (150, 180, 220),   # silver-blue
-    "secondary": (120, 150, 190), # dark silver
-    "accent": (180, 210, 245),    # light silver
-    "highlight": (220, 235, 255), # white-blue
+    "primary": (150, 180, 220),   # silver-blue #96B4DC
+    "secondary": (120, 150, 190),
+    "accent": (180, 210, 245),
+    "highlight": (220, 235, 255),
 }
 
-# Mage element colors
+C_WARRIOR_BODY = {
+    "primary": (210, 170, 90),    # gold #D2AA5A
+    "secondary": (180, 130, 60),
+    "accent": (240, 200, 120),
+    "highlight": (255, 220, 150),
+}
+
+C_WARRIOR_MIND = {
+    "primary": (160, 130, 200),   # purple #A082C8
+    "secondary": (120, 100, 170),
+    "accent": (200, 170, 240),
+    "highlight": (220, 200, 255),
+}
+
+C_RANGER_WEAPONRY = {
+    "primary": (130, 170, 80),    # green #82AA50
+    "secondary": (100, 140, 60),
+    "accent": (170, 200, 110),
+    "highlight": (200, 230, 150),
+}
+
+C_RANGER_SURVIVAL = {
+    "primary": (100, 160, 160),   # teal #64A0A0
+    "secondary": (70, 130, 130),
+    "accent": (140, 200, 200),
+    "highlight": (180, 230, 230),
+}
+
 C_FIRE = {
     "primary": (220, 80, 40),     # red-orange
-    "secondary": (180, 50, 20),   # dark red
-    "accent": (255, 160, 50),     # orange
-    "highlight": (255, 220, 100), # yellow
+    "secondary": (180, 50, 20),
+    "accent": (255, 160, 50),
+    "highlight": (255, 220, 100),
 }
+
 C_WATER = {
     "primary": (60, 130, 220),    # blue
-    "secondary": (40, 90, 180),   # dark blue
-    "accent": (100, 180, 255),    # light blue
-    "highlight": (180, 220, 255), # ice white
+    "secondary": (40, 90, 180),
+    "accent": (100, 180, 255),
+    "highlight": (180, 220, 255),
 }
+
 C_AIR = {
-    "primary": (100, 200, 230),   # cyan
-    "secondary": (60, 160, 200),  # dark cyan
-    "accent": (150, 230, 255),    # light cyan
-    "highlight": (220, 245, 255), # pale cyan
+    "primary": (220, 200, 60),    # yellow
+    "secondary": (180, 160, 40),
+    "accent": (255, 240, 100),
+    "highlight": (255, 250, 180),
 }
+
 C_EARTH = {
     "primary": (160, 120, 70),    # brown
-    "secondary": (120, 90, 50),   # dark brown
-    "accent": (200, 160, 100),    # tan
-    "highlight": (180, 170, 150), # stone gray
+    "secondary": (120, 90, 50),
+    "accent": (200, 160, 100),
+    "highlight": (180, 170, 150),
 }
-C_LIGHT = {
-    "primary": (245, 200, 107),   # gold (#f5c86b)
-    "secondary": (200, 160, 70),  # dark gold
-    "accent": (255, 230, 150),    # bright gold
-    "highlight": (255, 245, 210), # white-gold
+
+C_MAGE_AETHER = {
+    "primary": (224, 224, 255),   # white/light #E0E0FF
+    "secondary": (58, 32, 96),    # dark #3A2060
+    "accent": (180, 160, 240),
+    "highlight": (240, 240, 255),
 }
-C_DARK = {
-    "primary": (130, 80, 180),    # purple
-    "secondary": (90, 50, 140),   # dark purple
-    "accent": (170, 110, 220),    # light purple
-    "highlight": (100, 60, 120),  # deep purple
-}
-C_RESTORATION = {
-    "primary": (80, 200, 120),    # green
-    "secondary": (50, 160, 80),   # dark green
-    "accent": (120, 230, 160),    # light green
-    "highlight": (200, 255, 220), # pale green
-}
-C_AMPLIFICATION = {
-    "primary": (80, 140, 240),    # electric blue
-    "secondary": (50, 100, 200),  # dark blue
-    "accent": (120, 180, 255),    # light blue
-    "highlight": (180, 210, 255), # pale blue
-}
-C_OVERCHARGE = {
-    "primary": (240, 100, 60),    # danger orange
-    "secondary": (200, 60, 30),   # dark red
-    "accent": (255, 160, 80),     # bright orange
-    "highlight": (255, 200, 100), # yellow warning
+
+C_MAGE_ATTUNEMENT = {
+    "primary": (80, 200, 200),    # cyan #50C8C8
+    "secondary": (50, 160, 160),
+    "accent": (120, 230, 230),
+    "highlight": (200, 250, 250),
 }
 
 
-# ── Drawing primitives ──────────────────────────────────────────────────────
+# -- Drawing primitives ------------------------------------------------------
 
 def draw_pixel(draw, x, y, color, ox=0, oy=0):
-    """Draw a single pixel at grid position (x,y) with offset."""
     draw.point((ox + x, oy + y), fill=color)
 
 
 def draw_rect(draw, x1, y1, x2, y2, color, ox=0, oy=0):
-    """Draw a filled rectangle."""
     draw.rectangle((ox + x1, oy + y1, ox + x2, oy + y2), fill=color)
 
 
 def draw_line_px(draw, x1, y1, x2, y2, color, ox=0, oy=0):
-    """Draw a 1px line."""
     draw.line((ox + x1, oy + y1, ox + x2, oy + y2), fill=color, width=1)
 
 
 def draw_circle_filled(draw, cx, cy, r, color, ox=0, oy=0):
-    """Draw a filled circle."""
     draw.ellipse((ox + cx - r, oy + cy - r, ox + cx + r, oy + cy + r), fill=color)
 
 
 def draw_circle_outline(draw, cx, cy, r, color, ox=0, oy=0):
-    """Draw a circle outline."""
     draw.ellipse((ox + cx - r, oy + cy - r, ox + cx + r, oy + cy + r), outline=color)
 
 
 def draw_diamond(draw, cx, cy, r, color, ox=0, oy=0):
-    """Draw a filled diamond."""
     pts = [(ox+cx, oy+cy-r), (ox+cx+r, oy+cy), (ox+cx, oy+cy+r), (ox+cx-r, oy+cy)]
     draw.polygon(pts, fill=color)
 
 
 def draw_triangle_up(draw, cx, cy, size, color, ox=0, oy=0):
-    """Draw upward triangle."""
     pts = [(ox+cx, oy+cy-size), (ox+cx+size, oy+cy+size), (ox+cx-size, oy+cy+size)]
     draw.polygon(pts, fill=color)
 
 
 def draw_triangle_down(draw, cx, cy, size, color, ox=0, oy=0):
-    """Draw downward triangle."""
     pts = [(ox+cx, oy+cy+size), (ox+cx+size, oy+cy-size), (ox+cx-size, oy+cy-size)]
     draw.polygon(pts, fill=color)
 
 
 def draw_star(draw, cx, cy, r_out, r_in, points, color, ox=0, oy=0):
-    """Draw a star shape."""
-    import math
     pts = []
     for i in range(points * 2):
         angle = math.pi * i / points - math.pi / 2
@@ -175,186 +152,115 @@ def draw_star(draw, cx, cy, r_out, r_in, points, color, ox=0, oy=0):
     draw.polygon(pts, fill=color)
 
 
-# ── Icon drawing functions ──────────────────────────────────────────────────
-# Each returns nothing, draws directly onto the ImageDraw at offset (ox, oy).
-# All icons are 32x32.
+# -- Icon drawing functions --------------------------------------------------
+# Each draws onto ImageDraw at offset (ox, oy). All icons are 32x32.
 
-# --- Generic shapes for base skill icons ---
+# --- Row 0: Innate ---
 
-def icon_fist(draw, c, ox, oy):
-    """Clenched fist — Unarmed base."""
-    draw_rect(draw, 11, 8, 20, 12, c["primary"], ox, oy)  # knuckles
-    draw_rect(draw, 10, 12, 21, 22, c["primary"], ox, oy)  # fist body
-    draw_rect(draw, 13, 22, 18, 25, c["secondary"], ox, oy)  # wrist
-    # finger lines
+def icon_innate_mastery(draw, c, ox, oy):
+    """Innate mastery -- radiant body silhouette."""
+    draw_circle_filled(draw, 16, 10, 4, c["primary"], ox, oy)
+    draw_rect(draw, 12, 14, 20, 24, c["primary"], ox, oy)
+    draw_circle_outline(draw, 16, 16, 12, c["highlight"], ox, oy)
+    draw_circle_outline(draw, 16, 16, 11, c["accent"], ox, oy)
+
+def icon_haste(draw, c, ox, oy):
+    """Haste -- speed lines with running figure."""
+    draw_circle_filled(draw, 18, 10, 3, c["primary"], ox, oy)
+    draw_line_px(draw, 18, 13, 18, 20, c["primary"], ox, oy)
+    draw_line_px(draw, 18, 20, 22, 26, c["primary"], ox, oy)
+    draw_line_px(draw, 18, 20, 14, 26, c["primary"], ox, oy)
+    for i in range(4):
+        y = 10 + i * 4
+        draw_line_px(draw, 4, y, 12, y, c["accent"], ox, oy)
+
+def icon_sense(draw, c, ox, oy):
+    """Sense -- radiating pulse."""
+    draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
+    draw_circle_outline(draw, 16, 15, 6, c["accent"], ox, oy)
+    draw_circle_outline(draw, 16, 15, 9, c["primary"], ox, oy)
+    draw_circle_outline(draw, 16, 15, 12, c["secondary"], ox, oy)
+
+def icon_fortify(draw, c, ox, oy):
+    """Fortify -- glowing body shield."""
+    draw_circle_filled(draw, 16, 10, 4, c["primary"], ox, oy)
+    draw_rect(draw, 12, 14, 20, 24, c["primary"], ox, oy)
+    draw_circle_outline(draw, 16, 16, 12, c["highlight"], ox, oy)
+    draw_circle_outline(draw, 16, 16, 11, c["accent"], ox, oy)
+    # shield accent
+    draw_diamond(draw, 16, 16, 4, c["accent"], ox, oy)
+
+def icon_armor(draw, c, ox, oy):
+    """Armor -- chestplate."""
+    draw_rect(draw, 10, 8, 22, 22, c["primary"], ox, oy)
+    draw_rect(draw, 7, 8, 10, 14, c["accent"], ox, oy)
+    draw_rect(draw, 22, 8, 25, 14, c["accent"], ox, oy)
+    draw_rect(draw, 13, 10, 19, 20, c["secondary"], ox, oy)
+    draw_line_px(draw, 16, 10, 16, 20, c["highlight"], ox, oy)
+
+# --- Row 1: Unarmed ---
+
+def icon_unarmed_mastery(draw, c, ox, oy):
+    """Unarmed mastery -- clenched fist."""
+    draw_rect(draw, 11, 8, 20, 12, c["primary"], ox, oy)
+    draw_rect(draw, 10, 12, 21, 22, c["primary"], ox, oy)
+    draw_rect(draw, 13, 22, 18, 25, c["secondary"], ox, oy)
     draw_line_px(draw, 14, 9, 14, 12, c["secondary"], ox, oy)
     draw_line_px(draw, 17, 9, 17, 12, c["secondary"], ox, oy)
     draw_line_px(draw, 20, 10, 20, 12, c["secondary"], ox, oy)
-    # thumb
     draw_rect(draw, 8, 13, 10, 18, c["accent"], ox, oy)
 
-def icon_sword(draw, c, ox, oy):
-    """Sword — Bladed base."""
-    # blade
+def icon_punch(draw, c, ox, oy):
+    """Punch -- forward fist with impact."""
+    draw_rect(draw, 6, 12, 18, 20, c["primary"], ox, oy)
+    draw_rect(draw, 6, 13, 8, 19, c["accent"], ox, oy)
+    # impact lines
+    draw_line_px(draw, 20, 14, 26, 12, c["highlight"], ox, oy)
+    draw_line_px(draw, 20, 16, 27, 16, c["highlight"], ox, oy)
+    draw_line_px(draw, 20, 18, 26, 20, c["highlight"], ox, oy)
+
+def icon_kick(draw, c, ox, oy):
+    """Kick -- leg kick."""
+    draw_line_px(draw, 12, 8, 16, 16, c["secondary"], ox, oy)
+    draw_line_px(draw, 16, 16, 24, 14, c["primary"], ox, oy)
+    draw_line_px(draw, 13, 8, 17, 16, c["secondary"], ox, oy)
+    draw_line_px(draw, 17, 16, 25, 14, c["primary"], ox, oy)
+    draw_rect(draw, 23, 12, 27, 16, c["accent"], ox, oy)
+    draw_pixel(draw, 28, 13, c["highlight"], ox, oy)
+    draw_pixel(draw, 28, 15, c["highlight"], ox, oy)
+
+def icon_grappling(draw, c, ox, oy):
+    """Grappling -- grasping hands."""
+    draw_rect(draw, 6, 10, 12, 20, c["primary"], ox, oy)
+    draw_rect(draw, 20, 10, 26, 20, c["primary"], ox, oy)
+    draw_rect(draw, 12, 12, 14, 14, c["accent"], ox, oy)
+    draw_rect(draw, 12, 16, 14, 18, c["accent"], ox, oy)
+    draw_rect(draw, 18, 12, 20, 14, c["accent"], ox, oy)
+    draw_rect(draw, 18, 16, 20, 18, c["accent"], ox, oy)
+
+def icon_elbow_strike(draw, c, ox, oy):
+    """Elbow Strike -- bent arm with impact."""
+    draw_line_px(draw, 8, 8, 16, 16, c["secondary"], ox, oy)
+    draw_line_px(draw, 16, 16, 12, 24, c["secondary"], ox, oy)
+    draw_circle_filled(draw, 16, 16, 3, c["accent"], ox, oy)
+    draw_pixel(draw, 19, 14, c["highlight"], ox, oy)
+    draw_pixel(draw, 20, 16, c["highlight"], ox, oy)
+    draw_pixel(draw, 19, 18, c["highlight"], ox, oy)
+
+# --- Row 2: Bladed ---
+
+def icon_bladed_mastery(draw, c, ox, oy):
+    """Bladed mastery -- sword."""
     draw_line_px(draw, 16, 5, 16, 20, c["highlight"], ox, oy)
     draw_line_px(draw, 15, 6, 15, 19, c["accent"], ox, oy)
     draw_line_px(draw, 17, 6, 17, 19, c["accent"], ox, oy)
-    # point
     draw_pixel(draw, 16, 4, c["highlight"], ox, oy)
-    # guard
     draw_rect(draw, 12, 20, 20, 21, c["primary"], ox, oy)
-    # grip
     draw_rect(draw, 15, 22, 17, 26, c["secondary"], ox, oy)
-    # pommel
     draw_rect(draw, 14, 27, 18, 28, c["primary"], ox, oy)
 
-def icon_hammer(draw, c, ox, oy):
-    """Hammer — Blunt base."""
-    # handle
-    draw_rect(draw, 15, 14, 17, 27, c["secondary"], ox, oy)
-    # head
-    draw_rect(draw, 10, 6, 22, 14, c["primary"], ox, oy)
-    draw_rect(draw, 11, 7, 21, 13, c["accent"], ox, oy)
-    # highlight
-    draw_rect(draw, 12, 8, 14, 10, c["highlight"], ox, oy)
-
-def icon_spear(draw, c, ox, oy):
-    """Spear — Polearms base."""
-    # shaft
-    draw_line_px(draw, 16, 10, 16, 28, c["secondary"], ox, oy)
-    # spearhead
-    draw_triangle_up(draw, 16, 7, 4, c["accent"], ox, oy)
-    draw_pixel(draw, 16, 4, c["highlight"], ox, oy)
-
-def icon_shield(draw, c, ox, oy):
-    """Shield — Shields base."""
-    # shield body (rounded shape)
-    draw_rect(draw, 10, 7, 22, 22, c["primary"], ox, oy)
-    draw_rect(draw, 11, 6, 21, 23, c["primary"], ox, oy)
-    draw_rect(draw, 12, 23, 20, 25, c["primary"], ox, oy)
-    draw_pixel(draw, 13, 25, c["primary"], ox, oy)
-    draw_pixel(draw, 19, 25, c["primary"], ox, oy)
-    # center cross
-    draw_line_px(draw, 16, 9, 16, 21, c["accent"], ox, oy)
-    draw_line_px(draw, 12, 14, 20, 14, c["accent"], ox, oy)
-    # boss
-    draw_circle_filled(draw, 16, 14, 2, c["highlight"], ox, oy)
-
-def icon_brain(draw, c, ox, oy):
-    """Brain/meditation — Inner base."""
-    draw_circle_filled(draw, 16, 14, 8, c["primary"], ox, oy)
-    # brain folds
-    draw_line_px(draw, 16, 7, 16, 21, c["secondary"], ox, oy)
-    draw_line_px(draw, 11, 11, 14, 14, c["accent"], ox, oy)
-    draw_line_px(draw, 18, 11, 21, 14, c["accent"], ox, oy)
-    draw_line_px(draw, 11, 17, 14, 14, c["accent"], ox, oy)
-    draw_line_px(draw, 18, 17, 21, 14, c["accent"], ox, oy)
-    # glow
-    draw_circle_outline(draw, 16, 14, 10, c["highlight"], ox, oy)
-
-def icon_shout(draw, c, ox, oy):
-    """Shout/aura — Outer base."""
-    # face
-    draw_circle_filled(draw, 16, 14, 6, c["primary"], ox, oy)
-    # open mouth
-    draw_rect(draw, 14, 16, 18, 19, c["secondary"], ox, oy)
-    # shout waves
-    draw_line_px(draw, 23, 12, 26, 10, c["accent"], ox, oy)
-    draw_line_px(draw, 24, 15, 27, 15, c["accent"], ox, oy)
-    draw_line_px(draw, 23, 18, 26, 20, c["accent"], ox, oy)
-    draw_line_px(draw, 5, 12, 8, 10, c["accent"], ox, oy)
-    draw_line_px(draw, 4, 15, 7, 15, c["accent"], ox, oy)
-    draw_line_px(draw, 5, 18, 8, 20, c["accent"], ox, oy)
-
-def icon_bow(draw, c, ox, oy):
-    """Bow — Drawn base."""
-    # bow curve (left side)
-    draw_line_px(draw, 10, 6, 8, 16, c["primary"], ox, oy)
-    draw_line_px(draw, 8, 16, 10, 26, c["primary"], ox, oy)
-    # string
-    draw_line_px(draw, 10, 6, 10, 26, c["secondary"], ox, oy)
-    # arrow
-    draw_line_px(draw, 11, 16, 25, 16, c["accent"], ox, oy)
-    # arrowhead
-    draw_pixel(draw, 26, 16, c["highlight"], ox, oy)
-    draw_pixel(draw, 25, 15, c["highlight"], ox, oy)
-    draw_pixel(draw, 25, 17, c["highlight"], ox, oy)
-    # fletching
-    draw_pixel(draw, 12, 14, c["secondary"], ox, oy)
-    draw_pixel(draw, 12, 18, c["secondary"], ox, oy)
-
-def icon_throwing_knife(draw, c, ox, oy):
-    """Throwing knife — Thrown base."""
-    # blade (diagonal)
-    draw_line_px(draw, 8, 8, 20, 20, c["accent"], ox, oy)
-    draw_line_px(draw, 9, 8, 21, 20, c["accent"], ox, oy)
-    # handle
-    draw_line_px(draw, 21, 21, 25, 25, c["secondary"], ox, oy)
-    # motion lines
-    draw_line_px(draw, 6, 12, 4, 14, c["highlight"], ox, oy)
-    draw_line_px(draw, 10, 6, 8, 8, c["highlight"], ox, oy)
-
-def icon_pistol(draw, c, ox, oy):
-    """Pistol — Firearms base."""
-    # barrel
-    draw_rect(draw, 6, 12, 18, 15, c["primary"], ox, oy)
-    # body
-    draw_rect(draw, 14, 10, 22, 16, c["primary"], ox, oy)
-    # grip
-    draw_rect(draw, 18, 16, 22, 24, c["secondary"], ox, oy)
-    # trigger guard
-    draw_line_px(draw, 16, 16, 16, 20, c["accent"], ox, oy)
-    draw_line_px(draw, 16, 20, 18, 20, c["accent"], ox, oy)
-    # muzzle flash
-    draw_pixel(draw, 5, 13, c["highlight"], ox, oy)
-    draw_pixel(draw, 4, 12, c["highlight"], ox, oy)
-    draw_pixel(draw, 4, 14, c["highlight"], ox, oy)
-
-def icon_buckler(draw, c, ox, oy):
-    """Small buckler — Ranger Melee base."""
-    draw_circle_filled(draw, 16, 15, 8, c["primary"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 5, c["secondary"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 2, c["accent"], ox, oy)
-
-def icon_crosshair(draw, c, ox, oy):
-    """Crosshair — Precision base."""
-    draw_circle_outline(draw, 16, 15, 8, c["primary"], ox, oy)
-    draw_line_px(draw, 16, 4, 16, 10, c["accent"], ox, oy)
-    draw_line_px(draw, 16, 20, 16, 26, c["accent"], ox, oy)
-    draw_line_px(draw, 5, 15, 11, 15, c["accent"], ox, oy)
-    draw_line_px(draw, 21, 15, 27, 15, c["accent"], ox, oy)
-    draw_pixel(draw, 16, 15, c["highlight"], ox, oy)
-
-def icon_eye(draw, c, ox, oy):
-    """Eye — Awareness base."""
-    # eye shape
-    pts = [(6, 15), (16, 8), (26, 15), (16, 22)]
-    draw.polygon([(ox+x, oy+y) for x, y in pts], fill=c["primary"])
-    draw_circle_filled(draw, 16, 15, 4, c["accent"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 2, c["secondary"], ox, oy)
-    draw_pixel(draw, 15, 14, c["highlight"], ox, oy)
-
-def icon_trap(draw, c, ox, oy):
-    """Bear trap — Trapping base."""
-    # jaws (top)
-    for i in range(5):
-        x = 8 + i * 4
-        draw_triangle_up(draw, x, 12, 2, c["accent"], ox, oy)
-    # jaws (bottom)
-    for i in range(5):
-        x = 8 + i * 4
-        draw_triangle_down(draw, x, 18, 2, c["accent"], ox, oy)
-    # base plate
-    draw_rect(draw, 8, 20, 24, 23, c["primary"], ox, oy)
-    # chain
-    draw_line_px(draw, 16, 23, 16, 27, c["secondary"], ox, oy)
-
-# --- Specific skill icon variants ---
-# These are simpler variations using shapes + color to differentiate
-
-def icon_slash_arc(draw, c, ox, oy):
-    """Arc slash attack."""
-    import math
+def icon_slash(draw, c, ox, oy):
+    """Slash -- arc slash attack."""
     for angle in range(0, 180, 8):
         rad = math.radians(angle)
         x = int(16 + 10 * math.cos(rad))
@@ -362,163 +268,268 @@ def icon_slash_arc(draw, c, ox, oy):
         draw_pixel(draw, x, y, c["accent"], ox, oy)
         draw_pixel(draw, x, y+1, c["primary"], ox, oy)
 
-def icon_stab(draw, c, ox, oy):
-    """Thrust/stab."""
+def icon_thrust(draw, c, ox, oy):
+    """Thrust -- forward stab."""
     draw_line_px(draw, 16, 4, 16, 24, c["accent"], ox, oy)
     draw_line_px(draw, 15, 5, 15, 23, c["primary"], ox, oy)
-    # impact lines
     draw_line_px(draw, 12, 24, 20, 24, c["highlight"], ox, oy)
     draw_line_px(draw, 13, 26, 19, 26, c["highlight"], ox, oy)
 
-def icon_overhead_chop(draw, c, ox, oy):
-    """Cleave/overhead chop."""
-    # blade coming down
+def icon_cleave(draw, c, ox, oy):
+    """Cleave -- overhead chop."""
     draw_rect(draw, 14, 4, 18, 16, c["accent"], ox, oy)
-    # impact burst
     draw_line_px(draw, 10, 18, 22, 18, c["highlight"], ox, oy)
     draw_line_px(draw, 8, 20, 24, 20, c["highlight"], ox, oy)
     draw_line_px(draw, 12, 22, 20, 22, c["primary"], ox, oy)
 
-def icon_crossed_swords(draw, c, ox, oy):
-    """Parry — crossed blades."""
+def icon_parry(draw, c, ox, oy):
+    """Parry -- crossed blades."""
     draw_line_px(draw, 8, 6, 24, 22, c["accent"], ox, oy)
     draw_line_px(draw, 24, 6, 8, 22, c["accent"], ox, oy)
     draw_line_px(draw, 9, 6, 25, 22, c["primary"], ox, oy)
     draw_line_px(draw, 25, 6, 9, 22, c["primary"], ox, oy)
-    # spark at center
     draw_pixel(draw, 16, 14, c["highlight"], ox, oy)
     draw_pixel(draw, 15, 13, c["highlight"], ox, oy)
     draw_pixel(draw, 17, 15, c["highlight"], ox, oy)
 
-def icon_kick(draw, c, ox, oy):
-    """Leg kick."""
-    # leg
-    draw_line_px(draw, 12, 8, 16, 16, c["secondary"], ox, oy)
-    draw_line_px(draw, 16, 16, 24, 14, c["primary"], ox, oy)
-    draw_line_px(draw, 13, 8, 17, 16, c["secondary"], ox, oy)
-    draw_line_px(draw, 17, 16, 25, 14, c["primary"], ox, oy)
-    # boot
-    draw_rect(draw, 23, 12, 27, 16, c["accent"], ox, oy)
+# --- Row 3: Blunt ---
+
+def icon_blunt_mastery(draw, c, ox, oy):
+    """Blunt mastery -- hammer."""
+    draw_rect(draw, 15, 14, 17, 27, c["secondary"], ox, oy)
+    draw_rect(draw, 10, 6, 22, 14, c["primary"], ox, oy)
+    draw_rect(draw, 11, 7, 21, 13, c["accent"], ox, oy)
+    draw_rect(draw, 12, 8, 14, 10, c["highlight"], ox, oy)
+
+def icon_smash(draw, c, ox, oy):
+    """Smash -- hammer impact."""
+    draw_rect(draw, 13, 4, 19, 12, c["primary"], ox, oy)
+    draw_rect(draw, 15, 12, 17, 18, c["secondary"], ox, oy)
+    # impact lines
+    draw_line_px(draw, 8, 20, 24, 20, c["highlight"], ox, oy)
+    draw_line_px(draw, 10, 22, 22, 22, c["accent"], ox, oy)
+    draw_line_px(draw, 12, 24, 20, 24, c["primary"], ox, oy)
+
+def icon_bump(draw, c, ox, oy):
+    """Bump -- shoulder charge."""
+    draw_circle_filled(draw, 12, 12, 5, c["primary"], ox, oy)
+    draw_rect(draw, 8, 14, 18, 24, c["primary"], ox, oy)
+    # motion lines
+    draw_line_px(draw, 20, 10, 26, 8, c["highlight"], ox, oy)
+    draw_line_px(draw, 20, 14, 27, 14, c["highlight"], ox, oy)
+    draw_line_px(draw, 20, 18, 26, 20, c["highlight"], ox, oy)
+
+def icon_crush(draw, c, ox, oy):
+    """Crush -- heavy downward strike."""
+    draw_rect(draw, 10, 4, 22, 10, c["primary"], ox, oy)
+    draw_rect(draw, 14, 10, 18, 16, c["secondary"], ox, oy)
+    # ground cracks
+    draw_line_px(draw, 6, 20, 26, 20, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 20, 12, 28, c["highlight"], ox, oy)
+    draw_line_px(draw, 16, 20, 20, 28, c["highlight"], ox, oy)
+
+def icon_shatter(draw, c, ox, oy):
+    """Shatter -- breaking fragments."""
+    # fragments flying outward
+    draw_rect(draw, 14, 12, 18, 18, c["primary"], ox, oy)
+    draw_rect(draw, 6, 6, 10, 10, c["accent"], ox, oy)
+    draw_rect(draw, 22, 6, 26, 10, c["accent"], ox, oy)
+    draw_rect(draw, 6, 20, 10, 24, c["accent"], ox, oy)
+    draw_rect(draw, 22, 20, 26, 24, c["accent"], ox, oy)
+    # cracks from center
+    draw_line_px(draw, 16, 15, 8, 8, c["highlight"], ox, oy)
+    draw_line_px(draw, 16, 15, 24, 8, c["highlight"], ox, oy)
+    draw_line_px(draw, 16, 15, 8, 22, c["highlight"], ox, oy)
+    draw_line_px(draw, 16, 15, 24, 22, c["highlight"], ox, oy)
+
+# --- Row 4: Polearms ---
+
+def icon_polearms_mastery(draw, c, ox, oy):
+    """Polearms mastery -- spear."""
+    draw_line_px(draw, 16, 10, 16, 28, c["secondary"], ox, oy)
+    draw_triangle_up(draw, 16, 7, 4, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 4, c["highlight"], ox, oy)
+
+def icon_pierce(draw, c, ox, oy):
+    """Pierce -- spear thrust."""
+    draw_line_px(draw, 16, 6, 16, 26, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 4, c["highlight"], ox, oy)
+    draw_pixel(draw, 15, 5, c["highlight"], ox, oy)
+    draw_pixel(draw, 17, 5, c["highlight"], ox, oy)
     # impact
-    draw_pixel(draw, 28, 13, c["highlight"], ox, oy)
-    draw_pixel(draw, 28, 15, c["highlight"], ox, oy)
+    draw_line_px(draw, 12, 26, 20, 26, c["highlight"], ox, oy)
 
-def icon_grapple(draw, c, ox, oy):
-    """Grasping hands."""
-    # two hands reaching
-    draw_rect(draw, 6, 10, 12, 20, c["primary"], ox, oy)
-    draw_rect(draw, 20, 10, 26, 20, c["primary"], ox, oy)
-    # fingers curling inward
-    draw_rect(draw, 12, 12, 14, 14, c["accent"], ox, oy)
-    draw_rect(draw, 12, 16, 14, 18, c["accent"], ox, oy)
-    draw_rect(draw, 18, 12, 20, 14, c["accent"], ox, oy)
-    draw_rect(draw, 18, 16, 20, 18, c["accent"], ox, oy)
+def icon_sweep(draw, c, ox, oy):
+    """Sweep -- wide horizontal arc."""
+    draw_line_px(draw, 4, 16, 28, 16, c["accent"], ox, oy)
+    draw_line_px(draw, 4, 15, 28, 15, c["primary"], ox, oy)
+    # sweep arc below
+    for angle in range(0, 180, 10):
+        rad = math.radians(angle)
+        x = int(16 + 12 * math.cos(rad))
+        y = int(18 + 4 * math.sin(rad))
+        draw_pixel(draw, x, y, c["highlight"], ox, oy)
 
-def icon_elbow(draw, c, ox, oy):
-    """Elbow/knee strike."""
-    # arm bent
-    draw_line_px(draw, 8, 8, 16, 16, c["secondary"], ox, oy)
-    draw_line_px(draw, 16, 16, 12, 24, c["secondary"], ox, oy)
-    # elbow point
-    draw_circle_filled(draw, 16, 16, 3, c["accent"], ox, oy)
-    # impact sparks
-    draw_pixel(draw, 19, 14, c["highlight"], ox, oy)
-    draw_pixel(draw, 20, 16, c["highlight"], ox, oy)
-    draw_pixel(draw, 19, 18, c["highlight"], ox, oy)
+def icon_brace(draw, c, ox, oy):
+    """Brace -- spear set against charge."""
+    draw_line_px(draw, 8, 24, 24, 8, c["accent"], ox, oy)
+    draw_line_px(draw, 9, 24, 25, 8, c["accent"], ox, oy)
+    # point
+    draw_pixel(draw, 24, 7, c["highlight"], ox, oy)
+    draw_pixel(draw, 25, 7, c["highlight"], ox, oy)
+    # brace foot
+    draw_rect(draw, 6, 24, 12, 27, c["secondary"], ox, oy)
 
+def icon_vault(draw, c, ox, oy):
+    """Vault -- pole vault leap."""
+    # pole diagonal
+    draw_line_px(draw, 12, 26, 16, 6, c["secondary"], ox, oy)
+    # figure arcing over
+    draw_circle_filled(draw, 20, 8, 3, c["primary"], ox, oy)
+    # arc path
+    for angle in range(0, 180, 15):
+        rad = math.radians(angle)
+        x = int(16 + 8 * math.cos(rad))
+        y = int(12 - 4 * math.sin(rad))
+        draw_pixel(draw, x, y, c["accent"], ox, oy)
 
-def icon_generic_attack(draw, c, ox, oy, symbol="X"):
-    """Generic attack icon with visual symbol."""
-    draw_circle_filled(draw, 16, 15, 10, c["secondary"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 7, c["primary"], ox, oy)
-    # center accent
-    draw_diamond(draw, 16, 15, 4, c["accent"], ox, oy)
+def icon_haft_blow(draw, c, ox, oy):
+    """Haft Blow -- blunt end strike."""
+    draw_line_px(draw, 8, 8, 24, 24, c["secondary"], ox, oy)
+    draw_line_px(draw, 9, 8, 25, 24, c["secondary"], ox, oy)
+    # blunt end highlighted
+    draw_circle_filled(draw, 24, 24, 3, c["accent"], ox, oy)
+    # impact
+    draw_pixel(draw, 27, 22, c["highlight"], ox, oy)
+    draw_pixel(draw, 27, 26, c["highlight"], ox, oy)
 
+# --- Row 5: Shields ---
 
-def icon_generic_buff(draw, c, ox, oy):
-    """Generic buff — upward arrow in circle."""
-    draw_circle_filled(draw, 16, 15, 10, c["secondary"], ox, oy)
-    draw_triangle_up(draw, 16, 12, 5, c["accent"], ox, oy)
-    draw_rect(draw, 14, 17, 18, 23, c["accent"], ox, oy)
+def icon_shields_mastery(draw, c, ox, oy):
+    """Shields mastery -- shield."""
+    draw_rect(draw, 10, 7, 22, 22, c["primary"], ox, oy)
+    draw_rect(draw, 11, 6, 21, 23, c["primary"], ox, oy)
+    draw_rect(draw, 12, 23, 20, 25, c["primary"], ox, oy)
+    draw_line_px(draw, 16, 9, 16, 21, c["accent"], ox, oy)
+    draw_line_px(draw, 12, 14, 20, 14, c["accent"], ox, oy)
+    draw_circle_filled(draw, 16, 14, 2, c["highlight"], ox, oy)
 
-
-def icon_generic_debuff(draw, c, ox, oy):
-    """Generic debuff — downward arrow in circle."""
-    draw_circle_filled(draw, 16, 15, 10, c["secondary"], ox, oy)
-    draw_triangle_down(draw, 16, 18, 5, c["accent"], ox, oy)
-    draw_rect(draw, 14, 7, 18, 13, c["accent"], ox, oy)
-
-
-def icon_generic_aoe(draw, c, ox, oy):
-    """Generic AoE — concentric circles."""
-    draw_circle_filled(draw, 16, 15, 11, c["secondary"], ox, oy)
-    draw_circle_outline(draw, 16, 15, 8, c["accent"], ox, oy)
-    draw_circle_outline(draw, 16, 15, 5, c["accent"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
-
-
-def icon_shield_raised(draw, c, ox, oy):
-    """Shield raised — Block."""
-    icon_shield(draw, c, ox, oy)
-    # glow
+def icon_block(draw, c, ox, oy):
+    """Block -- shield raised."""
+    draw_rect(draw, 10, 7, 22, 22, c["primary"], ox, oy)
+    draw_rect(draw, 11, 6, 21, 23, c["primary"], ox, oy)
     draw_line_px(draw, 8, 5, 8, 24, c["highlight"], ox, oy)
     draw_line_px(draw, 24, 5, 24, 24, c["highlight"], ox, oy)
 
-
 def icon_shield_bash(draw, c, ox, oy):
-    """Shield bash."""
+    """Shield Bash -- shield strike."""
     draw_rect(draw, 8, 8, 18, 22, c["primary"], ox, oy)
-    # motion lines
     draw_line_px(draw, 20, 10, 26, 8, c["highlight"], ox, oy)
     draw_line_px(draw, 20, 15, 27, 15, c["highlight"], ox, oy)
     draw_line_px(draw, 20, 20, 26, 22, c["highlight"], ox, oy)
 
-
 def icon_deflect(draw, c, ox, oy):
-    """Arrow bouncing off shield."""
+    """Deflect -- arrow bouncing off."""
     draw_rect(draw, 6, 8, 14, 22, c["primary"], ox, oy)
-    # incoming arrow
     draw_line_px(draw, 26, 8, 16, 14, c["accent"], ox, oy)
-    # bouncing arrow
     draw_line_px(draw, 16, 14, 24, 22, c["highlight"], ox, oy)
 
-
-def icon_fortress(draw, c, ox, oy):
-    """Bulwark — fortified stance."""
+def icon_bulwark(draw, c, ox, oy):
+    """Bulwark -- fortified stance."""
     draw_rect(draw, 8, 10, 24, 24, c["primary"], ox, oy)
     draw_rect(draw, 10, 12, 22, 22, c["secondary"], ox, oy)
-    # battlements
     draw_rect(draw, 8, 6, 11, 10, c["primary"], ox, oy)
     draw_rect(draw, 14, 6, 18, 10, c["primary"], ox, oy)
     draw_rect(draw, 21, 6, 24, 10, c["primary"], ox, oy)
 
+# --- Row 6: Dual Wield ---
 
-def icon_focused_eye(draw, c, ox, oy):
-    """Battle Focus — focused eye."""
-    icon_eye(draw, c, ox, oy)
-    # focus lines around
+def icon_dual_wield_mastery(draw, c, ox, oy):
+    """Dual Wield mastery -- two crossed swords."""
+    # left sword
+    draw_line_px(draw, 8, 6, 16, 22, c["accent"], ox, oy)
+    draw_line_px(draw, 9, 6, 17, 22, c["accent"], ox, oy)
+    # right sword
+    draw_line_px(draw, 24, 6, 16, 22, c["accent"], ox, oy)
+    draw_line_px(draw, 23, 6, 15, 22, c["accent"], ox, oy)
+    # guards
+    draw_line_px(draw, 10, 18, 14, 16, c["primary"], ox, oy)
+    draw_line_px(draw, 22, 18, 18, 16, c["primary"], ox, oy)
+
+def icon_dual_stab(draw, c, ox, oy):
+    """Dual Stab -- two blades thrusting."""
+    draw_line_px(draw, 10, 4, 10, 24, c["accent"], ox, oy)
+    draw_line_px(draw, 11, 4, 11, 24, c["accent"], ox, oy)
+    draw_line_px(draw, 22, 4, 22, 24, c["accent"], ox, oy)
+    draw_line_px(draw, 23, 4, 23, 24, c["accent"], ox, oy)
+    # impact
+    draw_line_px(draw, 7, 24, 14, 24, c["highlight"], ox, oy)
+    draw_line_px(draw, 19, 24, 26, 24, c["highlight"], ox, oy)
+
+def icon_dual_slash(draw, c, ox, oy):
+    """Dual Slash -- two arcs."""
+    for angle in range(0, 180, 8):
+        rad = math.radians(angle)
+        x = int(12 + 7 * math.cos(rad))
+        y = int(16 - 6 * math.sin(rad))
+        draw_pixel(draw, x, y, c["accent"], ox, oy)
+    for angle in range(0, 180, 8):
+        rad = math.radians(angle)
+        x = int(20 + 7 * math.cos(rad))
+        y = int(16 - 6 * math.sin(rad))
+        draw_pixel(draw, x, y, c["highlight"], ox, oy)
+
+def icon_spin_attack(draw, c, ox, oy):
+    """Spin Attack -- circular blade motion."""
+    draw_circle_outline(draw, 16, 15, 10, c["accent"], ox, oy)
+    draw_circle_outline(draw, 16, 15, 9, c["primary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
+    # blade tips
+    draw_pixel(draw, 16, 5, c["highlight"], ox, oy)
+    draw_pixel(draw, 16, 25, c["highlight"], ox, oy)
+    draw_pixel(draw, 6, 15, c["highlight"], ox, oy)
+    draw_pixel(draw, 26, 15, c["highlight"], ox, oy)
+
+def icon_rapid_combo(draw, c, ox, oy):
+    """Rapid Combo -- multiple slash lines."""
+    for i in range(5):
+        x = 6 + i * 5
+        draw_line_px(draw, x, 6 + i, x + 4, 24 - i, c["accent"], ox, oy)
+        draw_pixel(draw, x + 2, 6 + i - 1, c["highlight"], ox, oy)
+
+# --- Row 7: Discipline ---
+
+def icon_discipline_mastery(draw, c, ox, oy):
+    """Discipline mastery -- meditation brain."""
+    draw_circle_filled(draw, 16, 14, 8, c["primary"], ox, oy)
+    draw_line_px(draw, 16, 7, 16, 21, c["secondary"], ox, oy)
+    draw_line_px(draw, 11, 11, 14, 14, c["accent"], ox, oy)
+    draw_line_px(draw, 18, 11, 21, 14, c["accent"], ox, oy)
+    draw_line_px(draw, 11, 17, 14, 14, c["accent"], ox, oy)
+    draw_line_px(draw, 18, 17, 21, 14, c["accent"], ox, oy)
+    draw_circle_outline(draw, 16, 14, 10, c["highlight"], ox, oy)
+
+def icon_focus(draw, c, ox, oy):
+    """Focus -- focused eye."""
+    pts = [(6, 15), (16, 8), (26, 15), (16, 22)]
+    draw.polygon([(ox+x, oy+y) for x, y in pts], fill=c["primary"])
+    draw_circle_filled(draw, 16, 15, 4, c["accent"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, c["secondary"], ox, oy)
+    draw_pixel(draw, 15, 14, c["highlight"], ox, oy)
+    # focus lines
     draw_pixel(draw, 16, 3, c["highlight"], ox, oy)
     draw_pixel(draw, 16, 27, c["highlight"], ox, oy)
-    draw_pixel(draw, 3, 15, c["highlight"], ox, oy)
-    draw_pixel(draw, 29, 15, c["highlight"], ox, oy)
 
-
-def icon_armor_body(draw, c, ox, oy):
-    """Pain Tolerance — armored body."""
-    # torso
+def icon_endure(draw, c, ox, oy):
+    """Endure -- armored body."""
     draw_rect(draw, 10, 8, 22, 22, c["primary"], ox, oy)
-    # shoulders
     draw_rect(draw, 7, 8, 10, 14, c["accent"], ox, oy)
     draw_rect(draw, 22, 8, 25, 14, c["accent"], ox, oy)
-    # center plate
     draw_rect(draw, 13, 10, 19, 20, c["secondary"], ox, oy)
     draw_line_px(draw, 16, 10, 16, 20, c["accent"], ox, oy)
 
-
-def icon_healing_breath(draw, c, ox, oy):
-    """Second Wind — healing breath."""
-    # swirl/wind
-    import math
+def icon_deep_breaths(draw, c, ox, oy):
+    """Deep Breaths -- healing breath spiral."""
     for angle in range(0, 360, 15):
         rad = math.radians(angle)
         r = 6 + angle / 120
@@ -528,19 +539,88 @@ def icon_healing_breath(draw, c, ox, oy):
             draw_pixel(draw, x, y, c["accent"], ox, oy)
     draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
 
+def icon_blood_lust(draw, c, ox, oy):
+    """Blood Lust -- raging aura."""
+    draw_circle_filled(draw, 16, 15, 8, (180, 50, 50), ox, oy)
+    draw_circle_filled(draw, 16, 15, 5, (220, 80, 60), ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
+    # rage sparks
+    draw_line_px(draw, 16, 3, 16, 7, c["accent"], ox, oy)
+    draw_line_px(draw, 4, 15, 8, 15, c["accent"], ox, oy)
+    draw_line_px(draw, 24, 15, 28, 15, c["accent"], ox, oy)
 
-def icon_helmet(draw, c, ox, oy):
-    """Iron Will — iron helmet."""
-    draw_rect(draw, 10, 8, 22, 22, c["primary"], ox, oy)
-    draw_rect(draw, 8, 12, 24, 18, c["primary"], ox, oy)
-    # visor slit
-    draw_line_px(draw, 12, 15, 20, 15, c["secondary"], ox, oy)
-    # crown
-    draw_rect(draw, 12, 6, 20, 8, c["accent"], ox, oy)
+# --- Row 8: Intimidation ---
 
+def icon_intimidation_mastery(draw, c, ox, oy):
+    """Intimidation mastery -- shouting face with aura."""
+    draw_circle_filled(draw, 16, 14, 6, c["primary"], ox, oy)
+    draw_rect(draw, 14, 16, 18, 19, c["secondary"], ox, oy)
+    draw_line_px(draw, 23, 12, 26, 10, c["accent"], ox, oy)
+    draw_line_px(draw, 24, 15, 27, 15, c["accent"], ox, oy)
+    draw_line_px(draw, 23, 18, 26, 20, c["accent"], ox, oy)
+    draw_line_px(draw, 5, 12, 8, 10, c["accent"], ox, oy)
+    draw_line_px(draw, 4, 15, 7, 15, c["accent"], ox, oy)
+    draw_line_px(draw, 5, 18, 8, 20, c["accent"], ox, oy)
 
-def icon_multiple_arrows(draw, c, ox, oy):
-    """Rapid Fire — multiple arrows."""
+def icon_shout(draw, c, ox, oy):
+    """Shout -- sound waves from mouth."""
+    draw_circle_filled(draw, 10, 14, 4, c["primary"], ox, oy)
+    draw_rect(draw, 12, 15, 15, 18, c["secondary"], ox, oy)
+    # sound waves
+    for i in range(3):
+        r = 4 + i * 3
+        draw_circle_outline(draw, 18, 15, r, c["accent"], ox, oy)
+
+def icon_intimidate(draw, c, ox, oy):
+    """Intimidate -- fear aura."""
+    draw_circle_filled(draw, 16, 14, 6, c["primary"], ox, oy)
+    draw_rect(draw, 13, 11, 15, 13, (40, 30, 50), ox, oy)  # dark eye
+    draw_rect(draw, 17, 11, 19, 13, (40, 30, 50), ox, oy)  # dark eye
+    draw_circle_outline(draw, 16, 14, 10, c["accent"], ox, oy)
+    draw_circle_outline(draw, 16, 14, 12, c["highlight"], ox, oy)
+
+def icon_ugly_mug(draw, c, ox, oy):
+    """Ugly Mug -- grotesque face."""
+    draw_circle_filled(draw, 16, 14, 7, c["primary"], ox, oy)
+    # misshapen features
+    draw_rect(draw, 12, 10, 14, 14, c["secondary"], ox, oy)
+    draw_rect(draw, 19, 11, 21, 13, c["secondary"], ox, oy)
+    draw_line_px(draw, 12, 18, 20, 20, c["accent"], ox, oy)
+    # scar
+    draw_line_px(draw, 10, 8, 14, 16, c["highlight"], ox, oy)
+
+def icon_battle_roar(draw, c, ox, oy):
+    """Battle Roar -- mighty roar with shockwave."""
+    draw_circle_filled(draw, 16, 14, 5, c["primary"], ox, oy)
+    draw_rect(draw, 14, 16, 18, 20, c["secondary"], ox, oy)
+    # shockwave rings
+    draw_circle_outline(draw, 16, 14, 8, c["accent"], ox, oy)
+    draw_circle_outline(draw, 16, 14, 11, c["highlight"], ox, oy)
+    draw_circle_outline(draw, 16, 14, 14, c["accent"], ox, oy)
+
+# --- Row 9: Bowmanship ---
+
+def icon_bowmanship_mastery(draw, c, ox, oy):
+    """Bowmanship mastery -- drawn bow."""
+    draw_line_px(draw, 10, 6, 8, 16, c["primary"], ox, oy)
+    draw_line_px(draw, 8, 16, 10, 26, c["primary"], ox, oy)
+    draw_line_px(draw, 10, 6, 10, 26, c["secondary"], ox, oy)
+    draw_line_px(draw, 11, 16, 25, 16, c["accent"], ox, oy)
+    draw_pixel(draw, 26, 16, c["highlight"], ox, oy)
+    draw_pixel(draw, 25, 15, c["highlight"], ox, oy)
+    draw_pixel(draw, 25, 17, c["highlight"], ox, oy)
+
+def icon_dead_eye(draw, c, ox, oy):
+    """Dead Eye -- precision crosshair."""
+    draw_circle_outline(draw, 16, 15, 8, c["primary"], ox, oy)
+    draw_line_px(draw, 16, 4, 16, 10, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 20, 16, 26, c["accent"], ox, oy)
+    draw_line_px(draw, 5, 15, 11, 15, c["accent"], ox, oy)
+    draw_line_px(draw, 21, 15, 27, 15, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 15, c["highlight"], ox, oy)
+
+def icon_pepper(draw, c, ox, oy):
+    """Pepper -- multiple arrows."""
     for i in range(3):
         y = 10 + i * 5
         draw_line_px(draw, 6, y, 22, y, c["accent"], ox, oy)
@@ -548,36 +628,70 @@ def icon_multiple_arrows(draw, c, ox, oy):
         draw_pixel(draw, 22 - i*2, y-1, c["highlight"], ox, oy)
         draw_pixel(draw, 22 - i*2, y+1, c["highlight"], ox, oy)
 
-
-def icon_arc_arrow(draw, c, ox, oy):
-    """Arc Shot — arcing arrow trajectory."""
-    import math
+def icon_lob(draw, c, ox, oy):
+    """Lob -- arc shot trajectory."""
     for angle in range(0, 180, 8):
         rad = math.radians(angle)
         x = int(6 + angle / 180 * 20)
         y = int(20 - 12 * math.sin(rad))
         draw_pixel(draw, x, y, c["accent"], ox, oy)
-    # arrowhead at end
     draw_pixel(draw, 26, 20, c["highlight"], ox, oy)
     draw_pixel(draw, 25, 19, c["highlight"], ox, oy)
 
-
-def icon_pinned(draw, c, ox, oy):
-    """Pin Shot — arrow pinning to ground."""
+def icon_pin(draw, c, ox, oy):
+    """Pin -- arrow pinning to ground."""
     draw_line_px(draw, 16, 4, 16, 22, c["accent"], ox, oy)
     draw_pixel(draw, 16, 3, c["highlight"], ox, oy)
     draw_pixel(draw, 15, 4, c["highlight"], ox, oy)
     draw_pixel(draw, 17, 4, c["highlight"], ox, oy)
-    # ground
     draw_line_px(draw, 6, 24, 26, 24, c["secondary"], ox, oy)
-    # cracks
     draw_line_px(draw, 14, 24, 12, 27, c["primary"], ox, oy)
     draw_line_px(draw, 18, 24, 20, 27, c["primary"], ox, oy)
 
+def icon_flame_arrow(draw, c, ox, oy):
+    """Flame Arrow -- flaming projectile."""
+    # arrow shaft
+    draw_line_px(draw, 6, 16, 20, 16, c["accent"], ox, oy)
+    draw_pixel(draw, 21, 16, c["highlight"], ox, oy)
+    draw_pixel(draw, 20, 15, c["highlight"], ox, oy)
+    draw_pixel(draw, 20, 17, c["highlight"], ox, oy)
+    # flames on tip
+    draw_rect(draw, 22, 12, 26, 20, (220, 80, 40), ox, oy)
+    draw_rect(draw, 24, 10, 28, 14, (255, 160, 50), ox, oy)
+    draw_pixel(draw, 26, 9, (255, 220, 100), ox, oy)
 
-def icon_spread_knives(draw, c, ox, oy):
-    """Fan Throw — spread of projectiles."""
-    import math
+# --- Row 10: Throwing ---
+
+def icon_throwing_mastery(draw, c, ox, oy):
+    """Throwing mastery -- throwing knife."""
+    draw_line_px(draw, 8, 8, 20, 20, c["accent"], ox, oy)
+    draw_line_px(draw, 9, 8, 21, 20, c["accent"], ox, oy)
+    draw_line_px(draw, 21, 21, 25, 25, c["secondary"], ox, oy)
+    draw_line_px(draw, 6, 12, 4, 14, c["highlight"], ox, oy)
+    draw_line_px(draw, 10, 6, 8, 8, c["highlight"], ox, oy)
+
+def icon_flick(draw, c, ox, oy):
+    """Flick -- quick thrown knife."""
+    draw_line_px(draw, 10, 14, 24, 14, c["accent"], ox, oy)
+    draw_line_px(draw, 10, 15, 24, 15, c["accent"], ox, oy)
+    draw_pixel(draw, 25, 14, c["highlight"], ox, oy)
+    # speed lines
+    draw_line_px(draw, 4, 12, 8, 14, c["secondary"], ox, oy)
+    draw_line_px(draw, 4, 16, 8, 15, c["secondary"], ox, oy)
+
+def icon_chuck(draw, c, ox, oy):
+    """Chuck -- heavy throw."""
+    draw_circle_filled(draw, 20, 14, 5, c["primary"], ox, oy)
+    draw_circle_filled(draw, 20, 14, 3, c["accent"], ox, oy)
+    # motion arc
+    for angle in range(90, 270, 12):
+        rad = math.radians(angle)
+        x = int(12 + 6 * math.cos(rad))
+        y = int(14 + 6 * math.sin(rad))
+        draw_pixel(draw, x, y, c["highlight"], ox, oy)
+
+def icon_fan(draw, c, ox, oy):
+    """Fan -- spread of projectiles."""
     for i in range(5):
         angle = math.radians(-60 + i * 30)
         x2 = int(10 + 14 * math.cos(angle))
@@ -585,168 +699,365 @@ def icon_spread_knives(draw, c, ox, oy):
         draw_line_px(draw, 10, 16, x2, y2, c["accent"], ox, oy)
         draw_pixel(draw, x2, y2, c["highlight"], ox, oy)
 
-
 def icon_ricochet(draw, c, ox, oy):
-    """Bounce Shot — ricocheting projectile."""
-    # zigzag path
+    """Ricochet -- bouncing projectile."""
     draw_line_px(draw, 6, 8, 14, 18, c["accent"], ox, oy)
     draw_line_px(draw, 14, 18, 22, 10, c["accent"], ox, oy)
     draw_line_px(draw, 22, 10, 28, 20, c["accent"], ox, oy)
-    # bounce sparks
     draw_pixel(draw, 14, 18, c["highlight"], ox, oy)
     draw_pixel(draw, 22, 10, c["highlight"], ox, oy)
 
+def icon_frost_blade(draw, c, ox, oy):
+    """Frost Blade -- icy thrown blade."""
+    draw_line_px(draw, 8, 8, 22, 22, (100, 180, 255), ox, oy)
+    draw_line_px(draw, 9, 8, 23, 22, (100, 180, 255), ox, oy)
+    draw_line_px(draw, 22, 22, 26, 24, c["secondary"], ox, oy)
+    # frost particles
+    draw_pixel(draw, 6, 10, (180, 220, 255), ox, oy)
+    draw_pixel(draw, 10, 6, (180, 220, 255), ox, oy)
+    draw_pixel(draw, 12, 12, (220, 240, 255), ox, oy)
 
-def icon_scope(draw, c, ox, oy):
-    """Snipe — scope/crosshair with zoom."""
+# --- Row 11: Firearms ---
+
+def icon_firearms_mastery(draw, c, ox, oy):
+    """Firearms mastery -- pistol."""
+    draw_rect(draw, 6, 12, 18, 15, c["primary"], ox, oy)
+    draw_rect(draw, 14, 10, 22, 16, c["primary"], ox, oy)
+    draw_rect(draw, 18, 16, 22, 24, c["secondary"], ox, oy)
+    draw_line_px(draw, 16, 16, 16, 20, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 20, 18, 20, c["accent"], ox, oy)
+    draw_pixel(draw, 5, 13, c["highlight"], ox, oy)
+    draw_pixel(draw, 4, 12, c["highlight"], ox, oy)
+    draw_pixel(draw, 4, 14, c["highlight"], ox, oy)
+
+def icon_quick_draw(draw, c, ox, oy):
+    """Quick Draw -- fast draw speed lines."""
+    draw_rect(draw, 14, 12, 24, 16, c["primary"], ox, oy)
+    draw_rect(draw, 20, 16, 24, 22, c["secondary"], ox, oy)
+    # speed lines
+    draw_line_px(draw, 4, 10, 12, 12, c["accent"], ox, oy)
+    draw_line_px(draw, 4, 14, 12, 14, c["accent"], ox, oy)
+    draw_line_px(draw, 4, 18, 12, 16, c["accent"], ox, oy)
+    draw_pixel(draw, 13, 13, c["highlight"], ox, oy)
+
+def icon_steady_shot(draw, c, ox, oy):
+    """Steady Shot -- aimed shot."""
+    draw_circle_outline(draw, 16, 15, 8, c["primary"], ox, oy)
+    draw_line_px(draw, 16, 4, 16, 10, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 20, 16, 26, c["accent"], ox, oy)
+    draw_line_px(draw, 5, 15, 11, 15, c["accent"], ox, oy)
+    draw_line_px(draw, 21, 15, 27, 15, c["accent"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
+
+def icon_burst_fire(draw, c, ox, oy):
+    """Burst Fire -- three rapid shots."""
+    for i in range(3):
+        x = 8 + i * 6
+        draw_circle_filled(draw, x + 6, 15, 2, c["accent"], ox, oy)
+        draw_pixel(draw, x + 8, 15, c["highlight"], ox, oy)
+    # muzzle flash
+    draw_rect(draw, 4, 12, 8, 18, c["primary"], ox, oy)
+    draw_pixel(draw, 3, 14, c["highlight"], ox, oy)
+    draw_pixel(draw, 3, 16, c["highlight"], ox, oy)
+
+def icon_snipe(draw, c, ox, oy):
+    """Snipe -- scope crosshair with zoom."""
     draw_circle_outline(draw, 16, 15, 9, c["primary"], ox, oy)
     draw_circle_outline(draw, 16, 15, 6, c["secondary"], ox, oy)
     draw_line_px(draw, 16, 3, 16, 27, c["accent"], ox, oy)
     draw_line_px(draw, 4, 15, 28, 15, c["accent"], ox, oy)
     draw_pixel(draw, 16, 15, c["highlight"], ox, oy)
 
+def icon_shock_round(draw, c, ox, oy):
+    """Shock Round -- electrified bullet."""
+    draw_circle_filled(draw, 16, 15, 4, c["primary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, (220, 200, 60), ox, oy)
+    # lightning sparks
+    draw_line_px(draw, 12, 10, 8, 6, (255, 240, 100), ox, oy)
+    draw_line_px(draw, 20, 10, 24, 6, (255, 240, 100), ox, oy)
+    draw_line_px(draw, 12, 20, 8, 24, (255, 240, 100), ox, oy)
+    draw_line_px(draw, 20, 20, 24, 24, (255, 240, 100), ox, oy)
 
-def icon_dodge_roll(draw, c, ox, oy):
-    """Dodge Roll — rolling figure."""
-    # circular arrow suggesting roll
-    import math
-    for angle in range(30, 330, 10):
-        rad = math.radians(angle)
-        x = int(16 + 8 * math.cos(rad))
-        y = int(15 + 8 * math.sin(rad))
-        draw_pixel(draw, x, y, c["accent"], ox, oy)
-    # arrowhead
-    draw_pixel(draw, 22, 8, c["highlight"], ox, oy)
-    draw_pixel(draw, 23, 10, c["highlight"], ox, oy)
-    # figure in center
-    draw_circle_filled(draw, 16, 15, 3, c["primary"], ox, oy)
+# --- Row 12: CQC ---
 
+def icon_cqc_mastery(draw, c, ox, oy):
+    """CQC mastery -- small buckler/dagger combo."""
+    draw_circle_filled(draw, 12, 15, 6, c["primary"], ox, oy)
+    draw_circle_filled(draw, 12, 15, 3, c["secondary"], ox, oy)
+    # dagger
+    draw_line_px(draw, 20, 6, 20, 22, c["accent"], ox, oy)
+    draw_rect(draw, 18, 16, 22, 17, c["primary"], ox, oy)
+    draw_pixel(draw, 20, 5, c["highlight"], ox, oy)
 
-def icon_leap_back(draw, c, ox, oy):
-    """Disengage — figure leaping back."""
-    # figure
+def icon_cqc_parry(draw, c, ox, oy):
+    """CQC Parry -- blade deflection."""
+    draw_line_px(draw, 8, 6, 24, 22, c["accent"], ox, oy)
+    draw_line_px(draw, 24, 6, 8, 22, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 14, c["highlight"], ox, oy)
+    draw_pixel(draw, 15, 13, c["highlight"], ox, oy)
+    draw_pixel(draw, 17, 15, c["highlight"], ox, oy)
+
+def icon_guard(draw, c, ox, oy):
+    """Guard -- defensive stance."""
+    draw_rect(draw, 10, 8, 22, 22, c["primary"], ox, oy)
+    draw_rect(draw, 12, 10, 20, 20, c["secondary"], ox, oy)
+    draw_line_px(draw, 16, 10, 16, 20, c["accent"], ox, oy)
+    draw_line_px(draw, 12, 15, 20, 15, c["accent"], ox, oy)
+
+def icon_riposte(draw, c, ox, oy):
+    """Riposte -- counter-attack blade."""
+    # parry line
+    draw_line_px(draw, 6, 10, 16, 16, c["secondary"], ox, oy)
+    # counter thrust
+    draw_line_px(draw, 16, 16, 28, 10, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 16, 28, 11, c["accent"], ox, oy)
+    draw_pixel(draw, 28, 10, c["highlight"], ox, oy)
+    # spark at deflection point
+    draw_circle_filled(draw, 16, 16, 2, c["highlight"], ox, oy)
+
+def icon_shiv(draw, c, ox, oy):
+    """Shiv -- quick dagger strike."""
+    draw_line_px(draw, 10, 6, 22, 24, c["accent"], ox, oy)
+    draw_line_px(draw, 11, 6, 23, 24, c["accent"], ox, oy)
+    # handle
+    draw_rect(draw, 22, 24, 26, 28, c["secondary"], ox, oy)
+    # impact sparks
+    draw_pixel(draw, 8, 6, c["highlight"], ox, oy)
+    draw_pixel(draw, 10, 4, c["highlight"], ox, oy)
+    draw_pixel(draw, 12, 5, c["highlight"], ox, oy)
+
+# --- Row 13: Awareness ---
+
+def icon_awareness_mastery(draw, c, ox, oy):
+    """Awareness mastery -- all-seeing eye."""
+    pts = [(6, 15), (16, 8), (26, 15), (16, 22)]
+    draw.polygon([(ox+x, oy+y) for x, y in pts], fill=c["primary"])
+    draw_circle_filled(draw, 16, 15, 4, c["accent"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, c["secondary"], ox, oy)
+    draw_pixel(draw, 15, 14, c["highlight"], ox, oy)
+
+def icon_keen_senses(draw, c, ox, oy):
+    """Keen Senses -- enhanced eye with glow."""
+    pts = [(6, 15), (16, 8), (26, 15), (16, 22)]
+    draw.polygon([(ox+x, oy+y) for x, y in pts], fill=c["primary"])
+    draw_circle_filled(draw, 16, 15, 4, c["accent"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
+    # glow lines
+    draw_pixel(draw, 16, 3, c["highlight"], ox, oy)
+    draw_pixel(draw, 16, 27, c["highlight"], ox, oy)
+    draw_pixel(draw, 3, 15, c["highlight"], ox, oy)
+    draw_pixel(draw, 29, 15, c["highlight"], ox, oy)
+
+def icon_tip_toes(draw, c, ox, oy):
+    """Tip Toes -- stealth footsteps."""
+    # foot outlines, subtle
+    draw_circle_filled(draw, 12, 14, 3, c["secondary"], ox, oy)
+    draw_circle_filled(draw, 20, 18, 3, c["secondary"], ox, oy)
+    # dotted trail
+    draw_pixel(draw, 8, 10, c["accent"], ox, oy)
+    draw_pixel(draw, 24, 22, c["accent"], ox, oy)
+    draw_pixel(draw, 6, 8, c["primary"], ox, oy)
+
+def icon_disengage(draw, c, ox, oy):
+    """Disengage -- leaping back."""
     draw_circle_filled(draw, 12, 12, 3, c["primary"], ox, oy)
     draw_line_px(draw, 12, 15, 12, 22, c["primary"], ox, oy)
-    # arrow pointing away
     draw_line_px(draw, 16, 15, 26, 15, c["accent"], ox, oy)
     draw_pixel(draw, 25, 13, c["accent"], ox, oy)
     draw_pixel(draw, 25, 17, c["accent"], ox, oy)
     draw_pixel(draw, 27, 15, c["highlight"], ox, oy)
 
+def icon_steady_breathing(draw, c, ox, oy):
+    """Steady Breathing -- calm breath waves."""
+    for i in range(3):
+        y = 10 + i * 6
+        for x in range(6, 26):
+            yy = int(y + 2 * math.sin((x - 6) * math.pi / 5))
+            draw_pixel(draw, x, yy, c["accent"], ox, oy)
+
+def icon_rangefinding(draw, c, ox, oy):
+    """Rangefinding -- distance lines."""
+    draw_line_px(draw, 4, 16, 28, 16, c["secondary"], ox, oy)
+    # markers at intervals
+    for x in [8, 14, 20, 26]:
+        draw_line_px(draw, x, 13, x, 19, c["accent"], ox, oy)
+    # distance numbers suggestion
+    draw_pixel(draw, 8, 11, c["highlight"], ox, oy)
+    draw_pixel(draw, 14, 11, c["highlight"], ox, oy)
+    draw_pixel(draw, 20, 11, c["highlight"], ox, oy)
+
+def icon_tracking(draw, c, ox, oy):
+    """Tracking -- footprint trail."""
+    # footprints in a path
+    draw_rect(draw, 6, 8, 10, 12, c["primary"], ox, oy)
+    draw_rect(draw, 12, 14, 16, 18, c["primary"], ox, oy)
+    draw_rect(draw, 18, 20, 22, 24, c["primary"], ox, oy)
+    # dots connecting
+    draw_pixel(draw, 11, 13, c["accent"], ox, oy)
+    draw_pixel(draw, 17, 19, c["accent"], ox, oy)
+    draw_pixel(draw, 23, 25, c["accent"], ox, oy)
+
+def icon_steady_aim(draw, c, ox, oy):
+    """Steady Aim -- crosshair locked on."""
+    draw_circle_outline(draw, 16, 15, 10, c["primary"], ox, oy)
+    draw_circle_outline(draw, 16, 15, 5, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 2, 16, 28, c["secondary"], ox, oy)
+    draw_line_px(draw, 2, 15, 28, 15, c["secondary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
+
+def icon_weak_spot(draw, c, ox, oy):
+    """Weak Spot -- target with crack."""
+    draw_circle_outline(draw, 16, 15, 8, c["primary"], ox, oy)
+    draw_circle_outline(draw, 16, 15, 4, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 15, c["highlight"], ox, oy)
+    # crack lines
+    draw_line_px(draw, 16, 15, 22, 10, c["highlight"], ox, oy)
+    draw_line_px(draw, 16, 15, 10, 22, c["highlight"], ox, oy)
+
+# --- Row 14: Trapping ---
+
+def icon_trapping_mastery(draw, c, ox, oy):
+    """Trapping mastery -- bear trap."""
+    for i in range(5):
+        x = 8 + i * 4
+        draw_triangle_up(draw, x, 12, 2, c["accent"], ox, oy)
+    for i in range(5):
+        x = 8 + i * 4
+        draw_triangle_down(draw, x, 18, 2, c["accent"], ox, oy)
+    draw_rect(draw, 8, 20, 24, 23, c["primary"], ox, oy)
+    draw_line_px(draw, 16, 23, 16, 27, c["secondary"], ox, oy)
 
 def icon_snare(draw, c, ox, oy):
-    """Snare — rope trap."""
+    """Snare -- rope trap."""
     draw_circle_outline(draw, 16, 18, 7, c["accent"], ox, oy)
     draw_circle_outline(draw, 16, 18, 5, c["primary"], ox, oy)
-    # rope end
     draw_line_px(draw, 16, 11, 16, 5, c["secondary"], ox, oy)
 
-
 def icon_tripwire(draw, c, ox, oy):
-    """Tripwire — wire across ground."""
-    # two posts
+    """Tripwire -- wire across ground."""
     draw_rect(draw, 6, 10, 9, 24, c["secondary"], ox, oy)
     draw_rect(draw, 23, 10, 26, 24, c["secondary"], ox, oy)
-    # wire
     draw_line_px(draw, 9, 18, 23, 18, c["accent"], ox, oy)
     draw_line_px(draw, 9, 17, 23, 17, c["highlight"], ox, oy)
 
-
 def icon_decoy(draw, c, ox, oy):
-    """Decoy — dummy figure."""
-    # stick figure on cross
+    """Decoy -- dummy figure."""
     draw_line_px(draw, 16, 8, 16, 26, c["secondary"], ox, oy)
     draw_line_px(draw, 10, 14, 22, 14, c["secondary"], ox, oy)
-    # head
     draw_circle_outline(draw, 16, 8, 3, c["accent"], ox, oy)
-    # question mark
     draw_pixel(draw, 16, 7, c["highlight"], ox, oy)
 
+def icon_bait(draw, c, ox, oy):
+    """Bait -- lure on hook."""
+    draw_line_px(draw, 16, 4, 16, 14, c["secondary"], ox, oy)
+    # hook
+    draw_line_px(draw, 16, 14, 20, 18, c["accent"], ox, oy)
+    draw_line_px(draw, 20, 18, 16, 22, c["accent"], ox, oy)
+    draw_pixel(draw, 16, 23, c["highlight"], ox, oy)
+    # bait glow
+    draw_circle_filled(draw, 16, 22, 3, c["primary"], ox, oy)
 
 def icon_ambush(draw, c, ox, oy):
-    """Ambush — hidden figure striking."""
-    # shadow
+    """Ambush -- hidden figure striking."""
     draw_rect(draw, 6, 8, 14, 24, c["secondary"], ox, oy)
-    # blade emerging
     draw_line_px(draw, 14, 12, 26, 12, c["accent"], ox, oy)
     draw_line_px(draw, 14, 13, 26, 13, c["primary"], ox, oy)
-    # exclamation
     draw_rect(draw, 22, 6, 24, 10, c["highlight"], ox, oy)
     draw_pixel(draw, 23, 12, c["highlight"], ox, oy)
 
+# --- Row 15: Sapping ---
 
-def icon_speed_lines(draw, c, ox, oy):
-    """Haste — speed lines."""
-    # figure running right
-    draw_circle_filled(draw, 18, 10, 3, c["primary"], ox, oy)
-    draw_line_px(draw, 18, 13, 18, 20, c["primary"], ox, oy)
-    draw_line_px(draw, 18, 20, 22, 26, c["primary"], ox, oy)
-    draw_line_px(draw, 18, 20, 14, 26, c["primary"], ox, oy)
-    # speed lines behind
-    for i in range(4):
-        y = 10 + i * 4
-        draw_line_px(draw, 4, y, 12, y, c["accent"], ox, oy)
+def icon_sapping_mastery(draw, c, ox, oy):
+    """Sapping mastery -- bomb with fuse."""
+    draw_circle_filled(draw, 16, 18, 8, c["primary"], ox, oy)
+    draw_circle_filled(draw, 16, 18, 6, c["secondary"], ox, oy)
+    # fuse
+    draw_line_px(draw, 16, 10, 20, 6, c["accent"], ox, oy)
+    draw_pixel(draw, 21, 5, c["highlight"], ox, oy)
+    draw_pixel(draw, 22, 4, (255, 160, 50), ox, oy)
 
+def icon_frag(draw, c, ox, oy):
+    """Frag -- exploding fragments."""
+    draw_circle_filled(draw, 16, 15, 5, c["primary"], ox, oy)
+    # fragments flying out
+    for i in range(8):
+        angle = math.radians(i * 45)
+        x2 = int(16 + 10 * math.cos(angle))
+        y2 = int(15 + 10 * math.sin(angle))
+        draw_line_px(draw, 16, 15, x2, y2, c["accent"], ox, oy)
+        draw_pixel(draw, x2, y2, c["highlight"], ox, oy)
 
-def icon_radar_pulse(draw, c, ox, oy):
-    """Sense — radiating pulse."""
-    draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
-    draw_circle_outline(draw, 16, 15, 6, c["accent"], ox, oy)
-    draw_circle_outline(draw, 16, 15, 9, c["primary"], ox, oy)
-    draw_circle_outline(draw, 16, 15, 12, c["secondary"], ox, oy)
+def icon_smoke_bomb(draw, c, ox, oy):
+    """Smoke Bomb -- cloud of smoke."""
+    for i in range(6):
+        x = 6 + i * 4
+        y = 12 + (i % 3) * 4
+        draw_circle_filled(draw, x, y, 3 + (i % 2), c["secondary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 4, c["primary"], ox, oy)
 
+def icon_flashbang(draw, c, ox, oy):
+    """Flashbang -- bright burst."""
+    draw_circle_filled(draw, 16, 15, 5, c["highlight"], ox, oy)
+    for i in range(8):
+        angle = math.radians(i * 45)
+        x2 = int(16 + 12 * math.cos(angle))
+        y2 = int(15 + 12 * math.sin(angle))
+        draw_line_px(draw, 16, 15, x2, y2, c["accent"], ox, oy)
 
-def icon_body_glow(draw, c, ox, oy):
-    """Fortify — glowing body shield."""
-    # body silhouette
-    draw_circle_filled(draw, 16, 10, 4, c["primary"], ox, oy)
-    draw_rect(draw, 12, 14, 20, 24, c["primary"], ox, oy)
-    # glow aura
-    draw_circle_outline(draw, 16, 16, 12, c["highlight"], ox, oy)
-    draw_circle_outline(draw, 16, 16, 11, c["accent"], ox, oy)
+def icon_caltrops(draw, c, ox, oy):
+    """Caltrops -- scattered spiky objects."""
+    positions = [(8, 18), (16, 14), (24, 20), (12, 24), (20, 10)]
+    for px, py in positions:
+        draw_star(draw, px, py, 3, 1, 4, c["accent"], ox, oy)
 
+def icon_sticky_bomb(draw, c, ox, oy):
+    """Sticky Bomb -- bomb stuck to surface."""
+    draw_circle_filled(draw, 16, 16, 6, c["primary"], ox, oy)
+    draw_circle_filled(draw, 16, 16, 4, c["secondary"], ox, oy)
+    # sticky drips
+    draw_line_px(draw, 12, 22, 12, 26, c["accent"], ox, oy)
+    draw_line_px(draw, 16, 22, 16, 28, c["accent"], ox, oy)
+    draw_line_px(draw, 20, 22, 20, 25, c["accent"], ox, oy)
+    # fuse spark
+    draw_pixel(draw, 16, 10, c["highlight"], ox, oy)
+    draw_pixel(draw, 17, 9, (255, 160, 50), ox, oy)
 
-# ── Mage spell icons ────────────────────────────────────────────────────────
+# --- Row 16: Fire ---
 
-def icon_flame(draw, c, ox, oy):
-    """Fire base — flame."""
+def icon_fire_mastery(draw, c, ox, oy):
+    """Fire mastery -- flame."""
     draw_rect(draw, 13, 14, 19, 24, c["primary"], ox, oy)
     draw_rect(draw, 14, 10, 18, 14, c["accent"], ox, oy)
     draw_rect(draw, 15, 6, 17, 10, c["highlight"], ox, oy)
     draw_pixel(draw, 16, 5, c["highlight"], ox, oy)
-    # flickers
     draw_pixel(draw, 11, 16, c["accent"], ox, oy)
     draw_pixel(draw, 21, 14, c["accent"], ox, oy)
 
 def icon_fireball(draw, c, ox, oy):
-    """Fireball — flaming sphere."""
+    """Fireball -- flaming sphere."""
     draw_circle_filled(draw, 16, 15, 7, c["primary"], ox, oy)
     draw_circle_filled(draw, 16, 15, 5, c["accent"], ox, oy)
     draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
-    # trail
     draw_line_px(draw, 4, 15, 9, 15, c["primary"], ox, oy)
     draw_line_px(draw, 5, 13, 8, 13, c["accent"], ox, oy)
     draw_line_px(draw, 5, 17, 8, 17, c["accent"], ox, oy)
 
 def icon_flame_wall(draw, c, ox, oy):
-    """Flame Wall — wall of fire."""
+    """Flame Wall -- wall of fire."""
     for x in range(6, 26, 3):
         h = 8 + (x % 7)
         draw_rect(draw, x, 24 - h, x + 2, 24, c["primary"], ox, oy)
         draw_rect(draw, x, 24 - h, x + 1, 24 - h + 3, c["highlight"], ox, oy)
 
 def icon_ignite(draw, c, ox, oy):
-    """Ignite — burning target."""
-    # target outline
+    """Ignite -- burning target."""
     draw_circle_outline(draw, 16, 15, 8, c["secondary"], ox, oy)
-    # flames on it
     draw_rect(draw, 14, 10, 18, 20, c["primary"], ox, oy)
     draw_rect(draw, 15, 7, 17, 10, c["accent"], ox, oy)
     draw_pixel(draw, 16, 6, c["highlight"], ox, oy)
 
 def icon_inferno(draw, c, ox, oy):
-    """Inferno — raging flames."""
-    # large flame mass
+    """Inferno -- raging flames."""
     for x in range(4, 28, 2):
         h = 6 + (x * 3 % 11)
         draw_rect(draw, x, 28 - h, x + 1, 28, c["primary"], ox, oy)
@@ -754,50 +1065,50 @@ def icon_inferno(draw, c, ox, oy):
             draw_pixel(draw, x, 28 - h, c["highlight"], ox, oy)
     draw_rect(draw, 10, 8, 22, 14, c["accent"], ox, oy)
 
-def icon_water_drop(draw, c, ox, oy):
-    """Water base — water drop."""
+# --- Row 17: Water ---
+
+def icon_water_mastery(draw, c, ox, oy):
+    """Water mastery -- water drop."""
     draw_triangle_up(draw, 16, 8, 3, c["accent"], ox, oy)
     draw_circle_filled(draw, 16, 17, 6, c["primary"], ox, oy)
     draw_circle_filled(draw, 16, 16, 4, c["accent"], ox, oy)
     draw_pixel(draw, 14, 14, c["highlight"], ox, oy)
 
 def icon_frost_bolt(draw, c, ox, oy):
-    """Frost Bolt — ice shard."""
+    """Frost Bolt -- ice shard."""
     draw_diamond(draw, 16, 14, 8, c["primary"], ox, oy)
     draw_diamond(draw, 16, 14, 5, c["accent"], ox, oy)
     draw_diamond(draw, 16, 14, 2, c["highlight"], ox, oy)
-    # trail
     draw_line_px(draw, 4, 22, 10, 18, c["secondary"], ox, oy)
 
 def icon_freeze(draw, c, ox, oy):
-    """Freeze — ice crystal."""
-    # snowflake-like
+    """Freeze -- ice crystal."""
     draw_line_px(draw, 16, 4, 16, 26, c["accent"], ox, oy)
     draw_line_px(draw, 6, 15, 26, 15, c["accent"], ox, oy)
     draw_line_px(draw, 8, 7, 24, 23, c["primary"], ox, oy)
     draw_line_px(draw, 24, 7, 8, 23, c["primary"], ox, oy)
     draw_circle_filled(draw, 16, 15, 2, c["highlight"], ox, oy)
 
-def icon_wave(draw, c, ox, oy):
-    """Tidal Wave — crashing wave."""
-    import math
+def icon_tidal_wave(draw, c, ox, oy):
+    """Tidal Wave -- crashing wave."""
     for x in range(4, 28):
         y = int(14 + 4 * math.sin((x - 4) * math.pi / 8))
         draw_rect(draw, x, y, x, 26, c["primary"], ox, oy)
         draw_pixel(draw, x, y, c["accent"], ox, oy)
         draw_pixel(draw, x, y - 1, c["highlight"], ox, oy)
 
-def icon_mist(draw, c, ox, oy):
-    """Mist Veil — swirling mist."""
+def icon_mist_veil(draw, c, ox, oy):
+    """Mist Veil -- swirling mist."""
     for i in range(6):
         x = 6 + i * 4
         y = 12 + (i % 3) * 4
         draw_circle_filled(draw, x, y, 3, c["secondary"], ox, oy)
     draw_circle_filled(draw, 16, 15, 4, c["primary"], ox, oy)
 
-def icon_wind(draw, c, ox, oy):
-    """Air base — wind swirl."""
-    import math
+# --- Row 18: Air ---
+
+def icon_air_mastery(draw, c, ox, oy):
+    """Air mastery -- wind swirl."""
     for angle in range(0, 540, 12):
         rad = math.radians(angle)
         r = 3 + angle / 120
@@ -814,232 +1125,182 @@ def icon_lightning(draw, c, ox, oy):
         draw_line_px(draw, pts[i][0]+1, pts[i][1], pts[i+1][0]+1, pts[i+1][1], c["highlight"], ox, oy)
 
 def icon_gust(draw, c, ox, oy):
-    """Gust — wind blast."""
+    """Gust -- wind blast."""
     for i in range(4):
         y = 8 + i * 5
         draw_line_px(draw, 6 + i, y, 24 - i, y, c["accent"], ox, oy)
         draw_pixel(draw, 25 - i, y, c["highlight"], ox, oy)
 
-def icon_chain_lightning(draw, c, ox, oy):
-    """Chain Shock — branching lightning."""
-    # main bolt
+def icon_chain_shock(draw, c, ox, oy):
+    """Chain Shock -- branching lightning."""
     draw_line_px(draw, 8, 6, 14, 15, c["accent"], ox, oy)
-    # branch 1
     draw_line_px(draw, 14, 15, 24, 10, c["highlight"], ox, oy)
-    # branch 2
     draw_line_px(draw, 14, 15, 22, 24, c["highlight"], ox, oy)
-    # sparks
     draw_pixel(draw, 24, 10, c["accent"], ox, oy)
     draw_pixel(draw, 22, 24, c["accent"], ox, oy)
 
-def icon_storm(draw, c, ox, oy):
-    """Tempest — storm cloud."""
-    # cloud
+def icon_tempest(draw, c, ox, oy):
+    """Tempest -- storm cloud."""
     draw_circle_filled(draw, 12, 10, 5, c["secondary"], ox, oy)
     draw_circle_filled(draw, 20, 10, 5, c["secondary"], ox, oy)
     draw_circle_filled(draw, 16, 8, 5, c["primary"], ox, oy)
-    # rain/lightning below
     draw_line_px(draw, 12, 16, 10, 24, c["accent"], ox, oy)
     draw_line_px(draw, 16, 16, 16, 24, c["accent"], ox, oy)
     draw_line_px(draw, 20, 16, 22, 24, c["accent"], ox, oy)
 
-def icon_rock(draw, c, ox, oy):
-    """Earth base — rock."""
+# --- Row 19: Earth ---
+
+def icon_earth_mastery(draw, c, ox, oy):
+    """Earth mastery -- rock."""
     pts = [(10, 22), (6, 14), (12, 8), (20, 6), (26, 12), (24, 22)]
     draw.polygon([(ox+x, oy+y) for x, y in pts], fill=c["primary"])
     draw.polygon([(ox+x, oy+y) for x, y in pts], outline=c["secondary"])
-    # highlight facet
     draw_rect(draw, 14, 10, 20, 16, c["accent"], ox, oy)
 
 def icon_stone_spike(draw, c, ox, oy):
-    """Stone Spike — sharp rock eruption."""
-    # spikes coming up
+    """Stone Spike -- sharp rock eruption."""
     draw_triangle_up(draw, 12, 10, 5, c["primary"], ox, oy)
     draw_triangle_up(draw, 20, 8, 6, c["accent"], ox, oy)
     draw_triangle_up(draw, 16, 6, 4, c["highlight"], ox, oy)
-    # ground
     draw_line_px(draw, 4, 24, 28, 24, c["secondary"], ox, oy)
 
 def icon_quake(draw, c, ox, oy):
-    """Quake — cracking ground."""
-    # ground line
+    """Quake -- cracking ground."""
     draw_line_px(draw, 4, 16, 28, 16, c["primary"], ox, oy)
-    # cracks
     draw_line_px(draw, 16, 16, 12, 26, c["accent"], ox, oy)
     draw_line_px(draw, 16, 16, 20, 24, c["accent"], ox, oy)
     draw_line_px(draw, 16, 16, 8, 22, c["secondary"], ox, oy)
-    # debris
     draw_rect(draw, 10, 8, 13, 11, c["primary"], ox, oy)
     draw_rect(draw, 19, 6, 22, 9, c["primary"], ox, oy)
 
 def icon_petrify(draw, c, ox, oy):
-    """Petrify — stone figure."""
-    # figure turning to stone
+    """Petrify -- stone figure."""
     draw_circle_filled(draw, 16, 8, 4, c["primary"], ox, oy)
     draw_rect(draw, 12, 12, 20, 24, c["primary"], ox, oy)
-    # stone texture lines
     draw_line_px(draw, 13, 14, 19, 14, c["secondary"], ox, oy)
     draw_line_px(draw, 13, 18, 19, 18, c["secondary"], ox, oy)
     draw_line_px(draw, 16, 12, 16, 24, c["secondary"], ox, oy)
 
-def icon_stone_armor(draw, c, ox, oy):
-    """Earthen Armor — rock coating."""
-    # body outline
+def icon_earthen_armor(draw, c, ox, oy):
+    """Earthen Armor -- rock coating."""
     draw_circle_filled(draw, 16, 10, 5, c["accent"], ox, oy)
     draw_rect(draw, 10, 15, 22, 26, c["accent"], ox, oy)
-    # stone overlay
     draw_circle_outline(draw, 16, 10, 6, c["primary"], ox, oy)
     draw_rect(draw, 9, 14, 9, 26, c["primary"], ox, oy)
     draw_rect(draw, 23, 14, 23, 26, c["primary"], ox, oy)
 
-def icon_star_light(draw, c, ox, oy):
-    """Light base — radiant star."""
-    draw_star(draw, 16, 15, 10, 4, 6, c["accent"], ox, oy)
-    draw_star(draw, 16, 15, 6, 3, 6, c["highlight"], ox, oy)
+# --- Row 20: Aether ---
 
-def icon_energy_beam(draw, c, ox, oy):
-    """Energy Blast — concentrated beam."""
-    draw_circle_filled(draw, 8, 15, 4, c["accent"], ox, oy)
-    draw_rect(draw, 12, 13, 28, 17, c["primary"], ox, oy)
-    draw_rect(draw, 12, 14, 28, 16, c["highlight"], ox, oy)
+def icon_aether_mastery(draw, c, ox, oy):
+    """Aether mastery -- void/energy orb."""
+    draw_circle_filled(draw, 16, 15, 10, c["secondary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 7, c["primary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 4, c["highlight"], ox, oy)
 
-def icon_radiance(draw, c, ox, oy):
-    """Radiance — burst of light."""
+def icon_nova(draw, c, ox, oy):
+    """Nova -- radiant burst."""
     draw_circle_filled(draw, 16, 15, 5, c["highlight"], ox, oy)
-    # rays
-    import math
     for i in range(8):
         angle = math.radians(i * 45)
         x2 = int(16 + 12 * math.cos(angle))
         y2 = int(15 + 12 * math.sin(angle))
         draw_line_px(draw, 16, 15, x2, y2, c["accent"], ox, oy)
 
-def icon_heal(draw, c, ox, oy):
-    """Heal — healing cross."""
-    draw_rect(draw, 13, 6, 19, 24, c["accent"], ox, oy)
-    draw_rect(draw, 7, 12, 25, 18, c["accent"], ox, oy)
-    draw_rect(draw, 14, 7, 18, 23, c["highlight"], ox, oy)
-    draw_rect(draw, 8, 13, 24, 17, c["highlight"], ox, oy)
+def icon_weld(draw, c, ox, oy):
+    """Weld -- energy connecting two points."""
+    draw_circle_filled(draw, 8, 15, 4, c["primary"], ox, oy)
+    draw_circle_filled(draw, 24, 15, 4, c["primary"], ox, oy)
+    draw_line_px(draw, 12, 13, 20, 13, c["accent"], ox, oy)
+    draw_line_px(draw, 12, 15, 20, 15, c["highlight"], ox, oy)
+    draw_line_px(draw, 12, 17, 20, 17, c["accent"], ox, oy)
 
-def icon_sparkles(draw, c, ox, oy):
-    """Purify — cleansing sparkles."""
+def icon_purify(draw, c, ox, oy):
+    """Purify -- cleansing sparkles."""
     positions = [(8, 8), (20, 6), (12, 20), (24, 16), (16, 12), (6, 16), (22, 24)]
     for x, y in positions:
         draw_star(draw, x, y, 3, 1, 4, c["accent"], ox, oy)
     draw_star(draw, 16, 12, 4, 2, 4, c["highlight"], ox, oy)
 
-def icon_void(draw, c, ox, oy):
-    """Dark base — dark void."""
-    draw_circle_filled(draw, 16, 15, 10, c["secondary"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 7, c["primary"], ox, oy)
-    draw_circle_filled(draw, 16, 15, 4, (20, 15, 30), ox, oy)
-
 def icon_drain(draw, c, ox, oy):
-    """Drain Life — siphon."""
-    # source
+    """Drain -- siphon energy."""
     draw_circle_filled(draw, 8, 15, 4, (200, 60, 60), ox, oy)
-    # destination
     draw_circle_filled(draw, 24, 15, 4, c["primary"], ox, oy)
-    # flow
     draw_line_px(draw, 12, 13, 20, 13, (200, 60, 60), ox, oy)
     draw_line_px(draw, 12, 15, 20, 15, c["accent"], ox, oy)
     draw_line_px(draw, 12, 17, 20, 17, (200, 60, 60), ox, oy)
 
-def icon_skull(draw, c, ox, oy):
-    """Curse — skull debuff."""
-    draw_circle_filled(draw, 16, 12, 7, c["primary"], ox, oy)
-    # eye sockets
-    draw_rect(draw, 12, 10, 14, 13, c["secondary"], ox, oy)
-    draw_rect(draw, 18, 10, 20, 13, c["secondary"], ox, oy)
-    # nose
-    draw_pixel(draw, 16, 15, c["secondary"], ox, oy)
-    # jaw
-    draw_rect(draw, 12, 18, 20, 22, c["primary"], ox, oy)
-    draw_line_px(draw, 13, 20, 19, 20, c["secondary"], ox, oy)
+def icon_singularity(draw, c, ox, oy):
+    """Singularity -- dark void pulling inward."""
+    draw_circle_filled(draw, 16, 15, 10, c["secondary"], ox, oy)
+    draw_circle_filled(draw, 16, 15, 7, (30, 20, 50), ox, oy)
+    draw_circle_filled(draw, 16, 15, 3, (10, 5, 20), ox, oy)
+    # inward spiral lines
+    for i in range(6):
+        angle = math.radians(i * 60)
+        x1 = int(16 + 12 * math.cos(angle))
+        y1 = int(15 + 12 * math.sin(angle))
+        x2 = int(16 + 5 * math.cos(angle + 0.5))
+        y2 = int(15 + 5 * math.sin(angle + 0.5))
+        draw_line_px(draw, x1, y1, x2, y2, c["accent"], ox, oy)
 
-def icon_dark_bolt(draw, c, ox, oy):
-    """Shadow Bolt — dark projectile."""
-    draw_circle_filled(draw, 18, 15, 6, c["primary"], ox, oy)
-    draw_circle_filled(draw, 18, 15, 3, c["accent"], ox, oy)
-    # dark trail
-    draw_line_px(draw, 4, 15, 12, 15, c["secondary"], ox, oy)
-    draw_line_px(draw, 6, 13, 10, 13, c["primary"], ox, oy)
-    draw_line_px(draw, 6, 17, 10, 17, c["primary"], ox, oy)
+# --- Row 21: Restoration ---
 
-def icon_void_zone(draw, c, ox, oy):
-    """Void Zone — dark pool."""
-    # dark ellipse on ground
-    draw.ellipse((ox+4, oy+12, ox+28, oy+26), fill=c["secondary"])
-    draw.ellipse((ox+6, oy+14, ox+26, oy+24), fill=c["primary"])
-    draw.ellipse((ox+10, oy+16, ox+22, oy+22), fill=(20, 15, 30))
-    # wisps rising
-    draw_line_px(draw, 12, 12, 10, 6, c["accent"], ox, oy)
-    draw_line_px(draw, 20, 12, 22, 6, c["accent"], ox, oy)
-
-def icon_heart_heal(draw, c, ox, oy):
-    """Restoration base — healing heart."""
-    # heart shape
+def icon_restoration_mastery(draw, c, ox, oy):
+    """Restoration mastery -- healing heart."""
     draw_circle_filled(draw, 12, 12, 5, c["primary"], ox, oy)
     draw_circle_filled(draw, 20, 12, 5, c["primary"], ox, oy)
     pts = [(7, 14), (16, 25), (25, 14)]
     draw.polygon([(ox+x, oy+y) for x, y in pts], fill=c["primary"])
-    # cross on heart
     draw_rect(draw, 15, 10, 17, 20, c["highlight"], ox, oy)
     draw_rect(draw, 12, 14, 20, 16, c["highlight"], ox, oy)
 
-def icon_quick_heal(draw, c, ox, oy):
-    """Mend — quick sparkle heal."""
+def icon_mend(draw, c, ox, oy):
+    """Mend -- quick sparkle heal."""
     draw_star(draw, 16, 15, 8, 3, 4, c["accent"], ox, oy)
     draw_star(draw, 16, 15, 5, 2, 4, c["highlight"], ox, oy)
-    # small + sign
     draw_rect(draw, 15, 13, 17, 17, c["highlight"], ox, oy)
     draw_rect(draw, 14, 14, 18, 16, c["highlight"], ox, oy)
 
 def icon_barrier(draw, c, ox, oy):
-    """Barrier — magic shield bubble."""
+    """Barrier -- magic shield bubble."""
     draw_circle_outline(draw, 16, 15, 10, c["accent"], ox, oy)
     draw_circle_outline(draw, 16, 15, 9, c["primary"], ox, oy)
     draw_circle_outline(draw, 16, 15, 8, c["secondary"], ox, oy)
-    # inner glow
     draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
 
 def icon_cleanse(draw, c, ox, oy):
-    """Cleanse — purifying wave."""
-    import math
+    """Cleanse -- purifying wave."""
     for x in range(4, 28):
         y = int(15 + 5 * math.sin((x - 4) * math.pi / 6))
         draw_pixel(draw, x, y, c["accent"], ox, oy)
         draw_pixel(draw, x, y + 1, c["primary"], ox, oy)
-    # sparkles
     draw_pixel(draw, 10, 8, c["highlight"], ox, oy)
     draw_pixel(draw, 22, 10, c["highlight"], ox, oy)
 
-def icon_regen(draw, c, ox, oy):
-    """Regeneration — green pulse."""
+def icon_regeneration(draw, c, ox, oy):
+    """Regeneration -- green pulse."""
     draw_circle_filled(draw, 16, 15, 8, c["secondary"], ox, oy)
     draw_circle_filled(draw, 16, 15, 5, c["primary"], ox, oy)
-    # upward arrows (growth)
     draw_triangle_up(draw, 16, 10, 3, c["highlight"], ox, oy)
     draw_triangle_up(draw, 10, 14, 2, c["accent"], ox, oy)
     draw_triangle_up(draw, 22, 14, 2, c["accent"], ox, oy)
 
-def icon_neural(draw, c, ox, oy):
-    """Amplification base — brain/neural."""
+# --- Row 22: Amplification ---
+
+def icon_amplification_mastery(draw, c, ox, oy):
+    """Amplification mastery -- neural network."""
     draw_circle_filled(draw, 16, 14, 8, c["secondary"], ox, oy)
     draw_circle_filled(draw, 16, 14, 6, c["primary"], ox, oy)
-    # neural connections
     draw_line_px(draw, 10, 10, 16, 14, c["accent"], ox, oy)
     draw_line_px(draw, 22, 10, 16, 14, c["accent"], ox, oy)
     draw_line_px(draw, 10, 18, 16, 14, c["accent"], ox, oy)
     draw_line_px(draw, 22, 18, 16, 14, c["accent"], ox, oy)
     draw_circle_filled(draw, 16, 14, 2, c["highlight"], ox, oy)
 
-def icon_mana_burst(draw, c, ox, oy):
-    """Mana Surge — blue mana burst."""
+def icon_mana_surge(draw, c, ox, oy):
+    """Mana Surge -- blue mana burst."""
     draw_circle_filled(draw, 16, 15, 6, c["primary"], ox, oy)
     draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
-    # burst rays
-    import math
     for i in range(6):
         angle = math.radians(i * 60)
         x2 = int(16 + 10 * math.cos(angle))
@@ -1047,56 +1308,49 @@ def icon_mana_burst(draw, c, ox, oy):
         draw_line_px(draw, 16, 15, x2, y2, c["accent"], ox, oy)
 
 def icon_quick_cast(draw, c, ox, oy):
-    """Quick Cast — speed cast."""
-    # clock-like symbol
+    """Quick Cast -- speed cast clock."""
     draw_circle_outline(draw, 16, 15, 8, c["primary"], ox, oy)
     draw_line_px(draw, 16, 15, 16, 8, c["accent"], ox, oy)
     draw_line_px(draw, 16, 15, 22, 13, c["accent"], ox, oy)
-    # speed lines
     draw_line_px(draw, 4, 10, 8, 12, c["highlight"], ox, oy)
     draw_line_px(draw, 4, 15, 8, 15, c["highlight"], ox, oy)
     draw_line_px(draw, 4, 20, 8, 18, c["highlight"], ox, oy)
 
-def icon_attunement(draw, c, ox, oy):
-    """Attunement — elemental harmony."""
-    # four small elemental dots
-    draw_circle_filled(draw, 10, 10, 3, (220, 80, 40), ox, oy)  # fire
-    draw_circle_filled(draw, 22, 10, 3, (60, 130, 220), ox, oy)  # water
-    draw_circle_filled(draw, 10, 20, 3, (160, 120, 70), ox, oy)  # earth
-    draw_circle_filled(draw, 22, 20, 3, (100, 200, 230), ox, oy)  # air
-    # center connection
-    draw_diamond(draw, 16, 15, 3, c["highlight"], ox, oy)
+def icon_resonance(draw, c, ox, oy):
+    """Resonance -- vibrating waves."""
+    draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
+    for r in [5, 8, 11]:
+        draw_circle_outline(draw, 16, 15, r, c["accent"], ox, oy)
 
-def icon_focus(draw, c, ox, oy):
-    """Focus Channel — meditation circle."""
+def icon_focus_channel(draw, c, ox, oy):
+    """Focus Channel -- meditation circle."""
     draw_circle_outline(draw, 16, 15, 10, c["primary"], ox, oy)
     draw_circle_outline(draw, 16, 15, 7, c["accent"], ox, oy)
-    # figure sitting
     draw_circle_filled(draw, 16, 12, 3, c["highlight"], ox, oy)
     draw_triangle_down(draw, 16, 19, 4, c["primary"], ox, oy)
 
-def icon_danger_spark(draw, c, ox, oy):
-    """Overcharge base — crackling danger."""
+# --- Row 23: Overcharge ---
+
+def icon_overcharge_mastery(draw, c, ox, oy):
+    """Overcharge mastery -- crackling danger."""
     draw_circle_filled(draw, 16, 15, 8, c["secondary"], ox, oy)
-    # lightning through it
-    icon_lightning(draw, c, ox, oy)
-    # danger border
+    # lightning through
+    pts = [(16, 4), (12, 14), (18, 14), (14, 26)]
+    for i in range(len(pts) - 1):
+        draw_line_px(draw, pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], c["accent"], ox, oy)
+        draw_line_px(draw, pts[i][0]+1, pts[i][1], pts[i+1][0]+1, pts[i+1][1], c["highlight"], ox, oy)
     draw_circle_outline(draw, 16, 15, 10, c["primary"], ox, oy)
 
-def icon_burning_brain(draw, c, ox, oy):
-    """Neural Burn — burning brain."""
+def icon_neural_burn(draw, c, ox, oy):
+    """Neural Burn -- burning brain."""
     draw_circle_filled(draw, 16, 14, 7, c["primary"], ox, oy)
-    # brain folds
     draw_line_px(draw, 16, 8, 16, 20, c["secondary"], ox, oy)
-    # flames on top
     draw_rect(draw, 12, 4, 14, 8, c["accent"], ox, oy)
     draw_rect(draw, 16, 3, 18, 8, c["highlight"], ox, oy)
     draw_rect(draw, 20, 5, 22, 8, c["accent"], ox, oy)
 
-def icon_wild_mana(draw, c, ox, oy):
-    """Mana Frenzy — wild mana storm."""
-    # chaotic energy
-    import math
+def icon_mana_frenzy(draw, c, ox, oy):
+    """Mana Frenzy -- wild mana storm."""
     for i in range(12):
         angle = math.radians(i * 30)
         r = 8 + (i % 3) * 2
@@ -1105,225 +1359,231 @@ def icon_wild_mana(draw, c, ox, oy):
         draw_line_px(draw, 16, 15, x, y, c["accent"], ox, oy)
     draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
 
-def icon_pain_power(draw, c, ox, oy):
-    """Pain Conduit — pain to power."""
-    # red incoming
+def icon_pain_gate(draw, c, ox, oy):
+    """Pain Gate -- pain to power transformation."""
     draw_line_px(draw, 4, 8, 14, 15, (200, 60, 60), ox, oy)
     draw_line_px(draw, 4, 22, 14, 15, (200, 60, 60), ox, oy)
-    # center transform
     draw_diamond(draw, 16, 15, 4, c["primary"], ox, oy)
-    # blue outgoing
     draw_line_px(draw, 18, 15, 28, 8, c["accent"], ox, oy)
     draw_line_px(draw, 18, 15, 28, 22, c["accent"], ox, oy)
 
 def icon_last_resort(draw, c, ox, oy):
-    """Last Resort — final burst."""
-    # explosion
+    """Last Resort -- final burst explosion."""
     draw_star(draw, 16, 15, 12, 5, 8, c["primary"], ox, oy)
     draw_star(draw, 16, 15, 8, 3, 8, c["accent"], ox, oy)
     draw_circle_filled(draw, 16, 15, 3, c["highlight"], ox, oy)
 
 
-# ── Sprite sheet definitions ────────────────────────────────────────────────
+# -- Row layout definition ---------------------------------------------------
+# Each row: (row_number, mastery_name, palette, [(ability_name, draw_fn), ...])
+# The first icon in each row is the mastery icon.
 
-# Skills: each entry = (draw_function, color_palette)
-# Laid out 5 per row: [base] [spec1] [spec2] [spec3] [spec4]
+ROW_LAYOUT = [
+    # Row 0: Innate
+    (0, "innate", C_INNATE, icon_innate_mastery, [
+        ("haste", icon_haste),
+        ("sense", icon_sense),
+        ("fortify", icon_fortify),
+        ("armor", icon_armor),
+    ]),
 
-SKILLS_LAYOUT = [
-    # Row 0-4: Warrior Body
-    # Unarmed
-    (icon_fist, C_WARRIOR_BODY), (icon_generic_attack, C_WARRIOR_BODY),
-    (icon_kick, C_WARRIOR_BODY), (icon_grapple, C_WARRIOR_BODY),
-    (icon_elbow, C_WARRIOR_BODY),
-    # Bladed
-    (icon_sword, C_WARRIOR_BODY), (icon_slash_arc, C_WARRIOR_BODY),
-    (icon_stab, C_WARRIOR_BODY), (icon_overhead_chop, C_WARRIOR_BODY),
-    (icon_crossed_swords, C_WARRIOR_BODY),
-    # Blunt
-    (icon_hammer, C_WARRIOR_BODY), (icon_overhead_chop, C_WARRIOR_BODY),
-    (icon_slash_arc, C_WARRIOR_BODY), (icon_generic_attack, C_WARRIOR_BODY),
-    (icon_generic_aoe, C_WARRIOR_BODY),
-    # Polearms
-    (icon_spear, C_WARRIOR_BODY), (icon_stab, C_WARRIOR_BODY),
-    (icon_slash_arc, C_WARRIOR_BODY), (icon_shield_raised, C_WARRIOR_BODY),
-    (icon_dodge_roll, C_WARRIOR_BODY),
-    # Shields
-    (icon_shield, C_WARRIOR_BODY), (icon_shield_raised, C_WARRIOR_BODY),
-    (icon_shield_bash, C_WARRIOR_BODY), (icon_deflect, C_WARRIOR_BODY),
-    (icon_fortress, C_WARRIOR_BODY),
+    # Rows 1-8: Warrior Body + Mind
+    (1, "unarmed", C_WARRIOR_BODY, icon_unarmed_mastery, [
+        ("punch", icon_punch),
+        ("kick", icon_kick),
+        ("grappling", icon_grappling),
+        ("elbow_strike", icon_elbow_strike),
+    ]),
+    (2, "bladed", C_WARRIOR_BODY, icon_bladed_mastery, [
+        ("slash", icon_slash),
+        ("thrust", icon_thrust),
+        ("cleave", icon_cleave),
+        ("parry", icon_parry),
+    ]),
+    (3, "blunt", C_WARRIOR_BODY, icon_blunt_mastery, [
+        ("smash", icon_smash),
+        ("bump", icon_bump),
+        ("crush", icon_crush),
+        ("shatter", icon_shatter),
+    ]),
+    (4, "polearms", C_WARRIOR_BODY, icon_polearms_mastery, [
+        ("pierce", icon_pierce),
+        ("sweep", icon_sweep),
+        ("brace", icon_brace),
+        ("vault", icon_vault),
+        ("haft_blow", icon_haft_blow),
+    ]),
+    (5, "shields", C_WARRIOR_BODY, icon_shields_mastery, [
+        ("block", icon_block),
+        ("shield_bash", icon_shield_bash),
+        ("deflect", icon_deflect),
+        ("bulwark", icon_bulwark),
+    ]),
+    (6, "dual_wield", C_WARRIOR_BODY, icon_dual_wield_mastery, [
+        ("dual_stab", icon_dual_stab),
+        ("dual_slash", icon_dual_slash),
+        ("spin_attack", icon_spin_attack),
+        ("rapid_combo", icon_rapid_combo),
+    ]),
+    (7, "discipline", C_WARRIOR_MIND, icon_discipline_mastery, [
+        ("focus", icon_focus),
+        ("endure", icon_endure),
+        ("deep_breaths", icon_deep_breaths),
+        ("blood_lust", icon_blood_lust),
+    ]),
+    (8, "intimidation", C_WARRIOR_MIND, icon_intimidation_mastery, [
+        ("shout", icon_shout),
+        ("intimidate", icon_intimidate),
+        ("ugly_mug", icon_ugly_mug),
+        ("battle_roar", icon_battle_roar),
+    ]),
 
-    # Row 5-6: Warrior Mind
-    # Inner
-    (icon_brain, C_WARRIOR_MIND), (icon_focused_eye, C_WARRIOR_MIND),
-    (icon_armor_body, C_WARRIOR_MIND), (icon_healing_breath, C_WARRIOR_MIND),
-    (icon_helmet, C_WARRIOR_MIND),
-    # Outer
-    (icon_shout, C_WARRIOR_MIND), (icon_generic_aoe, C_WARRIOR_MIND),
-    (icon_generic_debuff, C_WARRIOR_MIND), (icon_generic_aoe, C_WARRIOR_MIND),
-    (icon_generic_debuff, C_WARRIOR_MIND),
+    # Rows 9-15: Ranger Weaponry + Survival
+    (9, "bowmanship", C_RANGER_WEAPONRY, icon_bowmanship_mastery, [
+        ("dead_eye", icon_dead_eye),
+        ("pepper", icon_pepper),
+        ("lob", icon_lob),
+        ("pin", icon_pin),
+        ("flame_arrow", icon_flame_arrow),
+    ]),
+    (10, "throwing", C_RANGER_WEAPONRY, icon_throwing_mastery, [
+        ("flick", icon_flick),
+        ("chuck", icon_chuck),
+        ("fan", icon_fan),
+        ("ricochet", icon_ricochet),
+        ("frost_blade", icon_frost_blade),
+    ]),
+    (11, "firearms", C_RANGER_WEAPONRY, icon_firearms_mastery, [
+        ("quick_draw", icon_quick_draw),
+        ("steady_shot", icon_steady_shot),
+        ("burst_fire", icon_burst_fire),
+        ("snipe", icon_snipe),
+        ("shock_round", icon_shock_round),
+    ]),
+    (12, "cqc", C_RANGER_WEAPONRY, icon_cqc_mastery, [
+        ("cqc_parry", icon_cqc_parry),
+        ("guard", icon_guard),
+        ("riposte", icon_riposte),
+        ("shiv", icon_shiv),
+    ]),
+    (13, "awareness", C_RANGER_SURVIVAL, icon_awareness_mastery, [
+        ("keen_senses", icon_keen_senses),
+        ("tip_toes", icon_tip_toes),
+        ("disengage", icon_disengage),
+        ("steady_breathing", icon_steady_breathing),
+        ("rangefinding", icon_rangefinding),
+        ("tracking", icon_tracking),
+        ("steady_aim", icon_steady_aim),
+        ("weak_spot", icon_weak_spot),
+    ]),
+    (14, "trapping", C_RANGER_SURVIVAL, icon_trapping_mastery, [
+        ("snare", icon_snare),
+        ("tripwire", icon_tripwire),
+        ("decoy", icon_decoy),
+        ("bait", icon_bait),
+        ("ambush", icon_ambush),
+    ]),
+    (15, "sapping", C_RANGER_SURVIVAL, icon_sapping_mastery, [
+        ("frag", icon_frag),
+        ("smoke_bomb", icon_smoke_bomb),
+        ("flashbang", icon_flashbang),
+        ("caltrops", icon_caltrops),
+        ("sticky_bomb", icon_sticky_bomb),
+    ]),
 
-    # Row 7-10: Ranger Arms
-    # Drawn
-    (icon_bow, C_RANGER_ARMS), (icon_generic_attack, C_RANGER_ARMS),
-    (icon_multiple_arrows, C_RANGER_ARMS), (icon_arc_arrow, C_RANGER_ARMS),
-    (icon_pinned, C_RANGER_ARMS),
-    # Thrown
-    (icon_throwing_knife, C_RANGER_ARMS), (icon_generic_attack, C_RANGER_ARMS),
-    (icon_generic_attack, C_RANGER_ARMS), (icon_spread_knives, C_RANGER_ARMS),
-    (icon_ricochet, C_RANGER_ARMS),
-    # Firearms
-    (icon_pistol, C_RANGER_ARMS), (icon_generic_attack, C_RANGER_ARMS),
-    (icon_scope, C_RANGER_ARMS), (icon_multiple_arrows, C_RANGER_ARMS),
-    (icon_scope, C_RANGER_ARMS),
-    # Melee
-    (icon_buckler, C_RANGER_ARMS), (icon_crossed_swords, C_RANGER_ARMS),
-    (icon_shield_raised, C_RANGER_ARMS), (icon_generic_attack, C_RANGER_ARMS),
-    (icon_generic_debuff, C_RANGER_ARMS),
-
-    # Row 11-13: Ranger Instinct
-    # Precision
-    (icon_crosshair, C_RANGER_INSTINCT), (icon_scope, C_RANGER_INSTINCT),
-    (icon_focused_eye, C_RANGER_INSTINCT), (icon_generic_buff, C_RANGER_INSTINCT),
-    (icon_crosshair, C_RANGER_INSTINCT),
-    # Awareness
-    (icon_eye, C_RANGER_INSTINCT), (icon_radar_pulse, C_RANGER_INSTINCT),
-    (icon_dodge_roll, C_RANGER_INSTINCT), (icon_leap_back, C_RANGER_INSTINCT),
-    (icon_dodge_roll, C_RANGER_INSTINCT),
-    # Trapping
-    (icon_trap, C_RANGER_INSTINCT), (icon_snare, C_RANGER_INSTINCT),
-    (icon_tripwire, C_RANGER_INSTINCT), (icon_decoy, C_RANGER_INSTINCT),
-    (icon_ambush, C_RANGER_INSTINCT),
-
-    # Row 14: Innate
-    (icon_speed_lines, C_INNATE), (icon_radar_pulse, C_INNATE),
-    (icon_body_glow, C_INNATE),
+    # Rows 16-23: Mage Elemental + Aether + Attunement
+    (16, "fire", C_FIRE, icon_fire_mastery, [
+        ("fireball", icon_fireball),
+        ("flame_wall", icon_flame_wall),
+        ("ignite", icon_ignite),
+        ("inferno", icon_inferno),
+    ]),
+    (17, "water", C_WATER, icon_water_mastery, [
+        ("frost_bolt", icon_frost_bolt),
+        ("freeze", icon_freeze),
+        ("tidal_wave", icon_tidal_wave),
+        ("mist_veil", icon_mist_veil),
+    ]),
+    (18, "air", C_AIR, icon_air_mastery, [
+        ("lightning", icon_lightning),
+        ("gust", icon_gust),
+        ("chain_shock", icon_chain_shock),
+        ("tempest", icon_tempest),
+    ]),
+    (19, "earth", C_EARTH, icon_earth_mastery, [
+        ("stone_spike", icon_stone_spike),
+        ("quake", icon_quake),
+        ("petrify", icon_petrify),
+        ("earthen_armor", icon_earthen_armor),
+    ]),
+    (20, "aether", C_MAGE_AETHER, icon_aether_mastery, [
+        ("nova", icon_nova),
+        ("weld", icon_weld),
+        ("purify", icon_purify),
+        ("drain", icon_drain),
+        ("singularity", icon_singularity),
+    ]),
+    (21, "restoration", C_MAGE_ATTUNEMENT, icon_restoration_mastery, [
+        ("mend", icon_mend),
+        ("barrier", icon_barrier),
+        ("cleanse", icon_cleanse),
+        ("regeneration", icon_regeneration),
+    ]),
+    (22, "amplification", C_MAGE_ATTUNEMENT, icon_amplification_mastery, [
+        ("mana_surge", icon_mana_surge),
+        ("quick_cast", icon_quick_cast),
+        ("resonance", icon_resonance),
+        ("focus_channel", icon_focus_channel),
+    ]),
+    (23, "overcharge", C_MAGE_ATTUNEMENT, icon_overcharge_mastery, [
+        ("neural_burn", icon_neural_burn),
+        ("mana_frenzy", icon_mana_frenzy),
+        ("pain_gate", icon_pain_gate),
+        ("last_resort", icon_last_resort),
+    ]),
 ]
 
-SPELLS_LAYOUT = [
-    # Row 0-5: Arcane
-    # Fire
-    (icon_flame, C_FIRE), (icon_fireball, C_FIRE),
-    (icon_flame_wall, C_FIRE), (icon_ignite, C_FIRE),
-    (icon_inferno, C_FIRE),
-    # Water
-    (icon_water_drop, C_WATER), (icon_frost_bolt, C_WATER),
-    (icon_freeze, C_WATER), (icon_wave, C_WATER),
-    (icon_mist, C_WATER),
-    # Air
-    (icon_wind, C_AIR), (icon_lightning, C_AIR),
-    (icon_gust, C_AIR), (icon_chain_lightning, C_AIR),
-    (icon_storm, C_AIR),
-    # Earth
-    (icon_rock, C_EARTH), (icon_stone_spike, C_EARTH),
-    (icon_quake, C_EARTH), (icon_petrify, C_EARTH),
-    (icon_stone_armor, C_EARTH),
-    # Light
-    (icon_star_light, C_LIGHT), (icon_energy_beam, C_LIGHT),
-    (icon_radiance, C_LIGHT), (icon_heal, C_LIGHT),
-    (icon_sparkles, C_LIGHT),
-    # Dark
-    (icon_void, C_DARK), (icon_drain, C_DARK),
-    (icon_skull, C_DARK), (icon_dark_bolt, C_DARK),
-    (icon_void_zone, C_DARK),
 
-    # Row 6-8: Conduit
-    # Restoration
-    (icon_heart_heal, C_RESTORATION), (icon_quick_heal, C_RESTORATION),
-    (icon_barrier, C_RESTORATION), (icon_cleanse, C_RESTORATION),
-    (icon_regen, C_RESTORATION),
-    # Amplification
-    (icon_neural, C_AMPLIFICATION), (icon_mana_burst, C_AMPLIFICATION),
-    (icon_quick_cast, C_AMPLIFICATION), (icon_attunement, C_AMPLIFICATION),
-    (icon_focus, C_AMPLIFICATION),
-    # Overcharge
-    (icon_danger_spark, C_OVERCHARGE), (icon_burning_brain, C_OVERCHARGE),
-    (icon_wild_mana, C_OVERCHARGE), (icon_pain_power, C_OVERCHARGE),
-    (icon_last_resort, C_OVERCHARGE),
-]
+# -- Sheet generation --------------------------------------------------------
 
-# ── Skill/spell name mappings (for metadata) ───────────────────────────────
-
-SKILL_NAMES = [
-    # Warrior Body
-    "unarmed", "punch", "kick", "grapple", "elbow_knee",
-    "bladed", "slash", "thrust", "cleave", "parry",
-    "blunt", "smash", "sweep", "crush", "shatter",
-    "polearms", "thrust_pole", "sweep_pole", "brace", "vault",
-    "shields", "block", "shield_bash", "deflect", "bulwark",
-    # Warrior Mind
-    "inner", "battle_focus", "pain_tolerance", "second_wind", "iron_will",
-    "outer", "war_cry", "intimidate", "menacing_presence", "battle_roar",
-    # Ranger Arms
-    "drawn", "power_shot", "rapid_fire", "arc_shot", "pin_shot",
-    "thrown", "knife_throw", "axe_throw", "fan_throw", "bounce_shot",
-    "firearms", "quick_draw", "steady_shot", "burst_fire", "snipe",
-    "melee_ranger", "parry_ranger", "block_ranger", "riposte", "disarm",
-    # Ranger Instinct
-    "precision", "steady_aim", "weak_spot", "range_calc", "lead_shot",
-    "awareness", "threat_sense", "dodge_roll", "disengage", "tumble",
-    "trapping", "snare", "tripwire", "decoy", "ambush",
-    # Innate
-    "haste", "sense", "fortify",
-]
-
-SPELL_NAMES = [
-    # Arcane
-    "fire", "fireball", "flame_wall", "ignite", "inferno",
-    "water", "frost_bolt", "freeze", "tidal_wave", "mist_veil",
-    "air", "lightning", "gust", "chain_shock", "tempest",
-    "earth", "stone_spike", "quake", "petrify", "earthen_armor",
-    "light", "energy_blast", "radiance", "heal", "purify",
-    "dark", "drain_life", "curse", "shadow_bolt", "void_zone",
-    # Conduit
-    "restoration", "mend", "barrier", "cleanse", "regeneration",
-    "amplification", "mana_surge", "quick_cast", "attunement", "focus_channel",
-    "overcharge", "neural_burn", "mana_frenzy", "pain_conduit", "last_resort",
-]
-
-
-# ── Sheet generation ────────────────────────────────────────────────────────
-
-def generate_sheet(layout, names, output_path):
-    """Generate a 512x512 sprite sheet from icon layout."""
-    img = Image.new("RGBA", (SHEET_SIZE, SHEET_SIZE), BG_COLOR)
+def generate_sheet(row_layout, output_png, output_json):
+    """Generate the combined 512x1024 sprite sheet and JSON atlas."""
+    img = Image.new("RGBA", (SHEET_W, SHEET_H), BG_COLOR)
     draw = ImageDraw.Draw(img)
+    atlas = {}
 
-    for idx, (draw_fn, colors) in enumerate(layout):
-        col = idx % COLS
-        row = idx // COLS
-        ox = col * ICON_SIZE
-        oy = row * ICON_SIZE
+    total_icons = 0
 
-        # Draw 1px dark border for visual separation
-        draw_rect(draw, 0, 0, ICON_SIZE - 1, ICON_SIZE - 1, BG_COLOR, ox, oy)
-
-        # Draw the icon
-        draw_fn(draw, colors, ox, oy)
-
-    img.save(output_path, "PNG")
-    print(f"  Saved: {output_path} ({len(layout)} icons, {SHEET_SIZE}x{SHEET_SIZE})")
-    return img
-
-
-def generate_index(names, sheet_name, output_path):
-    """Generate a JSON index mapping icon names to grid positions."""
-    import json
-    index = {}
-    for idx, name in enumerate(names):
-        col = idx % COLS
-        row = idx // COLS
-        index[name] = {
-            "x": col * ICON_SIZE,
-            "y": row * ICON_SIZE,
-            "w": ICON_SIZE,
-            "h": ICON_SIZE,
-            "col": col,
-            "row": row,
-            "sheet": sheet_name,
+    for row_num, mastery_name, palette, mastery_fn, abilities in row_layout:
+        # Column 0: mastery icon
+        ox = 0
+        oy = row_num * ICON_SIZE
+        mastery_fn(draw, palette, ox, oy)
+        atlas[mastery_name] = {
+            "x": ox, "y": oy, "w": ICON_SIZE, "h": ICON_SIZE,
+            "col": 0, "row": row_num,
         }
-    with open(output_path, "w") as f:
-        json.dump(index, f, indent=2)
-    print(f"  Saved: {output_path} ({len(names)} entries)")
+        total_icons += 1
+
+        # Columns 1+: ability icons
+        for col_idx, (ability_name, ability_fn) in enumerate(abilities, start=1):
+            ox = col_idx * ICON_SIZE
+            oy = row_num * ICON_SIZE
+            ability_fn(draw, palette, ox, oy)
+            atlas[ability_name] = {
+                "x": ox, "y": oy, "w": ICON_SIZE, "h": ICON_SIZE,
+                "col": col_idx, "row": row_num,
+            }
+            total_icons += 1
+
+    img.save(output_png, "PNG")
+    print(f"  Saved: {output_png} ({total_icons} icons, {SHEET_W}x{SHEET_H})")
+
+    with open(output_json, "w") as f:
+        json.dump(atlas, f, indent=2)
+    print(f"  Saved: {output_json} ({len(atlas)} entries)")
+
+    return total_icons
 
 
 def main():
@@ -1331,30 +1591,21 @@ def main():
     icons_dir = os.path.join(project_root, "assets", "icons")
     os.makedirs(icons_dir, exist_ok=True)
 
-    print("Generating skill/spell icon sprite sheets (512x512)...")
+    print("Generating combined abilities icon sprite sheet (512x1024)...")
     print()
 
-    # Skills sheet
-    print("Skills sprite sheet (Warrior + Ranger + Innate):")
-    skills_path = os.path.join(icons_dir, "skills_icons.png")
-    generate_sheet(SKILLS_LAYOUT, SKILL_NAMES, skills_path)
-    generate_index(SKILL_NAMES, "skills_icons.png",
-                   os.path.join(icons_dir, "skills_icons.json"))
+    png_path = os.path.join(icons_dir, "abilities_icons.png")
+    json_path = os.path.join(icons_dir, "abilities_icons.json")
+
+    total = generate_sheet(ROW_LAYOUT, png_path, json_path)
 
     print()
-
-    # Spells sheet
-    print("Spells sprite sheet (Mage Arcane + Conduit):")
-    spells_path = os.path.join(icons_dir, "spells_icons.png")
-    generate_sheet(SPELLS_LAYOUT, SPELL_NAMES, spells_path)
-    generate_index(SPELL_NAMES, "spells_icons.png",
-                   os.path.join(icons_dir, "spells_icons.json"))
-
-    print()
-    print("Done! Sprite sheets ready in assets/icons/")
-    print(f"  Skills: {len(SKILLS_LAYOUT)} icons in 5-col rows (base + 4 specific)")
-    print(f"  Spells: {len(SPELLS_LAYOUT)} icons in 5-col rows (base + 4 specific)")
+    print("Done! Sprite sheet ready in assets/icons/")
+    print(f"  Total icons: {total}")
     print(f"  Grid: {COLS} cols x {ROWS} rows, {ICON_SIZE}x{ICON_SIZE}px per icon")
+    print(f"  Sheet: {SHEET_W}x{SHEET_H}px")
+    print()
+    print("Note: Old files (skills_icons.png, spells_icons.png) preserved.")
 
 
 if __name__ == "__main__":

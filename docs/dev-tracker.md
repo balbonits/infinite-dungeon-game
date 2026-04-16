@@ -160,12 +160,28 @@ These systems were implemented during visual-first development but were not part
 | END-03 | Dungeon Intelligence (adaptive AI Director) | Done | `DungeonIntelligence.cs` — 4 metrics, pressure score, spawn/aggro/elite modifiers |
 | END-04 | Zone Saturation (per-zone difficulty dial) | Done | `ZoneSaturation.cs` — per-zone saturation, decay, stat/reward multipliers |
 | END-05 | Depth gear tiers (new rarity at floor 50/100/150) | Done | `DepthGearTier.cs` — BaseQuality extended to 6 tiers, quality roll with floor shift |
-| UI-01 | Pause menu tabbed redesign | To Do | 7 tabs: Inventory, Equipment, Skills, Quests, Ledger, Stats, System. Q/E tab nav, Resume always visible. Spec: `docs/ui/pause-menu-tabs.md`. Blocked by SYS-11. |
+| UI-01 | Pause menu tabbed redesign | To Do | 8 tabs: Inventory, Equipment, Skills, Abilities (class-specific), Quests, Ledger, Stats, System. Q/E tab nav, Resume always visible. Spec: `docs/ui/pause-menu-tabs.md`. Blocked by SYS-11. |
 | SYS-11 | Equipment system (10-slot, 19 equippable) | To Do | Head, Body, Arms, Legs, Feet, Neck, 10 Rings, Main Hand, Off Hand, Ammo. No class-lock — +25% class affinity bonus instead. Bow without quiver = melee. Starting gear per class. Spec: `docs/systems/equipment.md`. |
 | POL-01 | Audio system (SFX + music + ambient) | To Do | Skipped per user — no audio/sound tasks |
 | POL-02 | Real sprite animations (AnimatedSprite2D) | To Do | 8-directional static rotations done; animation frames not yet |
 | POL-03 | Zone visual themes (per-zone floor/wall textures) | Done | `Constants.Assets.GetZoneTheme()` — 5 themes cycling for zone 6+ |
 | POL-04 | Shader effects (hit flash, outline, glow) | Partial | FlashFx uses Modulate tinting; no custom shaders yet |
+
+---
+
+## Skills & Abilities Spec Updates
+
+| ID | Title | Status | Notes |
+|----|-------|--------|-------|
+| SPEC-13a | Rewrite skills.md → Skills & Abilities spec | Done | Full rewrite: dual-system (Skills + Abilities), 3 class trees, SP/AP split, reactive/pull architecture |
+| SPEC-13b | Update magic.md (Elemental/Aether/Attunement) | Done | Mage: Arcane→Elemental, added Aether, Conduit→Attunement. Ranger: Arms→Weaponry, Instinct→Survival. Warrior: Inner→Discipline, Outer→Intimidation. Added Armor innate. |
+| SPEC-13c | Update classes.md (new mastery structure) | Done | Updated all 3 class summaries, Innate 3→4, SP/AP terminology |
+| SPEC-13d | Update pause-menu-tabs.md (7→8 tabs) | Done | Added class-specific Abilities tab (Warrior Arts / Ranger Crafts / Arcane Spells) |
+| SPEC-13e | Update combat.md (ability activation flow) | Done | Skill Hotbar→Ability Hotbar, dual XP tracking, updated flows/combat.md too |
+| SPEC-13f | Update hud.md (cooldowns, status effects) | Done | Ability cooldown overlay, Armor status effect, skill bar→ability bar |
+| SPEC-13g | Review controls.md (terminology pass) | Done | Skills→abilities for hotbar refs, updated tab list |
+| SPEC-13i | Create point-economy.md (SP/AP rates) | Done | New doc: SP 2/level, AP 3/level + milestones + combat + use-based. Updated leveling.md |
+| SPEC-13k | Archive working doc + cross-reference sweep | Done | SKILLS_AND_ABILITIES_SYSTEMS.md archived, stale terminology fixed in progression.md, items.md |
 
 ---
 

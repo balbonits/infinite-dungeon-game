@@ -135,11 +135,11 @@ Not yet implemented. Auto-attack currently always targets the nearest enemy.
 
 ### Shortcuts -- L1/R1 Hold + Face Button (Spec)
 
-8 shortcut slots via hold-modifier. Not yet implemented (needs skills/items to assign).
+8 shortcut slots via hold-modifier. Not yet implemented (needs abilities/items to assign).
 
 ### Game Window (Spec)
 
-Start (Esc) should open a tabbed game window (Inventory/Skills/Stats/Pause/Settings). Currently Esc only opens the simple pause menu with Resume/Quit.
+Start (Esc) should open a tabbed game window with 8 tabs: Inventory / Equipment / Skills / Abilities / Stats / Map / Settings / Quit. Currently Esc only opens the simple pause menu with Resume/Quit.
 
 ### Map Overlay (Spec)
 

@@ -107,7 +107,7 @@ Mana recovers passively over time. Rate depends on class and INT.
 | Base regen | Mage: fastest, Ranger: moderate, Warrior: slowest |
 | INT stat | Increases regen rate (magicule processing efficiency) |
 | Combat state | Regen may be slower during active combat (optional — balance decision) |
-| Amplification skills | Mage's Conduit tree has skills that boost regen (Mana Surge, Focus Channel) |
+| Amplification skills | Mage's Attunement tree has skills that boost regen (Mana Surge, Focus Channel) |
 
 #### Mana Costs By Class
 
@@ -144,14 +144,14 @@ Warriors use magicules **subconsciously to enhance their body**:
 - **Strengthen muscles** — hit harder, lift heavier, resist knockback
 - **Reinforce bones and joints** — take hits that would break a normal person
 - **Enhance reflexes** — react faster, parry instinctively
-- **Project presence** — the "Mind: Outer" skills (War Cry, Intimidate, Menacing Presence) are magicule projections that affect enemies' nervous systems
+- **Project presence** — the "Mind: Intimidation" skills (Shout, Intimidate, Ugly Mug, Battle Roar) are magicule projections that affect enemies' nervous systems
 
 A Warrior doesn't think "I'm casting a spell." They think "I'm pushing harder" and magicules respond. Their Body category skills are enhanced physical techniques. Their Mind category skills are the closest Warriors get to conscious magic use — projecting magicules outward to affect others.
 
 **Connection to skill tree:**
 - Body skills = magicule-enhanced physical combat (subconscious processing)
-- Mind: Inner = self-directed magicule enhancement (damage resistance, regen, willpower)
-- Mind: Outer = projected magicule effects (debuffs, fear, aura)
+- Mind: Discipline = self-directed magicule enhancement (damage resistance, regen, willpower)
+- Mind: Intimidation = projected magicule effects (debuffs, fear, aura)
 
 #### Rangers — Enhancement + Matter Manipulation
 
@@ -162,15 +162,15 @@ Rangers have the same biological enhancement as Warriors PLUS conscious **matter
 - **Enhance equipment** — temporarily boost weapon properties through magicule infusion
 - **Create magic projectiles** — minor manifestation (not as complex as Mage spells, but more than pure physical)
 
-The Ranger sits between Warrior and Mage on the magic spectrum. Their Arms skills use magicules for weapon enhancement. Their Instinct skills use magicules for cognitive enhancement (Precision, Awareness, Trapping).
+The Ranger sits between Warrior and Mage on the magic spectrum. Their Weaponry skills use magicules for weapon enhancement. Their Survival skills use magicules for cognitive enhancement and environmental manipulation (Awareness, Trapping, Sapping).
 
 **Imbuing and equipment materials:** Ranger imbuing is **equipment-enhanced, not equipment-required**. A Ranger can use elemental skills (fire arrows, frost bolts, etc.) with any weapon — even basic iron. However, materials have natural magical affinities: a bow strung with fire-aligned sinew, or arrows tipped with flame-conductive metal, will produce stronger fire imbuing than basic materials. Equipment enhances elemental output but is never a gate. This gives Rangers a reason to seek specific materials without locking elemental gameplay behind gear checks.
 
 **Connection to skill tree:**
-- Arms skills = magicule-enhanced ranged combat + matter manipulation (imbuing, magic projectiles)
-- Instinct: Precision = magicule-enhanced targeting (cognitive processing, trajectory calculation)
-- Instinct: Awareness = magicule-enhanced perception (threat detection, evasion reflexes)
-- Instinct: Trapping = magicule-infused objects (traps are items charged with magicule effects)
+- Weaponry skills = magicule-enhanced ranged combat + matter manipulation (imbuing, magic projectiles)
+- Survival: Awareness = magicule-enhanced perception (threat detection, evasion reflexes — also absorbs former Precision targeting abilities)
+- Survival: Trapping = magicule-infused objects (traps are items charged with magicule effects)
+- Survival: Sapping = magicule-charged explosives and area denial (demolitions, resource disruption)
 
 #### Mages — Full Thought-Based Manifestation
 
@@ -181,14 +181,15 @@ Mages create phenomena **purely from mental models**. This is the most demanding
 - **Sustain concentration** to maintain ongoing effects
 - **Process feedback** — the manifestation pushes back on the brain, which is why overcasting causes cognitive impairment
 
-The Mage's Arcane category contains their elemental manifestation skills (Fire, Water, Air, Earth, Light, Dark). Their Conduit category is about training the body to handle more magical throughput.
+The Mage's Elemental category contains their elemental manifestation skills (Fire, Water, Air, Earth, Light, Dark). Their Attunement category is about training the body to handle more magical throughput.
 
 **Connection to skill tree:**
-- Arcane: [Element] base skill = magicule processing efficiency for that element (cast speed, range, mana efficiency)
-- Arcane: [Element] specific skills = refined mental models for specific manifestations (Fireball, Lightning, etc.)
-- Conduit: Restoration = using magicules to repair the body (self-healing is magicule-directed cellular repair)
-- Conduit: Amplification = expanding the brain's magicule processing capacity (more mana, faster regen)
-- Conduit: Overcharge = pushing the nervous system past safe limits (power at bodily cost)
+- Elemental: [Element] mastery = magicule processing efficiency for that element (cast speed, range, mana efficiency)
+- Elemental: [Element] abilities = refined mental models for specific manifestations (Fireball, Lightning, etc.)
+- Aether: Light+Dark as one mastery — cosmic force manipulation (raw energy outward, gravity inward)
+- Attunement: Restoration = using magicules to repair the body (self-healing is magicule-directed cellular repair)
+- Attunement: Amplification = expanding the brain's magicule processing capacity (more mana, faster regen)
+- Attunement: Overcharge = pushing the nervous system past safe limits (power at bodily cost)
 
 ---
 
@@ -235,11 +236,11 @@ Every skill in the game is magicule manipulation. The categories describe differ
 | Application | Example Skills | Mental Model Type | Mana Cost | Consciousness Level |
 |-------------|---------------|-------------------|-----------|-------------------|
 | Biological enhancement | Warrior Body skills, Ranger reflexes | Subconscious body direction | Low (5–20) | Automatic |
-| Cognitive enhancement | Warrior Mind: Inner, Ranger Instinct | Semi-conscious focus | Low–Medium (10–30) | Background |
+| Cognitive enhancement | Warrior Mind: Discipline, Ranger Survival | Semi-conscious focus | Low–Medium (10–30) | Background |
 | Matter manipulation | Ranger imbuing, trapping | Conscious object direction | Medium (15–35) | Active |
-| Projected presence | Warrior Mind: Outer (War Cry, Intimidate) | Conscious outward projection | Medium (15–30) | Active |
-| Elemental manifestation | Mage Arcane spells | Fully conscious visualization | High (25–120+) | Full concentration |
-| Body channeling | Mage Conduit skills | Conscious internal direction | Medium–High (20–60) | Active |
+| Projected presence | Warrior Mind: Intimidation (Shout, Intimidate) | Conscious outward projection | Medium (15–30) | Active |
+| Elemental manifestation | Mage Elemental spells | Fully conscious visualization | High (25–120+) | Full concentration |
+| Body channeling | Mage Attunement skills | Conscious internal direction | Medium–High (20–60) | Active |
 | Overcharge | Mage Overcharge skills | Dangerous conscious override | HP cost, not mana | Desperate |
 
 **Use-based leveling** = the brain gets better at forming the mental model through repetition.
@@ -313,11 +314,23 @@ Every character starts with all Innate skills at level 0 and can level them infi
 
 ---
 
+**Armor** — Always-on passive armor proficiency.
+
+- **Class-specific names:** Ironhide (Warrior), Nimbleguard (Ranger), Spellweave (Mage)
+- **Activation:** Always active. Unlike the other Innate skills, Armor does NOT toggle and does NOT drain mana — it is permanently on.
+- **Effect:** Class-specific equipment mastery. Provides passive bonuses to armor effectiveness, equipment synergy, and class-appropriate defensive scaling.
+- **Leveling benefits:** Each level increases armor effectiveness and deepens class-specific equipment mastery.
+- **Why it's Innate:** Every living being develops a natural affinity for protecting itself. Humans extend this instinct through equipment — Warriors through heavy plate, Rangers through agile leathers, Mages through enchanted cloth. The body learns to work with its armor, not just wear it.
+
+---
+
 **Innate skill design principles:**
-- All three drain mana per second (consistent cost model — encourages moment-to-moment resource decisions)
-- All three are useful for every class (Warriors benefit from Sense just as much as Mages benefit from Fortify)
-- None overlap with class skills (Haste is movement, not combat; Sense is detection, not combat awareness like the Ranger's Threat Sense; Fortify is flat resistance, not the Warrior's specialized Pain Tolerance)
-- Leveling always reduces mana cost AND increases effect (double incentive to invest)
+- There are 4 Innate skills total: Haste, Sense, Fortify, and Armor
+- Haste, Sense, and Fortify drain mana per second (consistent cost model — encourages moment-to-moment resource decisions)
+- Armor is the exception: it is always active with no toggle and no mana drain
+- All four are useful for every class (Warriors benefit from Sense just as much as Mages benefit from Fortify)
+- None overlap with class skills (Haste is movement, not combat; Sense is detection, not combat awareness like the Ranger's Threat Sense; Fortify is flat resistance, not the Warrior's specialized Endure)
+- Leveling always reduces mana cost AND increases effect for toggle skills (double incentive to invest); for Armor, leveling purely increases effectiveness
 
 ## Acceptance Criteria
 
@@ -337,7 +350,8 @@ Every character starts with all Innate skills at level 0 and can level them infi
 - [ ] Haste skill: hold to sprint, drains mana/sec, boosts movement speed and dodge chance
 - [ ] Sense skill: toggle, drains mana/sec, detects nearby enemies and items through obstacles
 - [ ] Fortify skill: toggle, drains mana/sec, provides damage resistance
-- [ ] All three Innate skills are available to every class and level infinitely
+- [ ] Armor skill: always active (no toggle, no mana drain), class-specific passive armor proficiency (Ironhide/Nimbleguard/Spellweave)
+- [ ] All four Innate skills are available to every class and level infinitely
 
 ## Implementation Notes
 

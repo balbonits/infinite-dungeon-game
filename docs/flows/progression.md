@@ -42,23 +42,33 @@ When Xp >= threshold:
 
 ## Skill XP (Use-Based)
 
-When a skill is used in combat:
+When an ability is used in combat:
 ```
-1. SkillTracker.RecordUse(skillId, floorNumber)
+1. AbilityTracker.RecordUse(abilityId, floorNumber)
 2. Floor multiplier: 1 + (floor - 1) * 0.5
-3. XP to used skill: def.BaseXpPerUse * floorMultiplier
-4. XP to parent base skill (if specific skill used)
-5. Skill level formula: level^2 * 20 XP per level
+3. XP to used ability: def.BaseXpPerUse * floorMultiplier
+4. XP to parent skill (mastery) — always granted when child ability is used
+5. Level formula: level^2 * 20 XP per level
 6. Level 0 → 1 is instant (0 XP required)
 ```
 
-## Skill Point Allocation
+## SP Allocation (Skills)
 
 ```
-SkillTracker.AllocatePoint(skillId):
-1. Check SkillPoints > 0
+SkillTracker.AllocateSP(skillId):
+1. Check SP > 0
 2. Check skill exists and matches player class
-3. If specific skill: check parent base skill at level 1+
-4. Deduct 1 skill point
-5. Add XP: 50 * (1 + targetSkillLevel * 0.1)
+3. Deduct 1 SP
+4. Add XP: 50 * (1 + targetSkillLevel * 0.1)
+```
+
+## AP Allocation (Abilities)
+
+```
+AbilityTracker.AllocateAP(abilityId):
+1. Check AP > 0
+2. Check ability exists and matches player class
+3. Check parent skill at level 1+ (ability must be unlocked)
+4. Deduct 1 AP
+5. Add XP: 50 * (1 + targetAbilityLevel * 0.1)
 ```

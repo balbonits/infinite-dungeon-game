@@ -66,10 +66,12 @@ At every 25-level threshold, all non-zero auto-bonuses permanently increase by +
 
 On every level-up, the player receives **free stat points** to allocate manually to any of the four stats (STR, DEX, STA, INT). No restrictions — dump all into one stat or spread evenly.
 
-| Level-Up Type | Free Stat Points | Free Skill Points |
+| Level-Up Type | Free Stat Points | Free SP (Skill Points) |
 |---------------|-----------------|-------------------|
 | Normal level | 3 | 2 |
 | Milestone (every 10th level) | 5 (+2 bonus) | 3 (+1 bonus) |
+
+*SP are spent on passive masteries. AP (Ability Points) come from separate sources — see [Skills & Abilities](skills.md) for details.*
 
 **No respec.** Stat allocation is permanent. This makes each point a meaningful decision and encourages rerolling new characters to try different builds.
 
@@ -94,16 +96,16 @@ Assumes all free stat points dumped into STR (worst-case max for one stat):
 Each class has its own unique skill tree. Skills are **designed now, built post-MVP** — the core skill tree structure is established in documentation, with implementation deferred.
 
 Key design decisions:
-- **Infinite skill leveling** — every base skill and specific skill has no level cap
+- **Infinite skill leveling** — every Skill (passive mastery) and Ability (active combat action) has no level cap
 - **Strictly class-exclusive** — skills are unique to each class. No skill sharing between classes.
-- **Hierarchical** — base skills gate specific skills (inspired by Project Zomboid's skill system)
-- Full skill tree design: **[skills.md](skills.md)**
+- **Hierarchical** — Skills (passive masteries) gate Abilities (active combat actions) (inspired by Project Zomboid's skill system)
+- Full skill tree design: **[Skills & Abilities](skills.md)**
 
 Skill tree status:
-- **Warrior:** Designed — 7 base skills (Body: Unarmed, Bladed, Blunt, Polearms, Shields / Mind: Inner, Outer)
-- **Ranger:** Designed — 7 base skills (Arms: Drawn, Thrown, Firearms, Melee / Instinct: Precision, Awareness, Trapping)
-- **Mage:** Designed — 9 base skills (Arcane: Fire, Water, Air, Earth, Light, Dark / Conduit: Restoration, Amplification, Overcharge)
-- **Innate (all classes):** 3 standalone skills (Haste, Sense, Fortify) — see [magic.md](magic.md)
+- **Warrior:** Designed — 8 masteries (Body: Unarmed, Bladed, Blunt, Polearms, Shields, Dual Wield / Mind: Discipline, Intimidation)
+- **Ranger:** Designed — 7 masteries (Weaponry: Bowmanship, Throwing, Firearms, CQC / Survival: Awareness, Trapping, Sapping)
+- **Mage:** Designed — 8 masteries (Elemental: Fire, Water, Air, Earth / Aether / Attunement: Restoration, Amplification, Overcharge)
+- **Innate (all classes):** 4 standalone skills (Haste, Sense, Fortify, Armor) — see [magic.md](magic.md)
 
 ### Equipment Affinity
 

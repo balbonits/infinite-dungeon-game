@@ -96,12 +96,14 @@ Each level-up should feel meaningful. Multiple rewards per level:
 | Max HP increase | `floor(8 + level * 0.5)` | Scales with level (replaces flat +8) |
 | HP restore | `floor(max_hp * 0.15)` | 15% of new max HP (replaces flat +18) |
 | Free stat points | 3 per level (base) | Player allocates to STR/DEX/STA/INT |
-| Skill points | 2 per level (base) | Player allocates to any base or specific skill |
+| SP (Skill Points) | 2 per level (base) | Player allocates to any Skill (passive mastery). See [point-economy.md](point-economy.md) |
+| AP (Ability Points) | 3 per level (base) | Player allocates to any Ability (active combat action). Also earned from combat milestones and use-based tracking. See [point-economy.md](point-economy.md) |
 | Class stat bonuses | Per class table | Automatic, see [classes.md](classes.md) |
 
 **Milestone levels (every 10th):**
 - Bonus stat points: +2 extra (5 total that level)
-- Bonus skill points: +1 extra (3 total that level)
+- Bonus SP: +1 extra (3 SP total that level)
+- Bonus AP: +2 extra (5 AP total that level)
 - Future: cosmetic rewards, titles, achievements
 
 **Level-up feedback:** Level-ups should have strong visual/audio feedback — full-screen flash, particle burst, fanfare sound, brief pause. See [player-engagement.md](player-engagement.md) for the full juice/feel spec.
@@ -171,7 +173,7 @@ This is a one-time reward per boss per character. Revisiting a boss floor after 
 |----------|----------|
 | XP constant (45) | Locked at 45. Tunable during playtesting, but the quadratic shape is final. |
 | Floor multiplier shape | Linear (locked). `1 + (floor - 1) * 0.5` |
-| Milestone/skill interaction | Every 10th level grants +1 bonus skill point (3 total). See [classes.md](classes.md). |
+| Milestone/point interaction | Every 10th level grants +1 bonus SP (3 total) and +2 bonus AP (5 total). See [point-economy.md](point-economy.md). |
 | Rested XP display | Subtle bar color change (shimmer/glow) + tooltip showing remaining pool. |
 | Spell scroll XP | Deferred to spell acquisition spec (SPEC-03). |
 | Boss XP | Yes — 5x highest tier enemy XP for that floor, one-time per boss. |
