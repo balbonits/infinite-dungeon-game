@@ -67,7 +67,7 @@ public partial class QuestPanel : Control
 
         vbox.AddChild(new HSeparator());
 
-        var scroll = new ScrollContainer();
+        var scroll = new ScrollContainer { FollowFocus = true };
         scroll.CustomMinimumSize = new Vector2(0, 280);
         vbox.AddChild(scroll);
 

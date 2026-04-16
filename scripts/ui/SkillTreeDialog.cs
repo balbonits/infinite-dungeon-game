@@ -77,7 +77,7 @@ public partial class SkillTreeDialog : Control
         _detailLabel.CustomMinimumSize = new Vector2(0, 36);
         content.AddChild(_detailLabel);
 
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 300);
         content.AddChild(_scrollContainer);
 

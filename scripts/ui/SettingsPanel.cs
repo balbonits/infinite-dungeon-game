@@ -89,7 +89,7 @@ public partial class SettingsPanel : Control
         _content.AddChild(new HSeparator());
 
         // Scrollable settings list
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 300);
         _content.AddChild(_scrollContainer);
 

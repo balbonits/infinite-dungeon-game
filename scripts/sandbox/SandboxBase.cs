@@ -135,14 +135,14 @@ public abstract partial class SandboxBase : Control
         // Controls panel (left)
         _controlsContainer = new VBoxContainer();
         _controlsContainer.AddThemeConstantOverride("separation", 8);
-        var controlsScroll = new ScrollContainer();
+        var controlsScroll = new ScrollContainer { FollowFocus = true };
         controlsScroll.SizeFlagsHorizontal = SizeFlags.Expand;
         controlsScroll.CustomMinimumSize = new Vector2(300, 0);
         controlsScroll.AddChild(_controlsContainer);
         body.AddChild(controlsScroll);
 
         // Log panel (right)
-        var logScroll = new ScrollContainer();
+        var logScroll = new ScrollContainer { FollowFocus = true };
         logScroll.SizeFlagsHorizontal = SizeFlags.Expand;
         _logPanel = new RichTextLabel
         {

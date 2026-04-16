@@ -68,7 +68,7 @@ public partial class BackpackWindow : Control
         content.AddChild(_detailLabel);
 
         // Scrollable slot grid
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 320);
         content.AddChild(_scrollContainer);
 

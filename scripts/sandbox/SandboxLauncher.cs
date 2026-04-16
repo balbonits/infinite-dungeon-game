@@ -77,7 +77,7 @@ public partial class SandboxLauncher : Control
         headerInner.AddChild(subtitle);
 
         // Scrollable content
-        var scroll = new ScrollContainer();
+        var scroll = new ScrollContainer { FollowFocus = true };
         scroll.SizeFlagsVertical = SizeFlags.Expand;
         root.AddChild(scroll);
 

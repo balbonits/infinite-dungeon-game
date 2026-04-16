@@ -97,7 +97,7 @@ public partial class BlacksmithWindow : Control
         _detailLabel.CustomMinimumSize = new Vector2(0, 30);
         _contentBox.AddChild(_detailLabel);
 
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 300);
         _contentBox.AddChild(_scrollContainer);
 

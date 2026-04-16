@@ -69,7 +69,7 @@ public partial class TeleportDialog : Control
 
         vbox.AddChild(new HSeparator());
 
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 280);
         vbox.AddChild(_scrollContainer);
 

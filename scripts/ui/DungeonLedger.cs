@@ -68,7 +68,7 @@ public partial class DungeonLedger : Control
 
         vbox.AddChild(new HSeparator());
 
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 360);
         vbox.AddChild(_scrollContainer);
 

@@ -57,7 +57,7 @@ public partial class DebugConsole : Control
 
         vbox.AddChild(new HSeparator());
 
-        _scroll = new ScrollContainer();
+        _scroll = new ScrollContainer { FollowFocus = true };
         _scroll.CustomMinimumSize = new Vector2(0, 360);
         vbox.AddChild(_scroll);
 

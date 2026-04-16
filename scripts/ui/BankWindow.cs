@@ -87,7 +87,7 @@ public partial class BankWindow : Control
         _bankHeader.HorizontalAlignment = HorizontalAlignment.Center;
         bankCol.AddChild(_bankHeader);
 
-        var bankScroll = new ScrollContainer();
+        var bankScroll = new ScrollContainer { FollowFocus = true };
         bankScroll.CustomMinimumSize = new Vector2(240, 280);
         bankCol.AddChild(bankScroll);
         _bankList = new VBoxContainer();
@@ -105,7 +105,7 @@ public partial class BankWindow : Control
         _backpackHeader.HorizontalAlignment = HorizontalAlignment.Center;
         bpCol.AddChild(_backpackHeader);
 
-        var bpScroll = new ScrollContainer();
+        var bpScroll = new ScrollContainer { FollowFocus = true };
         bpScroll.CustomMinimumSize = new Vector2(240, 280);
         bpCol.AddChild(bpScroll);
         _backpackList = new VBoxContainer();

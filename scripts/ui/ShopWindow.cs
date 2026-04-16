@@ -118,7 +118,7 @@ public partial class ShopWindow : Control
         leftPanel.SizeFlagsStretchRatio = 1.2f;
         panels.AddChild(leftPanel);
 
-        var scroll = new ScrollContainer();
+        var scroll = new ScrollContainer { FollowFocus = true };
         scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
         leftPanel.AddChild(scroll);
 
