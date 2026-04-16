@@ -18,6 +18,42 @@ Full write-up: [`docs/development-paradigm.md`](docs/development-paradigm.md).
 
 ---
 
+## Work Discipline — "Slow is Smooth, Smooth is Fast"
+
+This is a foundational principle for how AI agents operate on this repo. Not optional, not domain-specific — it applies to every task.
+
+### The principle
+
+> **"Slow is smooth, smooth is fast. Do it once, do it right, never do it more than once."**
+
+Individual tasks should not be rushed. LLMs bias toward confident-sounding output even when uncertain. Rushing amplifies that bias, produces plausible-but-wrong work, and triggers expensive rework. **Rework is the enemy**: a task done twice costs more than a task done slowly once. Measured, verified work at each step is faster in total than fast guessing followed by correction cycles.
+
+### Rules that implement this principle
+
+1. **Verify, don't speculate.** Before asserting a filename, API, method signature, URL, or behavior: look it up. Use web search, read the actual docs, grep the codebase, inspect the NuGet package, read the spec in `docs/`. If you can't verify, say "uncertain" and research before proceeding.
+
+2. **No confident wrongness.** If you're not sure, say so. "I believe X but haven't verified" is acceptable. "X is Y" when you guessed is not.
+
+3. **Read before writing.** Read the relevant `docs/` spec before writing code. Read the existing file before editing it. Read the tool's official docs before assuming its behavior. Reading takes minutes; fixing wrong assumptions takes hours.
+
+4. **Test what you claim.** Don't claim "it works" without running it. `make build` is the minimum. `make test` for any logic change. Run the game for any UI change. "Should work" ≠ works.
+
+5. **One task, done fully, then stop.** Finish the current task — including docs, tests, and commit — before starting the next. Half-done tasks pile up and rot.
+
+6. **When in doubt, ask the user or spawn a research agent.** Don't guess to save time. A 30-second clarification or a 2-minute research query is cheaper than a wrong implementation plus rework.
+
+7. **Reflect on corrections.** When the user corrects you, the correction usually encodes a broader principle. Encode it into `AGENTS.md` or the relevant `docs/` file so the same class of mistake doesn't recur.
+
+### The trap to avoid
+
+LLMs can produce large volumes of output quickly. The temptation is to treat speed as productivity. It isn't — **rework-adjusted throughput** is the real measure. A single commit that ships correct code, correct tests, and correct docs is worth ten commits that need to be revisited.
+
+When you're about to guess, stop. Verify. Then proceed.
+
+Full convention (examples, signs you're about to violate it, rationale): [docs/conventions/work-discipline.md](docs/conventions/work-discipline.md).
+
+---
+
 ## Who You're Working For
 
 **The user is the product owner — not a developer.** They own the game vision, make design decisions, and approve outcomes. They do not write, review, or debug code. All technical work is handled by AI.

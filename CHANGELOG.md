@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 17 — Work Discipline Codified (2026-04-17)
+
+#### Added
+- `docs/conventions/work-discipline.md` — canonical convention for AI work discipline ("slow is smooth, smooth is fast"). 7 rules, rework-throughput rationale, warning signs, examples.
+- "Work Discipline" section in `AGENTS.md` as a top-level principle (second only to Paradigm).
+- Jump-to row in `CLAUDE.md` for Work Discipline; promoted "slow is smooth" to Hard Rule #1.
+
+#### Fixed
+- Removed invented AI tool filenames (`CURSOR.md`, `COPILOT.md`) from `docs/conventions/ai-context-files.md` and the `AGENTS.md`/`CLAUDE.md` pointers. Replaced with verified filenames from official docs.
+
 ### Session 16 — Tabbed PauseMenu, GoDotTest Rewrite, Transition Fixes, SoulsBorne Death (2026-04-17)
 
 #### Added

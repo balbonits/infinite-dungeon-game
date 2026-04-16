@@ -4,6 +4,34 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 17 — Work Discipline Codified (2026-04-17)
+
+### What Happened
+
+Mid-session, I speculated about AI tool filename conventions (`CURSOR.md`, `COPILOT.md`) without verifying. User pushed back: *"does Gemini actually use GEMINI.md?"* Forced a verification pass against official docs, which found that only `GEMINI.md` was real — the other two were invented. Corrective commit followed.
+
+The user then escalated the principle: *"it goes beyond 'guessing filenames'. it's a full paradigm for work and tasks. slow is smooth, smooth is fast. do it once, do it right, never do it more than once."*
+
+This session's work was encoding that discipline permanently across the context chain so the class of mistake doesn't recur.
+
+### Artifacts Created
+
+- **`docs/conventions/work-discipline.md`** — full canonical convention: the principle, why it matters for AI dev, 7 rules (verify/no-confident-wrongness/read-first/test-what-you-claim/one-task/ask-when-unsure/reflect-on-corrections), the rework-throughput trap, warning signs, and real examples from this very session.
+- **`AGENTS.md`** — added a top-level "Work Discipline" section right after Paradigm, with the principle inline + the 7 rules summarized + pointer to the full convention doc.
+- **`CLAUDE.md`** — added jump-to index row for Work Discipline, promoted "Slow is smooth" to Hard Rule #1 in the reminder block.
+
+### Key Lesson
+
+When the user corrects a specific mistake, the correction almost always encodes a broader principle. The job isn't "fix the instance" — it's "find the class of mistake, encode the lesson into the context files so future AI sessions catch the next instance automatically."
+
+Done right, each correction strengthens the system. Done wrong (fixing only the instance), the same class of mistake recurs.
+
+### What Triggered This
+
+Commit `24078f5` (the verified-filenames fix) was correct but reactive. This session's work makes it proactive — the principle that would have caught the original speculation is now in `AGENTS.md`, read at the top of every session.
+
+---
+
 ## Session 16 — Tabbed PauseMenu, GoDotTest Rewrite, Transition Fixes, SoulsBorne Death (2026-04-17)
 
 ### What Happened

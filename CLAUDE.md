@@ -9,6 +9,7 @@ This file is a jump-index into AGENTS.md. Never answer from this file alone — 
 | Need to... | Section |
 |------------|---------|
 | Understand the paradigm (AI+Human, specs-driven) | [Paradigm](AGENTS.md#paradigm--read-this-first) |
+| Avoid speculation / rework (core discipline) | [Work Discipline](AGENTS.md#work-discipline--slow-is-smooth-smooth-is-fast) |
 | Know who the user is / how to communicate | [Who You're Working For](AGENTS.md#who-youre-working-for) |
 | Route work to the right AI team | [AI Team Structure](AGENTS.md#ai-team-structure) |
 | Stay in scope / avoid scope creep | [Scope Discipline](AGENTS.md#1-scope-discipline-read-this-first) |
@@ -45,12 +46,13 @@ make run            # Launch Godot
 
 ## Hard Rules Reminder (full detail in AGENTS.md)
 
-1. **Stay in scope.** Do exactly what's asked.
-2. **Read the spec first** in `docs/`.
-3. **Specs are source of truth.** If code and docs disagree, one needs updating.
-4. **Tests before code.** Reference or write test cases first.
-5. **Post-task protocol is non-negotiable.** Test → Docs → Journal → Changelog → Counts → Commit.
-6. **Never hardcode volatile numbers** (test counts, file counts) in AI-context files.
+1. **Slow is smooth, smooth is fast.** Verify, don't speculate. Rework is the enemy. ([docs/conventions/work-discipline.md](docs/conventions/work-discipline.md))
+2. **Stay in scope.** Do exactly what's asked.
+3. **Read the spec first** in `docs/`.
+4. **Specs are source of truth.** If code and docs disagree, one needs updating.
+5. **Tests before code.** Reference or write test cases first.
+6. **Post-task protocol is non-negotiable.** Test → Docs → Journal → Changelog → Counts → Commit.
+7. **Never hardcode volatile numbers** (test counts, file counts) in AI-context files.
 
 ---
 
