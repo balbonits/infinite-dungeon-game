@@ -113,7 +113,7 @@ public static class UiTheme
         button.FocusMode = Control.FocusModeEnum.All;
     }
 
-    private static StyleBoxFlat CreateColoredButtonStyle(Color baseColor, bool bright)
+    public static StyleBoxFlat CreateColoredButtonStyle(Color baseColor, bool bright)
     {
         var style = new StyleBoxFlat();
         style.BgColor = bright ? new Color(baseColor, 0.9f) : new Color(baseColor, 0.7f);

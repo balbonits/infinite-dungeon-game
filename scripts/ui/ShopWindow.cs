@@ -156,13 +156,16 @@ public partial class ShopWindow : Control
         buyTab.Text = Strings.Shop.BuyTab;
         buyTab.CustomMinimumSize = new Vector2(80, 28);
         UiTheme.StyleButton(buyTab, UiTheme.FontSizes.Small);
+        buyTab.AddThemeStyleboxOverride("normal", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, false));
+        buyTab.AddThemeStyleboxOverride("hover", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
+        buyTab.AddThemeStyleboxOverride("focus", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
         buyTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(true)));
         modeRow.AddChild(buyTab);
 
         var sellTab = new Button();
         sellTab.Text = Strings.Shop.SellTab;
         sellTab.CustomMinimumSize = new Vector2(80, 28);
-        UiTheme.StyleButton(sellTab, UiTheme.FontSizes.Small);
+        UiTheme.StyleDangerButton(sellTab, UiTheme.FontSizes.Small);
         sellTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(false)));
         modeRow.AddChild(sellTab);
 
