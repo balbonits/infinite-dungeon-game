@@ -28,21 +28,36 @@ public partial class Projectile : Node2D
         tracer._targetPos = target;
         tracer._speed = speed;
 
+        Vector2 direction = (target - origin).Normalized();
+
         if (ResourceLoader.Exists(texturePath))
         {
             var sprite = new Sprite2D();
-            sprite.Texture = GD.Load<Texture2D>(texturePath);
+            var tex = GD.Load<Texture2D>(texturePath);
+            sprite.Texture = tex;
             sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
             sprite.Scale = new Vector2(scale, scale);
             if (tint.HasValue)
                 sprite.Modulate = tint.Value;
+
+            // Detect directional sprite sheets (width > height = multiple frames)
+            int frameCount = tex.GetWidth() / tex.GetHeight();
+            if (frameCount > 1)
+            {
+                // Pick the closest direction frame by angle
+                sprite.Hframes = frameCount;
+                float angle = (direction.Angle() + Mathf.Tau) % Mathf.Tau;
+                sprite.Frame = (int)Mathf.Round(angle / (Mathf.Tau / frameCount)) % frameCount;
+            }
+            else
+            {
+                // Single sprite — rotate toward target
+                tracer.Rotation = direction.Angle();
+            }
+
             tracer._sprite = sprite;
             tracer.AddChild(sprite);
         }
-
-        // Point sprite toward target
-        Vector2 direction = (target - origin).Normalized();
-        tracer.Rotation = direction.Angle();
 
         parent.AddChild(tracer);
     }

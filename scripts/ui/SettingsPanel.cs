@@ -21,6 +21,11 @@ public partial class SettingsPanel : GameWindow
     private int _currentTab;
     private Action? _onClose;
 
+    // Rebinding state
+    private string? _rebindingAction;
+    private Button? _rebindButton;
+    private readonly List<(string action, Label label)> _derivedSkillLabels = new();
+
     private static readonly string[] TabNames = { "Gameplay", "Display", "Audio", "Controls" };
 
     /// <summary>Create and show the settings panel as a child of the given parent.</summary>
@@ -212,20 +217,43 @@ public partial class SettingsPanel : GameWindow
 
     private void BuildControlsTab()
     {
+        _derivedSkillLabels.Clear();
+
         AddToggle("Show Control Hints", GameSettings.ShowControlHints, v => GameSettings.ShowControlHints = v);
         AddChoice("Controller Scheme", new[] { "Keyboard", "Gamepad" }, GameSettings.ControllerScheme, v => GameSettings.ControllerScheme = v);
 
-        // Key bindings reference (read-only)
+        // Rebindable key bindings
         AddSectionHeader("Key Bindings");
         AddReadOnlyRow("Move", "Arrow Keys");
-        AddReadOnlyRow("Confirm / Attack", GetActionKeyName(Constants.InputActions.ActionCross));
-        AddReadOnlyRow("Cancel / Back", GetActionKeyName(Constants.InputActions.ActionCircle));
-        AddReadOnlyRow("Skill 1", $"{GetActionKeyName(Constants.InputActions.ShoulderLeft)}+{GetActionKeyName(Constants.InputActions.ActionTriangle)}");
-        AddReadOnlyRow("Skill 2", $"{GetActionKeyName(Constants.InputActions.ShoulderLeft)}+{GetActionKeyName(Constants.InputActions.ActionCross)}");
-        AddReadOnlyRow("Skill 3", $"{GetActionKeyName(Constants.InputActions.ShoulderRight)}+{GetActionKeyName(Constants.InputActions.ActionTriangle)}");
-        AddReadOnlyRow("Skill 4", $"{GetActionKeyName(Constants.InputActions.ShoulderRight)}+{GetActionKeyName(Constants.InputActions.ActionCross)}");
-        AddReadOnlyRow("Map Toggle", GetActionKeyName(Constants.InputActions.MapToggle));
+        AddRebindRow("Confirm / Attack", Constants.InputActions.ActionCross);
+        AddRebindRow("Cancel / Back", Constants.InputActions.ActionCircle);
+        AddRebindRow("Left Shoulder", Constants.InputActions.ShoulderLeft);
+        AddRebindRow("Right Shoulder", Constants.InputActions.ShoulderRight);
+        AddRebindRow("Action Button", Constants.InputActions.ActionTriangle);
+        AddRebindRow("Map Toggle", Constants.InputActions.MapToggle);
         AddReadOnlyRow("Pause / Menu", "Esc");
+
+        // Derived skill chord display (auto-updates when base keys change)
+        AddSectionHeader("Skill Shortcuts");
+        AddDerivedSkillRow("Skill 1", Constants.InputActions.ShoulderLeft, Constants.InputActions.ActionTriangle);
+        AddDerivedSkillRow("Skill 2", Constants.InputActions.ShoulderLeft, Constants.InputActions.ActionCross);
+        AddDerivedSkillRow("Skill 3", Constants.InputActions.ShoulderRight, Constants.InputActions.ActionTriangle);
+        AddDerivedSkillRow("Skill 4", Constants.InputActions.ShoulderRight, Constants.InputActions.ActionCross);
+
+        // Reset defaults
+        _settingsList.AddChild(new HSeparator());
+        var resetBtn = new Button();
+        resetBtn.Text = "Reset to Defaults";
+        resetBtn.CustomMinimumSize = new Vector2(180, 32);
+        resetBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        resetBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleDangerButton(resetBtn, UiTheme.FontSizes.Small);
+        resetBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            GameSettings.ResetKeybindings();
+            BuildTab(3); // rebuild controls tab to reflect defaults
+        }));
+        _settingsList.AddChild(resetBtn);
     }
 
     // --- Widget Helpers ---
@@ -339,7 +367,108 @@ public partial class SettingsPanel : GameWindow
         row.AddChild(keyLabel);
     }
 
+    private void AddRebindRow(string label, string actionName)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+        _settingsList.AddChild(row);
+
+        var lbl = new Label();
+        lbl.Text = label;
+        UiTheme.StyleLabel(lbl, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        lbl.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        row.AddChild(lbl);
+
+        var btn = new Button();
+        btn.Text = GetActionKeyName(actionName);
+        btn.CustomMinimumSize = new Vector2(80, 28);
+        btn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleSecondaryButton(btn, UiTheme.FontSizes.Small);
+        string capturedAction = actionName;
+        btn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => StartRebind(capturedAction, btn)));
+        row.AddChild(btn);
+    }
+
+    private void AddDerivedSkillRow(string label, string action1, string action2)
+    {
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+        _settingsList.AddChild(row);
+
+        var lbl = new Label();
+        lbl.Text = label;
+        UiTheme.StyleLabel(lbl, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        lbl.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        row.AddChild(lbl);
+
+        var keyLabel = new Label();
+        keyLabel.Text = $"{GetActionKeyName(action1)}+{GetActionKeyName(action2)}";
+        UiTheme.StyleLabel(keyLabel, UiTheme.Colors.Info, UiTheme.FontSizes.Small);
+        row.AddChild(keyLabel);
+
+        // Track for refresh when base keys change
+        _derivedSkillLabels.Add(($"{action1}|{action2}", keyLabel));
+    }
+
+    private void StartRebind(string actionName, Button btn)
+    {
+        _rebindingAction = actionName;
+        _rebindButton = btn;
+        btn.Text = "...";
+    }
+
+    private void FinishRebind(Godot.Key keycode)
+    {
+        if (_rebindingAction == null || _rebindButton == null) return;
+
+        // Update InputMap
+        Godot.InputMap.ActionEraseEvents(_rebindingAction);
+        var ev = new Godot.InputEventKey();
+        ev.Keycode = keycode;
+        Godot.InputMap.ActionAddEvent(_rebindingAction, ev);
+
+        // Persist
+        GameSettings.KeyBindings[_rebindingAction] = (int)keycode;
+
+        // Update button text
+        _rebindButton.Text = Godot.OS.GetKeycodeString(keycode);
+
+        // Update derived skill labels
+        foreach (var (actions, label) in _derivedSkillLabels)
+        {
+            var parts = actions.Split('|');
+            label.Text = $"{GetActionKeyName(parts[0])}+{GetActionKeyName(parts[1])}";
+        }
+
+        _rebindingAction = null;
+        _rebindButton = null;
+    }
+
+    private void CancelRebind()
+    {
+        if (_rebindButton != null && _rebindingAction != null)
+            _rebindButton.Text = GetActionKeyName(_rebindingAction);
+        _rebindingAction = null;
+        _rebindButton = null;
+    }
+
     // --- Input ---
+
+    public override void _Input(InputEvent @event)
+    {
+        if (_rebindingAction == null) return;
+        if (@event is not InputEventKey keyEvent || !keyEvent.Pressed || keyEvent.Echo) return;
+
+        if (keyEvent.Keycode == Godot.Key.Escape)
+        {
+            CancelRebind();
+        }
+        else
+        {
+            FinishRebind(keyEvent.Keycode);
+        }
+        GetViewport().SetInputAsHandled();
+    }
 
     public new void Close()
     {

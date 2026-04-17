@@ -320,6 +320,36 @@ Icons are arranged in rows of 5: `[base skill] [specific1] [specific2] [specific
 - Icons are pixel-art style on dark backgrounds (#0f1117), matching the existing icon assets.
 - JSON index files allow code to look up any icon by name and get its atlas region.
 - Script is re-runnable: `python3 scripts/generate_icons.py` regenerates both sheets.
+## Session 14 — Various Fixes & Visual Polish (2026-04-14)
+
+### What Happened
+
+**Branch:** `fix/various-fixes`
+
+**Fixes:**
+- Weighted floor tile variant selection (50% base, 25% secondary, 25% accent) — eliminates chaotic patchwork
+- SettingsPanel runtime warning from setting `Size` on FullRect-anchored controls
+- Enter key now works as confirm everywhere (CharacterCard + KeyboardNav)
+
+**8-Direction Projectile Sprites:**
+- Generated 9 sprite sheets: arrow, magic arrow, magic bolt, fireball, frost bolt, lightning, stone spike, energy blast, shadow bolt
+- `Projectile.cs` auto-detects sprite sheets (width > height) and uses frame selection instead of pixel-art-ruining rotation
+
+**18 Animated Effect Sprites:**
+- Tile effects: fire, ice, poison pool, lava, shadow void, water puddle, magic circle
+- Combat effects: heal aura, shield bubble, explosion, lightning strike, poison cloud
+- Environmental: torch, dust/debris, nether wisps, sparkle, cathedral light, volcanic ash
+
+**Rebindable Keybindings:**
+- Click-to-rebind UI in Settings > Controls tab
+- Persists custom bindings to settings.json
+- Skill chord display auto-derives from base action keys
+- Reset to Defaults button
+
+**Control Hints:**
+- Reusable `UiTheme.CreateHintBar()` component
+- Added to Splash Screen and Pause Menu
+- Respects `ShowControlHints` setting
 
 ---
 

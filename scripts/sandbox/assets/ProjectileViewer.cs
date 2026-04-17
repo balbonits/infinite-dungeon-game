@@ -14,14 +14,15 @@ public partial class ProjectileViewer : SandboxBase
 
     private static readonly (string Name, string Path, Color Tint)[] Projectiles =
     [
-        ("Arrow",        "res://assets/projectiles/arrow.png",        Colors.White),
-        ("Energy Blast", "res://assets/projectiles/energy_blast.png", new Color(0.5f, 0.8f, 1f)),
-        ("Fireball",     "res://assets/projectiles/fireball.png",     new Color(1f, 0.5f, 0.1f)),
-        ("Frost Bolt",   "res://assets/projectiles/frost_bolt.png",   new Color(0.6f, 0.9f, 1f)),
-        ("Lightning",    "res://assets/projectiles/lightning.png",    new Color(1f, 1f, 0.3f)),
-        ("Magic Bolt",   "res://assets/projectiles/magic_bolt.png",   new Color(0.8f, 0.4f, 1f)),
-        ("Shadow Bolt",  "res://assets/projectiles/shadow_bolt.png",  new Color(0.5f, 0.2f, 0.8f)),
-        ("Stone Spike",  "res://assets/projectiles/stone_spike.png",  Colors.White),
+        ("Arrow",        "res://assets/projectiles/arrow_8dir.png",         Colors.White),
+        ("Magic Arrow",  "res://assets/projectiles/magic_arrow_8dir.png",  new Color(0.3f, 0.8f, 1f)),
+        ("Magic Bolt",   "res://assets/projectiles/magic_bolt_8dir.png",   new Color(0.8f, 0.4f, 1f)),
+        ("Fireball",     "res://assets/projectiles/fireball_8dir.png",     Colors.White),
+        ("Frost Bolt",   "res://assets/projectiles/frost_bolt_8dir.png",   Colors.White),
+        ("Lightning",    "res://assets/projectiles/lightning_8dir.png",    Colors.White),
+        ("Stone Spike",  "res://assets/projectiles/stone_spike_8dir.png",  Colors.White),
+        ("Energy Blast", "res://assets/projectiles/energy_blast_8dir.png", Colors.White),
+        ("Shadow Bolt",  "res://assets/projectiles/shadow_bolt_8dir.png",  Colors.White),
     ];
 
     private float _speed = 300f;

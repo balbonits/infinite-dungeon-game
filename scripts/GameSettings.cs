@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace DungeonGame;
@@ -34,6 +35,40 @@ public static class GameSettings
     // --- Controls ---
     public static bool ShowControlHints { get; set; } = true;
     public static int ControllerScheme { get; set; } = 0; // 0=keyboard, 1=gamepad
+    public static Dictionary<string, int> KeyBindings { get; set; } = new();
+
+    /// <summary>
+    /// Rebindable actions. Movement and Esc are not rebindable.
+    /// </summary>
+    public static readonly string[] RebindableActions =
+    {
+        Constants.InputActions.ActionCross,     // Confirm / Attack
+        Constants.InputActions.ActionCircle,    // Cancel / Back
+        Constants.InputActions.ShoulderLeft,    // Skill Modifier L
+        Constants.InputActions.ShoulderRight,   // Skill Modifier R
+        Constants.InputActions.ActionTriangle,  // Skill Button
+        Constants.InputActions.MapToggle,       // Map
+    };
+
+    /// <summary>Apply saved keybindings to InputMap. Call after Load().</summary>
+    public static void ApplyKeybindings()
+    {
+        foreach (var (action, keycode) in KeyBindings)
+        {
+            if (!Godot.InputMap.HasAction(action)) continue;
+            Godot.InputMap.ActionEraseEvents(action);
+            var ev = new Godot.InputEventKey();
+            ev.Keycode = (Godot.Key)keycode;
+            Godot.InputMap.ActionAddEvent(action, ev);
+        }
+    }
+
+    /// <summary>Reset all keybindings to project.godot defaults.</summary>
+    public static void ResetKeybindings()
+    {
+        KeyBindings.Clear();
+        Godot.InputMap.LoadFromProjectSettings();
+    }
 
     // --- Serialization ---
 
@@ -64,6 +99,7 @@ public static class GameSettings
             MuteOnFocusLoss = MuteOnFocusLoss,
             ShowControlHints = ShowControlHints,
             ControllerScheme = ControllerScheme,
+            KeyBindings = KeyBindings.Count > 0 ? new Dictionary<string, int>(KeyBindings) : null,
         };
         string json = JsonSerializer.Serialize(data, JsonOpts);
         using var file = Godot.FileAccess.Open(SavePath, Godot.FileAccess.ModeFlags.Write);
@@ -99,6 +135,8 @@ public static class GameSettings
             MuteOnFocusLoss = data.MuteOnFocusLoss;
             ShowControlHints = data.ShowControlHints;
             ControllerScheme = data.ControllerScheme;
+            KeyBindings = data.KeyBindings ?? new();
+            ApplyKeybindings();
         }
         catch { /* corrupted settings — use defaults */ }
     }
@@ -125,5 +163,6 @@ public static class GameSettings
         public bool MuteOnFocusLoss { get; init; } = true;
         public bool ShowControlHints { get; init; } = true;
         public int ControllerScheme { get; init; }
+        public Dictionary<string, int>? KeyBindings { get; init; }
     }
 }

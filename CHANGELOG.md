@@ -137,6 +137,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `assets/icons/skills_icons.json` — JSON atlas index for skill icons (name → x, y, w, h)
 - `assets/icons/spells_icons.json` — JSON atlas index for spell icons (name → x, y, w, h)
 - `scripts/generate_icons.py` — Pillow-based icon sprite sheet generator (re-runnable)
+### Session 14 — Various Fixes & Visual Polish (2026-04-14)
+
+#### Fixed
+- Floor tile chaos: weighted variant selection (50/25/25%) instead of equal random
+- SettingsPanel Godot warning: removed redundant `Size` set on FullRect-anchored controls (3 files)
+- Enter key now works as confirm on saved character card and all buttons
+- Pre-existing SmokeTests.cs missing `using System.Threading.Tasks`
+
+#### Added (Projectile Sprites)
+- 8-direction sprite sheets for all 9 projectile types (arrow, magic arrow, magic bolt, fireball, frost bolt, lightning, stone spike, energy blast, shadow bolt)
+- `Projectile.cs` auto-detects sprite sheets and uses frame selection instead of rotation
+- `MagicArrowProjectile` constant for Ranger elemental skills
+
+#### Added (Effect Sprites)
+- 18 animated effect sprite sheets (6 frames each, 64x64 per frame): fire, ice, poison pool, lava, shadow void, magic circle, heal aura, shield bubble, explosion, water puddle, torch, lightning strike, dust/debris, nether wisps, sparkle, poison cloud, cathedral light, volcanic ash
+- Asset existence and dimension tests for effects and projectiles
+
+#### Added (Settings & Controls)
+- Rebindable keybindings in Settings > Controls tab with click-to-rebind UI
+- Keybinding persistence in settings.json
+- Derived skill chord display (auto-updates when base keys change)
+- Reset to Defaults button
+- `UiTheme.CreateHintBar()` reusable control hint component
+- Control hints on Splash Screen and Pause Menu
+
+#### Changed
+- Deleted old single-frame projectile sprites (replaced by 8-direction sheets)
+- Added `*.slnx` to `.gitignore`, deleted empty `DungeonGame.slnx`
 
 ### Session 12 — Fix & Expand Test Suite + Full-Run Integration Test (2026-04-12)
 
