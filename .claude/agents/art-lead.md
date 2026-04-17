@@ -71,7 +71,7 @@ claude mcp add pixellab https://api.pixellab.ai/mcp -t http -H "Authorization: B
 - **Auth:** Bearer token from the user's PixelLab account dashboard
 - **Security:** The token is session-local and belongs to the user. Do NOT commit it, echo it back in responses, or put it in any git-tracked file. If you see a bearer token in a prompt, treat it as sensitive and never reproduce it in Bash commands (the sandbox will refuse the run).
 
-Once added, `claude mcp list` shows `pixellab` and the `mcp__pixellab__*` tools appear in the art-lead agent's tool surface. Existing sessions do not auto-pick up new MCP servers — the user may need to restart Claude Code or launch a fresh agent.
+Once added, `claude mcp list` shows `pixellab`. **But Claude Code only loads MCP config at startup** — an already-running session will not see the newly-added server, even in freshly-spawned agents, because the tool surface is determined at session boot. The user must **exit Claude Code and start a fresh session** after running `claude mcp add`; only then will `mcp__pixellab__*` tools appear in art-lead agent surfaces. Verified on 2026-04-17 (PR #5/#6 session): adding the server mid-session and spawning a new art-lead agent still reported the tools missing. Restart is required.
 
 ## PixelLab Workflow
 
