@@ -20,7 +20,7 @@ The game uses **five floor brackets**, which also serve as the **five item tiers
 | 2 | 11–25 | Mid-early |
 | 3 | 26–50 | Mid-late |
 | 4 | 51–100 | Deep |
-| 5 | 100+ | Endgame / infinite descent |
+| 5 | 101+ | Endgame / infinite descent |
 
 **These brackets apply to everything floor-scaled**: quality distribution, material tier, catalog item tier, monster drop tables. Any spec that references "floor range" or "tier" means this table. See [item-catalog.md](../inventory/item-catalog.md) for the catalog-tier binding and [monster-drops.md](monster-drops.md) for the drop-tier binding.
 
@@ -36,7 +36,7 @@ Equipment is split 50/50 between weapons and armor. All equipment drops without 
 
 #### Quality Distribution by Floor Range
 
-Floor brackets are unified across the project: **1–10 / 11–25 / 26–50 / 51–100 / 100+**. These are the same brackets used by [item-catalog.md](../inventory/item-catalog.md) (tier assignment) and [monster-drops.md](monster-drops.md) (material tier). A single shared bracketing so all three specs agree.
+Floor brackets are unified across the project: **1–10 / 11–25 / 26–50 / 51–100 / 101+**. These are the same brackets used by [item-catalog.md](../inventory/item-catalog.md) (tier assignment) and [monster-drops.md](monster-drops.md) (material tier). A single shared bracketing so all three specs agree — floor 100 resolves to Tier 4, floor 101 is the first Tier 5 floor.
 
 | Floor Range | Tier | Normal | Superior | Elite |
 |-------------|------|--------|----------|-------|
@@ -44,7 +44,7 @@ Floor brackets are unified across the project: **1–10 / 11–25 / 26–50 / 51
 | 11–25 | 2 | 80% | 20% | 0% |
 | 26–50 | 3 | 60% | 35% | 5% |
 | 51–100 | 4 | 30% | 50% | 20% |
-| 100+ | 5 | 15% | 50% | 35% |
+| 101+ | 5 | 15% | 50% | 35% |
 
 #### Quality Stat Bonuses
 
@@ -124,7 +124,7 @@ Crafting materials are organized into 5 tiers aligned to the shared floor bracke
 | 11–25 | 2 | Steel Ingot | Standard Bone | Standard Hide | 10 + floor |
 | 26–50 | 3 | Mithril Ore | Fine Bone | Fine Hide | 25 + floor |
 | 51–100 | 4 | Orichalcum Ore | Masterwork Bone | Masterwork Hide | 50 + floor |
-| 100+ | 5 | Dragonite Ore | Top-Shelf Bone | Top-Shelf Hide | 80 + floor |
+| 101+ | 5 | Dragonite Ore | Top-Shelf Bone | Top-Shelf Hide | 80 + floor |
 
 Materials are stackable. The three types (Ore, Bone, Hide) are all available per tier; which type drops is biased by the enemy species's thematic generic per [monster-drops.md](monster-drops.md).
 

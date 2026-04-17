@@ -120,8 +120,8 @@ public class MonsterDropTableTests
     [Fact]
     public void RollMaterials_GenericTypes_PrefersThematic()
     {
-        // Bat signature thematic = Bone. Over 5000 generic drops, Bone should be the
-        // plurality type (60/20/20 split per spec).
+        // Bat thematic = Hide (leathery wings, per monster-drops.md). Over 5000 generic
+        // drops, Hide should be the plurality type (60/20/20 split per spec).
         var rng = new Random(99);
         int ore = 0, bone = 0, hide = 0;
         for (int i = 0; i < 5000; i++)
@@ -134,8 +134,8 @@ public class MonsterDropTableTests
                 else if (m.Id.StartsWith("material_hide_")) hide++;
             }
         }
-        bone.Should().BeGreaterThan(ore);
-        bone.Should().BeGreaterThan(hide);
+        hide.Should().BeGreaterThan(ore);
+        hide.Should().BeGreaterThan(bone);
     }
 
     [Fact]
