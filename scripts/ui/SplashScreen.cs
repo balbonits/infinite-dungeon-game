@@ -56,17 +56,18 @@ public partial class SplashScreen : Control
         btnBox.AddThemeConstantOverride("separation", 10);
         vbox.AddChild(btnBox);
 
-        // Character card (only if save exists)
-        if (SaveManager.Instance != null && SaveManager.Instance.HasSave())
-        {
-            var saveData = SaveManager.Instance.PeekSave();
-            if (saveData != null)
-            {
-                var card = CharacterCard.Create(saveData,
-                    () => EmitSignal(SignalName.ContinuePressed));
-                btnBox.AddChild(card);
-            }
-        }
+        // Continue button (opens Load Game screen). Disabled when no saves exist.
+        var continueBtn = new Button();
+        continueBtn.Text = "Continue";
+        continueBtn.CustomMinimumSize = new Vector2(300, 44);
+        continueBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        continueBtn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleButton(continueBtn, UiTheme.FontSizes.Button);
+        bool anySave = SaveManager.Instance?.AnySaveExists() == true;
+        continueBtn.Disabled = !anySave;
+        continueBtn.Connect(BaseButton.SignalName.Pressed,
+            Callable.From(() => EmitSignal(SignalName.ContinuePressed)));
+        btnBox.AddChild(continueBtn);
 
         // New Game button
         var newGameBtn = new Button();
