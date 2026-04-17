@@ -26,7 +26,7 @@ public static class SaveSystem
         {
             var stack = gs.PlayerInventory.GetSlot(i);
             if (stack != null)
-                items.Add(new SavedItemStack { ItemId = stack.Item.Id, Count = stack.Count });
+                items.Add(new SavedItemStack { ItemId = stack.Item.Id, Count = stack.Count, Locked = stack.Locked });
         }
 
         return new SaveData
@@ -110,14 +110,24 @@ public static class SaveSystem
         gs.Level = level;
         gs.FloorNumber = floor;
 
-        gs.PlayerInventory = new Inventory(25);
-        gs.PlayerInventory.Gold = System.Math.Max(0, data.Gold);
+        gs.PlayerInventory = new Inventory(Constants.PlayerStats.BackpackStartingSlots);
+        gs.PlayerInventory.Gold = System.Math.Max(0L, data.Gold);
 
         foreach (var savedItem in data.Items)
         {
             var itemDef = ItemDatabase.Get(savedItem.ItemId);
             if (itemDef != null)
-                gs.PlayerInventory.TryAdd(itemDef, System.Math.Max(1, savedItem.Count));
+            {
+                gs.PlayerInventory.TryAdd(itemDef, System.Math.Max(1L, savedItem.Count));
+                if (savedItem.Locked)
+                {
+                    // SetLocked is idempotent — if the save file has multiple entries for
+                    // the same item Id (e.g., migrated from older stack-split saves), TryAdd
+                    // merges them into one slot and repeated toggles would flip the flag.
+                    int idx = gs.PlayerInventory.FindSlot(itemDef.Id);
+                    if (idx >= 0) gs.PlayerInventory.SetLocked(idx, true);
+                }
+            }
         }
 
         // Restore progression (skills + abilities)

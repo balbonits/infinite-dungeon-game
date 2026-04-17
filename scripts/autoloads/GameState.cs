@@ -97,7 +97,7 @@ public partial class GameState : Node
     public bool IsDead { get; set; } = false;
     public int DeepestFloor { get; set; } = 1;
     public PlayerClass SelectedClass { get; set; } = PlayerClass.Warrior;
-    public Inventory PlayerInventory { get; set; } = new(25);
+    public Inventory PlayerInventory { get; set; } = new(Constants.PlayerStats.BackpackStartingSlots);
     public StatBlock Stats { get; private set; } = new();
     public ProgressionTracker Progression { get; set; } = new(PlayerClass.Warrior);
     public Bank PlayerBank { get; set; } = new();
@@ -131,8 +131,8 @@ public partial class GameState : Node
         Level = 1;
         FloorNumber = 1;
         DeepestFloor = 1;
-        PlayerInventory = new Inventory(25);
-        PlayerInventory.Gold = 100;
+        PlayerInventory = new Inventory(Constants.PlayerStats.BackpackStartingSlots);
+        PlayerInventory.Gold = Constants.PlayerStats.StartingGold;
         Stats = new StatBlock();
         Progression = new ProgressionTracker(SelectedClass);
         PlayerBank = new Bank();

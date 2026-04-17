@@ -1,22 +1,25 @@
+using System;
 using Godot;
 using DungeonGame.Autoloads;
 
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Backpack inventory window. Shows all carried items in a grid/list.
-/// Items can be used (consumables), viewed (detail), or assigned via action menu.
-/// Accessible from pause menu — available anywhere (dungeon or town).
-/// Spec: docs/inventory/backpack.md
+/// Backpack inventory window. Shows all carried items in a grid via <see cref="SlotGrid"/>.
+/// Clicking a slot opens an item-actions dropdown (Use/Lock/Drop).
+/// Gold is displayed as a label (no controls — Deposit/Withdraw live in the Guild window).
+/// Accessible anywhere (dungeon or town).
+/// Spec: docs/inventory/backpack.md, docs/ui/guild-window.md#item-actions-dropdown-full-reference
 /// </summary>
 public partial class BackpackWindow : GameWindow
 {
     public static BackpackWindow? Instance { get; private set; }
 
     private Label _headerLabel = null!;
+    private Label _goldLabel = null!;
     private Label _detailLabel = null!;
     private ScrollContainer _scrollContainer = null!;
-    private VBoxContainer _itemList = null!;
+    private SlotGrid _slotGrid = null!;
 
     public override void _Ready()
     {
@@ -27,51 +30,44 @@ public partial class BackpackWindow : GameWindow
 
     protected override void BuildContent(VBoxContainer content)
     {
-        // Header
         _headerLabel = new Label();
         UiTheme.StyleLabel(_headerLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         _headerLabel.HorizontalAlignment = HorizontalAlignment.Center;
         content.AddChild(_headerLabel);
 
-        // Gold display
-        var goldLabel = new Label();
-        goldLabel.Text = ""; // updated on refresh
-        UiTheme.StyleLabel(goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
-        goldLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        content.AddChild(goldLabel);
-        // Store reference via name for refresh
-        goldLabel.Name = "GoldLabel";
+        _goldLabel = new Label();
+        UiTheme.StyleLabel(_goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
+        _goldLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        content.AddChild(_goldLabel);
 
         var hint = new Label();
-        hint.Text = "S: action | D: close";
+        hint.Text = "S: action  |  D: close";
         UiTheme.StyleLabel(hint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         hint.HorizontalAlignment = HorizontalAlignment.Center;
         content.AddChild(hint);
 
         content.AddChild(new HSeparator());
 
-        // Detail area
         _detailLabel = new Label();
         UiTheme.StyleLabel(_detailLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         _detailLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         _detailLabel.CustomMinimumSize = new Vector2(0, 36);
         content.AddChild(_detailLabel);
 
-        // Scrollable slot grid
         _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 320);
         content.AddChild(_scrollContainer);
 
-        _itemList = new VBoxContainer();
-        _itemList.AddThemeConstantOverride("separation", 4);
-        _scrollContainer.AddChild(_itemList);
+        _slotGrid = new SlotGrid { Columns = 5, SlotSize = 64f };
+        _slotGrid.SlotActivated += OnSlotActivated;
+        _slotGrid.SlotFocused += OnSlotFocused;
+        _scrollContainer.AddChild(_slotGrid);
 
-        // Close button
         var closeBtn = new Button();
         closeBtn.Text = "Close";
         closeBtn.CustomMinimumSize = new Vector2(200, 38);
         closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        closeBtn.FocusMode = FocusModeEnum.None; // not in nav — D/Esc closes, this is mouse-only
+        closeBtn.FocusMode = FocusModeEnum.None;
         UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Body);
         closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(Close));
         content.AddChild(closeBtn);
@@ -88,127 +84,101 @@ public partial class BackpackWindow : GameWindow
     {
         var inv = GameState.Instance.PlayerInventory;
         _headerLabel.Text = $"BACKPACK ({inv.UsedSlots}/{inv.SlotCount})";
-
-        var goldLabel = Overlay.GetNodeOrNull<Label>("CenterContainer/PanelContainer/VBoxContainer/GoldLabel");
-        if (goldLabel != null)
-            goldLabel.Text = $"Gold: {inv.Gold}";
-
+        _goldLabel.Text = $"Gold: {NumberFormat.Abbrev(inv.Gold)}";
         _detailLabel.Text = "Select an item";
 
-        foreach (Node child in _itemList.GetChildren())
-            child.QueueFree();
-
-        // Grid of square slot boxes — 5 columns
-        const int columns = 5;
-        const float slotSize = 64;
-
-        var grid = new GridContainer();
-        grid.Columns = columns;
-        grid.AddThemeConstantOverride("h_separation", 6);
-        grid.AddThemeConstantOverride("v_separation", 6);
-        grid.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        _itemList.AddChild(grid);
-
-        for (int i = 0; i < inv.SlotCount; i++)
-        {
-
-            var stack = inv.GetSlot(i);
-            int slotIdx = i;
-
-            var slotBtn = new Button();
-            slotBtn.CustomMinimumSize = new Vector2(slotSize, slotSize);
-            slotBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-            slotBtn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-            slotBtn.FocusMode = FocusModeEnum.All;
-
-            if (stack != null)
-            {
-                string countStr = stack.Count > 1 ? $"\n x{stack.Count}" : "";
-                slotBtn.Text = stack.Item.Name.Length > 6
-                    ? stack.Item.Name[..6] + countStr
-                    : stack.Item.Name + countStr;
-
-                Color slotColor = stack.Item.Category switch
-                {
-                    ItemCategory.Consumable => new Color(0.15f, 0.35f, 0.15f, 0.9f),
-                    ItemCategory.Material => new Color(0.15f, 0.25f, 0.35f, 0.9f),
-                    ItemCategory.Weapon => new Color(0.35f, 0.20f, 0.15f, 0.9f),
-                    ItemCategory.Armor => new Color(0.20f, 0.20f, 0.30f, 0.9f),
-                    _ => new Color(0.15f, 0.15f, 0.20f, 0.9f),
-                };
-                slotBtn.AddThemeStyleboxOverride("normal", CreateSlotBox(slotColor, false));
-                slotBtn.AddThemeStyleboxOverride("hover", CreateSlotBox(slotColor, true));
-                slotBtn.AddThemeStyleboxOverride("focus", CreateSlotBox(slotColor, true));
-                slotBtn.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
-                slotBtn.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
-                slotBtn.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
-                slotBtn.AddThemeFontSizeOverride("font_size", 9);
-
-                var itemDef = stack.Item;
-                slotBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
-                    ShowItemActions(slotIdx, itemDef, slotBtn.GlobalPosition)));
-
-                string detail = $"{stack.Item.Name}\n{stack.Item.Description}";
-                if (stack.Item.HealAmount > 0) detail += $"\nHeals: {stack.Item.HealAmount} HP";
-                if (stack.Item.ManaAmount > 0) detail += $"\nRestores: {stack.Item.ManaAmount} MP";
-                if (stack.Item.SellPrice > 0) detail += $"\nSell: {stack.Item.SellPrice}g";
-                slotBtn.FocusEntered += () => _detailLabel.Text = detail;
-            }
-            else
-            {
-                slotBtn.Text = "";
-                slotBtn.AddThemeStyleboxOverride("normal", CreateSlotBox(new Color(0.08f, 0.08f, 0.12f, 0.6f), false));
-                slotBtn.AddThemeStyleboxOverride("hover", CreateSlotBox(new Color(0.08f, 0.08f, 0.12f, 0.6f), false));
-                slotBtn.AddThemeStyleboxOverride("focus", CreateSlotBox(new Color(0.08f, 0.08f, 0.12f, 0.6f), false));
-                slotBtn.Disabled = true;
-            }
-
-            grid.AddChild(slotBtn);
-        }
-
+        _slotGrid.SetInventory(inv);
         _scrollContainer.ScrollVertical = 0;
-        CallDeferred(MethodName.FocusFirst);
+        CallDeferred(MethodName.FocusFirstSlot);
     }
 
-    private void FocusFirst()
+    private void FocusFirstSlot() => _slotGrid.FocusFirstSlot();
+
+    private void OnSlotFocused(int slotIdx, ItemStack? stack)
     {
-        UiTheme.FocusFirstButton(_itemList);
+        if (stack == null)
+        {
+            _detailLabel.Text = "";
+            return;
+        }
+        var detail = $"{stack.Item.Name} x{NumberFormat.Full(stack.Count)}\n{stack.Item.Description}";
+        if (stack.Item.HealAmount > 0) detail += $"\nHeals: {stack.Item.HealAmount} HP";
+        if (stack.Item.ManaAmount > 0) detail += $"\nRestores: {stack.Item.ManaAmount} MP";
+        if (stack.Item.SellPrice > 0) detail += $"\nSell: {stack.Item.SellPrice}g each";
+        if (stack.Locked) detail += "\n[LOCKED]";
+        _detailLabel.Text = detail;
     }
 
-    private static StyleBoxFlat CreateSlotBox(Color bgColor, bool focused) =>
-        UiTheme.CreateSlotStyle(bgColor, focused);
-
-    private void ShowItemActions(int slotIdx, ItemDef item, Vector2 position)
+    private void OnSlotActivated(int slotIdx, ItemStack? stack)
     {
-        var actions = new System.Collections.Generic.List<(string label, System.Action action)>();
+        if (stack == null) return;
+        ShowItemActions(slotIdx, stack);
+    }
+
+    private void ShowItemActions(int slotIdx, ItemStack stack)
+    {
+        var actions = new System.Collections.Generic.List<(string label, Action action)>();
+        var inv = GameState.Instance.PlayerInventory;
 
         // Use (consumables only)
-        if (item.Category == ItemCategory.Consumable)
+        if (stack.Item.Category == ItemCategory.Consumable)
         {
-            actions.Add(("Use", () =>
-            {
-                var gs = GameState.Instance;
-                if (item.HealAmount > 0)
-                    gs.Hp = System.Math.Min(gs.MaxHp, gs.Hp + item.HealAmount);
-                if (item.ManaAmount > 0)
-                    gs.Mana = System.Math.Min(gs.MaxMana, gs.Mana + item.ManaAmount);
-                gs.PlayerInventory.RemoveAt(slotIdx);
-                Toast.Instance?.Success($"Used {item.Name}");
-                Refresh();
-            }
-            ));
+            actions.Add(("Use", () => OnUse(slotIdx, stack.Item)));
         }
 
-        // Drop
-        actions.Add(("Drop", () =>
+        // Lock / Unlock toggle
+        actions.Add((stack.Locked ? "Unlock" : "Lock", () =>
         {
-            GameState.Instance.PlayerInventory.RemoveAt(slotIdx);
-            Toast.Instance?.Info($"Dropped {item.Name}");
+            inv.ToggleLock(slotIdx);
             Refresh();
         }
         ));
 
-        ActionMenu.Instance?.Show(position, actions.ToArray());
+        // Drop (disabled if Locked)
+        if (!stack.Locked)
+        {
+            actions.Add(("Drop", () => ShowDropConfirmation(slotIdx, stack)));
+        }
+
+        var pos = GetViewport().GetMousePosition();
+        ActionMenu.Instance?.Show(pos, actions.ToArray());
     }
 
+    private void OnUse(int slotIdx, ItemDef item)
+    {
+        var gs = GameState.Instance;
+        var inv = gs.PlayerInventory;
+        if (item.HealAmount > 0)
+            gs.Hp = Math.Min(gs.MaxHp, gs.Hp + item.HealAmount);
+        if (item.ManaAmount > 0)
+            gs.Mana = Math.Min(gs.MaxMana, gs.Mana + item.ManaAmount);
+        inv.RemoveAt(slotIdx);
+        Toast.Instance?.Success($"Used {item.Name}");
+        Refresh();
+    }
+
+    private void ShowDropConfirmation(int slotIdx, ItemStack stack)
+    {
+        // Destructive action — second confirmation before the drop goes through.
+        // Partial-drop amount picker is spec'd in docs/ui/guild-window.md#drop-backpack-only
+        // but deferred; MVP is always "Drop All" with a yes-cancel confirmation.
+        var actions = new System.Collections.Generic.List<(string label, Action action)>
+        {
+            ($"Destroy {NumberFormat.Abbrev(stack.Count)} {stack.Item.Name}",
+                () => ExecuteDrop(slotIdx, stack)),
+            ("Cancel", () => { }),
+        };
+        var pos = GetViewport().GetMousePosition();
+        ActionMenu.Instance?.Show(pos, actions.ToArray());
+    }
+
+    private void ExecuteDrop(int slotIdx, ItemStack stack)
+    {
+        var inv = GameState.Instance.PlayerInventory;
+        if (inv.Drop(slotIdx, stack.Count))
+        {
+            Toast.Instance?.Warning($"Destroyed {NumberFormat.Abbrev(stack.Count)}x {stack.Item.Name}");
+            Refresh();
+        }
+    }
 }

@@ -18,14 +18,37 @@ No items are implemented. The only item referenced in the design is the Sacrific
 |----------|-------------|---------|
 | **Equipment** | Weapons, armor, accessories. Affect stats and combat. | Iron Sword, Leather Helm, Gold Ring |
 | **Consumables** | Single-use effects. Destroyed on use. | Sacrificial Idol, Health Potion, Spell Scroll |
-| **Materials** | Crafting ingredients for the Blacksmith. | Iron Ore, Monster Bone, Fire Crystal |
+| **Materials** | Crafting ingredients for the Blacksmith and backpack upgrades. | Iron Ore, Monster Bone, Fire Crystal, Tanned Leather, Mystic Weave |
 | **Special** | Quest items, keys, unique rewards. | Boss Key, Dungeon Map Fragment |
+
+### Stacking Rules
+
+**All item categories stack unlimited per slot.** One slot = one item type, any quantity. The only "limit" is the slot count in the storage (bank or backpack).
+
+- Quantities are stored as a **64-bit signed integer** (`long` in C#). Maximum value: 9,223,372,036,854,775,807 — eight orders of magnitude beyond the largest stacks observed in reference games like Melvor Idle.
+- **No stack splitting within the same storage.** A single item type occupies exactly one slot in the bank, and exactly one slot in the backpack. To "split" a stack, transfer part of it across the bank/backpack boundary via the Guild window's Transfer tab.
+- Equipment stacks only if the rolled affixes match exactly. In practice most affixed equipment is unique, so equipment stacks are rare — but the data model supports it.
+
+### Number Display
+
+Numbers for stacks, gold, and sell prices use **abbreviated formatting** with the exact value in the tooltip:
+
+| Value | Displayed | Tooltip |
+|-------|-----------|---------|
+| 0 – 999 | `0` – `999` | — (no abbreviation needed) |
+| 1,000 – 999,999 | `1.0K` – `999K` | `1,000` – `999,999` |
+| 10⁶ – 10⁹ | `1.0M` – `999M` | full comma-separated |
+| 10⁹ – 10¹² | `1.0B` – `999B` | full comma-separated |
+| 10¹² – 10¹⁵ | `1.0T` – `999T` | full comma-separated |
+| 10¹⁵+ | `Qa` (quadrillion), `Qi` (quintillion), etc. | full comma-separated |
+
+Decimal places shown: 1 decimal for 1.0–99.9K/M/B/T, 0 decimals for 100+K/M/B/T (e.g., `12.3K`, `345K`, `1.2M`, `789M`).
 
 ### Known Items
 
 | Item | Type | Source | Effect |
 |------|------|--------|--------|
-| Sacrificial Idol | Consumable | Item Shop (town) | Negates backpack item loss on death. Single use. |
+| Sacrificial Idol | Consumable | Guild Store (Guild Maid) | Acts as free "Save Both" on death — keeps equipment, backpack items, and backpack gold at no gold cost. EXP loss still applies. Consumed on use. |
 
 ### Equipment Slots
 
@@ -166,6 +189,93 @@ Item color uses the **unified color gradient** (see [color-system.md](../systems
 - Grey = item is far below your level, candidate for recycling at the Blacksmith
 
 The same item shifts color as the player levels. No equipment restrictions on wearing items — any item can be equipped, but abilities/bonuses may be locked if the player is underleveled.
+
+### Sell Pricing
+
+Items can be sold from the Guild window's Bank tab (items must be transferred from backpack to bank first via the Transfer tab).
+
+**Consumables and Materials:** sell price = **100% of buy price**. The Store effectively acts as free storage for basics — you can buy, stockpile, and refund at will. This keeps gold flow from feeling punitive on consumable inventory management.
+
+**Equipment:** sell price derives from base value and affix count:
+
+```
+base_value = item_level × rarity_multiplier × (1 + 0.5 × affix_count)
+sell_price = base_value × 0.10 × (1 + affix_count)
+```
+
+| affix_count | Sell multiplier of base_value |
+|-------------|-------------------------------|
+| 0 affixes | 10% |
+| 1 affix | 20% |
+| 2 affixes | 30% |
+| 3 affixes | 40% |
+| 4 affixes | 50% |
+| 5 affixes | 60% |
+| 6 affixes (max) | 70% |
+
+**Rarity multipliers** (base quality tier from item drop):
+
+| Quality | Multiplier |
+|---------|-----------|
+| Normal | 1.0 |
+| Superior | 1.5 |
+| Elite | 2.5 |
+
+Example: A floor-25 Superior item (item_level=25, multiplier=1.5) with 3 affixes:
+- `base_value = 25 × 1.5 × (1 + 0.5 × 3) = 25 × 1.5 × 2.5 = 93.75g`
+- `sell_price = 93.75 × 0.10 × (1 + 3) = 37.5g`
+
+### Item Actions
+
+Every item has a contextual actions dropdown available in both the Bank and Backpack views (and on equipped slots). Clicking an item slot opens the dropdown.
+
+| Action | Where available | Effect |
+|--------|----------------|--------|
+| Inspect | Bank, Backpack, Equipped | Show full tooltip (affixes, item level, value) |
+| Use | Bank, Backpack | Consumable only — trigger the item's effect |
+| Equip | Bank, Backpack | Equippable only — move item to the matching equipment slot; swap previous out |
+| Unequip | Equipped | Equipped only — move item back to backpack |
+| Sell | Bank | Opens Sell dialog (see below) |
+| Lock / Unlock | Bank, Backpack, Equipped | Toggle lock flag. Locked → Sell and Drop greyed out. For equipped items, Lock prevents accidental unequip. **Lock does not protect from death.** |
+| Transfer | Bank, Backpack | Navigation shortcut — opens the Guild window's Transfer tab with this item pre-selected |
+| **Drop** | Backpack only | Destroys the item permanently. Single-confirmation dialog. Greyed out if Locked. |
+
+Notes:
+- **Bank has no Drop.** Items in the bank cannot be destroyed — use Sell to remove.
+- **Backpack has no Sell.** Transfer to the bank first.
+- **Equipped has no Sell or Drop.** Unequip first.
+
+### Sell Dialog
+
+Opens from the Bank tab's item-actions Sell button. Controls:
+
+- Amount input field (type an exact number) + slider (drag for 0 to stack size)
+- **Sell Amount** button — sells the entered/sliced quantity
+- **Sell All** button — sells the entire stack (with warning dialog)
+- **Sell All but 1** button — sells everything except 1
+- **"Don't ask me again for this item"** checkbox — appears on both the main Sell dialog and the Sell All warning. Persists per-item-ID across sessions. Toggleable at any time.
+
+When "Sell All" is clicked and the per-item warning is not muted, a confirmation dialog appears:
+
+```
+┌──────────────────────────────────┐
+│  Sell ALL 1,847 "Iron Ore"?      │
+│                                  │
+│  Total: 18,470g                  │
+│                                  │
+│  [ ] Don't ask me again for      │
+│      "Iron Ore"                  │
+│                                  │
+│  [Confirm]  [Cancel]             │
+└──────────────────────────────────┘
+```
+
+### Lock Behavior (summary)
+
+- Lock flag lives on the item instance (persists across moves between bank/backpack).
+- Locked items: Sell action greyed out, Drop action greyed out.
+- For equipped items: Locked flag prevents Unequip from the dropdown (must unlock first).
+- **Lock does NOT protect from death-loss.** A locked backpack item is destroyed the same as any other when the player doesn't save the backpack.
 
 ## Resolved Questions
 

@@ -4,6 +4,95 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 21 — Bank & Backpack Redesign: Spec Lock + Implementation (2026-04-17)
+
+### What Happened
+
+New branch `feat/bank-backpack-redesign` opened after PR #4 merged to main. The session combined milestone 1 (spec lock via a 60+ multi-choice Q&A cycle) **and** milestones 2a–2g (full implementation). Initially scoped as spec-only, the user chose to keep pushing into implementation in the same session. See CHANGELOG's "Session 21 — Bank & Backpack Redesign Implementation" entry for the impl-side changes.
+
+### Resulting Design (headline changes)
+
+**NPC restructure — Maoyuu-style title-only naming:**
+- **Guild Maid** (Guild Maid Assistant) — merged Shopkeeper + Banker. Female-maid archetype (glasses, long skirt, logbook) — placeholder uses current Banker sprite, tracked as ART-02.
+- **Old Village Chief** — renamed from the previous Guild Master NPC, quest-giver role unchanged.
+- **Old Master Blacksmith** — Forge + new Workshop tab for high-tier material manufacturing. Gains backpack expansion (was Item Shop).
+- **Old Master Wizard** — renamed from Teleporter, role unchanged.
+- **PC address:** "{Class} Guildmaster" — "Warrior Guildmaster", "Ranger Guildmaster", "Mage Guildmaster". PC is the Guildmaster of a new guild branch; other NPCs are senior personnel supporting the expedition.
+- **Lore scope note:** the Guild as an organization is out-of-scope flavor text. We won't visit other branches or see guild politics.
+
+**Guild window (new, merges Store + Bank):**
+- 3 tabs: **Store** / **Bank** / **Transfer**. Title: "Guild". Opens on Bank tab.
+- Store: fixed catalog, fixed prices, basic consumables + basic materials + basic ammo only. Buy flow: pick → amount → "Send to Bank/Backpack" → Confirm.
+- Bank: 25 starting slots, +1 per upgrade at `50 × N gold` (pure gold, no materials). Sort/filter/search. Gold pocket (safe on death) with Withdraw/Deposit buttons.
+- Transfer: amount-input dialog per B1: a (spec). MVP implementation uses click-to-move-entire-stack; amount dialog is a polish ticket.
+
+**Backpack:**
+- 15 starting slots (was 25). +5 per upgrade at Blacksmith, `200 × N² gold + leather/cloth materials`.
+- **Unlimited stacking** per slot (was 99-cap). Stored as `long` (max ~9.2 quintillion). No stack splitting within the same storage.
+- Gold display-only label — no controls. Gold goes to backpack pocket on dungeon pickup.
+- Drop action (destroys item permanently, single confirmation).
+
+**Two gold pockets** (reverses the old "no gold in bank" prohibition):
+- Bank gold = safe on death.
+- Backpack gold = at-risk on death (goes here on dungeon pickup).
+- Transfer freely in the Guild window.
+
+**Death: new 5-option sacrifice dialog** (full rewrite of the multi-step flow):
+- **Save Both** / **Save Equipment** / **Save Backpack** / **Accept Fate** / **Quit Game**.
+- Equipment loss = 1 random of 19 equipped slots (uniform across occupied slots).
+- Backpack loss = 100% of items + all backpack gold.
+- Gold buyout source: player-chosen pocket (default: backpack first). Equipment buyout is cheaper than backpack (`deepestFloor × 25` vs `deepestFloor × 60`) — about 40% ratio.
+- Sacrificial Idol → free "Save Both" (EXP loss still applies).
+- EXP loss: unavoidable. Old EXP-buyout option removed.
+- Accept Fate and Quit Game require second confirmation listing exact losses.
+
+**Items & actions:**
+- Unlimited stacks across all categories (equipment only stacks if affix rolls match exactly).
+- Number display: abbreviated K/M/B/T + exact in tooltip.
+- Sell pricing: consumables/materials 100% of buy price (Store acts as free storage). Equipment `base_value × 0.10 × (1 + affix_count)` — 10% to 70%.
+- Item-actions dropdown available on Bank, Backpack, and Equipped slots. Actions: Inspect, Use, Equip/Unequip, Sell, Lock/Unlock, Transfer (navigation shortcut), Drop (backpack only).
+- Lock flag: prevents Sell/Drop/accidental-unequip. **Does NOT protect from death-loss.**
+
+**Dungeon lore — regurgitation:**
+- The dungeon absorbs everything that dies/breaks inside, then regurgitates it as loot on future visits. Monster parts at shallow floors, crates/jars/chests at deeper floors.
+- In-world answer for "how does the dungeon take gold from a corpse?" — don't ask. Part of the dungeon's unknowable magic.
+
+### Process Notes
+
+**Multi-choice design interview worked very well.** The user reviewed 60+ MC questions across 8 subsystems. Picking letters is much faster than writing prose, and the `[rec]` flag on each option gave them a default to override or accept. Whole rounds went from dialog to locked decision in minutes.
+
+**User overrode several `[rec]` suggestions with important design intent:**
+- Consumables/materials sell at **100%** of buy price (I had recommended 50%). User's framing: "Store acts as free storage for basics." Matches the unlimited-stacking design — the Store is a utility, not a gold sink.
+- Equipment buyout **cheaper** than backpack (`25×` vs `60×`) — gear matters more for long-term progression; backpack is replaceable.
+- Dungeon bank access **no**, not even via scrolls/perks — forces trips to town.
+- `long` storage, **no BigInteger** — 9.2 quintillion is enough for any realistic stack, and BigInteger is ~100× slower.
+
+**Maoyuu homage:** user specified all NPCs title-only (no personal names) as a nod to *Maoyuu Maou Yuusha*. Saved as memory.
+
+**Scope discipline:** the user explicitly scoped out Guild-as-organization, kill-the-Shopkeeper lore, and other rabbit holes. "We're getting stuff from outside. Lore is mostly flavor text."
+
+### Files Changed This Session
+
+All documentation. No code touched.
+
+- REWRITTEN: `docs/inventory/bank.md`, `docs/inventory/backpack.md`, `docs/systems/death.md`
+- UPDATED: `docs/inventory/items.md` (stacking, number display, sell pricing, item actions), `docs/systems/equipment.md` (equipment-on-death section), `docs/world/town.md` (NPC roster), `docs/world/dungeon.md` (regurgitation lore), `docs/flows/bank.md`, `docs/flows/shop.md`
+- NEW: `docs/ui/guild-window.md`
+- TRACKER: added SYS-12 (spec locked), ART-02 (new Guild Maid sprite)
+- CHANGELOG: new Session 20 entry under [Unreleased]
+
+### Next (milestone 2+)
+
+1. Reusable `SlotGrid` control (shared between Bank, Backpack, Transfer)
+2. `GuildWindow.cs` implementation (3 tabs)
+3. `BackpackWindow` refresh for unlimited stacks and Drop action
+4. New death dialog (5 options + sub-dialogs)
+5. GoDotTest suite for the full flow
+6. `Inventory` model rewrite: `long` stacks, Lock flag, two gold pockets, slot-per-type enforcement
+7. NPC retirement (Banker, Shopkeeper) + Guild Maid placement using placeholder sprite
+
+---
+
 ## Session 20 — Copilot Review + Post-Merge Verification (2026-04-17)
 
 ### What Happened

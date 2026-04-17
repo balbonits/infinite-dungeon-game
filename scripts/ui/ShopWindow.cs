@@ -267,7 +267,7 @@ public partial class ShopWindow : GameWindow
         _descStats.Text = stats.ToString();
 
         // Update Buy/Sell button text with price + disable when unaffordable
-        int gold = GameState.Instance.PlayerInventory.Gold;
+        long gold = GameState.Instance.PlayerInventory.Gold;
         if (_isBuyMode)
         {
             _buyButton.Text = Strings.Shop.Buy(item.BuyPrice);

@@ -37,7 +37,7 @@ public partial class BankSandbox : SandboxBase
         AddSectionLabel("Expansion");
         AddButton("Purchase expansion", () =>
         {
-            int cost = _bank.GetNextExpansionCost();
+            long cost = _bank.GetNextExpansionCost();
             bool ok = _bank.PurchaseExpansion(_backpack);
             Refresh(ok ? $"Expanded! Cost: {cost}g" : $"Can't afford {cost}g");
         });
@@ -66,11 +66,11 @@ public partial class BankSandbox : SandboxBase
         Log("── Headless checks ──");
 
         var bank = new Bank();
-        Assert(bank.GetNextExpansionCost() == 500, "1st expansion costs 500g");
+        Assert(bank.GetNextExpansionCost() == 50, "1st expansion costs 50g");
 
         var inv = new Inventory { Gold = 100_000 };
         bank.PurchaseExpansion(inv);
-        Assert(bank.GetNextExpansionCost() == 2000, "2nd expansion costs 2000g");
+        Assert(bank.GetNextExpansionCost() == 100, "2nd expansion costs 100g");
         Assert(bank.TotalSlots == Bank.StartingSlots + Bank.SlotsPerExpansion,
             $"Slots grew to {bank.TotalSlots}");
 

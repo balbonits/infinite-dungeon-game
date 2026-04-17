@@ -516,7 +516,7 @@ public class FullRunTests
         inv.TryBuy(sword).Should().BeTrue();
         inv.TryBuy(potions).Should().BeTrue();
         inv.TryBuy(potions).Should().BeTrue(); // stack to 2
-        int goldAfterShopping = inv.Gold;
+        long goldAfterShopping = inv.Gold;
         goldAfterShopping.Should().BeLessThan(2000);
 
         // Bank a spare potion for safety

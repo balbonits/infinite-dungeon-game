@@ -31,7 +31,7 @@ public static class Strings
     {
         public const string Title = "FLOOR CLEARED";
         public const string Subtitle = "You've dominated this floor. The dungeon trembles.";
-        public static string BonusGold(int gold) => $"Bonus: +{gold} gold";
+        public static string BonusGold(long gold) => $"Bonus: +{gold} gold";
         public static string NextFloor(int floor) => $"Descend to Floor {floor}";
         public const string StayOnFloor = "Stay & Farm (enemies respawn)";
         public const string SelectFloor = "Select Floor...";
@@ -42,12 +42,19 @@ public static class Strings
     public static class Death
     {
         public const string Title = "YOU DIED";
+        // Legacy (pre-redesign) — retained for test compat
         public const string Subtitle = "The dungeon consumes your memories...";
         public const string ChooseDestination = "Where will you respawn?";
         public const string ReturnToTown = "Return to Town";
         public const string RespawnAtSafeSpot = "Respawn at Last Safe Spot";
         public const string MitigationTitle = "NEGOTIATE WITH THE DUNGEON";
-        public const string Confirm = "Accept Fate";
+        // Post-redesign 5-option sacrifice dialog labels
+        public const string SaveBoth = "Save Both";
+        public const string SaveEquipment = "Save Equipment";
+        public const string SaveBackpack = "Save Backpack";
+        public const string AcceptFate = "Accept Fate";
+        public const string QuitGame = "Quit Game";
+        public const string Confirm = "Confirm";
     }
 
     // --- Splash Screen ---
@@ -63,7 +70,7 @@ public static class Strings
     public static class Hud
     {
         public const string ControlsHint = "Move: Arrow keys\nAuto-attack: nearest enemy in range";
-        public static string Stats(int xp, int level, int floor, int gold) =>
+        public static string Stats(int xp, int level, int floor, long gold) =>
             $"XP: {xp} | LVL: {level} | Floor: {floor} | Gold: {gold}";
     }
 
@@ -98,12 +105,20 @@ public static class Strings
     }
 
     // --- NPC Names ---
+    // Post-redesign roster (docs/world/town.md): Guild Maid (merged Shopkeeper+Banker),
+    // Village Chief (renamed from Guild Master), Blacksmith, Teleporter.
+    // Legacy names retained so older tests/dialogue pointing at Shopkeeper/Banker/Guild Master
+    // still compile; they're no longer placed in the town scene.
     public static class Npcs
     {
-        public const string Shopkeeper = "Shopkeeper";
+        public const string GuildMaid = "Guild Maid";
+        public const string VillageChief = "Village Chief";
         public const string Blacksmith = "Blacksmith";
-        public const string GuildMaster = "Guild Master";
         public const string Teleporter = "Teleporter";
+
+        // Legacy (retired from town scene, retained for tests/code-path compat)
+        public const string Shopkeeper = "Shopkeeper";
+        public const string GuildMaster = "Guild Master";
         public const string Banker = "Banker";
     }
 
@@ -224,7 +239,7 @@ public static class Strings
         public const string CannotAfford = "Not enough gold!";
         public static string Buy(int price) => $"Buy ({price}g)";
         public static string Sell(int price) => $"Sell ({price}g)";
-        public static string GoldDisplay(int gold) => $"Gold: {gold}";
+        public static string GoldDisplay(long gold) => $"Gold: {gold}";
     }
 
     // --- Stat Allocation ---
@@ -243,21 +258,28 @@ public static class Strings
     // --- NPC Services ---
     public static class NpcServices
     {
-        public const string OpenShop = "Browse Wares";
+        public const string OpenGuild = "Open Guild";
         public const string OpenForge = "Open Forge";
         public const string ViewQuests = "View Quests";
         public const string Teleport = "Teleport";
-        public const string OpenBank = "Open Vault";
         public const string Talk = "Talk";
+
+        // Legacy labels (still used by retired NPCs for compat — not in-game post-redesign)
+        public const string OpenShop = "Browse Wares";
+        public const string OpenBank = "Open Vault";
     }
 
     // --- NPC Greetings ---
     public static class NpcGreetings
     {
+        public const string GuildMaid = "Welcome to the Guild, Guildmaster. Store, bank, or transfers — I'll handle whichever you need.";
+        public const string VillageChief = "Young Guildmaster. The settlement has contracts ready when you are. The dungeon won't wait, and neither should you.";
+        public const string Blacksmith = "Forge's hot. Bring me mats from the deep and I'll make it into something worth carrying. Need a bigger pack? I can fix that too.";
+        public const string Teleporter = "The dungeon's magical signature drew me here. I've mapped the floors you've seen — say the word and I'll send you back.";
+
+        // Legacy (not used in-game after the redesign)
         public const string Shopkeeper = "I hauled these supplies three weeks across the wastes. You'd better put them to good use down there.";
-        public const string Blacksmith = "Just got the forge hot. Bring me something from the deep and I'll make it into something worth carrying.";
         public const string GuildMaster = "I organized this expedition. You're our first delver — make every floor count.";
-        public const string Teleporter = "The dungeon's magical signature drew me here. I've mapped what you've seen — I can send you back to any floor.";
         public const string Banker = "Frontier towns attract frontier trouble. Your gold and gear stay locked in my vault until you need them.";
     }
 }

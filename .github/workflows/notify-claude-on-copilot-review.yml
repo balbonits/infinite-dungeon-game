@@ -1,0 +1,49 @@
+name: Notify Claude on Copilot Review Complete
+
+# Fires when the GitHub Copilot PR reviewer submits a review.
+# Sends a POST to a Claude Code routine so the session watching this repo can triage
+# the findings without polling. Replaces the 1-minute polling cron.
+#
+# Setup:
+#   1. Create a routine at https://claude.ai/code/routines (prompt: see README)
+#   2. Copy the fire URL and bearer token
+#   3. Add two repo secrets:
+#        - CLAUDE_ROUTINE_FIRE_URL  (full URL to POST to)
+#        - CLAUDE_ROUTINE_TOKEN     (bearer token shown once at creation)
+#
+# If either secret is missing the job is a no-op (skipped cleanly).
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  notify:
+    # Only fire for the Copilot reviewer — ignore human reviews
+    if: github.event.review.user.login == 'copilot-pull-request-reviewer[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          if [ -z "${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}" ] || [ -z "${{ secrets.CLAUDE_ROUTINE_TOKEN }}" ]; then
+            echo "::warning::CLAUDE_ROUTINE_FIRE_URL or CLAUDE_ROUTINE_TOKEN not set — skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fire Claude routine
+        if: steps.check.outputs.skip == 'false'
+        env:
+          FIRE_URL: ${{ secrets.CLAUDE_ROUTINE_FIRE_URL }}
+          TOKEN: ${{ secrets.CLAUDE_ROUTINE_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_URL: ${{ github.event.review.html_url }}
+        run: |
+          curl -sS -X POST "$FIRE_URL" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\": \"PR #${PR_NUMBER} — Copilot review submitted. URL: ${REVIEW_URL}\"}"
