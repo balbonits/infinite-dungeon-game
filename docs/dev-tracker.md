@@ -236,6 +236,29 @@ These systems were implemented during visual-first development but were not part
 
 ---
 
+## Audit Findings — 2026-04-17
+
+Full report: [docs/audits/2026-04-17-full-project.md](audits/2026-04-17-full-project.md). Each ticket below is one finding — fix in its own branch / PR. Pick by priority.
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| AUDIT-01 | `Enemy.cs:53` — `SpawnRateModifier` mixed into enemy HP | To Do | P1 | `intel.SpawnRateModifier` (a spawn-rate dial, 0.80–1.20) is incorrectly multiplied into enemy HP instead of into the spawn budget / respawn timer. Also: `AggressionModifier` is currently multiplied into move speed, but per its docstring it should drive aggro range + attack cooldown. Two-line fix in `Enemy._Ready` plus correct application in `Dungeon._spawnTimer.WaitTime` / `SpawnInitialEnemies` budget. Audit §1. |
+| AUDIT-02 | `GodotFileSaveStorage.Write` — silent save failure | To Do | P1 | `FileAccess.Open(..., Write)` returns null on failure; current code uses `using var file = ...` then writes through it without a null check. `SaveManager.Save` reports success regardless. Real save-loss surface with no UI feedback. Fix: check the file handle, return a bool from `Write`, surface failure via `SaveManager` → toast. Audit §2. |
+| AUDIT-03 | `SaveManager.Save` — silent slot-0 overwrite when `CurrentSaveSlot` is null | To Do | P1 | PR #9 fixed the ClassSelect.Reset() path but the audit found two more sites that null `CurrentSaveSlot` before a save fires: PauseMenu "Back to Main Menu" and DeathScreen quit. Same root cause as PR #9, broader scope. Either: (a) make `Save()` refuse when slot is null instead of falling through to 0, OR (b) audit every site that nulls `CurrentSaveSlot` and confirm no autosave can fire after. Audit §3. |
+| AUDIT-04 | `MagiculeAttunement.ImportState` — corrupt save inflates points | To Do | P1 | `TotalPoints` is reconstructed from `_clearedFloors.Count` without filtering by `> UnlockFloor`. A corrupt or pre-unlock-era save can inflate the player's attunement points. Fix: rebuild `TotalPoints` by iterating `_clearedFloors` with the unlock filter, mirroring how points are awarded during play. Audit §4. |
+| AUDIT-05 | `PauseMenu.OnShow` — synchronous `Free()` of in-tree node + dead `_tabs` | To Do | P2 | `Free()` is called on a tab panel still in the tree (use `QueueFree`); separately, the original `_tabs` from `BuildContent` is never mounted (dead code). Cleanup pass on `PauseMenu.OnShow`. Audit §5. |
+| AUDIT-06 | `Toast.Show` — SceneTreeTimer holds reference to potentially-dismissed toast | To Do | P2 | If a toast is dismissed early (e.g., via `MaxVisible` overflow), the auto-dismiss `SceneTreeTimer.Timeout` still fires `DismissToast(toast)` on the same instance, causing a double-Remove on `_activeToasts` (silent — `List.Remove` returns false on miss but the second call still iterates). Guard with `IsInstanceValid` or track a dismissed flag. Audit §6. |
+| AUDIT-07 | `Dungeon.OnEnemyDefeated` — `async void` with side effects before tree guard | To Do | P3 | `async void` handler increments `_killCount` before the `IsInsideTree` guard. Mostly safe today (kill happens before scene unload), but a textbook race surface. Refactor to `async Task`-equivalent or move the guard up. Audit §7. |
+| AUDIT-08 | `Constants.PlayerStats.GetMaxHp` — O(level) loop on every `StatsChanged` | To Do | P3 | Each `StatsChanged` signal re-derives MaxHp by looping floor-by-floor. Free at low level, becomes a smell at high level (>500). Memoize the curve into a precomputed table or a closed-form expression. Audit §8. |
+| AUDIT-09 | Spec-vs-spec drift: `item-generation.md` (5-bracket) vs `depth-gear-tiers.md` (7-bracket) | To Do | P2 | Two docs disagree on the bracket count; code happens to match the 7-bracket doc. Pick one canonical bracket scheme and reconcile both docs (similar to the PR #9 floor-100 boundary fix but bigger). Audit Spec Drift §4. |
+| AUDIT-10 | `AffixDatabase.GetMaxTier` — claims tiers 5/6 exist but registry only has 1–4 | To Do | P2 | Stale doc/code mismatch. Either add tier 5 and 6 affixes to the registry, or update `GetMaxTier` + comments to reflect the real cap of 4. Audit Spec Drift §2. |
+| AUDIT-11 | `Crafting.RecycleItem` — quality bonus missing Masterwork/Mythic/Transcendent cases | To Do | P2 | The depth-gear-tiers ladder added three new quality tiers but the recycle quality-bonus switch was never updated; high-quality items recycle as if they were Normal. Audit Spec Drift §3. |
+| AUDIT-12 | Test gap: `DungeonIntelligence` (199 LOC, time/decay/pressure) | To Do | P1 | Completely untested. Time-based decay, pressure score thresholds, modifier curves all need coverage before more endgame work touches them. Audit Test Gaps. |
+| AUDIT-13 | Test gap: `AffixDatabase`, `ItemDatabase`, `ClassAttacks`, `SpeciesConfig`, `FloorGenerator` | To Do | P2 | None directly tested. ItemDatabase needs uniqueness + slot-coverage assertions to catch catalog-rename breakage early. Audit Test Gaps. |
+| AUDIT-14 | Silent-no-op tests in `QuestSystemTests` (lines 67/102/126/146) | To Do | P2 | Multiple tests early-return on RNG misses, so they pass without asserting their core invariant. Same pattern PR #9 fixed in `EquipmentSetTests` — replace early-return with seeded-deterministic setup. Audit Test Gaps. |
+
+---
+
 ## P3 -- Future
 
 | ID | Title | Status | Notes |
