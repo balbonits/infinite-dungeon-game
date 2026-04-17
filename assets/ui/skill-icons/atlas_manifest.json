@@ -1,0 +1,358 @@
+{
+  "cellSize": 64,
+  "cols": 4,
+  "gap": 0,
+  "icons": {
+    "ability_mage_fireball": {
+      "atlas": "atlas_mage",
+      "col": 0,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 0,
+      "y": 128
+    },
+    "ability_mage_frost_bolt": {
+      "atlas": "atlas_mage",
+      "col": 1,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 64,
+      "y": 128
+    },
+    "ability_mage_lightning": {
+      "atlas": "atlas_mage",
+      "col": 2,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 128,
+      "y": 128
+    },
+    "ability_mage_mend": {
+      "atlas": "atlas_mage",
+      "col": 3,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 192,
+      "y": 128
+    },
+    "ability_ranger_dead_eye": {
+      "atlas": "atlas_ranger",
+      "col": 3,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 192,
+      "y": 64
+    },
+    "ability_ranger_disengage": {
+      "atlas": "atlas_ranger",
+      "col": 1,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 64,
+      "y": 128
+    },
+    "ability_ranger_flame_arrow": {
+      "atlas": "atlas_ranger",
+      "col": 0,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 0,
+      "y": 128
+    },
+    "ability_ranger_smoke_bomb": {
+      "atlas": "atlas_ranger",
+      "col": 2,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 128,
+      "y": 128
+    },
+    "ability_warrior_block": {
+      "atlas": "atlas_warrior",
+      "col": 2,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 128,
+      "y": 128
+    },
+    "ability_warrior_blood_lust": {
+      "atlas": "atlas_warrior",
+      "col": 3,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 192,
+      "y": 128
+    },
+    "ability_warrior_parry": {
+      "atlas": "atlas_warrior",
+      "col": 1,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 64,
+      "y": 128
+    },
+    "ability_warrior_slash": {
+      "atlas": "atlas_warrior",
+      "col": 0,
+      "h": 64,
+      "row": 2,
+      "w": 64,
+      "x": 0,
+      "y": 128
+    },
+    "mastery_innate_armor": {
+      "atlas": "atlas_innate",
+      "col": 0,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 0,
+      "y": 0
+    },
+    "mastery_innate_fortify": {
+      "atlas": "atlas_innate",
+      "col": 1,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 64,
+      "y": 0
+    },
+    "mastery_innate_haste": {
+      "atlas": "atlas_innate",
+      "col": 2,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 128,
+      "y": 0
+    },
+    "mastery_innate_sense": {
+      "atlas": "atlas_innate",
+      "col": 3,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 192,
+      "y": 0
+    },
+    "mastery_mage_aether": {
+      "atlas": "atlas_mage",
+      "col": 0,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 0,
+      "y": 64
+    },
+    "mastery_mage_air": {
+      "atlas": "atlas_mage",
+      "col": 2,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 128,
+      "y": 0
+    },
+    "mastery_mage_amplification": {
+      "atlas": "atlas_mage",
+      "col": 2,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 128,
+      "y": 64
+    },
+    "mastery_mage_earth": {
+      "atlas": "atlas_mage",
+      "col": 3,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 192,
+      "y": 0
+    },
+    "mastery_mage_fire": {
+      "atlas": "atlas_mage",
+      "col": 0,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 0,
+      "y": 0
+    },
+    "mastery_mage_overcharge": {
+      "atlas": "atlas_mage",
+      "col": 3,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 192,
+      "y": 64
+    },
+    "mastery_mage_restoration": {
+      "atlas": "atlas_mage",
+      "col": 1,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 64,
+      "y": 64
+    },
+    "mastery_mage_water": {
+      "atlas": "atlas_mage",
+      "col": 1,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 64,
+      "y": 0
+    },
+    "mastery_ranger_awareness": {
+      "atlas": "atlas_ranger",
+      "col": 0,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 0,
+      "y": 64
+    },
+    "mastery_ranger_bowmanship": {
+      "atlas": "atlas_ranger",
+      "col": 0,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 0,
+      "y": 0
+    },
+    "mastery_ranger_cqc": {
+      "atlas": "atlas_ranger",
+      "col": 3,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 192,
+      "y": 0
+    },
+    "mastery_ranger_firearms": {
+      "atlas": "atlas_ranger",
+      "col": 2,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 128,
+      "y": 0
+    },
+    "mastery_ranger_sapping": {
+      "atlas": "atlas_ranger",
+      "col": 2,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 128,
+      "y": 64
+    },
+    "mastery_ranger_throwing": {
+      "atlas": "atlas_ranger",
+      "col": 1,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 64,
+      "y": 0
+    },
+    "mastery_ranger_trapping": {
+      "atlas": "atlas_ranger",
+      "col": 1,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 64,
+      "y": 64
+    },
+    "mastery_warrior_bladed": {
+      "atlas": "atlas_warrior",
+      "col": 1,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 64,
+      "y": 0
+    },
+    "mastery_warrior_blunt": {
+      "atlas": "atlas_warrior",
+      "col": 2,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 128,
+      "y": 0
+    },
+    "mastery_warrior_discipline": {
+      "atlas": "atlas_warrior",
+      "col": 2,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 128,
+      "y": 64
+    },
+    "mastery_warrior_dual_wield": {
+      "atlas": "atlas_warrior",
+      "col": 1,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 64,
+      "y": 64
+    },
+    "mastery_warrior_intimidation": {
+      "atlas": "atlas_warrior",
+      "col": 3,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 192,
+      "y": 64
+    },
+    "mastery_warrior_polearms": {
+      "atlas": "atlas_warrior",
+      "col": 3,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 192,
+      "y": 0
+    },
+    "mastery_warrior_shields": {
+      "atlas": "atlas_warrior",
+      "col": 0,
+      "h": 64,
+      "row": 1,
+      "w": 64,
+      "x": 0,
+      "y": 64
+    },
+    "mastery_warrior_unarmed": {
+      "atlas": "atlas_warrior",
+      "col": 0,
+      "h": 64,
+      "row": 0,
+      "w": 64,
+      "x": 0,
+      "y": 0
+    }
+  }
+}
