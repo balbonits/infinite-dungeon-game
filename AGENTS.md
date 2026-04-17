@@ -106,7 +106,7 @@ This project uses specialized AI team leads defined in `.claude/agents/`. Each t
 | Team | Agent | Handles | Tickets |
 |------|-------|---------|---------|
 | Design | `@design-lead` | Game specs, formulas, balance | SPEC-* |
-| Art | `@art-lead` | PixelLab sprites, tiles, animations | ART-* |
+| Art | `@art-lead` | PixelLab sprites, tiles, animations (MCP setup: `.claude/agents/art-lead.md#pixellab-mcp-connection`) | ART-* |
 | QA | `@qa-lead` | Spec review, test planning | TEST-*, reviews |
 | DevOps | `@devops-lead` | CI, Makefile, project config | SETUP-*, INFRA-* |
 | Engine | `@engine-lead` | Godot scenes, physics, tiles | P1 scenes (Phase 2) |
