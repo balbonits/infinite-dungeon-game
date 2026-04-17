@@ -78,10 +78,13 @@ public partial class NpcPanel : GameWindow
         // Auto-focus first button for keyboard nav
         UiTheme.FocusFirstButton(_serviceButtons);
 
-        // Fade in the content
-        ContentBox.Modulate = new Color(1, 1, 1, 0);
+        // Fade in the overlay — targets the overlay (root of the dialog hierarchy),
+        // NOT ContentBox (inner VBox). Fading only ContentBox leaves the panel
+        // background + border visible during the "fade out", which breaks the
+        // illusion. (Copilot PR #3 review.)
+        Overlay.Modulate = new Color(1, 1, 1, 0);
         var tween = CreateTween();
-        tween.TweenProperty(ContentBox, "modulate:a", 1.0f, 0.15f);
+        tween.TweenProperty(Overlay, "modulate:a", 1.0f, 0.15f);
     }
 
     /// <summary>
@@ -97,8 +100,10 @@ public partial class NpcPanel : GameWindow
             if (child is Button btn)
                 btn.FocusMode = FocusModeEnum.None;
 
+        // Fade the overlay (root), not just ContentBox, so the panel background
+        // fades too. (Copilot PR #3 review.)
         var tween = CreateTween();
-        tween.TweenProperty(ContentBox, "modulate:a", 0.0f, 0.1f);
+        tween.TweenProperty(Overlay, "modulate:a", 0.0f, 0.1f);
         tween.TweenCallback(Callable.From(() =>
         {
             Close();

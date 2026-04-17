@@ -128,7 +128,60 @@ Before writing `docs/conventions/ai-context-files.md`, verified every AI tool's 
 
 An earlier version of `ai-context-files.md` listed `CURSOR.md`, `COPILOT.md`, `GEMINI.md` as examples of tool-specific context files. Only `GEMINI.md` is real. User pushed back ("does Gemini actually use GEMINI.md?"), forcing a verification pass and a corrective commit. This whole discipline doc exists because of that incident.
 
+## Special Case: External AI Feedback (Copilot, Cursor, ChatGPT, other AIs)
+
+When another AI reviews or comments on this project's code (GitHub Copilot PR reviews, Cursor suggestions, ChatGPT snippets pasted into chat, etc.), treat every suggestion as a **hypothesis, not a finding**. The AI that wrote it has no more certainty than we do — and often less context.
+
+User directive: *"advices are grains of salt, best not to take too much of it."*
+
+Procedure:
+
+1. **Read the claim fully.** Don't skim.
+2. **Trace the mechanism in our codebase.** Open the cited files. Confirm the code path actually does what the AI says.
+3. **Verify behavior claims via primary sources.** If the AI asserts "Godot does X" or "this library does Y", check the official docs — not another AI's summary of the docs. Web search, framework docs, package READMEs.
+4. **If fully supported by facts → apply the fix** and cite the verification (e.g., "Copilot PR #3 review; confirmed via Godot docs on `Modulate` cascade").
+5. **If partially supported → narrow the fix** to what's actually verified. Don't expand beyond evidence.
+6. **If unsupported → ignore and move on.** Record the rejected claim in the dev journal so future sessions don't reconsider it blindly.
+
+Why this matters: AIs produce confident-sounding output. Uncritically applying one AI's suggestion through another AI's hands amplifies errors. Verification at every step breaks the amplification chain.
+
+Example — Session 20 had 4 Copilot review claims on PR #3. All 4 turned out valid (traced + Godot-docs-confirmed), but the default posture must be skeptical. See `docs/dev-journal.md` Session 20 for the verification table.
+
 Cost: two extra commits, ~15 minutes of rework, and a public-facing doc that would have been wrong if not caught.
+
+### Replying to External AI Reviews (async 2-AI dialogue)
+
+Beyond verify-and-fix, we can also **reply** to Copilot's review comments. This creates an audit-trail dialogue — useful when a claim is rejected (so future reviews don't re-flag it) or when acknowledging a fix with a commit SHA for PR readers.
+
+**Threaded reply to a specific inline finding** (nests under Copilot's comment on the PR line):
+```bash
+gh api --method POST \
+  /repos/:owner/:repo/pulls/:PR/comments/:COMMENT_ID/replies \
+  -f body="<reply text>"
+```
+
+**Top-level PR comment** (general, not threaded):
+```bash
+gh pr comment :PR --body "<text>"
+```
+
+**When to reply:**
+- **Rejecting a claim** — note why a Copilot suggestion was NOT applied, with the verification evidence. Prevents re-flagging on future reviews and leaves a record for PR readers.
+  > *"Verified the login is actually `Copilot` via live API query — not a bug. Keeping as-is."*
+- **Acknowledging a fix with a SHA** — link the commit that addresses the finding. Useful for PR audit trail.
+  > *"Addressed in 3a44449 — added pr-copilot-* targets to .PHONY."*
+- **Explaining a partial fix** — when you applied part of the suggestion (the defensive improvement) but rejected the premise (the underlying bug claim).
+
+**When NOT to reply:**
+- Force-push already happened and Copilot re-reviewed — the new review implicitly accepts (no re-flag) or re-flags. No reply needed.
+- Purely cosmetic "thanks for the review" — adds noise.
+
+**What Copilot does with replies:**
+- Reads them on re-review as PR conversation context
+- Doesn't chat back — it posts a new review when re-triggered
+- The reply sits in the PR thread permanently, visible to anyone reading the PR history
+
+**Why document this publicly:** this repo is a paradigm showcase for AI+Human natural-language programming. The full communication loop — *two AIs discussing code on a human's PR while the human directs the conversation* — is itself novel collaboration pattern worth making visible. See [`docs/development-paradigm.md`](../development-paradigm.md) for the bigger picture.
 
 ## See Also
 

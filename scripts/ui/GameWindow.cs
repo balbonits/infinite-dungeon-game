@@ -37,6 +37,11 @@ public partial class GameWindow : Control
     {
         ProcessMode = ProcessModeEnum.Always;
         MouseFilter = MouseFilterEnum.Ignore;
+        // Anchor the GameWindow itself to FullRect. Dynamically created windows
+        // (SettingsPanel.Open, TutorialPanel.Open) add themselves to UILayer
+        // without setting anchors, which would otherwise give Overlay a 0×0
+        // parent and render an invisible dialog. (Copilot PR #3 review.)
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 
         var (overlay, content) = UiTheme.CreateDialogWindow(_windowWidth);
         Overlay = overlay;
@@ -82,8 +87,10 @@ public partial class GameWindow : Control
     {
         if (_isOpen) return;
         _isOpen = true;
+        // WindowStack.Push handles pause-on-first-open + records ownership.
+        // Don't set Paused here — let WindowStack be the single source of truth
+        // for modal pause lifecycle.
         WindowStack.Push(this);
-        GetTree().Paused = true;
 
         OnShow();
         Overlay.Visible = true;
@@ -94,6 +101,8 @@ public partial class GameWindow : Control
     {
         if (!_isOpen) return;
         _isOpen = false;
+        // WindowStack.Pop handles unpause-when-stack-empties IFF WindowStack
+        // owns the pause (i.e., wasn't already paused before the first modal).
         WindowStack.Pop(this);
         Overlay.Visible = false;
         GD.Print($"[Window] Close: {GetType().Name} | Stack: {WindowStack.Count} | Paused: {GetTree().Paused}");
@@ -102,13 +111,8 @@ public partial class GameWindow : Control
         {
             var pauseMenu = GetNodeOrNull<PauseMenu>("../PauseMenu");
             if (pauseMenu != null)
-            {
                 pauseMenu.Show();
-                return;
-            }
         }
-        if (!WindowStack.HasModal)
-            GetTree().Paused = false;
     }
 
     public override void _UnhandledInput(InputEvent @event)
