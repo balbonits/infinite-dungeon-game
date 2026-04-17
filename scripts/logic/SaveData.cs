@@ -59,6 +59,23 @@ public record SaveData
     public SavedSaturationData? SaturationData { get; init; }
     public int[]? PactRanks { get; init; }
     public SavedAttunementData? AttunementData { get; init; }
+
+    // Equipment (SYS-11)
+    public SavedEquipment? EquipmentData { get; init; }
+}
+
+public record SavedEquipment
+{
+    public string? Head { get; init; }
+    public string? Body { get; init; }
+    public string? Arms { get; init; }
+    public string? Legs { get; init; }
+    public string? Feet { get; init; }
+    public string? Neck { get; init; }
+    public string?[] Rings { get; init; } = new string?[EquipmentSet.RingSlotCount];
+    public string? MainHand { get; init; }
+    public string? OffHand { get; init; }
+    public string? Ammo { get; init; }
 }
 
 public record SavedItemStack

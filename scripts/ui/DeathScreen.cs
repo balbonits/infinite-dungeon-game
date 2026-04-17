@@ -217,12 +217,23 @@ public partial class DeathScreen : Control
 
         // Apply losses for un-saved targets
         if (!savePack) DeathPenalty.WipeBackpack(backpack);
-        // Equipment loss is 1 random equipped piece — equipment system (SYS-11) isn't
-        // implemented yet, so this is a stub. Wire in once equipment slots land.
-        if (!saveEquip) { /* TODO SYS-11: remove 1 random of 19 equipped slots */ }
+        if (!saveEquip) DestroyRandomEquippedAndReport(gs);
 
         ApplyExpLoss();
         RespawnInTown();
+    }
+
+    /// <summary>
+    /// Roll a random equipped-item slot and destroy it (SYS-12 equipment-on-death).
+    /// Surfaces the loss via a toast so the player knows what vanished. Spec: equipment.md
+    /// § "Equipment on Death" — uniform roll over currently-equipped slots, Lock flag
+    /// provides no protection, destroyed items do not enter bank/loot tables.
+    /// </summary>
+    private static void DestroyRandomEquippedAndReport(Autoloads.GameState gs)
+    {
+        var destroyed = gs.Equipment.DestroyRandomEquipped(new System.Random());
+        if (destroyed != null)
+            Toast.Instance?.Warning($"Lost equipped: {destroyed.Name}");
     }
 
     private void ConfirmAcceptFate(bool quitAfter)
@@ -243,11 +254,11 @@ public partial class DeathScreen : Control
         AddButton(quitAfter ? "Confirm — Quit" : "Confirm — Accept", () =>
         {
             // Apply the full penalty: lose 1 equip + wipe backpack (items + gold) + exp loss
-            DeathPenalty.WipeBackpack(GameState.Instance.PlayerInventory);
-            // TODO SYS-11: remove 1 random equipped item
+            var gs = GameState.Instance;
+            DeathPenalty.WipeBackpack(gs.PlayerInventory);
+            DestroyRandomEquippedAndReport(gs);
             ApplyExpLoss();
 
-            var gs = GameState.Instance;
             gs.IsDead = false;
             gs.Hp = gs.MaxHp;
             gs.FloorNumber = 1;

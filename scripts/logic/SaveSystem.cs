@@ -1,20 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 
 namespace DungeonGame;
 
 /// <summary>
-/// Save/load system. Serializes GameState to JSON, reads it back.
-/// Pure logic — Godot FileAccess handled by the caller.
+/// Save/load system. Captures/restores GameState. Pure JSON codec lives in
+/// <see cref="SaveDataJson"/> so tests can exercise it without pulling in the
+/// Godot-coupled GameState autoload.
 /// </summary>
 public static class SaveSystem
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
 
     /// <summary>
     /// Capture current game state into a SaveData record.
@@ -73,6 +68,7 @@ public static class SaveSystem
                 ClearedFloors = gs.Attunement.ExportClearedFloors(),
                 ActiveKeystone = gs.Attunement.ActiveKeystone,
             },
+            EquipmentData = gs.Equipment.CaptureState(),
         };
     }
 
@@ -182,20 +178,13 @@ public static class SaveSystem
 
         // Intelligence is session-scoped, always starts fresh
         gs.Intelligence = new DungeonIntelligence();
+
+        // Restore equipment (SYS-11)
+        gs.Equipment = new EquipmentSet();
+        if (data.EquipmentData != null)
+            gs.Equipment.RestoreState(data.EquipmentData);
     }
 
-    public static string Serialize(SaveData data) => JsonSerializer.Serialize(data, JsonOptions);
-
-    public static SaveData? Deserialize(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<SaveData>(json, JsonOptions);
-        }
-        catch (JsonException ex)
-        {
-            Godot.GD.PrintErr($"Save data corrupted: {ex.Message}");
-            return null;
-        }
-    }
+    public static string Serialize(SaveData data) => SaveDataJson.Serialize(data);
+    public static SaveData? Deserialize(string json) => SaveDataJson.Deserialize(json);
 }

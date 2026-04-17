@@ -20,7 +20,7 @@ public partial class InventorySandbox : SandboxBase
     { Id = "sword", Name = "Iron Sword", Category = ItemCategory.Weapon, BuyPrice = 100, SellPrice = 40 };
 
     private static readonly ItemDef Potion = new()
-    { Id = "potion_hp_small", Name = "Small Potion", Category = ItemCategory.Consumable, BuyPrice = 25, SellPrice = 10 };
+    { Id = "consumable_hp_small", Name = "Small Health Potion", Category = ItemCategory.Consumable, BuyPrice = 25, SellPrice = 10 };
 
     private static readonly ItemDef Ore = new()
     { Id = "iron_ore", Name = "Iron Ore", Category = ItemCategory.Material, BuyPrice = 10, SellPrice = 4 };

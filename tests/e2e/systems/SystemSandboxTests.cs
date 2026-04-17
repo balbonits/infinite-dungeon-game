@@ -173,7 +173,7 @@ public class DeathPenaltySandboxTests
     public void DeathPenalty_Idol_ConsumedAndProtects()
     {
         var inv = new Inventory();
-        var idol = new ItemDef { Id = "idol_sacrificial", Name = "Idol", Category = ItemCategory.Consumable };
+        var idol = new ItemDef { Id = "consumable_sacrificial_idol", Name = "Idol", Category = ItemCategory.Consumable };
         inv.TryAdd(idol);
 
         AssertThat(DeathPenalty.HasSacrificialIdol(inv)).IsTrue();

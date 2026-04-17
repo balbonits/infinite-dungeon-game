@@ -11,11 +11,10 @@ public partial class Town : Node2D
     // NPC data: name, sprite path, tile position, greeting
     // Post-redesign roster (docs/world/town.md): Guild Maid merges Shopkeeper+Banker.
     // Village Chief replaces the Guild Master NPC (same role: quest-giver).
-    // Guild Maid uses the Banker sprite as placeholder until ART-02 delivers the maid sprite.
     // Village Chief uses the former Guild Master sprite.
     private static readonly (string name, string spritePath, Vector2I position, string greeting)[] NpcData =
     {
-        (Strings.Npcs.GuildMaid, "res://assets/characters/npcs/banker/rotations/south.png", new Vector2I(12, 10), Strings.NpcGreetings.GuildMaid),
+        (Strings.Npcs.GuildMaid, "res://assets/characters/npcs/guild_maid/rotations/south.png", new Vector2I(12, 10), Strings.NpcGreetings.GuildMaid),
         (Strings.Npcs.Blacksmith, "res://assets/characters/npcs/blacksmith/rotations/south.png", new Vector2I(5, 7), Strings.NpcGreetings.Blacksmith),
         (Strings.Npcs.VillageChief, "res://assets/characters/npcs/guild_master/rotations/south.png", new Vector2I(18, 7), Strings.NpcGreetings.VillageChief),
         (Strings.Npcs.Teleporter, "res://assets/characters/npcs/teleporter/rotations/south.png", new Vector2I(18, 14), Strings.NpcGreetings.Teleporter),

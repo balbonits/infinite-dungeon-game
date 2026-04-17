@@ -137,7 +137,7 @@ public class DeathPenaltyTests
     public void HasSacrificialIdol_WithIdol_ReturnsTrue()
     {
         var inv = new Inventory();
-        var idol = new ItemDef { Id = "idol_sacrificial", Name = "Sacrificial Idol", Category = ItemCategory.Consumable };
+        var idol = new ItemDef { Id = "consumable_sacrificial_idol", Name = "Sacrificial Idol", Category = ItemCategory.Consumable };
         inv.TryAdd(idol);
         DeathPenalty.HasSacrificialIdol(inv).Should().BeTrue();
     }
@@ -157,7 +157,7 @@ public class DeathPenaltyTests
     public void ConsumeSacrificialIdol_RemovesIdolFromInventory()
     {
         var inv = new Inventory();
-        var idol = new ItemDef { Id = "idol_sacrificial", Name = "Sacrificial Idol", Category = ItemCategory.Consumable };
+        var idol = new ItemDef { Id = "consumable_sacrificial_idol", Name = "Sacrificial Idol", Category = ItemCategory.Consumable };
         inv.TryAdd(idol);
         DeathPenalty.ConsumeSacrificialIdol(inv);
         DeathPenalty.HasSacrificialIdol(inv).Should().BeFalse();

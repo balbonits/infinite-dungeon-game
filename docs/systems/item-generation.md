@@ -10,6 +10,20 @@ The item generation system produces equipment, materials, and consumables scaled
 
 ## Design
 
+### Floor Brackets = Tiers (single source of truth)
+
+The game uses **five floor brackets**, which also serve as the **five item tiers** in the catalog. One number, one concept — no separate "floor range" and "tier" systems.
+
+| Tier | Floor Range | Role |
+|------|-------------|------|
+| 1 | 1–10 | Entry / tutorial depths |
+| 2 | 11–25 | Mid-early |
+| 3 | 26–50 | Mid-late |
+| 4 | 51–100 | Deep |
+| 5 | 100+ | Endgame / infinite descent |
+
+**These brackets apply to everything floor-scaled**: quality distribution, material tier, catalog item tier, monster drop tables. Any spec that references "floor range" or "tier" means this table. See [item-catalog.md](../inventory/item-catalog.md) for the catalog-tier binding and [monster-drops.md](monster-drops.md) for the drop-tier binding.
+
 ### Equipment Generation
 
 When equipment is generated, the floor number determines both the **item level** and the **quality distribution**.
@@ -22,14 +36,15 @@ Equipment is split 50/50 between weapons and armor. All equipment drops without 
 
 #### Quality Distribution by Floor Range
 
-| Floor Range | Normal | Superior | Elite |
-|-------------|--------|----------|-------|
-| 1-9 | 100% | 0% | 0% |
-| 10-24 | 80% | 20% | 0% |
-| 25-49 | 60% | 35% | 5% |
-| 50-74 | 40% | 45% | 15% |
-| 75-99 | 25% | 50% | 25% |
-| 100+ | 15% | 50% | 35% |
+Floor brackets are unified across the project: **1–10 / 11–25 / 26–50 / 51–100 / 100+**. These are the same brackets used by [item-catalog.md](../inventory/item-catalog.md) (tier assignment) and [monster-drops.md](monster-drops.md) (material tier). A single shared bracketing so all three specs agree.
+
+| Floor Range | Tier | Normal | Superior | Elite |
+|-------------|------|--------|----------|-------|
+| 1–10 | 1 | 100% | 0% | 0% |
+| 11–25 | 2 | 80% | 20% | 0% |
+| 26–50 | 3 | 60% | 35% | 5% |
+| 51–100 | 4 | 30% | 50% | 20% |
+| 100+ | 5 | 15% | 50% | 35% |
 
 #### Quality Stat Bonuses
 
@@ -101,17 +116,17 @@ value = baseValue * qualityMultiplier
 
 ### Material Generation
 
-Crafting materials are organized into 5 tiers based on floor depth:
+Crafting materials are organized into 5 tiers aligned to the shared floor brackets. Concrete material names are locked in [item-catalog.md](../inventory/item-catalog.md) § Materials; this table is the mechanical summary.
 
-| Floor Range | Tier | Example Materials | Base Value |
-|-------------|------|-------------------|------------|
-| 1-9 | Basic | Scrap Metal, Tattered Hide, Bone Fragment | 5 + floor |
-| 10-24 | Low | Iron Ore, Monster Bone, Rough Gem | 10 + floor |
-| 25-49 | Mid | Steel Ingot, Monster Hide, Fire Crystal | 25 + floor |
-| 50-74 | High | Dark Iron Ore, Wyvern Bone, Arcane Dust | 50 + floor |
-| 75+ | Rare | Enchanted Crystal, Dragon Scale, Mythril Shard | 80 + floor |
+| Floor Range | Tier | Ore | Bone | Hide | Base Value |
+|-------------|------|-----|------|------|------------|
+| 1–10 | 1 | Iron Ore | Rough Bone | Rough Hide | 5 + floor |
+| 11–25 | 2 | Steel Ingot | Standard Bone | Standard Hide | 10 + floor |
+| 26–50 | 3 | Mithril Ore | Fine Bone | Fine Hide | 25 + floor |
+| 51–100 | 4 | Orichalcum Ore | Masterwork Bone | Masterwork Hide | 50 + floor |
+| 100+ | 5 | Dragonite Ore | Top-Shelf Bone | Top-Shelf Hide | 80 + floor |
 
-Each tier has 3 possible material names, selected randomly. Materials are stackable.
+Materials are stackable. The three types (Ore, Bone, Hide) are all available per tier; which type drops is biased by the enemy species's thematic generic per [monster-drops.md](monster-drops.md).
 
 ### Consumable Generation
 

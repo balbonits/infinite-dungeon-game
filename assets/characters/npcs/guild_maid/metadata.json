@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "f138d696-5497-49b5-a617-75335c0f29ba",
+    "name": "Guild Maid",
+    "prompt": "Female guild maid with glasses, dark blue long skirt/maid dress with white apron, neat brown hair, holding a leather-bound ledger book at her hip. Clean, approachable, professional look. Not a combatant. Dark fantasy palette with deep blue dress, gold button accents on collar.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-17T18:31:00+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-17T19:00:00"
+}

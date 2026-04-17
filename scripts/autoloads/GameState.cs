@@ -113,6 +113,15 @@ public partial class GameState : Node
     public DungeonIntelligence Intelligence { get; set; } = new();
     public MagiculeAttunement Attunement { get; set; } = new();
 
+    // Equipment (SYS-11)
+    public EquipmentSet Equipment { get; set; } = new();
+
+    /// <summary>
+    /// Index (0..SaveManager.SlotCount-1) of the save slot currently loaded or being played.
+    /// Null when no slot is active (e.g., just-started New Game that has not yet been saved).
+    /// </summary>
+    public int? CurrentSaveSlot { get; set; }
+
     public override void _Ready()
     {
         Instance = this;
@@ -144,6 +153,33 @@ public partial class GameState : Node
         Pacts = new DungeonPacts();
         Intelligence = new DungeonIntelligence();
         Attunement = new MagiculeAttunement();
+        Equipment = new EquipmentSet();
+        CurrentSaveSlot = null;
+        EquipStartingGear();
+    }
+
+    private void EquipStartingGear()
+    {
+        // Per docs/systems/equipment.md: starting weapon + off-hand/ammo, no armor or accessories.
+        // Uses tier-1 catalog items (ITEM-01).
+        string mainHandId = SelectedClass switch
+        {
+            PlayerClass.Warrior => "mainhand_warrior_sword_t1",
+            PlayerClass.Ranger => "mainhand_ranger_shortbow_t1",
+            PlayerClass.Mage => "mainhand_mage_staff_t1",
+            _ => "mainhand_warrior_sword_t1",
+        };
+        (string offOrAmmoId, EquipSlot slot) = SelectedClass switch
+        {
+            PlayerClass.Warrior => ("offhand_warrior_shield_small_t1", EquipSlot.OffHand),
+            PlayerClass.Ranger => ("ammo_quiver_basic", EquipSlot.Ammo),
+            PlayerClass.Mage => ("offhand_mage_grimoire_t1", EquipSlot.OffHand),
+            _ => ("offhand_warrior_shield_small_t1", EquipSlot.OffHand),
+        };
+        var main = ItemDatabase.Get(mainHandId);
+        if (main != null) Equipment.ForceEquip(EquipSlot.MainHand, main);
+        var off = ItemDatabase.Get(offOrAmmoId);
+        if (off != null) Equipment.ForceEquip(slot, off);
     }
 
     public void AwardXp(int amount)

@@ -59,6 +59,18 @@ public static class ClassAttacks
         EffectColor = new Color("9B6BFF"),
     };
 
+    // Ranger fallback: bow-bash melee (when no quiver equipped — SYS-11).
+    // Per docs/systems/equipment.md § "Ammo System": bow without quiver = blunt melee.
+    public static readonly AttackConfig RangerBowBash = new()
+    {
+        Range = Constants.ClassCombat.WarriorMeleeRange,
+        Cooldown = Constants.ClassCombat.RangerCooldown,
+        DamageMultiplier = 0.6f,
+        IsProjectile = false,
+        Effect = VisualEffect.Slash,
+        EffectColor = new Color("a88050"),
+    };
+
     /// <summary>
     /// Get the primary (auto-attack) config for a class.
     /// Mage auto-attacks with staff melee — magic bolt is a mana skill (use via hotbar).

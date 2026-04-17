@@ -20,7 +20,7 @@ public class DeathFlowTests
 
     private static ItemDef SacrificialIdol => new()
     {
-        Id = "idol_sacrificial",
+        Id = "consumable_sacrificial_idol",
         Name = "Sacrificial Idol",
         Category = ItemCategory.Consumable,
         BuyPrice = 200,

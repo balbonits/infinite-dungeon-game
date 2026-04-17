@@ -59,21 +59,23 @@ public class FullRunTests
     public void Phase2_Shopping_BuySellRoundTrip()
     {
         var inv = new Inventory(25) { Gold = 500 };
-        var potion = ItemDatabase.Get("potion_hp_small")!;
-        var sword = ItemDatabase.Get("sword_iron")!;
+        var potion = ItemDatabase.Get("consumable_hp_small")!;
+        var sword = ItemDatabase.Get("mainhand_warrior_sword_t1")!;
 
-        // Buy potion (25g) and sword (100g)
+        int potionBuy = potion.BuyPrice;   // Small Health Potion — 25g.
+        int swordBuy = sword.BuyPrice;     // Tier-1 main hand — 60g per TierBuyPrice(1).
+        int swordSell = sword.SellPrice;   // 24g per TierSellPrice(1).
+
         inv.TryBuy(potion).Should().BeTrue();
-        inv.Gold.Should().Be(475);
+        inv.Gold.Should().Be(500 - potionBuy);
         inv.UsedSlots.Should().Be(1);
 
         inv.TryBuy(sword).Should().BeTrue();
-        inv.Gold.Should().Be(375);
+        inv.Gold.Should().Be(500 - potionBuy - swordBuy);
         inv.UsedSlots.Should().Be(2);
 
-        // Sell sword back (40g)
         inv.TrySell(1).Should().BeTrue();
-        inv.Gold.Should().Be(415);
+        inv.Gold.Should().Be(500 - potionBuy - swordBuy + swordSell);
         inv.UsedSlots.Should().Be(1);
 
         // Buy multiple potions (stack)
@@ -91,7 +93,7 @@ public class FullRunTests
     {
         var inv = new Inventory(25) { Gold = 5000 };
         var bank = new Bank();
-        var sword = ItemDatabase.Get("sword_iron")!;
+        var sword = ItemDatabase.Get("mainhand_warrior_sword_t1")!;
 
         // Buy and deposit
         inv.TryBuy(sword);
@@ -121,7 +123,7 @@ public class FullRunTests
         var inv = new Inventory { Gold = 10000 };
         var item = new CraftableItem
         {
-            BaseItemId = "sword_iron",
+            BaseItemId = "mainhand_warrior_sword_t1",
             BaseName = "Iron Sword",
             ItemLevel = 10,
             Quality = BaseQuality.Normal,
@@ -314,7 +316,7 @@ public class FullRunTests
         inv.UsedSlots.Should().Be(5 - itemsToLose);
 
         // Idol protection
-        var idol = ItemDatabase.Get("idol_sacrificial")!;
+        var idol = ItemDatabase.Get("consumable_sacrificial_idol")!;
         inv.TryAdd(idol);
         DeathPenalty.HasSacrificialIdol(inv).Should().BeTrue();
         DeathPenalty.ConsumeSacrificialIdol(inv);
@@ -346,7 +348,7 @@ public class FullRunTests
         var bank = new Bank();
         var tempInv = new Inventory { Gold = 10000 };
         bank.PurchaseExpansion(tempInv);
-        tempInv.TryAdd(ItemDatabase.Get("potion_hp_small")!);
+        tempInv.TryAdd(ItemDatabase.Get("consumable_hp_small")!);
         bank.Deposit(tempInv, 0);
         var bankState = bank.CaptureState();
         var bankRestored = new Bank();
@@ -511,8 +513,8 @@ public class FullRunTests
         var pacts = new DungeonPacts();
 
         // ── Town: buy gear ───────────────────────────────────────────────────
-        var sword = ItemDatabase.Get("sword_iron")!;
-        var potions = ItemDatabase.Get("potion_hp_small")!;
+        var sword = ItemDatabase.Get("mainhand_warrior_sword_t1")!;
+        var potions = ItemDatabase.Get("consumable_hp_small")!;
         inv.TryBuy(sword).Should().BeTrue();
         inv.TryBuy(potions).Should().BeTrue();
         inv.TryBuy(potions).Should().BeTrue(); // stack to 2

@@ -58,6 +58,19 @@ public partial class Main : Node
 
         splash.Connect(Ui.SplashScreen.SignalName.NewGamePressed, Callable.From(() =>
         {
+            // Spec: if all 3 save slots are full, block New Game and nudge to Load Game
+            // for deletion. See docs/flows/load-game.md § Interaction with New Game.
+            var sm = Autoloads.SaveManager.Instance;
+            if (sm != null && sm.AreAllSlotsFull())
+            {
+                Ui.Toast.Instance?.Error(
+                    "All save slots are full. Delete a character from Load Game first.");
+                return;
+            }
+            // Reserve the first empty slot as the new character's home. Auto-save targets it.
+            if (sm != null)
+                Autoloads.GameState.Instance.CurrentSaveSlot = sm.FindFirstEmptySlot();
+
             splash.Visible = false;
             splash.QueueFree();
             ShowClassSelection();
@@ -65,20 +78,7 @@ public partial class Main : Node
 
         splash.Connect(Ui.SplashScreen.SignalName.ContinuePressed, Callable.From(() =>
         {
-            // Let ScreenTransition cover the splash screen during fade-to-black,
-            // then hide splash, load save, and swap in the town — all while the
-            // overlay is fully opaque. Prevents the town from flashing into view.
-            Ui.ScreenTransition.Instance.Play(
-                Strings.Town.Title,
-                () =>
-                {
-                    splash.Visible = false;
-                    splash.QueueFree();
-                    Autoloads.SaveManager.Instance.Load();
-                    GetTree().Paused = false;
-                    LoadTown();
-                },
-                Strings.Town.Arriving);
+            ShowLoadGameScreen(splash);
         }));
 
         GetNode<CanvasLayer>("UILayer").AddChild(splash);
@@ -91,6 +91,50 @@ public partial class Main : Node
         _classSelect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         GetNode<CanvasLayer>("UILayer").AddChild(_classSelect);
         GetTree().Paused = true;
+    }
+
+    /// <summary>
+    /// Show the Load Game screen as an overlay on top of the splash. On Back, the
+    /// Load Game screen frees itself and the splash is re-shown. On Load, a
+    /// ScreenTransition covers everything while the save is restored and town loads.
+    /// </summary>
+    private void ShowLoadGameScreen(Ui.SplashScreen splash)
+    {
+        splash.Visible = false;
+
+        var screen = new Ui.LoadGameScreen();
+        screen.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        screen.Theme = Ui.GlobalTheme.Create();
+
+        screen.Connect(Ui.LoadGameScreen.SignalName.BackPressed, Callable.From(() =>
+        {
+            screen.QueueFree();
+            splash.Visible = true;
+        }));
+
+        screen.Connect(Ui.LoadGameScreen.SignalName.LoadSelected, Callable.From((int slotIndex) =>
+        {
+            // Cover with a fade-to-black, then swap GameState under the overlay and
+            // transition into town. Prevents any flash of splash or stale state.
+            Ui.ScreenTransition.Instance.Play(
+                Strings.Town.Title,
+                () =>
+                {
+                    screen.QueueFree();
+                    splash.QueueFree();
+                    var loaded = Autoloads.SaveManager.Instance?.LoadSlot(slotIndex) == true;
+                    if (!loaded)
+                    {
+                        Ui.Toast.Instance?.Error($"Failed to load slot {slotIndex + 1}");
+                        return;
+                    }
+                    GetTree().Paused = false;
+                    LoadTown();
+                },
+                Strings.Town.Arriving);
+        }));
+
+        GetNode<CanvasLayer>("UILayer").AddChild(screen);
     }
 
     public void LoadTown()

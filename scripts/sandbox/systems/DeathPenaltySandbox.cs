@@ -33,7 +33,7 @@ public partial class DeathPenaltySandbox : SandboxBase
         });
         AddButton("Add Sacrificial Idol", () =>
         {
-            _inv.TryAdd(new ItemDef { Id = "idol_sacrificial", Name = "Sacrificial Idol", Category = ItemCategory.Consumable });
+            _inv.TryAdd(new ItemDef { Id = "consumable_sacrificial_idol", Name = "Sacrificial Idol", Category = ItemCategory.Consumable });
             _hasIdol = true;
             Recalculate();
         });
@@ -99,7 +99,7 @@ public partial class DeathPenaltySandbox : SandboxBase
         Assert(DeathPenalty.GetBackpackProtectionCost(10) == 250, "Backpack prot cost floor 10 = 250g");
 
         var inv = new Inventory();
-        var idol = new ItemDef { Id = "idol_sacrificial", Name = "Sacrificial Idol", Category = ItemCategory.Consumable };
+        var idol = new ItemDef { Id = "consumable_sacrificial_idol", Name = "Sacrificial Idol", Category = ItemCategory.Consumable };
         inv.TryAdd(idol);
         Assert(DeathPenalty.HasSacrificialIdol(inv), "Idol detected in inventory");
         DeathPenalty.ConsumeSacrificialIdol(inv);

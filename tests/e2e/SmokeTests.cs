@@ -19,7 +19,7 @@ public class SmokeTests
     public void ItemDatabase_Loads_WithoutError()
     {
         // ItemDatabase has a static constructor — accessing it triggers load
-        var item = ItemDatabase.Get("potion_hp_small");
+        var item = ItemDatabase.Get("consumable_hp_small");
         AssertThat(item).IsNotNull();
         AssertThat(item!.Name).IsNotEmpty();
     }
