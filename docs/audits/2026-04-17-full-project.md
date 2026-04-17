@@ -1,4 +1,4 @@
-# Project Audit — infinite-dungeon-game
+# Project Audit — infinite-dungeon-game (game: "A Dungeon in the Middle of Nowhere")
 **Date:** 2026-04-17
 **Scope:** `scripts/` and `tests/` (excluded: `.godot/`, `bin/`, `obj/`, `assets/`)
 **Method:** systematic file-by-file read of autoloads, save system, pure logic, key UI, and test patterns.
@@ -14,7 +14,7 @@ float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone) * 
 `DungeonIntelligence.SpawnRateModifier` is documented as "spawn rate multiplier (0.80 to 1.20). Applied to room budget and respawn timer." It is incorrectly multiplied into the enemy HP calculation. AggressionModifier is also misapplied (multiplied into spdMult on line 55 — correct for speed but its docstring says "applied to aggro range and attack cooldown", not movement speed).
 **Fix:** drop `intel.SpawnRateModifier` from `hpMult`. Apply it where enemy spawning is rate-controlled (`Dungeon._spawnTimer.WaitTime` or in `SpawnInitialEnemies` budget). Re-evaluate where AggressionModifier should apply (probably enemy attack cooldown, not move speed).
 
-### 2. `GodotFileSaveStorage.cs:21-30` — silent save failure
+### 2. `GodotFileSaveStorage.cs:21-30` — save failure not propagated
 ```csharp
 public void Write(string key, string content) {
     using var file = FileAccess.Open(key, FileAccess.ModeFlags.Write);
@@ -22,8 +22,12 @@ public void Write(string key, string content) {
     file.StoreString(content);
 }
 ```
-If file open fails (disk full, permissions, sandbox), the Write returns silently. Caller `SaveManager.SaveToSlot` then prints `"Game saved to slot N"` regardless, and `Save()` returns no status. The player's run is unsaved with no UI feedback.
-**Fix:** make `ISaveStorage.Write` return `bool`, propagate failure to `SaveManager.Save()` so callers (PauseMenu line 894, DeathScreen line 272, Dungeon close, etc.) can surface a Toast.Error.
+The current implementation **does** check for null and logs `GD.PrintErr` on failure (corrected from earlier draft of this finding). The real problem is that `Write` returns `void`, so on failure:
+- The `GD.PrintErr` log is invisible to the player (debug-only).
+- `SaveManager.SaveToSlot` cannot detect the failure and proceeds to print `"Game saved to slot N"` regardless.
+- `Save()` returns no status, so callers (PauseMenu "Back to Main Menu", DeathScreen Quit, Dungeon close) cannot surface a Toast.Error.
+
+**Fix:** change `ISaveStorage.Write` from `void` to `bool` (return false when `file == null`); propagate the bool through `SaveManager.SaveToSlot` and `Save()`; let callers Toast.Error on failure. Player gets visible feedback when a save fails instead of a silent loss + a misleading "saved" log.
 
 ### 3. `SaveManager.Save()` (line 105-109) — slot-0 silent overwrite
 ```csharp
