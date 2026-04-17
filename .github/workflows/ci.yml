@@ -92,7 +92,10 @@ jobs:
 
   # ─── Job 4: Coverage Gate ────────────────────────────────────────────────────
   coverage-check:
-    name: Coverage Gate (${{ env.COVERAGE_THRESHOLD }}% min)
+    # Threshold value is sourced from env.COVERAGE_THRESHOLD inside the run step.
+    # Don't interpolate ${{ env.X }} into job name — the env context isn't
+    # allowed at job-name scope and GitHub silently rejects the workflow.
+    name: Coverage Gate
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests]
     steps:
