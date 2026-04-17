@@ -138,26 +138,31 @@ public partial class NpcPanel : GameWindow
     private void OnServicePressed(string npcName)
     {
         HideWithFade();
-        if (npcName == Strings.Npcs.Shopkeeper)
+        if (npcName == Strings.Npcs.GuildMaid)
         {
-            var shopItems = new System.Collections.Generic.List<ItemDef>(ItemDatabase.All);
-            ShopWindow.Instance?.Open(shopItems);
+            GuildWindow.Instance?.Open();
         }
         else if (npcName == Strings.Npcs.Teleporter)
         {
             TeleportDialog.Instance?.Show();
         }
-        else if (npcName == Strings.Npcs.Banker)
-        {
-            BankWindow.Instance?.Open();
-        }
         else if (npcName == Strings.Npcs.Blacksmith)
         {
             BlacksmithWindow.Instance?.Open();
         }
-        else if (npcName == Strings.Npcs.GuildMaster)
+        else if (npcName == Strings.Npcs.VillageChief || npcName == Strings.Npcs.GuildMaster)
         {
             QuestPanel.Instance?.Open();
+        }
+        // Legacy NPCs — retired from town scene but still dispatched if encountered via tests/code
+        else if (npcName == Strings.Npcs.Shopkeeper)
+        {
+            var shopItems = new System.Collections.Generic.List<ItemDef>(ItemDatabase.All);
+            ShopWindow.Instance?.Open(shopItems);
+        }
+        else if (npcName == Strings.Npcs.Banker)
+        {
+            BankWindow.Instance?.Open();
         }
         else
         {
@@ -169,10 +174,14 @@ public partial class NpcPanel : GameWindow
     {
         return npcName switch
         {
-            Strings.Npcs.Shopkeeper => Strings.NpcServices.OpenShop,
+            Strings.Npcs.GuildMaid => Strings.NpcServices.OpenGuild,
             Strings.Npcs.Blacksmith => Strings.NpcServices.OpenForge,
-            Strings.Npcs.GuildMaster => Strings.NpcServices.ViewQuests,
+            Strings.Npcs.VillageChief => Strings.NpcServices.ViewQuests,
             Strings.Npcs.Teleporter => Strings.NpcServices.Teleport,
+
+            // Legacy
+            Strings.Npcs.GuildMaster => Strings.NpcServices.ViewQuests,
+            Strings.Npcs.Shopkeeper => Strings.NpcServices.OpenShop,
             Strings.Npcs.Banker => Strings.NpcServices.OpenBank,
             _ => Strings.NpcServices.Talk,
         };

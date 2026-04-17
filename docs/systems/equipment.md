@@ -208,6 +208,41 @@ Rings row opens a sub-view showing all 10 ring slots.
 - `scripts/ui/EquipmentPanel.cs` — UI panel for the Equipment tab
 - Unit tests in `tests/unit/EquipmentSetTests.cs`
 
+## Equipment on Death
+
+Equipment interacts with the death sacrifice dialog (see [death.md](death.md) for the full flow).
+
+### Loss Rule
+
+If the player chooses **Save Backpack**, **Accept Fate**, or **Quit Game** (any option that does not save equipment), the dungeon destroys **exactly 1 random equipped item**. The random roll is uniform across the **19 equipped slots** (Head, Body, Arms, Legs, Feet, Neck, Main Hand, Off Hand, Ammo, + 10 Ring slots), with empty slots skipped (only currently-equipped items are eligible for the roll).
+
+- If nothing is equipped (e.g., just after starting a fresh character before picking up gear), no equipment is lost.
+- The lost item is **destroyed** — it does not go to the bank, it does not reappear as loot.
+- **Locked equipped items are NOT protected.** The Lock flag on equipment only prevents accidental unequip via the item-actions dropdown; it does nothing during the death roll.
+
+### Saving Equipment (gold cost)
+
+```
+equipBuyoutCost = deepestFloor × 25
+```
+
+This is ~40% of the backpack buyout cost (`deepestFloor × 60`). Equipment is cheaper to save because long-term investment in affixed gear is worth more than mass-consumable backpack contents.
+
+See [death.md](death.md#buyout-cost-formulas) for the full cost table.
+
+### Interaction with Sacrificial Idol
+
+A Sacrificial Idol in the backpack acts as a free "Save Both" — equipment is kept, backpack is kept, idol is consumed. See [death.md](death.md#sacrificial-idol).
+
+### Locking Equipped Items
+
+Right-click (or dropdown) on any equipped slot exposes **Lock / Unlock**:
+- Locked: Unequip is greyed out in the dropdown (prevents accidental unequip)
+- Locked: No effect on the death-loss roll (NOT protected)
+- Unlocked (default): All actions available
+
+This makes the Lock flag useful for "don't accidentally swap my best weapon while browsing the picker" — not as a death-mitigation tool.
+
 ## Files to Modify
 
 - `scripts/logic/Item.cs` — add `EquipSlot` enum, add `Slot`/`ClassAffinity` to `ItemDef`, add new `ItemCategory` values

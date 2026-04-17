@@ -294,6 +294,27 @@ Commit the updated JSON with a message documenting why. Re-enable later (same AP
 - A hedged suggestion that turns out narrowly wrong but points at a real defensive improvement (we applied Copilot's defensive OR-match in PR #4 even though the underlying claim was wrong — net positive)
 - Disagreement on style preferences — Copilot flags both sides of a style debate; not a context problem
 
+#### Copilot on Docs-Only PRs — Filter by Signal Type
+
+Spec/doc PRs (only `.md` and other prose files changed) get different handling than code PRs. Copilot reviews prose from a code-reviewer prior and its signal-to-noise ratio drops: most findings are stylistic suggestions ("this could be clearer", "consider an example"), not defects.
+
+**Rule:** on docs-only PRs, filter Copilot comments by signal type before engaging.
+
+**Act on:**
+- Cross-reference inconsistencies ("bank.md says 25 slots, items.md says 50")
+- Broken links / wrong file paths
+- Numbers that contradict other specs
+- Lore contradictions between files
+- Missing resolved-questions entries when a decision is stated
+
+**Ignore:**
+- Prose-style suggestions ("consider rephrasing", "this paragraph is long")
+- Subjective "add more detail" without a specific gap named
+- Formatting preferences (header style, list style, table width)
+- Requests to add examples where the spec is already unambiguous
+
+Don't toggle the ruleset per PR — that's manual overhead. Just apply this filter when triaging doc-PR findings. Same verification discipline as code reviews: each finding must be fact-backed (point to a specific contradiction), not just a style preference.
+
 ### 2c. Documentation Maintenance
 
 - **Never hardcode volatile numbers** in AGENTS.md or CLAUDE.md (test counts, file counts, step counts). Reference commands instead: "Run `make test` for current count."

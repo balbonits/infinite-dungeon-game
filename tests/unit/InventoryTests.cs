@@ -95,13 +95,18 @@ public class InventoryTests
     }
 
     [Fact]
-    public void TryAdd_Weapon_DoesNotStack()
+    public void TryAdd_SameWeaponId_MergesIntoOneSlot()
     {
+        // Spec change (docs/inventory/items.md): one item type per slot per storage.
+        // All categories (including equipment) merge into the single slot for that Id.
+        // In practice most looted equipment has unique affix rolls so stacking is rare,
+        // but the data model supports it — and base items (no affixes) DO stack.
         var inv = new Inventory();
         var sword = MakeWeapon("sword");
         inv.TryAdd(sword);
         inv.TryAdd(sword);
-        inv.UsedSlots.Should().Be(2); // weapons don't stack
+        inv.UsedSlots.Should().Be(1);
+        inv.GetSlot(0)!.Count.Should().Be(2);
     }
 
     [Fact]
@@ -124,13 +129,16 @@ public class InventoryTests
     }
 
     [Fact]
-    public void TryAdd_StackOverflow_UsesNextSlot()
+    public void TryAdd_UnlimitedStack_StaysInOneSlot()
     {
+        // Spec change (docs/inventory/items.md): unlimited stacking per slot, one type per storage.
+        // Stacks never "overflow" to a second slot — they just grow.
         var inv = new Inventory(2);
         var potion = MakeConsumable("potion");
-        inv.TryAdd(potion, 99); // fills slot 0 to max
-        inv.TryAdd(potion, 1);  // should spill to slot 1
-        inv.UsedSlots.Should().Be(2);
+        inv.TryAdd(potion, 99);
+        inv.TryAdd(potion, 1);
+        inv.UsedSlots.Should().Be(1);
+        inv.GetSlot(0)!.Count.Should().Be(100);
     }
 
     // ── RemoveAt ─────────────────────────────────────────────────────────────

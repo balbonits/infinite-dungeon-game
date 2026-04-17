@@ -4,90 +4,88 @@ namespace DungeonGame;
 
 /// <summary>
 /// Death penalty calculations. Pure logic — no Godot dependency.
-/// Formulas from docs/systems/death.md.
+/// Formulas from docs/systems/death.md (post-redesign: 5-option sacrifice dialog).
 /// </summary>
 public static class DeathPenalty
 {
-    /// <summary>
-    /// Percentage of current level's XP progress lost on death.
-    /// Scales with deepest floor achieved, capped at 50%.
-    /// </summary>
-    public static float GetExpLossPercent(int deepestFloor)
-    {
-        return MathF.Min(deepestFloor * 0.4f, 50.0f);
-    }
+    // ── Cost formulas (new spec — see docs/systems/death.md#buyout-cost-formulas) ──
 
-    /// <summary>
-    /// Number of random backpack items lost on death.
-    /// </summary>
-    public static int GetItemsLost(int deepestFloor)
-    {
-        return deepestFloor / 10 + 1;
-    }
+    /// <summary>Gold cost to save equipment (1 random equipped item otherwise lost).</summary>
+    public static long GetEquipmentBuyoutCost(int deepestFloor) => deepestFloor * 25L;
 
-    /// <summary>
-    /// Gold cost to protect XP from loss.
-    /// </summary>
-    public static int GetExpProtectionCost(int deepestFloor)
-    {
-        return deepestFloor * 15;
-    }
+    /// <summary>Gold cost to save backpack (all items + backpack gold otherwise lost).</summary>
+    public static long GetBackpackBuyoutCost(int deepestFloor) => deepestFloor * 60L;
 
-    /// <summary>
-    /// Gold cost to protect backpack items from loss.
-    /// </summary>
-    public static int GetBackpackProtectionCost(int deepestFloor)
-    {
-        return deepestFloor * 25;
-    }
+    /// <summary>Combined cost to save both equipment and backpack.</summary>
+    public static long GetBothBuyoutCost(int deepestFloor) =>
+        GetEquipmentBuyoutCost(deepestFloor) + GetBackpackBuyoutCost(deepestFloor);
 
-    /// <summary>
-    /// Calculate actual XP to lose based on current progress within the level.
-    /// </summary>
+    // ── EXP loss (unavoidable — applies in all paths) ──
+
+    /// <summary>Percentage of current level's XP progress lost on death.</summary>
+    public static float GetExpLossPercent(int deepestFloor) =>
+        MathF.Min(deepestFloor * 0.4f, 50.0f);
+
+    /// <summary>XP amount to lose from current progress.</summary>
     public static int CalculateXpLoss(int currentXp, int deepestFloor)
     {
         float percent = GetExpLossPercent(deepestFloor) / 100f;
         return (int)(currentXp * percent);
     }
 
-    /// <summary>
-    /// Check if the player has a Sacrificial Idol in their backpack.
-    /// </summary>
+    // ── Sacrificial Idol ──
+
     public static bool HasSacrificialIdol(Inventory inventory)
     {
-        for (int i = 0; i < inventory.SlotCount; i++)
-        {
-            var stack = inventory.GetSlot(i);
-            if (stack != null && stack.Item.Id == "idol_sacrificial")
-                return true;
-        }
-        return false;
+        return inventory.FindSlot("idol_sacrificial") >= 0;
     }
 
-    /// <summary>
-    /// Consume one Sacrificial Idol from the inventory.
-    /// </summary>
     public static void ConsumeSacrificialIdol(Inventory inventory)
     {
-        for (int i = 0; i < inventory.SlotCount; i++)
-        {
-            var stack = inventory.GetSlot(i);
-            if (stack != null && stack.Item.Id == "idol_sacrificial")
-            {
-                inventory.RemoveAt(i);
-                return;
-            }
-        }
+        int idx = inventory.FindSlot("idol_sacrificial");
+        if (idx >= 0) inventory.RemoveAt(idx, 1);
+    }
+
+    // ── Backpack loss (full wipe — items + gold) ──
+
+    /// <summary>Wipe all backpack items and backpack gold. Used when backpack is not saved.</summary>
+    public static void WipeBackpack(Inventory inventory)
+    {
+        inventory.Clear();
+        inventory.Gold = 0;
     }
 
     /// <summary>
-    /// Remove random items from inventory (death penalty).
+    /// Pay gold buyout, drawing from backpack first then bank. Returns true if paid in full.
+    ///
+    /// MVP note: the full spec (docs/systems/death.md#payment-sourcing) describes a player-
+    /// chosen pocket split sub-dialog — the player can override the default to pay bank-first
+    /// or any combination. This MVP implementation auto-splits backpack-first, which is the
+    /// default the spec shows. The split sub-dialog is tracked as a follow-up polish ticket.
     /// </summary>
+    public static bool PayBuyout(Inventory backpack, Bank bank, long cost)
+    {
+        if (cost <= 0) return true;
+        long total = backpack.Gold + bank.Gold;
+        if (total < cost) return false;
+
+        long fromBackpack = Math.Min(backpack.Gold, cost);
+        backpack.Gold -= fromBackpack;
+        long remaining = cost - fromBackpack;
+        if (remaining > 0) bank.Gold -= remaining;
+        return true;
+    }
+
+    // ── Legacy (pre-redesign — retained for test compat) ──
+
+    public static int GetItemsLost(int deepestFloor) => deepestFloor / 10 + 1;
+    public static int GetExpProtectionCost(int deepestFloor) => deepestFloor * 15;
+    public static int GetBackpackProtectionCost(int deepestFloor) => deepestFloor * 25;
+
+    /// <summary>Legacy helper: remove <paramref name="itemsToLose"/> random items from the backpack.</summary>
     public static void ApplyItemLoss(Inventory inventory, int itemsToLose)
     {
         int lost = 0;
-
-        // Collect occupied slot indices
         var occupiedSlots = new System.Collections.Generic.List<int>();
         for (int i = 0; i < inventory.SlotCount; i++)
         {

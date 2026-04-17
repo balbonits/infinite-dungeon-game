@@ -14,14 +14,23 @@ Not yet implemented. The prototype only has the dungeon scene.
 
 The town is a **frontier settlement** — recently founded as an "adventurers' town" beside a newly discovered cave mouth that leads into an infinite dungeon. Nobody knows how deep it goes, what made it, or why it exists. The cave is natural, not man-made — something ancient and possibly alive.
 
-The player is the **first resident adventurer**, assigned to delve into the dungeon, establish a foothold, and study what lies below. Every NPC in town chose to be here. They left established lives to set up shop on the frontier, drawn by opportunity, curiosity, or duty. The buildings are freshly constructed, the roads are dirt, and the settlement smells of sawdust and ambition.
+### The Guild Branch
 
-**Key lore beats:**
+This town is the site of a **newly-opened branch of The Guild**. The player character is the branch's **Guildmaster** — a young but capable adventurer assigned to plant a flag in the frontier and lead the exploration effort. The NPCs in town are **senior guild personnel and allied specialists** sent to support the Guildmaster. They are pioneers in their fields — a master smith, a master wizard, an experienced chief, a skilled operational assistant — all high-ranking in their own right, but supporting the Guildmaster for this expedition.
+
+NPCs address the player as **"{Class} Guildmaster"** — e.g., "Warrior Guildmaster", "Ranger Guildmaster", "Mage Guildmaster". This is the player's title in-world.
+
+**Naming convention (Maoyuu homage):** all NPCs are referred to by title/role, not personal names. Full titles exist in the lore (e.g., "Old Master Blacksmith") but the in-game label shows only the short form ("Blacksmith"). See the NPC roster below.
+
+### Key Lore Beats
+
 - The dungeon was discovered recently. No one has explored beyond the first few floors.
 - The town exists solely to support dungeon exploration. There is no other reason for it.
-- NPCs are pioneers, not established merchants. They are staking their livelihoods on the player's success.
+- NPCs are **seasoned guild personnel**, not random merchants. Each is a master in their field.
+- The player character is the **Guildmaster** — the designated leader of this branch. The other NPCs technically outrank the player in experience but operate under the Guildmaster's authority by guild protocol.
 - The cave entrance is at the edge of town — a dark, natural opening in a rocky hillside.
 - As the player pushes deeper, the town may grow and attract new settlers (future feature — not in MVP).
+- **Scope note:** the Guild as a larger organization (other branches, leadership hierarchy, politics) is out of scope for this game. The "Guild" framing is primarily **flavor text**. Treat the Guild as "the organization that sent this group here" — we won't visit other branches or see Guild headquarters.
 
 ## Design
 
@@ -35,17 +44,17 @@ Town is a separate scene that the player transitions to from the dungeon. It fun
 
 ### Layout
 
-Compact walkable area. All 5 NPCs are within a few steps of center. The player should be able to reach any NPC in under 2 seconds of walking.
+Compact walkable area. All 4 NPCs are within a few steps of center. The player should be able to reach any NPC in under 2 seconds of walking.
 
 **Conceptual layout (top-down):**
 
 ```
         ┌─────────────────────────────┐
-        │         [Banker]            │
+        │      [Village Chief]        │
         │                             │
-        │  [Blacksmith]   [Item Shop] │
+        │  [Blacksmith]   [Guild Maid]│
         │         (center)            │
-        │  [Guild]   [Teleporter]     │
+        │                 [Teleporter]│
         │                             │
         │     [Dungeon Entrance]      │
         └─────────────────────────────┘
@@ -56,15 +65,18 @@ Compact walkable area. All 5 NPCs are within a few steps of center. The player s
 - **Dungeon Entrance:** At the bottom/south edge of town — a natural cave mouth in a rocky hillside, recently discovered, not man-made. Walk into it to enter the dungeon.
 - **Total size:** ~2x the viewport. Small enough to see most NPCs on screen at once.
 
+**Reduced NPC count:** with Store and Bank merged under the Guild Maid, the town now has **4 interactive NPCs** (was 5): Guild Maid, Blacksmith, Village Chief, Teleporter. The "Banker" and "Item Shop" roles are retired — their functions moved into the Guild Maid's window.
+
 ### NPC List
 
-| NPC | Role | Function | Spec Ticket |
-|-----|------|----------|-------------|
-| Item Shop | Eager frontier merchant, came to supply the expedition | Buy consumables (Sacrificial Idol, potions, spell scrolls) | SPEC-01b |
-| Blacksmith | Rugged smith who hauled a forge to the frontier for monster materials | Craft affixes onto base items, recycle unwanted gear for materials | SPEC-01c |
-| Adventure Guild | Veteran explorer who organized the entire expedition | View quests, achievements, or challenges | SPEC-01d |
-| Level Teleporter | Scholarly mage drawn by the dungeon's magical signature | Travel to previously visited dungeon floors | SPEC-01e |
-| Banker | Practical security expert — frontier towns need vaults | Access bank storage (safe, permanent, town-only) | SPEC-01f |
+All NPCs use title-only in-game labels (short form shown in the label column). Full titles documented for lore reference.
+
+| In-game Label | Full Title | Role | Function |
+|---------------|-----------|------|----------|
+| Guild Maid | Guild Maid Assistant | The Guildmaster's primary operational assistant. A young woman in maid attire (glasses, long skirt, carries a logbook). Runs day-to-day branch operations so the Guildmaster can focus on the dungeon. | Guild window: Store (basic consumables/materials/ammo), Bank (safe storage, slot expansion, gold pocket), Transfer (move items/gold between bank ↔ backpack) |
+| Blacksmith | Old Master Blacksmith | Veteran smith sent to support a guildmaster-level adventurer. Knows every recipe, just needs materials. | Craft affixes onto base items, recycle unwanted gear, **backpack expansion** (+5 slots per upgrade), **Workshop tab** for manufacturing high-tier materials |
+| Village Chief | Old Village Chief | Experienced settlement leader. Knows the land, handles local relations, issues work contracts for the guild. | Offer quests (kill, boss, floor-clear, depth-push) — procedurally generated, always available |
+| Teleporter | Old Master Wizard | Scholarly mage drawn by the dungeon's magical signature. Maintains the teleport network to previously visited floors. | Travel to any previously visited dungeon floor (free, no cost) |
 
 ### Interaction Model
 
@@ -113,36 +125,60 @@ The bank is **town-only**. Players cannot access bank storage from inside the du
 
 ## NPC Specs
 
-### Item Shop (SPEC-01b)
+### Guild Maid
 
-Sells consumables and backpack expansions. Inventory is always available — no stock limits.
-
-**Inventory:**
-
-| Item | Cost | Effect |
-|------|------|--------|
-| Health Potion | 50 gold | Restore 30% max HP instantly |
-| Mana Potion | 50 gold | Restore 30% max mana instantly |
-| Sacrificial Idol | 200 gold | Negates backpack item loss on death (consumed on death) |
-| Spell Scroll (varies) | varies | One-use spell cast. Repeated use teaches the spell permanently (Mage). |
-| Backpack Expansion | `300 * N^2` | +5 backpack slots (N = expansion number) |
-
-Scroll availability scales with player's deepest floor reached (deeper = more powerful scrolls available).
-
-### Blacksmith (SPEC-01c)
-
-Adds affixes to base items and recycles unwanted gear. See [items.md](../inventory/items.md) for full crafting rules.
+Runs the Guild window — the merged Store + Bank + Transfer interface. See [guild-window.md](../ui/guild-window.md) for full UI spec.
 
 **Services:**
 
 | Service | Effect | Cost |
 |---------|--------|------|
-| Add Affix | Pick exact prefix or suffix, apply to item | Materials + gold (scales with affix tier) |
+| Store (basic consumables) | Health/Mana potions, Sacrificial Idol, basic ammo | Fixed prices |
+| Store (basic materials) | Bottles, shafts, feathers, tanning oil, thread, string, flux powder | Fixed prices |
+| Bank (safe storage) | Deposit/withdraw items, safe on death | Free |
+| Bank Expansion | +1 slot per upgrade | `50 × N gold` (N = expansion number) |
+| Bank gold pocket | Separate gold balance, safe on death | Free |
+| Transfer tab | Move items and gold between bank ↔ backpack | Free |
+
+**Store inventory (fixed, always in stock):**
+
+| Item | Cost | Category |
+|------|------|----------|
+| Small Health Potion | 50 gold | Consumable |
+| Small Mana Potion | 50 gold | Consumable |
+| Sacrificial Idol | 200 gold | Consumable (free "Save Both" on death) |
+| Glass Bottle | 5 gold | Material (basic) |
+| Arrow Shaft | 3 gold | Material (basic) |
+| Feather | 2 gold | Material (basic) |
+| Tanning Oil | 10 gold | Material (basic) |
+| Thread | 2 gold | Material (basic) |
+| String | 3 gold | Material (basic) |
+| Flux Powder | 8 gold | Material (basic) |
+| Iron Arrows | 1 gold | Ammo (basic) |
+| Iron Bolts | 1 gold | Ammo (basic) |
+
+*Prices are tunable during playtesting. Relative ratios (consumables cheap, mats cheaper, ammo cheapest per-unit) are locked.*
+
+### Blacksmith (Old Master Blacksmith)
+
+Adds affixes to base items, recycles gear, expands the backpack, and manufactures high-tier crafting materials. See [items.md](../inventory/items.md) for affix crafting rules and [backpack.md](../inventory/backpack.md) for expansion costs.
+
+**Services (Forge tab):**
+
+| Service | Effect | Cost |
+|---------|--------|------|
+| Add Affix | Pick exact prefix/suffix, apply to item | Materials + gold (scales with affix tier) |
 | Recycle Gear | Break down equipment into materials | Free (materials returned to player) |
+| Backpack Expansion | +5 backpack slots per upgrade | `200 × N² gold + crafting materials` (see [backpack.md](../inventory/backpack.md)) |
 
-The Blacksmith's available affix list is gated by the player's deepest floor (determines max affix tier accessible).
+**Services (Workshop tab):**
 
-### Adventure Guild (SPEC-01d)
+- Manufacture **high-tier crafting materials** from mid-tier drops + rare ingredients. Recipes are always available (no unlock gate); player just needs the inputs.
+- Workshop is a second tab in the Blacksmith window, alongside the Forge tab.
+
+The Blacksmith's affix list is gated by the player's deepest floor.
+
+### Village Chief (Old Village Chief)
 
 Offers radiant quests — procedurally generated, always available. Completing quests rewards gold and materials.
 
@@ -161,7 +197,7 @@ Offers radiant quests — procedurally generated, always available. Completing q
 - No time limits — complete at your own pace
 - No penalty for abandoning a quest
 
-### Level Teleporter (SPEC-01e)
+### Teleporter (Old Master Wizard)
 
 Instantly teleport to any previously visited dungeon floor. **Free, no cost.**
 
@@ -170,17 +206,6 @@ Instantly teleport to any previously visited dungeon floor. **Free, no cost.**
 - Teleports directly to the floor entrance safe spot
 - Floor layout is pulled from cache if available (max 10 cached), otherwise regenerated with a new seed
 - Cannot teleport to floors deeper than the player's deepest visited floor
-
-### Banker (SPEC-01f)
-
-Access bank storage and purchase bank expansions. See [bank.md](../inventory/bank.md) for full bank rules.
-
-**Services:**
-
-| Service | Effect | Cost |
-|---------|--------|------|
-| Deposit/Withdraw | Move items between backpack and bank | Free |
-| Bank Expansion | +10 bank slots | `500 * N^2` (N = expansion number) |
 
 ---
 

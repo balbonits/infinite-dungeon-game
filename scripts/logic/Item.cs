@@ -44,14 +44,17 @@ public enum ItemCategory
 }
 
 /// <summary>
-/// A stack of items in an inventory slot.
+/// A stack of items in an inventory slot. Unlimited quantity per slot — one item type per slot per storage.
+/// See docs/inventory/items.md for stacking rules.
 /// </summary>
 public record ItemStack
 {
     public ItemDef Item { get; init; } = null!;
-    public int Count { get; init; } = 1;
+    public long Count { get; init; } = 1;
 
-    public bool IsStackable => Item.Category == ItemCategory.Consumable ||
-                                Item.Category == ItemCategory.Material;
-    public int MaxStack => IsStackable ? 99 : 1;
+    /// <summary>
+    /// Locked items cannot be Sold or Dropped (and cannot be accidentally unequipped).
+    /// Lock does NOT protect from death-loss — see docs/systems/death.md.
+    /// </summary>
+    public bool Locked { get; init; }
 }

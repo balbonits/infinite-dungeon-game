@@ -67,3 +67,6 @@ docs/evidence/**/frame_*.png
 # Logs
 *.log
 crash_reports/
+
+# Claude Code session-local runtime state
+.claude/scheduled_tasks.lock

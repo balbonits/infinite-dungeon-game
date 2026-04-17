@@ -94,11 +94,10 @@ public class TownTests : GameTestBase
     {
         string[] expected =
         {
-            Strings.Npcs.Shopkeeper,
+            Strings.Npcs.GuildMaid,
             Strings.Npcs.Blacksmith,
-            Strings.Npcs.Banker,
+            Strings.Npcs.VillageChief,
             Strings.Npcs.Teleporter,
-            Strings.Npcs.GuildMaster,
         };
 
         // Collect all NPCs currently in the tree (walk from scene-tree root)

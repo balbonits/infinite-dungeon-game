@@ -9,10 +9,10 @@ using DungeonGame.Ui;
 namespace DungeonGame.Testing.Tests;
 
 /// <summary>
-/// Tests for player death + respawn. Forces HP=0 in the dungeon, verifies the
-/// DeathScreen appears, keyboard nav works, and respawn returns the player to town
-/// with full HP.
-/// See docs/flows/death.md.
+/// Tests for the post-redesign 5-option sacrifice dialog. Forces HP=0 in the dungeon,
+/// verifies DeathScreen appears with the new buttons, and respawn returns the player
+/// to town with full HP.
+/// See docs/systems/death.md.
 /// </summary>
 public class DeathTests : GameTestBase
 {
@@ -53,7 +53,7 @@ public class DeathTests : GameTestBase
     private async Task EnterDungeon()
     {
         Main.Instance.LoadDungeon();
-        await Input.WaitSeconds(1.2f); // ScreenTransition hold + fade
+        await Input.WaitSeconds(1.2f);
         await WaitUntil(() => Ui.FindNodeOfType<Dungeon>() is not null,
             timeout: 6f, what: "Dungeon scene to load");
         await Input.WaitSeconds(0.3f);
@@ -66,8 +66,6 @@ public class DeathTests : GameTestBase
         await EnterDungeon();
 
         Expect(GameState.Instance.IsDead == false, "Alive before HP=0");
-
-        // Force death
         GameState.Instance.Hp = 0;
 
         await WaitUntil(() => GameState.Instance.IsDead,
@@ -94,7 +92,7 @@ public class DeathTests : GameTestBase
     }
 
     [Test]
-    public async Task Death_KeyboardNavigatesDeathScreen()
+    public async Task Death_SacrificeDialogHasAllFiveOptions()
     {
         await GetToTown();
         await EnterDungeon();
@@ -102,55 +100,74 @@ public class DeathTests : GameTestBase
         GameState.Instance.Hp = 0;
         await WaitUntil(() => Ui.HasNodeOfType<DeathScreen>(),
             timeout: 3f, what: "DeathScreen appears");
+
+        // Wait for the SoulsBorne cinematic to finish (fade in + hold + fade out + panel reveal ~6s)
+        await WaitUntil(() =>
+        {
+            var ds = Ui.FindNodeOfType<DeathScreen>();
+            return ds is not null && !ds.IsPlayingCinematic;
+        }, timeout: 10f, what: "cinematic ends and sacrifice dialog appears");
         await Input.WaitSeconds(0.3f);
 
-        // Step 1: "Return to Town" should be auto-focused
-        var returnBtn = Ui.FindButton(Strings.Death.ReturnToTown);
-        Expect(returnBtn is not null, "Return to Town button exists on Step 1");
-        Expect(Ui.FocusedButtonText == Strings.Death.ReturnToTown,
-            $"Return to Town auto-focused (got: '{Ui.FocusedButtonText}')");
-
-        // Advance to Step 2
-        await Input.PressEnter();
-        await Input.WaitSeconds(0.3f);
-
-        // Step 2 has a Confirm button. Navigate down with arrow keys.
-        var confirmBtn = Ui.FindButton(Strings.Death.Confirm);
-        Expect(confirmBtn is not null, "Confirm button exists on Step 2");
-
-        // Prove arrow keys move focus between options on step 2
-        var firstFocused = Ui.FocusedButtonText;
-        await Input.NavDown();
-        await Input.WaitFrames(5);
-        var secondFocused = Ui.FocusedButtonText;
-        Expect(firstFocused != secondFocused || confirmBtn is not null,
-            $"Arrow-down navigates or Confirm present ('{firstFocused}' → '{secondFocused}')");
+        // Per docs/systems/death.md the five options should all be visible.
+        // All button labels include extra text (cost + detail), so match by prefix.
+        Expect(Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.SaveBoth)) is not null,
+            "Save Both button exists");
+        Expect(Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.SaveEquipment)) is not null,
+            "Save Equipment button exists");
+        Expect(Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.SaveBackpack)) is not null,
+            "Save Backpack button exists");
+        var acceptBtn = Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.AcceptFate));
+        var quitBtn = Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.QuitGame));
+        Expect(acceptBtn is not null, "Accept Fate button exists");
+        Expect(quitBtn is not null, "Quit Game button exists");
     }
 
     [Test]
-    public async Task Death_EnterConfirmsAndRespawnsInTown()
+    public async Task Death_AcceptFateWipesBackpackAndReturnsToTown()
     {
         await GetToTown();
+        // Put a test item into the backpack to verify it gets wiped
+        var inv = GameState.Instance.PlayerInventory;
+        var potion = ItemDatabase.Get("potion_hp_small");
+        if (potion is not null)
+        {
+            inv.TryAdd(potion, 3);
+            inv.Gold = 500;
+        }
+        int itemsBefore = inv.UsedSlots;
+        long goldBefore = inv.Gold;
+        Expect(itemsBefore > 0 && goldBefore > 0, $"Test setup: backpack has {itemsBefore} items, {goldBefore}g");
+
         await EnterDungeon();
 
         int maxHp = GameState.Instance.MaxHp;
         GameState.Instance.Hp = 0;
         await WaitUntil(() => Ui.HasNodeOfType<DeathScreen>(),
             timeout: 3f, what: "DeathScreen appears");
+
+        await WaitUntil(() =>
+        {
+            var ds = Ui.FindNodeOfType<DeathScreen>();
+            return ds is not null && !ds.IsPlayingCinematic;
+        }, timeout: 10f, what: "cinematic ends");
         await Input.WaitSeconds(0.3f);
 
-        // Step 1 → Step 2
+        // Click Accept Fate → opens confirmation
+        var acceptBtn = Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.AcceptFate));
+        if (acceptBtn is null) { Expect(false, "Accept Fate button missing"); return; }
+        acceptBtn.GrabFocus();
+        await Input.WaitFrames(3);
         await Input.PressEnter();
-        await Input.WaitSeconds(0.4f);
+        await Input.WaitSeconds(0.3f);
 
-        // Step 2: press Confirm button directly (find + grab focus + press Enter)
-        var confirmBtn = Ui.FindButton(Strings.Death.Confirm);
-        if (confirmBtn is null) { Expect(false, "Confirm button missing on Step 2"); return; }
+        // Confirmation dialog: focus "Confirm — Accept" and press Enter
+        var confirmBtn = Ui.FindButton(btn => btn.Text.Contains("Confirm"));
+        if (confirmBtn is null) { Expect(false, "Confirmation button missing"); return; }
         confirmBtn.GrabFocus();
         await Input.WaitFrames(3);
         await Input.PressEnter();
 
-        // Respawn: LoadTown runs, player is alive again
         await WaitUntil(() => !GameState.Instance.IsDead,
             timeout: 5f, what: "IsDead cleared after respawn");
         await WaitUntil(() => Ui.FindNodeOfType<Town>() is not null,
@@ -158,11 +175,10 @@ public class DeathTests : GameTestBase
         await Input.WaitSeconds(0.3f);
 
         Expect(GameState.Instance.IsDead == false, "Player is alive after respawn");
-        Expect(GameState.Instance.Hp == maxHp,
-            $"HP restored to MaxHp ({GameState.Instance.Hp}/{maxHp})");
-        Expect(GameState.Instance.FloorNumber == 1,
-            $"FloorNumber reset to 1 (got {GameState.Instance.FloorNumber})");
-        Expect(Ui.FindNodeOfType<Dungeon>() is null, "Dungeon scene no longer active");
+        Expect(GameState.Instance.Hp == maxHp, $"HP restored to MaxHp ({GameState.Instance.Hp}/{maxHp})");
+        Expect(GameState.Instance.FloorNumber == 1, "FloorNumber reset to 1");
+        Expect(GameState.Instance.PlayerInventory.UsedSlots == 0, "Backpack wiped after Accept Fate");
+        Expect(GameState.Instance.PlayerInventory.Gold == 0, "Backpack gold wiped after Accept Fate");
     }
 
     [CleanupAll]

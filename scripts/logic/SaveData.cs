@@ -31,8 +31,8 @@ public record SaveData
     public int Int { get; init; }
     public int FreePoints { get; init; }
 
-    // Inventory
-    public int Gold { get; init; } = 100;
+    // Inventory — backpack pocket (at-risk on death)
+    public long Gold { get; init; } = 0;
     public SavedItemStack[] Items { get; init; } = System.Array.Empty<SavedItemStack>();
 
     // Skills & Abilities (new system)
@@ -64,7 +64,8 @@ public record SaveData
 public record SavedItemStack
 {
     public string ItemId { get; init; } = "";
-    public int Count { get; init; } = 1;
+    public long Count { get; init; } = 1;
+    public bool Locked { get; init; }
 }
 
 // SavedMasteryState and SavedAbilityState are defined in ProgressionTracker.cs
@@ -72,6 +73,7 @@ public record SavedItemStack
 public record SavedBankData
 {
     public int ExpansionCount { get; init; }
+    public long Gold { get; init; }
     public SavedItemStack[] Items { get; init; } = System.Array.Empty<SavedItemStack>();
 }
 

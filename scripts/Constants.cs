@@ -51,6 +51,11 @@ public static class Constants
         public const int StartingHp = 100;
         public const float HealOnLevelUpPercent = 0.15f; // 15% of max HP (spec: leveling.md)
 
+        // Inventory — see docs/inventory/backpack.md and docs/inventory/bank.md
+        public const int BackpackStartingSlots = 15;
+        public const int BackpackSlotsPerExpansion = 5;
+        public const int StartingGold = 0; // G1: d — zero starting gold, earned from first kills
+
         public static int GetDamage(int level) => BaseDamage + (int)(level * DamagePerLevel);
 
         // Spec (magic.md): class base mana pools

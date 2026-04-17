@@ -208,7 +208,7 @@ public partial class BankWindow : GameWindow
         }
     }
 
-    private static HBoxContainer CreateItemRow(string name, int count, string actionLabel, System.Action action)
+    private static HBoxContainer CreateItemRow(string name, long count, string actionLabel, System.Action action)
     {
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 6);
@@ -235,7 +235,7 @@ public partial class BankWindow : GameWindow
     {
         var bank = GameState.Instance.PlayerBank;
         var backpack = GameState.Instance.PlayerInventory;
-        int cost = bank.GetNextExpansionCost();
+        long cost = bank.GetNextExpansionCost();
 
         if (bank.PurchaseExpansion(backpack))
         {

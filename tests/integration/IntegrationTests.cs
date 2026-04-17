@@ -210,19 +210,25 @@ public class EconomyFlowTests
     [Fact]
     public void FullInventory_ThenSellAll_RestoresGoldAboveZero()
     {
+        // Spec change (docs/inventory/items.md): one type per slot per storage, unlimited stacking.
+        // Buying 5 of the same item goes into ONE slot with Count=5. To exercise full-inventory
+        // behavior, use 5 distinct item IDs.
         int slots = 5;
         var inv = new Inventory(slots) { Gold = 500 };
-        var item = new ItemDef
+
+        ItemDef MakeSword(int idx) => new()
         {
-            Id = "sword",
-            Name = "Sword",
+            Id = $"sword_{idx}",
+            Name = $"Sword {idx}",
             Category = ItemCategory.Weapon,
             BuyPrice = 100,
             SellPrice = 40,
         };
 
         for (int i = 0; i < slots; i++)
-            inv.TryBuy(item);
+            inv.TryBuy(MakeSword(i));
+
+        inv.UsedSlots.Should().Be(slots);
 
         for (int i = slots - 1; i >= 0; i--)
             inv.TrySell(i);

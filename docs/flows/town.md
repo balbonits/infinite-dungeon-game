@@ -10,15 +10,18 @@
 - **Collision layer:** `Constants.Layers.Player` (bit 1)
 - **Grace period:** Started on spawn
 
-## NPC Positions
+## NPC Positions (post-redesign — SYS-12 roster)
 
 | NPC | Tile Position | Constants ref | Services |
 |-----|--------------|---------------|----------|
-| Shopkeeper | (5, 7) | — | ShopWindow.Open() |
-| Blacksmith | (18, 7) | — | BlacksmithWindow.Open() |
-| Guild Master | (5, 14) | — | QuestPanel.Open() |
+| Guild Maid | (12, 10) | — | GuildWindow.Open() (Store / Bank / Transfer tabs) |
+| Blacksmith | (5, 7) | — | BlacksmithWindow.Open() |
+| Village Chief | (18, 7) | — | QuestPanel.Open() |
 | Teleporter | (18, 14) | — | TeleportDialog.Show() |
-| Banker | (12, 14) | — | BankWindow.Open() |
+
+Shopkeeper and Banker NPCs are retired — their functions are merged into the Guild Maid's
+three-tab window. `ShopWindow`/`BankWindow` are still present for test compat but no longer
+placed in the town scene. See `docs/ui/guild-window.md` for the Guild UI spec.
 
 Each NPC has:
 - Sprite at position with Y offset

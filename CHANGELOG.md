@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 21 — Bank & Backpack Redesign: Spec + Implementation (2026-04-17)
+
+Branch: `feat/bank-backpack-redesign`. Milestones 1 (spec lock) + 2a–2g (implementation) landed in the same session. All 402 unit + 11 integration tests green. See the dev-journal Session 21 entry for the narrative; this changelog lists the concrete additions/changes by category.
+
+#### Implementation (milestones 2a–2g)
+
+#### Added
+- **NEW: `scripts/logic/NumberFormat.cs`** — abbreviated K/M/B/T/Qa/Qi formatter for stacks and gold, plus `Full(value)` for comma-separated tooltips. Covered by 28 unit tests in `NumberFormatTests`.
+- **NEW: `scripts/ui/SlotGrid.cs`** — reusable Godot Control that binds to an `Inventory` and renders a keyboard-navigable slot grid. Category-colored slots, lock icon overlay, abbreviated count, `SlotActivated` + `SlotFocused` events, configurable columns + slot size. Shared by `BackpackWindow`, `GuildWindow` (Bank tab + Transfer tab).
+- **NEW: `scripts/ui/GuildWindow.cs`** — merged Store + Bank + Transfer window. Three tabs (Store / Bank / Transfer), opens on Bank (Y2: c), Q/E switches tabs. Store buy flow with "Send to Bank/Backpack" toggle (sticky across session). Bank tab: SlotGrid + gold row (Withdraw All / Deposit All) + inline Upgrade button. Transfer tab: side-by-side SlotGrids, click-to-move, gold transfer buttons. Replaces the old ShopWindow + BankWindow in the post-redesign town.
+- **NEW: `scripts/testing/tests/GuildWindowTests.cs`** — GoDotTest suite covering: opens on Bank tab, Upgrade button increases slots, Deposit All moves gold backpack→bank.
+- Added `UiHelper.FindButton(predicate)` overload for substring/pattern button lookups.
+
+#### Changed
+- **`scripts/logic/Item.cs`**: `ItemStack.Count: long`, new `Locked: bool` flag. Removed `MaxStack` / `IsStackable` (all items stack unlimited).
+- **`scripts/logic/Inventory.cs`**: `Gold: long`. Enforces one-type-per-slot invariant in `TryAdd` (merges by Id). New methods: `FindSlot`, `FindEmptySlot`, `ToggleLock`, `Transfer(from, dest, count)`, `Drop(i, count)`. `Drop` refuses Locked items; `Transfer` ignores Lock (Lock only gates Sell/Drop).
+- **`scripts/logic/Bank.cs`**: starting slots 50 → 25; +10 → +1; expansion cost `500×N²` → `50×N`. Own `Gold` pocket (safe on death). New `DepositGold`/`WithdrawGold`. `PurchaseExpansion` draws from bank-first then backpack. `Deposit`/`Withdraw` legacy helpers wrap `Inventory.Transfer` and preserve `Locked` flags.
+- **`scripts/logic/SaveData.cs`** + **`SaveSystem.cs`**: `Gold: long`, `Count: long`, `Locked` flag round-trip, `SavedBankData.Gold` new field.
+- **`scripts/logic/DeathPenalty.cs`**: new `GetEquipmentBuyoutCost` (`floor×25`), `GetBackpackBuyoutCost` (`floor×60`), `GetBothBuyoutCost`, `WipeBackpack`, `PayBuyout(backpack, bank, cost)` (backpack-first). Legacy `GetExpProtectionCost` / `GetBackpackProtectionCost` / `ApplyItemLoss` retained for compat.
+- **`scripts/ui/DeathScreen.cs`**: full rewrite. Replaces two-step flow with the 5-option sacrifice dialog (Save Both / Save Equipment / Save Backpack / Accept Fate / Quit Game). Accept Fate + Quit Game have second-confirmation dialogs listing exact losses. Sacrificial Idol still auto-detected (offers free "Save Both"). EXP loss applies in all paths. Equipment loss is stubbed (`TODO SYS-11`) since the equipment system isn't implemented yet.
+- **`scripts/ui/BackpackWindow.cs`**: refactored to use `SlotGrid`. Item-actions dropdown gains Lock/Unlock + Drop. Gold displayed via `NumberFormat.Abbrev`. Detail panel shows full count + Locked status.
+- **`scripts/Town.cs`**: NPC roster updated per docs/world/town.md. Guild Maid (new — uses Banker sprite placeholder), Village Chief (renamed from Guild Master — reuses old sprite), Blacksmith, Teleporter. Shopkeeper and Banker retired from the scene.
+- **`scripts/ui/NpcPanel.cs`**: dispatch updated — Guild Maid → GuildWindow, Village Chief → QuestPanel. Legacy Shopkeeper/Banker branches retained for test compat.
+- **`scripts/Strings.cs`**: new NPC names (GuildMaid, VillageChief), new greetings, new NpcServices.OpenGuild. New Death labels (SaveBoth, SaveEquipment, SaveBackpack, AcceptFate, QuitGame). GoldDisplay/BonusGold/Stats accept `long`. Legacy strings retained.
+- **`scripts/Constants.cs`**: new `PlayerStats.BackpackStartingSlots = 15`, `BackpackSlotsPerExpansion = 5`, `StartingGold = 0`.
+- **`scenes/main.tscn`**: registered `GuildWindow` node on UILayer.
+- **`scripts/testing/tests/NpcTests.cs`**: updated to use GuildMaid + GuildWindow + OpenGuild label.
+- **`scripts/testing/tests/TownTests.cs`**: expected NPC roster updated (Guild Maid, Blacksmith, Village Chief, Teleporter).
+- **`scripts/testing/tests/DeathTests.cs`**: full rewrite for the 5-option dialog. Covers: YOU DIED cinematic, all five sacrifice buttons present, Accept Fate → confirmation → wipes backpack items + gold and returns to town.
+- **`scripts/testing/tests/DeathCinematicTests.cs`**: updated to check `Death.SaveBoth` visibility (was `ReturnToTown`).
+
+#### Spec (milestone 1) — part of the same Session 21
+- **REWRITTEN: `docs/inventory/bank.md`** — Bank merged with Store into a new Guild window (3 tabs: Store / Bank / Transfer). Starting 25 slots (was 50), +1 per upgrade (was +10), cost `50 × N gold` (was `500 × N²`). Added a gold pocket (bank gold is safe on death — reverses previous prohibition). One-item-type-per-slot, unlimited stacking, no stack splitting within the same storage.
+- **REWRITTEN: `docs/inventory/backpack.md`** — Starting 15 slots (was 25), still +5 per upgrade, cost `200 × N² gold + crafting materials` (was `300 × N²` pure gold). Unlimited stacking per slot (was capped at 99). Gold displayed as a label (no Deposit/Withdraw controls on backpack). Expansion moved from Item Shop to Blacksmith. Material tiers: basic (Store) / mid (drops) / high (manufactured at new Blacksmith Workshop tab). Drop = destroy (single confirmation), no ground-drop retention.
+- **REWRITTEN: `docs/systems/death.md`** — New 5-option sacrifice dialog: **Save Both** / **Save Equipment** / **Save Backpack** / **Accept Fate** / **Quit Game**. Replaces old multi-step gold-buyout flow. Equipment loss = 1 random of 19 equipped slots. Backpack loss = 100% of items + gold. EXP loss still applies in all paths (no EXP buyout — removed). Sacrificial Idol now acts as a free "Save Both". Gold buyout sourced from player-chosen pocket (backpack first default, override allowed).
+- **UPDATED: `docs/inventory/items.md`** — Stacking now unlimited across all categories (stored as `long`, max ~9.2 quintillion). Number display uses abbreviated K/M/B/T format with exact values in tooltips. New Sell Pricing section: consumables/materials 100% of buy price, equipment scales with affix count (10% × (1 + affix_count) of `base_value`). New Item Actions reference: Inspect, Use, Equip/Unequip, Sell, Lock/Unlock, Transfer, Drop. Sell dialog spec with "Sell All but 1" + "Don't ask me again" mute.
+- **UPDATED: `docs/systems/equipment.md`** — New "Equipment on Death" section: 1 random of 19 equipped slots lost if equipment not saved, cost `deepestFloor × 25` (~40% of backpack buyout). Locked equipped items prevent accidental unequip but do NOT protect from death.
+- **NEW: `docs/ui/guild-window.md`** — Full UI spec for the merged Guild window. Title "Guild", default tab Bank, Q/E tab switching, item-actions dropdown reference, Sell/Drop/Lock dialog specs.
+- **UPDATED: `docs/world/town.md`** — NPC roster restructured for the Guild branch lore. Banker and Item Shop retired. New roster (4 NPCs, was 5):
+  - **Guild Maid** (Guild Maid Assistant) — operates Store + Bank + Transfer. Art placeholder: current Banker sprite. Future sprite: female maid with glasses, long skirt, logbook (tracked as ART ticket).
+  - **Blacksmith** (Old Master Blacksmith) — Forge + new Workshop tab for high-tier material manufacturing. Backpack expansion moved here from the old Item Shop.
+  - **Village Chief** (Old Village Chief) — renamed from the previous Guild Master NPC; quest-giver role unchanged.
+  - **Teleporter** (Old Master Wizard) — unchanged.
+  - Lore: PC is the `{Class} Guildmaster` of a new branch; other NPCs are senior guild personnel supporting the expedition. Maoyuu-style: all NPCs title-only, no personal names.
+- **UPDATED: `docs/world/dungeon.md`** — New "Regurgitation: Where Loot Comes From" section explaining the dungeon's absorb-and-re-emit cycle. Monster parts at shallow floors, crates/jars/chests at deeper floors. Also explains in-world how the dungeon takes gold from corpses (answer: don't ask, it's a mystery).
+- **UPDATED: `docs/flows/bank.md`** — Rewritten for the Guild window flow. Old `BankWindow.cs` replaced by new `GuildWindow.cs` (to be implemented). Bank tab operations: item-actions dropdown, Sell, Lock, Transfer shortcut, Upgrade sub-dialog, Withdraw/Deposit gold.
+- **UPDATED: `docs/flows/shop.md`** — Rewritten for the Guild Store tab. Buy flow: pick item → input amount → choose "Send to Bank/Backpack" → Confirm. Store no longer sells (moved to Bank tab item-actions). Item Shop NPC retired.
+
+(Implementation deferred to milestone 2+ on this branch.)
+
 ### Session 19 — Load Game Spec (2026-04-17)
 
 #### Documentation

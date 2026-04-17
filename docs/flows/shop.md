@@ -1,74 +1,72 @@
-# Flow: Shop
+# Flow: Guild Store
 
-**Script:** `scripts/ui/ShopWindow.cs`
-**Opened by:** NPC Panel → Shopkeeper → "Open Shop"
+**Script:** `scripts/ui/GuildWindow.cs` (new — replaces the old `ShopWindow.cs`)
+**Opened by:** NPC Panel → Guild Maid → "Open Guild"
+**UI spec:** [../ui/guild-window.md](../ui/guild-window.md)
+
+The Guild window has three tabs: **Store**, **Bank**, **Transfer**. This flow doc describes the Store tab specifically. For Bank + Transfer flows see [bank.md](bank.md).
 
 ## Opening
 
+The Store tab is **not** the default tab — the Guild window opens on the **Bank** tab. The user presses **E** (or clicks) to switch to the Store tab.
+
+## Store Tab Operations
+
+### Store inventory
+
+Fixed catalog (always in stock, fixed prices). See [town.md](../world/town.md#guild-maid) for the full item list. Store only sells **basic consumables**, **basic crafting materials**, and **basic ammo**. No equipment, no scrolls, no mid/high-tier materials.
+
+### Click item row → open Buy dialog
+
 ```
-ShopWindow.Open(shopInventory):
-1. Store items list (all ItemDatabase items)
-2. _isOpen = true
-3. WindowStack.Push(this)
-4. GetTree().Paused = true
-5. Show overlay + center panel
-6. Default to Buy mode
-7. RefreshList() — populate item buttons
-8. Focus first item button
+OnItemClicked(itemId):
+1. Open BuyDialog with item name + unit price
+2. Default amount: 1
+3. Default "Send to" target: last-used value (sticky); first-ever = Bank
 ```
 
-## Layout
+BuyDialog UI:
+- Amount input field + slider (0 → reasonable max, e.g., 999)
+- Live total: `amount × unit_price` gold
+- Radio group: "Send to Bank" / "Send to Backpack"
+- Confirm / Cancel buttons
 
-- **Left panel:** Scrollable item list (buttons)
-- **Right panel:** Item description (name, stats, action button)
+### Confirm purchase
 
-## Tabs
+```
+OnBuyConfirmed(itemId, amount, targetStorage):
+1. totalCost = amount × unit_price
+2. If Backpack.gold + Bank.gold < totalCost → disabled, Toast "Cannot afford"
+3. Draw from Backpack.gold first, then Bank.gold (auto — no sub-dialog for store purchases)
+4. AddItemToStorage(targetStorage, itemId, amount):
+   a. If slot exists for itemId → merge (stack += amount)
+   b. Else if free slot available → create new slot
+   c. Else → Toast "<targetStorage> is full. Send elsewhere." (allow changing target in dialog)
+5. Toast "Bought Nx <item> → <targetStorage>"
+6. Remember target for next buy this session
+```
 
-| Tab | Key | Shows |
-|-----|-----|-------|
-| Buy | Q (shoulder_left) | All shop items from ItemDatabase |
-| Sell | E (shoulder_right) | Player's backpack items (non-empty slots) |
+**Note:** if the target storage is full for this item, the dialog prompts the user to change the target rather than failing the transaction.
+
+### Sell? No.
+
+The Store tab does **not** sell. Selling happens in the **Bank tab** via the item-actions dropdown. Players must transfer items from backpack to bank first, then sell. This is an intentional friction point — selling is not a fast-lane action.
 
 ## Input
 
 | Input | Action |
 |-------|--------|
-| Up/Down | Navigate item list |
-| Q | Switch to Buy tab |
-| E | Switch to Sell tab |
-| S / action_cross | Buy/sell focused item |
-| D / Escape | Close shop |
-
-## Buy Flow
-
-```
-1. Navigate to item (focus updates description panel)
-2. Press S or click "Buy" action button
-3. OnActionPressed():
-   a. inventory.TryBuy(_selectedItem)
-   b. If success: Toast "Bought X", update gold label, refresh list
-   c. If fail: Toast "Cannot afford"
-```
-
-## Sell Flow
-
-```
-1. Switch to Sell tab (Q key)
-2. List refreshes with backpack items
-3. Navigate to item
-4. Press S or click "Sell" action button
-5. OnActionPressed():
-   a. inventory.TrySell(_selectedIndex)
-   b. If success: Toast "Sold X", refresh list
-   c. Item removed from backpack
-```
+| Q / E | Switch tab (Store ↔ Bank ↔ Transfer) |
+| Arrow keys | Navigate item list and dialog controls |
+| S / action_cross | Click the focused row (opens Buy dialog) or confirm dialog button |
+| D / Escape | Close Buy dialog / Guild window |
 
 ## Closing
 
-```
-Close():
-1. _isOpen = false
-2. WindowStack.Pop(this)
-3. GetTree().Paused = false
-4. Hide overlay + center
-```
+Same as Bank flow — Esc / D / X closes the Guild window, pops WindowStack, unpauses tree.
+
+## Superseded
+
+- Old `ShopWindow.cs` retained until `GuildWindow.cs` lands; then deleted.
+- Sell mode removed from Store tab (moved to Bank tab's item-actions dropdown).
+- Item Shop NPC retired.

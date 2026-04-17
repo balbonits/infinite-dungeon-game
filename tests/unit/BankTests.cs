@@ -50,23 +50,23 @@ public class BankTests
     // ── GetNextExpansionCost ──────────────────────────────────────────────────
 
     [Fact]
-    public void FirstExpansionCost_Is500()
+    public void FirstExpansionCost_Is50()
     {
-        // N=1: 500 * 1^2 = 500
-        new Bank().GetNextExpansionCost().Should().Be(500);
+        // N=1: 50 * 1 = 50 (spec: docs/inventory/bank.md)
+        new Bank().GetNextExpansionCost().Should().Be(50);
     }
 
     [Fact]
-    public void ExpansionCost_ScalesQuadratically()
+    public void ExpansionCost_ScalesLinearly()
     {
         var bank = new Bank();
         var playerInv = new Inventory { Gold = 100_000 };
 
-        bank.PurchaseExpansion(playerInv); // N=1: cost 500
-        bank.GetNextExpansionCost().Should().Be(2000); // N=2: 500 * 4
+        bank.PurchaseExpansion(playerInv); // N=1: cost 50
+        bank.GetNextExpansionCost().Should().Be(100); // N=2: 50 * 2
 
-        bank.PurchaseExpansion(playerInv); // N=2: cost 2000
-        bank.GetNextExpansionCost().Should().Be(4500); // N=3: 500 * 9
+        bank.PurchaseExpansion(playerInv); // N=2: cost 100
+        bank.GetNextExpansionCost().Should().Be(150); // N=3: 50 * 3
     }
 
     // ── PurchaseExpansion ─────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ public class BankTests
         var bank = new Bank();
         var inv = new Inventory { Gold = 1000 };
         bank.PurchaseExpansion(inv);
-        inv.Gold.Should().Be(500); // 1000 - 500
+        inv.Gold.Should().Be(950); // 1000 - 50 (new formula: 50*N)
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class BankTests
     public void PurchaseExpansion_NotEnoughGold_ReturnsFalse()
     {
         var bank = new Bank();
-        var inv = new Inventory { Gold = 100 }; // need 500
+        var inv = new Inventory { Gold = 10 }; // need 50 (combined pockets < 50)
         bank.PurchaseExpansion(inv).Should().BeFalse();
     }
 
@@ -110,7 +110,7 @@ public class BankTests
     public void PurchaseExpansion_NotEnoughGold_DoesNotChangeSlots()
     {
         var bank = new Bank();
-        var inv = new Inventory { Gold = 100 };
+        var inv = new Inventory { Gold = 10 };
         bank.PurchaseExpansion(inv);
         bank.TotalSlots.Should().Be(Bank.StartingSlots);
     }

@@ -93,7 +93,7 @@ public class NpcTests : GameTestBase
     public async Task Npc_PressSOpensNpcPanel()
     {
         await GetToTown();
-        await WalkToNpc(Strings.Npcs.Shopkeeper);
+        await WalkToNpc(Strings.Npcs.GuildMaid);
 
         int modalsBefore = Ui.ModalCount;
         Expect(modalsBefore == 0, $"No modals open before interaction (got {modalsBefore})");
@@ -110,15 +110,15 @@ public class NpcTests : GameTestBase
     public async Task Npc_PanelHasServiceAndCancelButtons()
     {
         await GetToTown();
-        await WalkToNpc(Strings.Npcs.Shopkeeper);
+        await WalkToNpc(Strings.Npcs.GuildMaid);
 
         await Input.Confirm();
         await Input.WaitSeconds(0.4f);
 
-        // Shopkeeper service button = "Open Shop"
-        var serviceBtn = Ui.FindButton(Strings.NpcServices.OpenShop);
+        // Guild Maid service button = "Open Guild"
+        var serviceBtn = Ui.FindButton(Strings.NpcServices.OpenGuild);
         var cancelBtn = Ui.FindButton(Strings.Ui.Cancel);
-        Expect(serviceBtn is not null, "Service button ('Open Shop') exists in NpcPanel");
+        Expect(serviceBtn is not null, "Service button ('Open Guild') exists in NpcPanel");
         Expect(cancelBtn is not null, "Cancel button exists in NpcPanel");
     }
 
@@ -126,14 +126,14 @@ public class NpcTests : GameTestBase
     public async Task Npc_ServiceButtonIsFocusedByDefault()
     {
         await GetToTown();
-        await WalkToNpc(Strings.Npcs.Shopkeeper);
+        await WalkToNpc(Strings.Npcs.GuildMaid);
 
         await Input.Confirm();
         await Input.WaitSeconds(0.4f);
 
         // First button (service) should have focus
         var focused = Ui.FocusedButtonText;
-        Expect(focused == Strings.NpcServices.OpenShop,
+        Expect(focused == Strings.NpcServices.OpenGuild,
             $"Service button focused by default (focused: '{focused}')");
     }
 
@@ -141,17 +141,17 @@ public class NpcTests : GameTestBase
     public async Task Npc_PressEnterOpensServiceWindow()
     {
         await GetToTown();
-        await WalkToNpc(Strings.Npcs.Shopkeeper);
+        await WalkToNpc(Strings.Npcs.GuildMaid);
 
         await Input.Confirm();
         await Input.WaitSeconds(0.4f);
 
-        // Service button is focused — press Enter to open ShopWindow
+        // Service button is focused — press Enter to open GuildWindow
         await Input.PressEnter();
         await Input.WaitSeconds(0.5f);
 
-        Expect(Ui.HasNodeOfType<ShopWindow>() && ShopWindow.Instance?.IsOpen == true,
-            "ShopWindow opens after pressing Enter on service button");
+        Expect(Ui.HasNodeOfType<GuildWindow>() && GuildWindow.Instance?.IsOpen == true,
+            "GuildWindow opens after pressing Enter on service button");
         // NpcPanel should have closed (fade-out) by now
         await WaitUntil(() => NpcPanel.Instance?.IsOpen != true,
             timeout: 1f, what: "NpcPanel closed after service selected");
@@ -161,23 +161,23 @@ public class NpcTests : GameTestBase
     public async Task Npc_EscapeClosesServiceWindow()
     {
         await GetToTown();
-        await WalkToNpc(Strings.Npcs.Shopkeeper);
+        await WalkToNpc(Strings.Npcs.GuildMaid);
 
         await Input.Confirm();
         await Input.WaitSeconds(0.4f);
         await Input.PressEnter(); // open shop
         await Input.WaitSeconds(0.5f);
 
-        Expect(ShopWindow.Instance?.IsOpen == true, "ShopWindow open before cancel");
+        Expect(GuildWindow.Instance?.IsOpen == true, "GuildWindow open before cancel");
         int modalsWithShop = Ui.ModalCount;
         Expect(modalsWithShop >= 1, $"ModalCount tracking shop window (got {modalsWithShop})");
 
-        // Press D (action_circle = cancel) — closes ShopWindow
+        // Press D (action_circle = cancel) — closes GuildWindow
         await Input.Cancel();
         await Input.WaitSeconds(0.5f);
 
-        await WaitUntil(() => ShopWindow.Instance?.IsOpen != true,
-            timeout: 2f, what: "ShopWindow closed after D/Cancel");
+        await WaitUntil(() => GuildWindow.Instance?.IsOpen != true,
+            timeout: 2f, what: "GuildWindow closed after D/Cancel");
         Expect(Ui.ModalCount == 0,
             $"ModalCount == 0 after all windows closed (got {Ui.ModalCount})");
         Expect(!Ui.AnyModalOpen, "No modals open after returning to game");

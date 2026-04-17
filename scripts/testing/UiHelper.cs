@@ -58,19 +58,25 @@ public class UiHelper
 
     // ── Scene queries ────────────────────────────────────────────────────────
 
-    /// <summary>Find a button by text in the scene tree (for verification, not clicking).</summary>
+    /// <summary>Find a button by exact text in the scene tree (for verification, not clicking).</summary>
     public Button? FindButton(string text)
     {
-        return SearchButton(_node.GetTree().Root, text);
+        return SearchButton(_node.GetTree().Root, b => b.Text == text);
     }
 
-    private static Button? SearchButton(Node root, string text)
+    /// <summary>Find a button matching a predicate (e.g., text.Contains/StartsWith).</summary>
+    public Button? FindButton(System.Func<Button, bool> predicate)
     {
-        if (root is Button btn && btn.Text == text && btn.Visible)
+        return SearchButton(_node.GetTree().Root, predicate);
+    }
+
+    private static Button? SearchButton(Node root, System.Func<Button, bool> predicate)
+    {
+        if (root is Button btn && btn.Visible && predicate(btn))
             return btn;
         foreach (var child in root.GetChildren())
         {
-            var found = SearchButton(child, text);
+            var found = SearchButton(child, predicate);
             if (found != null) return found;
         }
         return null;

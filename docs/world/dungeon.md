@@ -273,6 +273,21 @@ All monster stats (HP, damage, speed) are multiplied by `total_multiplier`.
 
 The dungeon is not just a place. It is a **living entity** — a massive, intelligent concentration of magicules that has developed some form of awareness over an incomprehensible span of time. In lore terms, the dungeon IS a monster. The largest, oldest, most patient monster in the world.
 
+### Regurgitation: Where Loot Comes From
+
+The dungeon absorbs everything that dies or breaks inside it — bodies, broken weapons, lost gold, spilled magic. When the dungeon regenerates itself between visits (floors are purged from the cache, layouts change, enemies respawn), it regurgitates what it consumed back into its halls, rearranged:
+
+- **Shallow floors** — Regurgitated as **monster parts and organic drops** on kills. The dungeon's fresh intake, still recognizable as "stuff that came from a creature."
+- **Deeper floors** — Regurgitated as **crates, jars, and chests** placed in rooms. The dungeon has had more time to "sort" this older material, packaging it for the adventurer to find. This is why containers appear on floors where no one placed them — the dungeon itself is the placer.
+
+The dungeon is showing the player its own consumed history, re-sorted for digestion. Every loot drop is technically a regurgitation. The containers in treasure rooms are the dungeon's way of organizing the largest meals it ever processed.
+
+**Gold follows the same cycle.** Adventurers who lose gold in the dungeon (to death, to destruction) are not giving gold to the dungeon permanently — the dungeon re-emits gold drops on future runs, often in completely different floors. This is why monsters drop gold, why chests contain gold, and why the economy doesn't collapse over time: every coin that disappears eventually re-enters circulation somewhere in the dungeon.
+
+### How the Dungeon Takes Gold from a Corpse
+
+When an adventurer dies in the dungeon and chooses a death bargain that costs gold, the gold disappears from their pockets — even from the safe bank storage in town. **How** is a mystery the NPCs explicitly don't try to answer. "The gold was there, and then it wasn't" is how the Guild Maid phrases it. The in-world acknowledgment is: the dungeon's magic extends further than anyone understands, and if it can capture consciousness and build new bodies, it can reach into pockets. This is part of the dungeon's intentionally unknowable nature. Don't ask.
+
 ### The Dungeon Feeds
 
 The dungeon attracts outsiders — adventurers, creatures, anything alive — to enter its body. It lures them with treasure, rare materials, and the promise of growth. Adventurers enter weak, fight monsters, grow stronger (accumulating processed mana as EXP), push deeper into more dangerous territory, and eventually die. When they die, the dungeon eats their accumulated EXP — the processed mana memories stored in their bodies and minds.

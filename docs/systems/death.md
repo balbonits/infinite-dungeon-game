@@ -2,37 +2,43 @@
 
 ## Summary
 
-Death imposes penalties scaled by the deepest floor achieved. Players can spend gold to mitigate penalties. A Sacrificial Idol consumable can negate backpack loss entirely.
+Death triggers a **5-option sacrifice dialog**: the player pays gold to save their equipment and/or backpack, or chooses to accept the loss. The gold paid IS the sacrifice — there is no additional penalty beyond items-and-gold-or-equipment-or-both. A Sacrificial Idol in the backpack acts as a free "Save Both." XP loss still applies on top of the sacrifice choice and is **unavoidable** — there is no gold buyout for XP (the old two-step mitigation model is retired).
 
 ## Current State
 
-The prototype has a basic death screen ("You Died — Tap / Press R to restart") that restarts the scene. No penalties, gold buyout, or death options are implemented yet.
+**Spec status: LOCKED.** This supersedes the previous death design (two-step flow with separate EXP/Backpack mitigation toggles).
+
+Implemented in `scripts/ui/DeathScreen.cs` (5-option dialog, cinematic, second-confirmation on Accept Fate / Quit Game) and `scripts/logic/DeathPenalty.cs` (cost formulas, PayBuyout, WipeBackpack). Equipment loss is currently stubbed as a TODO pending the equipment system (SYS-11). The companion specs in `docs/flows/death.md` and `docs/ui/death-screen.md` describe the older flow and need a follow-up refresh; this spec is authoritative in the meantime.
 
 ## Death Lore
 
-Death in the dungeon is not a simple mechanical reset. It is a transaction between the adventurer and the living dungeon entity.
+Death in the dungeon is a **transaction** between the adventurer and the living dungeon entity.
+
+### The Dungeon's Appetite
+
+The dungeon absorbs everything that dies or breaks inside it — bodies, broken weapons, lost gold, spilled magic. When the dungeon regenerates itself between visits, it regurgitates what it consumed back into its halls, rearranged: first as monster parts (the obvious "loot drops"), then at deeper floors as crates, jars, and chests. This is why containers appear on floors where no one placed them. The dungeon is showing the player their own consumed history, re-sorted for digestion.
 
 ### XP Loss = The Dungeon Eating Your Memories
 
-When an adventurer dies, the dungeon consumes a portion of their processed mana — the imprinted action memories that make up their EXP. These memories are the record of every fight, every skill used, every lesson learned. The dungeon strips them away and absorbs them as nutrition. Losing EXP on death means the adventurer literally forgets some of what their body and mind learned. Lose enough, and they lose levels — their growth partially undone.
+When an adventurer dies, the dungeon consumes a portion of their processed mana — the imprinted action memories that make up EXP. These memories are the record of every fight, every skill used, every lesson learned. Losing EXP means the adventurer literally forgets some of what their body and mind learned.
 
 ### Revival = The Dungeon Rebuilding Its Prey
 
-The dungeon does not let adventurers die permanently. At the moment of death, the dungeon captures the adventurer's consciousness — which is itself a form of magic — and holds it. While held, the consciousness experiences the death screen: choosing where to respawn, deciding what protections to buy. From a lore perspective, the adventurer is negotiating with the dungeon entity for the terms of their return.
+The dungeon does not let adventurers die permanently. At the moment of death, the dungeon captures the adventurer's consciousness and holds it. While held, the consciousness experiences the death screen — bargaining for the terms of revival. The dungeon then constructs a new body and imbues the consciousness into it. Revival is not mercy; it is the dungeon investing in future harvests.
 
-The dungeon then constructs a new physical body using magic and imbues the consciousness into it. But before releasing the adventurer, it takes its cut — skimming memories (EXP) as payment. Revival is not mercy. It is the dungeon investing in future harvests. A dead adventurer earns the dungeon nothing more. A revived adventurer can grow, push deeper, and die again — yielding an even bigger meal next time.
+### The Sacrifice = Paying the Tab
 
-### Gold Buyout = Bribing the Dungeon
+The new death dialog offers the player explicit bargains. Pay gold to save the equipment, pay gold to save the backpack. If you choose to save something, the gold paid IS the replacement offering — the dungeon takes coin instead of gear. Pay for both and the dungeon takes nothing but coin. Pay for nothing and the dungeon takes everything.
 
-Spending gold to protect EXP or backpack items on the death screen is the adventurer offering the dungeon an alternative payment. Gold carries its own magical value — it's a concentrated, tradeable form of processed resources. By offering enough gold, the adventurer convinces the dungeon to eat fewer of their memories or leave their belongings intact. The dungeon accepts because gold is still nutrition, just a different kind.
+**How does the dungeon take gold from a corpse?** The lore answer is: **don't ask.** This is part of the dungeon's mystery. If it can capture consciousness and build new bodies, it can reach into pockets. The gold just disappears. Flavor-text NPCs treat this as unknowable dungeon-magic — "the gold was there, and then it wasn't."
 
 ### Sacrificial Idol = A Tastier Offering
 
-The Sacrificial Idol is an item crafted or purchased specifically to appeal to the dungeon's appetite. It is "tastier" than the adventurer's backpack contents — magically rich enough that the dungeon accepts it as a substitute for the items it would otherwise consume. When an idol is in the backpack at death, the dungeon takes the idol and leaves the rest of the backpack alone. One idol, one death, consumed on use.
+The Sacrificial Idol is crafted specifically to appeal to the dungeon's appetite. It is "tastier" than the adventurer's belongings — magically rich enough that the dungeon accepts it in place of everything else. When an idol is in the backpack at death, the dungeon takes the idol and leaves both equipment and backpack alone. One idol, one death, consumed on use.
 
 ### The Death Screen = Consciousness Negotiating
 
-The death screen UI represents the adventurer's consciousness suspended inside the dungeon, bargaining for revival. The dungeon is in no hurry — it holds the consciousness for as long as needed (the death screen is untimed). The choices the player makes on the death screen are the terms of the deal: where to be reborn, what to sacrifice, what to protect. Once the player confirms, the deal is struck and the dungeon releases them.
+The death screen UI represents the adventurer's consciousness suspended inside the dungeon, bargaining for revival. The dungeon is in no hurry — the screen is untimed.
 
 ---
 
@@ -43,92 +49,171 @@ The death screen UI represents the adventurer's consciousness suspended inside t
 ```
 Player HP reaches 0
   → Game pauses (enemies stop, player disabled)
-  → Death screen appears
-  → Step 1: Choose destination
-    → "Return to Town" (lose floor progress, safe restart)
-    → "Respawn at Last Safe Spot" (stay on current floor)
-  → Step 2: Toggle mitigation options
-    → [ ] Buy EXP protection (costs gold)
-    → [ ] Buy Backpack protection (costs gold)
-    → Sacrificial Idol auto-applies if in inventory (negates backpack loss, consumed)
-  → Step 3: Review summary
-    → Shows exact penalties with and without mitigations
-    → Shows gold cost
-  → Step 4: Confirm
-    → Confirmation dialog: "Are you sure? You will lose X, Y, Z"
-    → Player confirms → penalties applied → respawn
+  → Death cinematic plays ("YOU DIED" fade-in/out)
+  → Death dialog appears with 5 options:
+
+    ┌─────────────────────────────────────────────────┐
+    │           YOU DIED                              │
+    │                                                 │
+    │  Deepest Floor: 42                              │
+    │  EXP Loss: 16.8% of current level               │
+    │                                                 │
+    │  Choose your bargain:                           │
+    │                                                 │
+    │  [Save Both (2,500g)]                           │
+    │     Keep all equipment + all backpack contents  │
+    │                                                 │
+    │  [Save Equipment (1,000g)]                      │
+    │     Keep gear. Lose all backpack items + gold.  │
+    │                                                 │
+    │  [Save Backpack (1,500g)]                       │
+    │     Keep pack. Lose 1 random equipped piece.    │
+    │                                                 │
+    │  [Accept Fate]                                  │
+    │     Lose 1 equipment + all backpack + backpack  │
+    │     gold. Respawn in town.                      │
+    │                                                 │
+    │  [Quit Game]                                    │
+    │     Same penalty as Accept Fate, then quit.     │
+    └─────────────────────────────────────────────────┘
 ```
 
-**Key rule:** No auto-select. The player must actively choose every option. Nothing is pre-checked.
+### The Five Options
 
-### Penalty Formulas
+| Option | Gold Cost | Equipment | Backpack Items | Backpack Gold | Next |
+|--------|-----------|-----------|----------------|---------------|------|
+| Save Both | `equipCost + backpackCost` | Kept | Kept | Kept | Respawn in town |
+| Save Equipment | `equipCost` | Kept | Lost (all) | Lost (all) | Respawn in town |
+| Save Backpack | `backpackCost` | 1 random piece lost | Kept | Kept | Respawn in town |
+| Accept Fate | 0 | 1 random piece lost | Lost (all) | Lost (all) | Respawn in town |
+| Quit Game | 0 | 1 random piece lost | Lost (all) | Lost (all) | Quit to main menu |
 
-These formulas are the starting values. All numbers are subject to change based on playtesting — fun is the top priority. The full death system (gold buyout, Sacrificial Idol, multi-step flow) is **MVP scope** — not deferred.
+**Key rules:**
+- No auto-select. The player must actively click one button.
+- Buyouts are **all-or-nothing per target.** You cannot partially save the backpack (can't pay half to keep half). Either save it or lose it.
+- Player may choose which pocket pays: backpack-gold first, then bank-gold, or any combination. A sub-dialog presents the payment split before confirming.
+- Both **Accept Fate** and **Quit Game** show a **second confirmation dialog** listing exact losses before proceeding. This is a final decision — no undo.
+- Grayed-out options: if the player can't afford a buyout, that button is disabled with the cost shown.
+- **EXP loss applies regardless of choice** (it's the dungeon's "consciousness tax"). See EXP Loss below.
 
-#### EXP Loss
+### Equipment Loss Detail (1 random piece)
 
-```
-expLossPercent = min(deepestFloor * 0.4, 50)
-```
+When equipment is not saved, the dungeon takes **exactly 1** random equipped item, uniformly distributed across all **19 equipped slots** (Head, Body, Arms, Legs, Feet, Neck, Main Hand, Off Hand, Ammo, + 10 Ring slots). A slot with no item equipped is skipped in the random roll (only currently-occupied slots are eligible).
 
-- Loses a percentage of XP progress within the current level (not total XP)
-- Floor 1: 0.4% loss (negligible)
-- Floor 50: 20% loss (noticeable)
-- Floor 125+: 50% loss (cap — never lose more than half a level's progress)
+- If the player has nothing equipped (fresh char, before starting gear), no equipment is lost.
+- **Locked equipped items** are NOT protected from this loss. Lock only prevents accidental unequip.
+- The lost item is destroyed — does not go to the bank, does not reappear in the dungeon.
 
-#### Backpack Item Loss
+### Buyout Cost Formulas
 
-```
-itemsLost = floor(deepestFloor / 10) + 1
-```
-
-- Randomly selected items from the backpack
-- Floor 1–9: lose 1 item
-- Floor 10–19: lose 2 items
-- Floor 50–59: lose 6 items
-- Capped by actual backpack contents (can't lose more items than you have)
-- Bank items are **never** at risk
-
-#### Gold Buyout Costs
-
-Separate costs to mitigate each penalty:
+Equipment buyout is cheaper than backpack buyout, encouraging the player to save gear over bulk inventory:
 
 ```
-expProtectionCost = deepestFloor * 15
-backpackProtectionCost = deepestFloor * 25
+equipBuyoutCost = deepestFloor × 25
+backpackBuyoutCost = deepestFloor × 60
+bothBuyoutCost = equipBuyoutCost + backpackBuyoutCost
 ```
 
-- These are not automatic — the player must opt in on the death screen
-- If the player can't afford it, the option is grayed out with the cost shown
+| Floor | Save Equip | Save Pack | Save Both |
+|-------|-----------|-----------|-----------|
+| 1 | 25g | 60g | 85g |
+| 10 | 250g | 600g | 850g |
+| 25 | 625g | 1,500g | 2,125g |
+| 50 | 1,250g | 3,000g | 4,250g |
+| 100 | 2,500g | 6,000g | 8,500g |
+
+*Formulas are starting values — tunable during playtesting. The relative ratio (equipment ≈ 40% of backpack cost) is locked.*
+
+### Payment Sourcing
+
+The player chooses which pocket pays for the buyout. When the player clicks a Save button, a sub-dialog presents:
+
+```
+┌──────────────────────────────┐
+│  Pay 2,500g for: Save Both   │
+│                              │
+│  Backpack gold:   1,800g     │
+│  Bank gold:       5,000g     │
+│                              │
+│  From backpack:  [1,800]  g  │
+│  From bank:      [  700]  g  │
+│  ──────────────────────────  │
+│  Total:           2,500g     │
+│                              │
+│  [Confirm]  [Cancel]         │
+└──────────────────────────────┘
+```
+
+- Default split: drain backpack gold first, then bank.
+- Player can override the split freely.
+- If the combined total is less than the buyout cost, Confirm is disabled.
+
+### EXP Loss (independent of sacrifice choice)
+
+EXP loss still applies on top of the sacrifice dialog. This is the dungeon's "memory tax" — it happens regardless of what items are saved.
+
+```
+expLossPercent = min(deepestFloor × 0.4, 50)
+```
+
+- Loses a percentage of XP progress **within the current level** (not total XP).
+- Floor 1: 0.4% loss (negligible).
+- Floor 50: 20% loss (noticeable).
+- Floor 125+: 50% loss (cap — never lose more than half a level's progress in one death).
+
+**No gold buyout for EXP loss** under the new design. EXP is the unavoidable cost of death; the sacrifice dialog handles items and gold. (This is a simplification from the old three-protection model.)
 
 ### Sacrificial Idol
 
-- Purchased from the Item Shop in town
-- Stored in inventory (backpack or bank)
-- On death: if one is in the **backpack**, it auto-applies and fully negates backpack item loss
-- Consumed on use (single-use item)
-- Does **not** protect against EXP loss — that still requires gold buyout
-- The death screen shows when an idol is being consumed
+- Purchased from the Guild Maid (Store tab) or dropped from late-floor chests.
+- **Effect:** If an idol is in the **backpack** at time of death, it auto-consumes and acts as a free "Save Both":
+  - Equipment kept.
+  - Backpack items kept.
+  - Backpack gold kept.
+  - Gold cost: 0.
+  - EXP loss still applies.
+- Consumed on use (one-shot item, destroyed).
+- The death dialog shows "Sacrificial Idol will be consumed" at the top and greys out the Save Both / Save Equipment / Save Backpack buttons (no reason to pay).
+- Accept Fate and Quit Game are still available — the player can choose to skip the idol if they want to (idol is NOT destroyed if those are picked; it stays in the backpack and the backpack is lost anyway).
+- Multiple idols stack in one slot (unlimited stacking). Only one is consumed per death.
 
-### Respawn Destinations
+### Respawn
 
-| Option | Effect |
-|--------|--------|
-| Return to Town | Player spawns in town hub. Current floor layout is preserved in cache (if within the 10-floor cache limit). |
-| Respawn at Last Safe Spot | Player spawns at the last floor entrance/exit they passed. Current floor layout is preserved. |
+After any Save / Accept Fate choice, the player respawns at the **town spawn point**. Dungeon state (floor layouts, enemy states) is reset for the next dungeon entry. The "Respawn at Last Safe Spot" option from the old design is **removed** — death always returns to town. This keeps the stakes honest: a run can be ended, but town remains the hub.
 
-### Design Principles
+Quit Game applies the same loss (as Accept Fate) before exiting to main menu. On next game load, the player is in town with the penalty already applied.
 
-- **Death should hurt, but not devastate** — penalties scale with depth but cap out
-- **Player agency** — every mitigation is a conscious choice, not automatic
-- **Gold as insurance** — gold's primary purpose is death mitigation, not shopping
-- **No auto-select** — forcing the player to read and choose prevents accidental confirmations
+### Order of Operations
 
-### Tuning Notes
+1. HP reaches 0 → game pause + death cinematic
+2. Dialog appears with 5 options + EXP loss preview
+3. Player clicks a Save option → payment sub-dialog if cost > 0
+4. Player confirms payment → items/equipment/gold adjusted
+5. **OR** player clicks Accept Fate / Quit Game → confirmation dialog
+6. Player confirms → items/equipment/gold adjusted
+7. EXP loss applied (in all paths)
+8. Respawn in town (Save/Accept) or quit to menu (Quit Game)
 
-The following parameters are starting values — all subject to change based on gameplay feedback:
-- Gold buyout cost scaling (currently linear)
-- EXP loss cap percentage (currently 50%)
-- Whether a grace period is needed for early floors
-- Sacrificial Idol stacking behavior
-- The death screen is **untimed** — players take as long as they need (see [death-screen.md](../ui/death-screen.md))
+## Design Principles
+
+- **Sacrifice is the currency of death.** Gold paid replaces items lost. The player is always trading one form of wealth for another.
+- **Equipment is cheaper to save than backpack** — gear has long-term value (affixed builds), backpack is more replaceable (stackable goods + fresh drops).
+- **Player agency preserved.** No auto-apply beyond the Sacrificial Idol. Every option is explicit.
+- **Accept Fate is a valid strategic choice** — sometimes taking the hit is cheaper than paying gold, especially early game.
+- **Locked items don't protect from death** — Lock is anti-accidental-sell/drop, not anti-dungeon.
+- **EXP loss is unavoidable** — keeps death meaningful even for a rich player.
+
+## Resolved Questions
+
+| Question | Decision |
+|----------|----------|
+| Dialog format | 5 buttons on a single screen, no multi-step flow. |
+| Equipment loss magnitude | Exactly 1 random equipped piece (of 19 possible). |
+| Backpack loss magnitude | 100% of items + gold if not saved. |
+| EXP buyout | Removed. EXP loss is unavoidable. |
+| Gold pocket used for buyout | Player choice (sub-dialog shows split: backpack first, then bank, freely adjustable). |
+| Can Lock protect from death? | No. Lock prevents Sell/Drop only. |
+| Respawn location | Always town. "Respawn at Last Safe Spot" removed. |
+| Quit Game button | Applies same penalty as Accept Fate, quits to main menu. Confirmation required. |
+| Sacrificial Idol effect | Free "Save Both." Consumed on use. EXP loss still applies. |
+| Why can the dungeon take gold from a corpse? | In-world answer: mystery magic. Part of the dungeon's lore — don't ask. |

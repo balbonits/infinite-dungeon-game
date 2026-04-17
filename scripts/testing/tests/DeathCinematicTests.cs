@@ -70,19 +70,19 @@ public class DeathCinematicTests : GameTestBase
         await Input.WaitFrames(10);
         Expect(death.IsPlayingCinematic, "IsPlayingCinematic flag is true during cinematic");
 
-        // Menu panel should be hidden during cinematic
-        var returnBtn = Ui.FindButton(Strings.Death.ReturnToTown);
-        Expect(returnBtn is null || !returnBtn.Visible || returnBtn.Modulate.A < 0.1f,
-            "Menu button is NOT visible during cinematic (panel hidden)");
+        // Menu panel should be hidden during cinematic (Save Both button label starts with "Save Both")
+        var saveBothBtn = Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.SaveBoth));
+        Expect(saveBothBtn is null || !saveBothBtn.Visible || saveBothBtn.Modulate.A < 0.1f,
+            "Sacrifice dialog is NOT visible during cinematic (panel hidden)");
 
         // Wait for cinematic to complete (fade-in + hold + fade-out + panel reveal ~= 6s)
         await WaitUntil(() => !death.IsPlayingCinematic, timeout: 10f, what: "cinematic finishes");
 
-        // Now the menu should be visible
+        // Now the sacrifice dialog should be visible
         await Input.WaitSeconds(0.5f);
-        var returnBtnAfter = Ui.FindButton(Strings.Death.ReturnToTown);
-        Expect(returnBtnAfter is not null && returnBtnAfter.Visible,
-            "Menu button visible AFTER cinematic");
+        var saveBothBtnAfter = Ui.FindButton(btn => btn.Text.StartsWith(Strings.Death.SaveBoth));
+        Expect(saveBothBtnAfter is not null && saveBothBtnAfter.Visible,
+            "Sacrifice dialog (Save Both button) visible AFTER cinematic");
     }
 
     [Test]
