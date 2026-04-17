@@ -75,6 +75,35 @@ create branch → research → plan → verify plan (research bot cross-check)
 - Push to remote, create PR if needed
 - Delete the feature branch after merge
 
+**10a. Pair every PR push with a Copilot review request and a polling cron — atomic step.**
+
+Every `git push` to a PR branch is incomplete until all of these happened in the same response:
+
+1. `make pr-copilot-request PR=N` — the ruleset's auto-review trigger is unreliable (especially on force-push; confirmed PR #5, Session 21). Do the manual request as the source of truth.
+2. `make pr-copilot-wait PR=N` started in background — do NOT skip and "wait for the notify-claude workflow." The notify workflow has gating issues; the explicit poller is what closes the loop.
+3. Verify both started: PR URL returned + background task ID returned. If either failed, retry.
+4. **Cap the wait at 20 minutes total.** The Make target's built-in 10-min loop is too short. Either run two consecutive 10-min waits, or schedule a wakeup at 20 min to kill the poller if no review has landed.
+5. **On 20-min timeout:** kill the poller, surface the failure to the user, and decide — re-request the review (Copilot may have dropped it) or proceed without (with explicit user OK). Do not let a stalled poller linger.
+
+The mental shortcut is "you didn't push if you didn't poll." This is one reflex, not three steps performed at different prompts.
+
+**10b. Pre-merge briefing is mandatory — no silent merges.**
+
+Before running `gh pr merge` on any PR — even under auto mode, even on a "ship it" instruction — post a brief and wait for explicit go-ahead. The brief must include:
+
+1. **What's shipping** — one-sentence summary per major ticket/system (not the raw commit list).
+2. **Open review findings** — every substantive Copilot/human comment, classified (bug vs nitpick) with a one-line explanation. **If anything is substantive, fix it before merging.** A follow-up ticket is not a substitute.
+3. **CI state** — explicit note if CI is red, and the reason (known-broken workflow vs real test failure). Do not paper over red CI silently.
+4. **Deferred follow-ups** — anything being punted, stated by ticket ID.
+
+"Ship it" authorizes the merge AFTER the brief has been shown. It does not authorize a silent merge. Auto mode disables routine "shall I proceed?" checkpoints — it does NOT disable informed consent on merges or override "do not ship known-bad code."
+
+**Why these exist:** PR #8 merged on 2026-04-17 with three substantive Copilot bugs (floor-100 boundary, thematic biases, Load-Game stranding) plus four more from earlier review passes (focus no-op, button-zone navigation, GameState.Reset clobbering save slot, silent-no-op test). The user had to flag both the silent merge AND the bad code as process breaks. PR #9 was the triage. These rules exist so the same week doesn't repeat.
+
+**10c. Don't ask the user for manual GitHub-UI dispatch / approval.**
+
+When a workflow shows `action_required`, a stalled approval gate, or any "Approve and run" prompt, do not surface it as "you'll need to approve...". Either route around it (background poller via `gh api`, alternate trigger, scheduled wakeup) or fix the underlying config (workflow `permissions:` block, branch protection, fork-PR policy) — propose a PR for the fix, don't ask the user to flip the switch in the GitHub UI. The user's expectation is that automation actually automates.
+
 **11. Stop**
 - Do not continue to the next ticket
 - Do not "clean up" nearby code

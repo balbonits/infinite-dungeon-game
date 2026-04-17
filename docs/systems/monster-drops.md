@@ -93,7 +93,7 @@ Brackets align to the unified Floor-Bracket tier system from [item-generation.md
 | 11–25 | 2 | 80% | 20% | 0% | 0% | 0% | 0% |
 | 26–50 | 3 | 60% | 35% | 5% | 0% | 0% | 0% |
 | 51–100 | 4 | 30% | 45% | 20% | 5% | 0% | 0% |
-| 100+ | 5 | 10% | 25% | 35% | 25% | 5% | 0% |
+| 101+ | 5 | 10% | 25% | 35% | 25% | 5% | 0% |
 
 **Transcendent quality** does not appear in the distribution above — it has an additional floor-150 gate per [depth-gear-tiers.md](depth-gear-tiers.md). Once the player crosses floor 150 the distribution shifts to: Normal 5% / Superior 15% / Elite 30% / Masterwork 30% / Mythic 15% / Transcendent 5%.
 
@@ -120,7 +120,7 @@ Five tiers, binding directly to floor brackets. Names are locked in [item-catalo
 | 2 | 11–25 | Steel Ingot | Standard Bone | Standard Hide |
 | 3 | 26–50 | Mithril Ore | Fine Bone | Fine Hide |
 | 4 | 51–100 | Orichalcum Ore | Masterwork Bone | Masterwork Hide |
-| 5 | 100+ | Dragonite Ore | Top-Shelf Bone | Top-Shelf Hide |
+| 5 | 101+ | Dragonite Ore | Top-Shelf Bone | Top-Shelf Hide |
 
 The species-signature material type (ore vs bone vs hide) biases the generic roll: each species rolls its **thematic generic** 60% of the time and one of the other two 20% each.
 
@@ -152,7 +152,7 @@ Boss encounters (first kill per save slot, per boss) follow a **guaranteed-bundl
 | Floor 10 miniboss | 3× Tier 2 generics, 1× signature (zone's dominant species) | 1 item, quality roll shifted +1 bracket (so Superior guaranteed at floor 10) |
 | Floor 25 miniboss | 4× Tier 3 generics, 2× signature | 1 item, Elite guaranteed |
 | Floor 50 elite | 5× Tier 4 generics, 3× signature, 1× Bone Dust (Skeleton King callback) | 1 item, Masterwork guaranteed |
-| Floor 100 elite | 5× Tier 5 generics, 3× signature, 1× of every Zone 1–3 signature | 1 item, Mythic guaranteed |
+| Floor 101 elite | 5× Tier 5 generics, 3× signature, 1× of every Zone 1–3 signature | 1 item, Mythic guaranteed |
 | Floor 150+ boss | 5× Arcane materials per type, 5× of any 3 signatures | 1 item, Transcendent guaranteed |
 
 **One-time only per save slot.** Subsequent kills of the same boss instance use the normal species drop table with a +1 quality bracket shift.

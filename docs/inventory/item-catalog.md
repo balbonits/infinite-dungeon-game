@@ -70,7 +70,7 @@ Every equipment slot has exactly **5 tiers**. Tier maps to floor bracket and to 
 | 2 | 11–25 | Steel | Standard | Apprentice |
 | 3 | 26–50 | Hard | Fine | Adept |
 | 4 | 51–100 | Super | Fancy | Master |
-| 5 | 100+ | Mega | Top-Shelf | Archmage |
+| 5 | 101+ | Mega | Top-Shelf | Archmage |
 
 Tier gates **which item ID drops at which floor** (see [monster-drops.md](../systems/monster-drops.md) slot-roll step 4). Tier does **not** gate whether a player can equip the item — any item can be equipped at any level; the color-gradient system makes appropriateness obvious (see [items.md](items.md#item-color)).
 

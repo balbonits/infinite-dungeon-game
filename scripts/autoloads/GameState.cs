@@ -117,8 +117,10 @@ public partial class GameState : Node
     public EquipmentSet Equipment { get; set; } = new();
 
     /// <summary>
-    /// Index (0..SaveManager.SlotCount-1) of the save slot currently loaded or being played.
-    /// Null when no slot is active (e.g., just-started New Game that has not yet been saved).
+    /// Index (0..SaveManager.SlotCount-1) of the save slot this character owns.
+    /// Set when a slot is loaded (Load Game) OR reserved (New Game splash flow), and
+    /// preserved across <see cref="Reset"/> — the slot is character identity, not run state.
+    /// Null only at boot before any New-Game reservation or Load-Game has happened.
     /// </summary>
     public int? CurrentSaveSlot { get; set; }
 
@@ -154,7 +156,11 @@ public partial class GameState : Node
         Intelligence = new DungeonIntelligence();
         Attunement = new MagiculeAttunement();
         Equipment = new EquipmentSet();
-        CurrentSaveSlot = null;
+        // CurrentSaveSlot is intentionally preserved across Reset(): it identifies
+        // which save file this character owns, not run state. The New Game flow
+        // reserves a slot on the splash screen BEFORE ClassSelect.Reset() runs;
+        // wiping it here would cause the first autosave to fall through to slot 0
+        // and silently overwrite an existing save.
         EquipStartingGear();
     }
 

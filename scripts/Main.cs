@@ -116,18 +116,21 @@ public partial class Main : Node
         {
             // Cover with a fade-to-black, then swap GameState under the overlay and
             // transition into town. Prevents any flash of splash or stale state.
+            // On load failure, preserve the screen + splash so the fade-out reveals
+            // a recoverable UI (toast + still-live Load Game screen), instead of
+            // stranding the user behind a black overlay with nothing to interact with.
             Ui.ScreenTransition.Instance.Play(
                 Strings.Town.Title,
                 () =>
                 {
-                    screen.QueueFree();
-                    splash.QueueFree();
                     var loaded = Autoloads.SaveManager.Instance?.LoadSlot(slotIndex) == true;
                     if (!loaded)
                     {
                         Ui.Toast.Instance?.Error($"Failed to load slot {slotIndex + 1}");
                         return;
                     }
+                    screen.QueueFree();
+                    splash.QueueFree();
                     GetTree().Paused = false;
                     LoadTown();
                 },

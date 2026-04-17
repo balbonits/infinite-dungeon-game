@@ -32,7 +32,8 @@ public partial class LoadGameScreen : Control
     {
         public int Index;
         public bool IsPopulated;
-        public Control Root = null!;          // Outer focusable control for this slot.
+        public Control Root = null!;          // Teardown target (the parent this slot adds to the row).
+        public Control Focusable = null!;     // The control that receives GrabFocus() — must have FocusMode != None.
         public CharacterCard? Card;           // Populated slot — the character card.
         public Button? DeleteBtn;             // Red X, only on populated.
     }
@@ -147,6 +148,7 @@ public partial class LoadGameScreen : Control
             wrapper.AddChild(deleteBtn);
 
             entry.Root = wrapper;
+            entry.Focusable = card; // CharacterCard has FocusMode=All; wrapper is a plain Control (unfocusable).
             parent.AddChild(wrapper);
         }
         else
@@ -175,6 +177,7 @@ public partial class LoadGameScreen : Control
             vbox.AddChild(sublabel);
 
             entry.Root = empty;
+            entry.Focusable = empty;
             parent.AddChild(empty);
         }
 
@@ -194,7 +197,7 @@ public partial class LoadGameScreen : Control
             if (_slots[i].IsPopulated)
             {
                 _focusedSlot = i;
-                _slots[i].Root.GrabFocus();
+                _slots[i].Focusable.GrabFocus();
                 RefreshLoadEnabled();
                 return;
             }
@@ -214,7 +217,7 @@ public partial class LoadGameScreen : Control
         }
         int next = (_focusedSlot + direction + _slots.Length) % _slots.Length;
         _focusedSlot = next;
-        _slots[next].Root.GrabFocus();
+        _slots[next].Focusable.GrabFocus();
         RefreshLoadEnabled();
     }
 
@@ -291,14 +294,15 @@ public partial class LoadGameScreen : Control
 
         if (@event.IsActionPressed("ui_left"))
         {
-            if (_focusedSlot < 0) { _focusedSlot = 0; _slots[0].Root.GrabFocus(); RefreshLoadEnabled(); }
+            // From buttons zone: prefer first populated slot (don't land on empty slot 0).
+            if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(-1);
             GetViewport().SetInputAsHandled();
             return;
         }
         if (@event.IsActionPressed("ui_right"))
         {
-            if (_focusedSlot < 0) { _focusedSlot = 0; _slots[0].Root.GrabFocus(); RefreshLoadEnabled(); }
+            if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(1);
             GetViewport().SetInputAsHandled();
             return;

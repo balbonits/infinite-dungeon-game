@@ -38,15 +38,15 @@ public static class MonsterDropTable
     {
         // Zone 1 — Tier 1.
         [EnemySpecies.Skeleton] = new(EnemySpecies.Skeleton, MonsterTier.One, "material_sig_skeleton", 0.10f, MaterialType.Bone),
-        [EnemySpecies.Bat] = new(EnemySpecies.Bat, MonsterTier.One, "material_sig_bat", 0.08f, MaterialType.Bone),
+        [EnemySpecies.Bat] = new(EnemySpecies.Bat, MonsterTier.One, "material_sig_bat", 0.08f, MaterialType.Hide),
         // Zone 2 — Tier 1-2.
-        [EnemySpecies.Goblin] = new(EnemySpecies.Goblin, MonsterTier.One, "material_sig_goblin", 0.10f, MaterialType.Hide),
+        [EnemySpecies.Goblin] = new(EnemySpecies.Goblin, MonsterTier.One, "material_sig_goblin", 0.10f, MaterialType.Ore),
         [EnemySpecies.Wolf] = new(EnemySpecies.Wolf, MonsterTier.Two, "material_sig_wolf", 0.10f, MaterialType.Hide),
         // Zone 3 — Tier 2-3.
         [EnemySpecies.Orc] = new(EnemySpecies.Orc, MonsterTier.Three, "material_sig_orc", 0.10f, MaterialType.Ore),
         [EnemySpecies.Spider] = new(EnemySpecies.Spider, MonsterTier.Two, "material_sig_spider", 0.08f, MaterialType.Hide),
         // Zone 4+ — Tier 3.
-        [EnemySpecies.DarkMage] = new(EnemySpecies.DarkMage, MonsterTier.Three, "material_sig_darkmage", 0.07f, MaterialType.Ore),
+        [EnemySpecies.DarkMage] = new(EnemySpecies.DarkMage, MonsterTier.Three, "material_sig_darkmage", 0.07f, MaterialType.Bone),
     };
 
     public static DropTable? Get(EnemySpecies species) =>
