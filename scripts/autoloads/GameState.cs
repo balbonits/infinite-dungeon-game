@@ -116,6 +116,12 @@ public partial class GameState : Node
     // Equipment (SYS-11)
     public EquipmentSet Equipment { get; set; } = new();
 
+    /// <summary>
+    /// Index (0..SaveManager.SlotCount-1) of the save slot currently loaded or being played.
+    /// Null when no slot is active (e.g., just-started New Game that has not yet been saved).
+    /// </summary>
+    public int? CurrentSaveSlot { get; set; }
+
     public override void _Ready()
     {
         Instance = this;
@@ -148,6 +154,7 @@ public partial class GameState : Node
         Intelligence = new DungeonIntelligence();
         Attunement = new MagiculeAttunement();
         Equipment = new EquipmentSet();
+        CurrentSaveSlot = null;
         EquipStartingGear();
     }
 
