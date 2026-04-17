@@ -164,12 +164,13 @@ These systems were implemented during visual-first development but were not part
 | UI-02 | Load Game screen + 3-slot save system | To Do | Spec: `docs/flows/load-game.md`. Replaces inline CharacterCard on splash with "Continue" button (above "New Game") that opens a 3-slot save-select screen. Each card has a red X delete button with confirmation dialog. Multi-slot SaveManager API. Implementation on a new branch. |
 | ART-01 | Splash screen background image | To Do | 1920x1080 atmospheric dungeon scene matching `icon.png` palette. Use PixelLab for hero sprites (archway, rocks) + programmatic composite. Output to `assets/ui/splash_background.png`. Blocked: PixelLab MCP server not currently connected in session. |
 | SYS-11 | Equipment system (10-slot, 19 equippable) | To Do | Head, Body, Arms, Legs, Feet, Neck, 10 Rings, Main Hand, Off Hand, Ammo. No class-lock — +25% class affinity bonus instead. Bow without quiver = melee. Starting gear per class. Spec: `docs/systems/equipment.md`. |
-| SYS-12 | Bank & Backpack Redesign (Guild window) | Impl (milestones 2a–2g done) | Branch: `feat/bank-backpack-redesign`. Milestones 1 (spec lock) + 2a–2g done: model rewrite (Inventory/Bank `long` gold, one-type-per-slot, Lock flag, Transfer/Drop), reusable `SlotGrid` + `NumberFormat`, new `GuildWindow` (3 tabs), refreshed `BackpackWindow` with Drop/Lock, 5-option sacrifice death dialog, NPC retirement (Guild Maid placed with Banker sprite as placeholder), updated test suites. Equipment-on-death stub pending SYS-11. ART-02 (Guild Maid sprite) still blocked on PixelLab. 402 unit + 11 integration tests green. |
-| ART-02 | Guild Maid NPC sprite | To Do | Female maid archetype: glasses, long skirt, logbook. Used when Guild Maid (merged Shopkeeper + Banker) NPC is placed in town. Current Banker sprite is placeholder. |
+| SYS-12 | Bank & Backpack Redesign (Guild window) | Impl (milestones 2a–2g done) | Branch: `feat/bank-backpack-redesign`. Milestones 1 (spec lock) + 2a–2g done: model rewrite (Inventory/Bank `long` gold, one-type-per-slot, Lock flag, Transfer/Drop), reusable `SlotGrid` + `NumberFormat`, new `GuildWindow` (3 tabs), refreshed `BackpackWindow` with Drop/Lock, 5-option sacrifice death dialog, NPC retirement (Guild Maid uses dedicated sprite from ART-02), updated test suites. Equipment-on-death stub pending SYS-11. 402 unit + 11 integration tests green. |
+| ART-02 | Guild Maid NPC sprite | Done | `assets/characters/npcs/guild_maid/` — 8-directional, 92×92, female maid with glasses, dark blue dress, white apron, ledger. Wired into `Town.cs` NPC roster. |
 | POL-01 | Audio system (SFX + music + ambient) | To Do | Skipped per user — no audio/sound tasks |
 | POL-02 | Real sprite animations (AnimatedSprite2D) | To Do | 8-directional static rotations done; animation frames not yet |
 | POL-03 | Zone visual themes (per-zone floor/wall textures) | Done | `Constants.Assets.GetZoneTheme()` — 5 themes cycling for zone 6+ |
 | POL-04 | Shader effects (hit flash, outline, glow) | Partial | FlashFx uses Modulate tinting; no custom shaders yet |
+| SYS-13 | Dungeon Regurgitation | Draft-spec | P2 | Per-save-slot graveyard pool: items destroyed at death can re-surface as monster drops or chest contents at or below the floor they were lost on. Brutal-low rate (0.5% mob / 3% chest), celebrated "overleveled trash drop" comedy. Spec: `docs/systems/dungeon-regurgitation.md`. |
 
 ---
 
@@ -203,6 +204,20 @@ These systems were implemented during visual-first development but were not part
 | TEST-08 | GoDotTest + keyboard-nav test suite | Done | P1 | Added `Chickensoft.GoDotTest` v2.0.28. `Main.cs` boots tests via `--run-tests`. Test suites in `scripts/testing/tests/`: Splash, ClassSelect, Town, PauseMenu, Npc, Death, Transition, DeathCinematic — all use keyboard-only input, all verify specs in `docs/flows/*.md`. Run via `make test-ui`. |
 | TEST-09 | Cross-suite state isolation | To Do | P1 | Once one suite transitions splash→town, subsequent suites fail setup. Fix via per-suite `GameState.Reset()` + scene reload, or linear ordering. |
 | TEST-10 | CI integration for make test-ui | To Do | P2 | Add GoDotTest suite to `.github/workflows/ci.yml` so every PR runs keyboard-nav tests. |
+
+---
+
+## Content Catalogs
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| ITEM-01 | Base item catalog spec + ItemDatabase expansion | Draft-spec | P1 | Full 259-item base catalog (weapons, armor, accessories, consumables, materials) with class-voice naming. Unified metal ladder (Iron/Steel/Mithril/Orichalcum/Dragonite) across accessories and ores. Quivers collapsed to 9 imbue types (no tier/size — ammo is infinite). Rings expanded to 5 tiers × 8 focuses (stat + combat). Spec: `docs/inventory/item-catalog.md`. Implementation replaces placeholder items in `ItemDatabase.cs`. |
+| ITEM-02 | Monster drop tables spec + wiring | Draft-spec | P1 | Per-species drop tables with signature material and thematic "Preferred Slots" identity (currently uniform weighting; 2× weighting reserved for when species variety per zone expands). Spec: `docs/systems/monster-drops.md`. Implementation replaces `LootTable.cs` with `MonsterDropTables`. Depends on ITEM-01 for the base-item IDs. |
+| FORGE-01 | Blacksmith Forge RNG system (spec + impl) | To Do | P2 | Player-owned base item + large material investment rolls against a curated unique-item table gated by base tier and ilvl. Produces a named item with a hand-designed affix package. Replaces the traditional "unique drops from bosses" model. Spec authoring pending; no doc yet. |
+| ART-03 | Catalog armor sprites (Head/Body/Arms/Legs/Feet × 5 tiers × 3 classes) | To Do | P2 | 75 armor sprites total. Class-voice visual differentiation (Warrior plate vs Ranger leather vs Mage robes). PixelLab batch generation per art-lead. Blocks ITEM-01 visual polish but not core ITEM-01 data wiring. |
+| ART-04 | Catalog weapon sprites (Main Hand × 40 + Off Hand × 30) | To Do | P2 | 70 weapon/offhand sprites. Swords/axes/hammers (Warrior), shortbow/longbow/crossbow (Ranger), staves/wands (Mage), shields/defensive-melee/spellbooks. |
+| ART-05 | Catalog quiver sprites (9 imbue types) | To Do | P2 | 9 quiver sprites (Basic/Hot/Cold/Heavy/Nasty/Zap/Quiet/Sharp/Bright). Element-coded visuals. |
+| ART-06 | Catalog accessory sprites (Neck × 15 + Ring × 40) | To Do | P3 | 55 small-icon sprites. Metal ladder visual cues (Iron/Steel/Mithril/Orichalcum/Dragonite). Likely smallest art lift — icon-only, no directional rotations. |
 
 ---
 
