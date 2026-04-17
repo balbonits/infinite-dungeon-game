@@ -306,36 +306,40 @@ public class EquipmentSetTests
     [Fact]
     public void CaptureAndRestore_PreservesAllSlots()
     {
-        var original = new EquipmentSet();
-        original.ForceEquip(EquipSlot.Head, Helm("leather_cap"));
-        original.ForceEquip(EquipSlot.Body, MakeItem("vest", EquipSlot.Body, ItemCategory.Body));
-        original.ForceEquip(EquipSlot.MainHand, Weapon("sword"));
-        original.ForceEquip(EquipSlot.OffHand, Shield("buckler"));
-        original.ForceEquip(EquipSlot.Ammo, Quiver("basic"));
-        original.ForceEquip(EquipSlot.Ring, Ring("copper"), 2);
-        original.ForceEquip(EquipSlot.Ring, Ring("copper"), 7);
+        // Use real catalog IDs (ITEM-01) so RestoreState can resolve them via ItemDatabase.
+        // The previous version of this test used legacy IDs (leather_cap, vest, ...) and
+        // silently returned when those weren't found, masking regressions in CaptureState /
+        // RestoreState. Asserting catalog presence up-front is now part of the test contract.
+        const string headId = "head_warrior_helmet_t1";
+        const string bodyId = "body_warrior_armor_t1";
+        const string mainId = "mainhand_warrior_sword_t1";
+        const string offId = "offhand_warrior_shield_small_t1";
+        const string ammoId = "ammo_quiver_basic";
+        const string ringId = "ring_t1_str";
 
-        // Items must be registered in ItemDatabase for RestoreState to resolve them.
-        foreach (var id in new[] { "leather_cap", "vest", "sword", "buckler", "basic", "copper" })
-        {
-            if (ItemDatabase.Get(id) == null)
-            {
-                // Test relies on ItemDatabase having these; skip if not present.
-                return;
-            }
-        }
+        foreach (var id in new[] { headId, bodyId, mainId, offId, ammoId, ringId })
+            ItemDatabase.Get(id).Should().NotBeNull($"catalog must contain {id} for the round-trip to mean anything");
+
+        var original = new EquipmentSet();
+        original.ForceEquip(EquipSlot.Head, ItemDatabase.Get(headId)!);
+        original.ForceEquip(EquipSlot.Body, ItemDatabase.Get(bodyId)!);
+        original.ForceEquip(EquipSlot.MainHand, ItemDatabase.Get(mainId)!);
+        original.ForceEquip(EquipSlot.OffHand, ItemDatabase.Get(offId)!);
+        original.ForceEquip(EquipSlot.Ammo, ItemDatabase.Get(ammoId)!);
+        original.ForceEquip(EquipSlot.Ring, ItemDatabase.Get(ringId)!, 2);
+        original.ForceEquip(EquipSlot.Ring, ItemDatabase.Get(ringId)!, 7);
 
         var data = original.CaptureState();
         var restored = new EquipmentSet();
         restored.RestoreState(data);
 
-        restored.Head?.Id.Should().Be("leather_cap");
-        restored.Body?.Id.Should().Be("vest");
-        restored.MainHand?.Id.Should().Be("sword");
-        restored.OffHand?.Id.Should().Be("buckler");
-        restored.Ammo?.Id.Should().Be("basic");
-        restored.Rings[2]?.Id.Should().Be("copper");
-        restored.Rings[7]?.Id.Should().Be("copper");
+        restored.Head?.Id.Should().Be(headId);
+        restored.Body?.Id.Should().Be(bodyId);
+        restored.MainHand?.Id.Should().Be(mainId);
+        restored.OffHand?.Id.Should().Be(offId);
+        restored.Ammo?.Id.Should().Be(ammoId);
+        restored.Rings[2]?.Id.Should().Be(ringId);
+        restored.Rings[7]?.Id.Should().Be(ringId);
     }
 
     [Fact]

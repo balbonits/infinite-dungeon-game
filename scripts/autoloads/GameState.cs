@@ -154,7 +154,11 @@ public partial class GameState : Node
         Intelligence = new DungeonIntelligence();
         Attunement = new MagiculeAttunement();
         Equipment = new EquipmentSet();
-        CurrentSaveSlot = null;
+        // CurrentSaveSlot is intentionally preserved across Reset(): it identifies
+        // which save file this character owns, not run state. The New Game flow
+        // reserves a slot on the splash screen BEFORE ClassSelect.Reset() runs;
+        // wiping it here would cause the first autosave to fall through to slot 0
+        // and silently overwrite an existing save.
         EquipStartingGear();
     }
 
