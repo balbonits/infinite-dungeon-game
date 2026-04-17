@@ -38,13 +38,18 @@ Depends on / informs: [movement.md](movement.md) (will be rewritten by ISO-01f),
 
 | Slot | Pixel Footprint | Anchor | Notes |
 |---|---|---|---|
-| Floor diamond | 64w × 32h | Center of the diamond (sprite center) | The base grid unit. One floor tile = one world cell. |
-| Wall block (full height) | 64w × 64h | Bottom-center of the sprite (= center of the floor diamond it occupies) | Bottom 32px overlaps the floor diamond; top 32px is the wall face that rises above it. |
-| Wall block (half height) | 64w × 48h | Bottom-center | Same anchor; shorter rise. Used for waist-high railings, low cathedral walls. |
-| Multi-tile object (e.g., 2×2 altar) | 128w × 96h or larger | Bottom-center of the **southernmost** floor cell the object covers | Y-sort uses this anchor so the object sorts as if it lives in its forward-most cell. |
-| Object (1×1, tall, e.g., pillar) | 64w × 96h or 64×128 | Bottom-center | Same as wall: bottom 32px = floor footprint. |
+| Floor diamond (TileMapLayer) | 64w × 32h | Godot's default tile origin (top-left of the cell rect) | The base grid unit. One floor tile = one world cell. Placement uses `MapToLocal`. |
+| Wall block (TileMapLayer, full height) | 64w × 64h | Godot's default tile origin; the extra 32px of texture extends **above** the cell rect | Bottom 32px overlaps the floor diamond; top 32px is the wall face that rises above it. See `TextureRegionSize` rule in [docs/basics/tilemap-and-isometric.md](../basics/tilemap-and-isometric.md). |
+| Wall block (TileMapLayer, half height) | 64w × 48h | Same as full-height wall; texture extends 16px above the cell | Used for waist-high railings, low cathedral walls. |
+| Sprite/entity (player, enemy, NPC, projectile, dropped item) | varies | **Bottom-center of the footprint** via `Sprite2D.offset` and `Node2D.y_sort_origin` | This is the Y-sort anchor — sets where the entity "stands" so depth ordering matches visual position. |
+| Multi-tile object node (e.g., 2×2 altar as a `Node2D`) | 128w × 96h or larger | **Bottom-center of the southernmost floor cell the object covers** (set on `y_sort_origin`) | Y-sort uses this anchor so the object sorts as if it lives in its forward-most cell. |
+| Object node (1×1, tall, e.g., free-standing pillar as a `Node2D`) | 64w × 96h or 64×128 | Bottom-center of the floor cell the object stands on | Same Y-sort rule as entities. |
 
-**Anchor convention is "bottom-center of the floor footprint" for everything.** This is the industry-standard iso anchor: it makes the sprite's `position` correspond exactly to the screen position of its forward floor cell, which makes Y-sort correct for free and makes hand-placement intuitive.
+**Two distinct anchor conventions, do not conflate them:**
+
+1. **TileMapLayer floors and walls** use Godot's default tile origin (top-left of the cell rect). Placement is by cell index via `SetCell` / `MapToLocal`; the engine handles the rest. Wall textures taller than the cell rect (e.g., 64×64 walls in a 64×32 cell) extend upward automatically — that is the entire mechanism by which iso wall blocks render. Do not try to override the tile anchor; if you do, walls will misalign with floors.
+
+2. **Sprites and entities** (anything that is **not** a TileMapLayer cell — players, enemies, NPCs, projectiles, dropped items, multi-tile object nodes) use **bottom-center of the footprint** as their anchor, configured via `Sprite2D.offset` and `Node2D.y_sort_origin`. This is the industry-standard iso anchor for sprites: it makes the entity's `position` correspond exactly to the screen position of its forward floor cell, which makes Y-sort correct for free and makes hand-placement intuitive.
 
 **Why 64×32 (2:1):** Standard iso ratio. The existing ISS tileset and PixelLab pipeline both produce 64×32 floors (see [project memory: ISS adoption](../../.claude/agent-memory/design-lead/project_tile_standard.md), [docs/assets/sprite-specs.md](../assets/sprite-specs.md)). No reason to deviate.
 
@@ -64,15 +69,26 @@ screen.x = (wx - wy) * HALF_W
 screen.y = (wx + wy) * HALF_H
 ```
 
-**Screen → World (inverse, for input picking / mouse hover):**
+**Screen → World — two APIs:**
+
+The continuous inverse and the cell-picker are **different functions**. Conflating them was an earlier draft mistake; the spec exposes both explicitly:
 
 ```
+# ScreenToWorld(screen): Vector2 — exact (continuous) inverse of WorldToScreen.
+# Use for: sub-cell entity placement, world-coord debug overlay, anything
+# that needs round-trip precision with WorldToScreen.
 wx_float = (screen.x / HALF_W + screen.y / HALF_H) / 2
 wy_float = (screen.y / HALF_H - screen.x / HALF_W) / 2
+return Vector2(wx_float, wy_float)
 
-wx = floor(wx_float)
-wy = floor(wy_float)
+# ScreenToCell(screen): Vector2I — the integer world cell containing the point.
+# Use for: mouse-hover picking, cell-based gameplay queries (what tile is
+# under the cursor, which cell did the projectile land in).
+v = ScreenToWorld(screen)
+return Vector2I(floor(v.x), floor(v.y))
 ```
+
+`ScreenToWorld` and `WorldToScreen` are exact inverses to within float precision. `ScreenToCell` is **not** an inverse — it discards sub-cell information by flooring.
 
 **Worked examples** (sanity-check during implementation):
 
@@ -91,19 +107,26 @@ Godot's `TileMapLayer.MapToLocal()` and `LocalToMap()` already perform this math
 
 ### Z-Ordering (Draw Order)
 
-**Use Godot's built-in Y-sort.** The `TileMapLayer` and the `Entities` `Node2D` parent both have `y_sort_enabled = true` (already true today per [scene-tree.md](../architecture/scene-tree.md)). Every visible thing — floor tiles, wall tiles, multi-tile objects, the player, enemies, NPCs, projectiles, dropped items, FX — lives under one Y-sort container so they all sort against each other.
+**Read [docs/basics/tilemap-and-isometric.md](../basics/tilemap-and-isometric.md) first** — that doc is the canonical project guidance for the TileMapLayer pattern this section depends on. Key rules from there: floors and walls share **one** TileMapLayer (separate layers break Y-sort interleaving and is listed as Common Mistake #5); wall textures (64×64) extend above the cell rect via `TextureRegionSize` taller than `TileSize`; entities must live in a Y-sorted parent in the same rendering context (not on a CanvasLayer).
 
-**Sort key is `global_position.y`** (Godot's default for Y-sort). Combined with the bottom-center anchor convention, this means:
-- A wall tile at world (5, 5) sits at screen y ≈ 160. The player at world (5, 4) sits at screen y ≈ 144. Player.y < Wall.y → player draws first → wall draws over player.
+**Use Godot's built-in Y-sort.** Two Y-sorted nodes are involved:
+
+1. **One shared `TileMapLayer` with `YSortEnabled = true`** holds **both floor and wall tiles**. Floor tiles use a `TileSetAtlasSource` with `TextureRegionSize = (64, 32)`; wall tiles use a separate atlas source on the same TileSet with `TextureRegionSize = (64, 64)` so their texture rises above the cell. One cell = one tile entry; floors and walls do not coexist in the same cell (a wall cell is solid and replaces the floor at that index).
+2. **The `Entities` `Node2D`** with `y_sort_enabled = true` holds player, enemies, NPCs, projectiles, dropped items, multi-tile object nodes.
+
+For the two Y-sort contexts to interleave correctly (so a player can stand between two walls and sort properly against both), the `TileMapLayer` and `Entities` are siblings under a **parent that also has `y_sort_enabled = true`**. Godot then sorts the children of the parent by their effective Y, and inside each child the inner Y-sort takes over. Net effect: every visible thing sorts against every other visible thing by `global_position.y`.
+
+**Sort key is `global_position.y`** (Godot's default for Y-sort). Combined with the wall-tile placement and the entity bottom-center anchor convention, this means:
+- A wall tile at world (5, 5) sits at screen y ≈ 160 (the cell's local origin maps there). The player at world (5, 4) sits at screen y ≈ 144. Player.y < Wall.y → player draws first → wall draws over player.
 - Walk one cell south: player at world (5, 6) → screen y ≈ 176 > 160 → player draws over wall.
 
 This is exactly the behavior we want — entities in front of walls occlude them, entities behind walls are occluded by them.
 
-**Multi-tile objects** (e.g., the 2×2 altar from [ART-13](../dev-tracker.md)): anchor at the bottom-center of the **southernmost** floor cell the object covers. The object's `y_sort_origin` points there. Result: a 2×2 altar occupying cells (5,5), (6,5), (5,6), (6,6) sorts as if it lives at (6,6) — anything at (5,5)/(6,5) draws behind it; anything at (7,7) draws in front. This is the standard "bottom-front-corner" rule.
+**Multi-tile object nodes** (e.g., the 2×2 altar from [ART-13](../dev-tracker.md)): these are **not** placed as TileMapLayer cells; they are `Node2D` objects under `Entities` so the bottom-center anchor / `y_sort_origin` rule applies. Anchor at the bottom-center of the **southernmost** floor cell the object covers. Result: a 2×2 altar occupying cells (5,5), (6,5), (5,6), (6,6) sorts as if it lives at (6,6) — anything at (5,5)/(6,5) draws behind it; anything at (7,7) draws in front. This is the standard "bottom-front-corner" rule.
 
-**Do not compute per-frame `z_index` for normal entities.** Y-sort is sufficient. Reserve manual `z_index` for explicit overlays (HUD, floating text, screen-space FX).
+**Do not compute per-frame `z_index` for normal entities or tiles.** Y-sort is sufficient. Reserve manual `z_index` for explicit overlays (HUD, floating text, screen-space FX) which live on a `CanvasLayer` and are outside the world Y-sort context entirely.
 
-**Floor tiles all sort below entities** by giving the floor tilemap a separate `z_index = 0` and the entities container `z_index = 1`. Wall tiles stay on the same sort layer as entities so they interleave correctly.
+**Do not split floors and walls into separate TileMapLayers.** Doing so breaks Y-sort interleaving between the two layers (each TileMapLayer is its own sort context; they cannot interleave with each other). This was the original bug behind [docs/basics/tilemap-and-isometric.md](../basics/tilemap-and-isometric.md) — see Common Mistake #5 there.
 
 ### Input → Movement Mapping
 
@@ -147,10 +170,12 @@ This is the simplest implementation and matches Diablo 1 input behavior. Documen
 | Parent | Player (camera is a child of `Player.tscn`) |
 | Position offset | `(0, 0)` — camera sits on the player anchor |
 | Zoom | 2.0 (current value, unchanged by iso pivot) |
-| Smoothing | `position_smoothing_enabled = true`, speed = 8.0 (Godot default acceptable) |
+| Smoothing | `position_smoothing_enabled = true`, `position_smoothing_speed = 5.0` (matches `scenes/player.tscn` and [camera.md](camera.md) — do not change as part of ISO-01) |
 | Limits | Set per-scene to the iso-projected bounding box of the dungeon: `(min_screen.x - margin, min_screen.y - margin, max_screen.x + margin, max_screen.y + margin)`. Computed in `Dungeon.cs` after generation by transforming the four corners of the world grid. |
 
 The camera does **not** need to know about iso projection — it is following a `Node2D` whose `global_position` is already in iso screen space. The only iso-aware logic is camera-bounds calculation, which uses the world→screen formula above on the four world-grid corners.
+
+**Out of scope for ISO-01:** [camera.md](camera.md) Open Question #2 asks whether to raise `position_smoothing_speed` from 5.0 to 8–10 for snappier follow. That decision stays open and is **not** bundled into ISO-01 — the iso-projection pivot is enough behavioral change for one ticket. Re-tuning camera feel after the iso flip lets us evaluate smoothing speed against the new movement model with a clean baseline.
 
 ### Collision Shapes
 
@@ -167,19 +192,19 @@ The camera does **not** need to know about iso projection — it is following a 
 
 ### Wall Occlusion (Player Behind Tall Walls)
 
-**v1 approach: alpha-modulate walls between camera and player.**
+**v1 approach: shader-based per-cell alpha fade on the walls TileMapLayer.**
 
-When the player walks behind a wall tile, the wall should fade so the player remains visible. v1 implementation:
+When the player walks behind a wall tile, the wall should fade so the player remains visible. Because floor and wall tiles share a single TileMapLayer (per the Z-Ordering section), per-cell alpha cannot be done via `modulate.a` on individual tiles — `modulate` is a per-CanvasItem property, not per-cell. v1 implementation uses a fragment shader on the TileMapLayer that takes the player's screen position as a uniform and reduces alpha for wall-textured fragments within a 3-cell window above the player:
 
-1. Each frame, compute the player's world cell `(pwx, pwy)`.
-2. For every wall tile in cells `(pwx, pwy-1), (pwx-1, pwy), (pwx-1, pwy-1)` — i.e., the three cells **visually above** the player on screen — set `modulate.a = 0.4` if a wall exists there.
-3. Walls not in that set return to `modulate.a = 1.0`.
+1. Each frame, push the player's world cell `(pwx, pwy)` (or screen position) into the TileMapLayer's shader as a `vec2` uniform.
+2. The shader fades any wall fragment whose source cell is one of `(pwx, pwy-1), (pwx-1, pwy), (pwx-1, pwy-1)` — the three cells **visually above** the player — to `alpha = 0.4`.
+3. All other wall fragments stay at `alpha = 1.0`. Floor fragments are never faded.
 
-This is a 3-cell lookup per frame. Cheap. Works without shaders. Visually reads as "the wall fades to show me where I am."
+The shader needs a way to identify wall fragments vs floor fragments — easiest is a custom `tile_data` flag set per atlas tile during `TileSet` build (`is_wall = true` on every wall tile). The shader reads that flag via the tile-data texture Godot exposes for shader access.
 
-**v2 (deferred):** shader-based stencil cut — replace the alpha fade with a circular cutout in the wall sprite centered on the player. Looks better, requires a shader. Not v1 scope.
+**Multi-tile object nodes** (e.g., 2×2 altar) are separate `Node2D` instances under `Entities`, so they fade via plain `modulate.a` set on the node — no shader needed. If the altar covers (5,5) (6,5) (5,6) (6,6) and the player is at (5,7), the whole object fades because it is one node.
 
-**Multi-tile objects** (e.g., 2×2 altar): treat each occupied cell as a fade target. If the altar covers (5,5) (6,5) (5,6) (6,6) and the player is at (5,7), all four cells fade together because the object is one node — alpha-modulate the whole object.
+**v2 (deferred):** circular-cutout shader instead of flat fade — the wall stays opaque except for a soft circle around the player's screen position. Looks better but requires more shader work; not v1 scope.
 
 ### Sprite Atlas Layout per Biome
 
@@ -244,7 +269,11 @@ ISO-01 must touch all of the following. This list is the spec's contract with th
 - `scripts/DirectionalSprite.cs` — already iso-friendly; no change. The 8-way directions ("north", "north-east", etc.) refer to **visual** directions on screen, which is what the player perceives. Confirm in code comments.
 - `scripts/Projectile.cs` — projectile travel along screen-space velocity; verify Y-sort placement under `Entities` so it sorts against walls.
 - `scripts/Npc.cs` — NPC placement in `town.tscn` uses iso tilemap `MapToLocal`.
-- New: `scripts/IsoTransform.cs` — pure-static helper with `WorldToScreen(Vector2 world)`, `ScreenToWorld(Vector2 screen)`, `WorldToScreen(Vector2I worldCell)`. Wraps the formulas above; redundant with `TileMapLayer.MapToLocal` but useful for non-tilemap callers (e.g., camera bounds, world coord debug overlay).
+- New: `scripts/IsoTransform.cs` — pure-static helper exposing three APIs:
+  - `WorldToScreen(Vector2 world) → Vector2` and overload `WorldToScreen(Vector2I worldCell) → Vector2`.
+  - `ScreenToWorld(Vector2 screen) → Vector2` — exact (continuous) inverse of `WorldToScreen`. Use for sub-cell math and round-trip verification.
+  - `ScreenToCell(Vector2 screen) → Vector2I` — flooring picker. Use for mouse hover / cell-based queries; matches `TileMapLayer.LocalToMap` inside the tilemap region.
+  Redundant with `TileMapLayer.MapToLocal` but useful for non-tilemap callers (e.g., camera bounds, world-coord debug overlay, future mouse picking outside a tilemap).
 
 **Scenes:**
 - `scenes/dungeon.tscn` — TileMapLayer already iso; verify `Entities` `y_sort_enabled = true`; add wall-occlusion node hook if implemented as a script.
@@ -263,16 +292,17 @@ ISO-01 must touch all of the following. This list is the spec's contract with th
 
 ## Acceptance Criteria
 
-- [ ] `IsoTransform.WorldToScreen` and `ScreenToWorld` are inverses to within sub-pixel rounding (unit-testable).
+- [ ] `IsoTransform.WorldToScreen(Vector2)` and `IsoTransform.ScreenToWorld(Vector2)` are exact inverses to within float precision (unit-testable: round-trip 1000 random screen points and assert per-axis delta < 1e-4).
+- [ ] `IsoTransform.ScreenToCell(Vector2)` returns the integer cell containing the input point and matches `TileMapLayer.LocalToMap` for points inside the tilemap region.
 - [ ] Pressing **W** moves the character visually up the screen (not up-and-to-the-right).
 - [ ] Pressing **W+D** moves the character visually up-right at the same total speed as **W** alone (diagonal speed normalized).
 - [ ] An entity at world cell (5, 4) draws **behind** a wall at (5, 5) and **in front of** a wall at (5, 3), without per-frame `z_index` manipulation.
 - [ ] A 2×2 altar object placed at cells (5,5)–(6,6) sorts as if it occupies cell (6,6) — entities at (7,7) draw in front, entities at (5,4) draw behind.
 - [ ] The camera follows the player smoothly with no visible lag or snap, and never reveals beyond the dungeon's iso bounding box.
-- [ ] Wall tiles with their floor cell within the 3-cell occlusion window above the player render at `modulate.a = 0.4`; all others at `1.0`.
+- [ ] Wall tiles with their floor cell within the 3-cell occlusion window above the player render at alpha 0.4 (via the wall-fade shader); all others at alpha 1.0. Floor tiles are never faded.
 - [ ] Diamond wall collision polygon prevents the player from clipping past the visible edge of any wall tile.
 - [ ] `Constants.Rendering.DungeonUsesIso` toggles iso behavior on `dungeon.tscn` without breaking the other scenes.
-- [ ] Mouse hover (when added in a later spec) reports the correct world cell via `ScreenToWorld(GetGlobalMousePosition())`.
+- [ ] Mouse hover (when added in a later spec) reports the correct world cell via `IsoTransform.ScreenToCell(GetGlobalMousePosition())`.
 
 ## Implementation Notes
 
@@ -281,10 +311,12 @@ ISO-01 must touch all of the following. This list is the spec's contract with th
 - **Sprite anchor is bottom-center of floor footprint.** When importing PixelLab / ISS art, set the sprite's `offset` so the bottom-center of the diamond footprint sits at `(0, 0)` in sprite-local coordinates. ISS already follows this; PixelLab output may need a one-line offset shim per asset.
 - **Diamond collision polygon vertex order:** clockwise from top → `(0, -16), (32, 0), (0, 16), (-32, 0)`. Godot expects clockwise for convex polygons.
 - **`Velocity` stays in screen-space** — do not transform input into world space and back; just feed the raw normalized input vector × `MoveSpeed` into `Velocity` and call `MoveAndSlide()`. The math works because the player's `position` is in iso scene space.
-- **Wall occlusion lookup:** keep a `Dictionary<Vector2I, Sprite2D>` of wall tiles indexed by world cell during dungeon generation. Per-frame lookup is then O(1) for the 3-cell occlusion window.
-- **Z-index discipline:** floor tilemap `z_index = 0`, entities container `z_index = 1`, wall tilemap `z_index = 1` (same as entities so Y-sort interleaves), HUD `CanvasLayer` `layer = 100`. No other manual z-index unless an explicit screen-space overlay is needed.
+- **Wall occlusion (shader-based):** the wall-fade lives in a fragment shader on the shared TileMapLayer (see Wall Occlusion section). Push the player's world cell as a `uniform vec2` each frame; tag wall atlas tiles with an `is_wall` custom data flag so the shader can distinguish wall vs floor fragments. Multi-tile object nodes fade via plain `modulate.a` on the node — no shader needed for those.
+- **Z-index discipline:** **one** TileMapLayer holds both floors and walls (per [docs/basics/tilemap-and-isometric.md](../basics/tilemap-and-isometric.md) — separate layers break Y-sort interleaving). Entities container is a sibling of that TileMapLayer under a Y-sorted parent. No manual `z_index` on tiles or entities; HUD `CanvasLayer` `layer = 100`. Reserve manual z-index only for explicit screen-space overlays.
 - **Migration flag is a temporary scaffold.** Do not let `Constants.Rendering` calcify into a permanent feature flag. After ISO-01f deletes it, the codebase has one rendering model.
 
 ## Open Questions
 
-None. Awaiting product-owner sign-off to remove DRAFT status and unblock ISO-01.
+1. **Wall occlusion mechanism — shader vs separate wall-tile nodes?** Aligning with the single-TileMapLayer pattern from [docs/basics/tilemap-and-isometric.md](../basics/tilemap-and-isometric.md) means per-cell `modulate.a` is not available, so v1 occlusion needs a fragment shader on the TileMapLayer. The alternative is to make every visible-edge wall a sibling `Sprite2D` under `Entities` (fade via `modulate.a` directly, no shader) — simpler code, more nodes, and it diverges from the canonical tilemap pattern. Spec currently picks **shader**. PO should confirm shader complexity is acceptable for v1 vs accepting the node-per-wall divergence; if neither is acceptable, we defer occlusion entirely to a post-ISO-01 ticket and ship without it.
+
+   *Recommendation:* shader-based fade. Keeps the canonical single-layer pattern intact and matches what the deferred v2 stencil-cut work would need anyway.
