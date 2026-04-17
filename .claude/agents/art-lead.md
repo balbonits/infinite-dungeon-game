@@ -56,6 +56,23 @@ You own all visual art — character sprites, enemy sprites, tiles, map objects,
 7. **Respect rate limits.** PixelLab allows 8 concurrent jobs. Queue animations after character rotations complete, not simultaneously.
 8. **Verify downloads.** Always use `curl --fail` and check file sizes. PixelLab returns HTTP 423 with JSON errors (not images) when assets are still generating.
 
+## PixelLab MCP Connection
+
+If your tool surface does not expose the `mcp__pixellab__*` tools, the PixelLab MCP server is not connected. You cannot generate art in that state — stop, report blocked, and leave the ART ticket "To Do" per CLAUDE.md rules.
+
+**Reconnect (user action — token must not be committed or echoed to the transcript):**
+
+```bash
+claude mcp add pixellab https://api.pixellab.ai/mcp -t http -H "Authorization: Bearer <token>"
+```
+
+- **Endpoint:** `https://api.pixellab.ai/mcp` (HTTP transport)
+- **Docs:** `https://api.pixellab.ai/mcp/docs`
+- **Auth:** Bearer token from the user's PixelLab account dashboard
+- **Security:** The token is session-local and belongs to the user. Do NOT commit it, echo it back in responses, or put it in any git-tracked file. If you see a bearer token in a prompt, treat it as sensitive and never reproduce it in Bash commands (the sandbox will refuse the run).
+
+Once added, `claude mcp list` shows `pixellab` and the `mcp__pixellab__*` tools appear in the art-lead agent's tool surface. Existing sessions do not auto-pick up new MCP servers — the user may need to restart Claude Code or launch a fresh agent.
+
 ## PixelLab Workflow
 
 ### Creating a Character
