@@ -202,8 +202,8 @@ These systems were implemented during visual-first development but were not part
 | TEST-06 | Integrate GodotTestDriver (Chickensoft) | Done | P1 | `Chickensoft.GodotTestDriver` v3.1.66 wraps keyboard/action input simulation. Used by `InputHelper`. |
 | TEST-07 | Create game-specific test drivers | To Do | P2 | Optional convenience — write typed drivers (PauseMenuDriver, ShopDriver, NpcDriver) that wrap keyboard flows. Current `InputHelper` + `UiHelper` already cover the bases. |
 | TEST-08 | GoDotTest + keyboard-nav test suite | Done | P1 | Added `Chickensoft.GoDotTest` v2.0.28. `Main.cs` boots tests via `--run-tests`. Test suites in `scripts/testing/tests/`: Splash, ClassSelect, Town, PauseMenu, Npc, Death, Transition, DeathCinematic — all use keyboard-only input, all verify specs in `docs/flows/*.md`. Run via `make test-ui`. |
-| TEST-09 | Cross-suite state isolation | To Do | P1 | Once one suite transitions splash→town, subsequent suites fail setup. Fix via per-suite `GameState.Reset()` + scene reload, or linear ordering. |
-| TEST-10 | CI integration for make test-ui | To Do | P2 | Add GoDotTest suite to `.github/workflows/ci.yml` so every PR runs keyboard-nav tests. |
+| TEST-09 | Cross-suite state isolation | Done (helper shipped; per-suite adoption gradual) | P1 | `GameTestBase.ResetToFreshSplash()` helper added — each suite can call it in `[Setup]` to guarantee a fresh GameState + splash screen. Resets `GameState.Instance`, reloads the current scene (re-runs Main._Ready), awaits splash re-appearance. Existing suites will adopt gradually as they start failing; new suites should call it up front. |
+| TEST-10 | CI integration for make test-ui | Done | P2 | New `ui-tests` job in `.github/workflows/ci.yml`. Runs on every PR and push (not main-push-only, unlike the existing e2e-tests job) so keyboard-nav regressions fail CI at PR time. Uses `chickensoft-games/setup-godot@v2` for Godot 4.3. Greps the output for `✗` failure marker; uploads log as artifact on every run. |
 
 ---
 
