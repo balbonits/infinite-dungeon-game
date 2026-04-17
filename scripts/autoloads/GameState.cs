@@ -161,19 +161,20 @@ public partial class GameState : Node
     private void EquipStartingGear()
     {
         // Per docs/systems/equipment.md: starting weapon + off-hand/ammo, no armor or accessories.
+        // Uses tier-1 catalog items (ITEM-01).
         string mainHandId = SelectedClass switch
         {
-            PlayerClass.Warrior => "sword_iron_short",
-            PlayerClass.Ranger => "bow_short",
-            PlayerClass.Mage => "staff_short",
-            _ => "sword_iron_short",
+            PlayerClass.Warrior => "mainhand_warrior_sword_t1",
+            PlayerClass.Ranger => "mainhand_ranger_shortbow_t1",
+            PlayerClass.Mage => "mainhand_mage_staff_t1",
+            _ => "mainhand_warrior_sword_t1",
         };
         (string offOrAmmoId, EquipSlot slot) = SelectedClass switch
         {
-            PlayerClass.Warrior => ("shield_wooden_small", EquipSlot.OffHand),
-            PlayerClass.Ranger => ("quiver_iron_arrows", EquipSlot.Ammo),
-            PlayerClass.Mage => ("spellbook_basic", EquipSlot.OffHand),
-            _ => ("shield_wooden_small", EquipSlot.OffHand),
+            PlayerClass.Warrior => ("offhand_warrior_shield_small_t1", EquipSlot.OffHand),
+            PlayerClass.Ranger => ("ammo_quiver_basic", EquipSlot.Ammo),
+            PlayerClass.Mage => ("offhand_mage_grimoire_t1", EquipSlot.OffHand),
+            _ => ("offhand_warrior_shield_small_t1", EquipSlot.OffHand),
         };
         var main = ItemDatabase.Get(mainHandId);
         if (main != null) Equipment.ForceEquip(EquipSlot.MainHand, main);

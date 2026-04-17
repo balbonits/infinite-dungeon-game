@@ -182,8 +182,8 @@ public class SaveSystemTests
         {
             Items = new[]
             {
-                new SavedItemStack { ItemId = "potion_hp_small", Count = 5, Locked = false },
-                new SavedItemStack { ItemId = "idol_sacrificial", Count = 1, Locked = true },
+                new SavedItemStack { ItemId = "consumable_hp_small", Count = 5, Locked = false },
+                new SavedItemStack { ItemId = "consumable_sacrificial_idol", Count = 1, Locked = true },
                 new SavedItemStack { ItemId = "material_ore_t3", Count = 1_000_000_000L },
             }
         };
@@ -193,7 +193,7 @@ public class SaveSystemTests
 
         restored.Should().NotBeNull();
         restored!.Items.Should().HaveCount(3);
-        restored.Items[0].ItemId.Should().Be("potion_hp_small");
+        restored.Items[0].ItemId.Should().Be("consumable_hp_small");
         restored.Items[0].Count.Should().Be(5);
         restored.Items[1].Locked.Should().BeTrue();
         restored.Items[2].Count.Should().Be(1_000_000_000L);

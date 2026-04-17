@@ -37,12 +37,12 @@ public static class DeathPenalty
 
     public static bool HasSacrificialIdol(Inventory inventory)
     {
-        return inventory.FindSlot("idol_sacrificial") >= 0;
+        return inventory.FindSlot("consumable_sacrificial_idol") >= 0;
     }
 
     public static void ConsumeSacrificialIdol(Inventory inventory)
     {
-        int idx = inventory.FindSlot("idol_sacrificial");
+        int idx = inventory.FindSlot("consumable_sacrificial_idol");
         if (idx >= 0) inventory.RemoveAt(idx, 1);
     }
 

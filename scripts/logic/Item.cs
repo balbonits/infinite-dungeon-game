@@ -37,6 +37,13 @@ public record ItemDef
     // Class affinity — null means generic gear (no class bonus). When the player's
     // class matches, all stat bonuses on this item are multiplied by 1.25.
     public PlayerClass? ClassAffinity { get; init; }
+
+    /// <summary>
+    /// Catalog tier (1..5) — maps to floor brackets per item-generation.md § Floor
+    /// Brackets = Tiers. 0 = untiered (e.g., universal consumables, signature materials).
+    /// Used by MonsterDropTable for floor-gated slot-roll selection.
+    /// </summary>
+    public int Tier { get; init; }
 }
 
 public enum ItemCategory

@@ -129,7 +129,7 @@ public class DeathTests : GameTestBase
         await GetToTown();
         // Put a test item into the backpack to verify it gets wiped
         var inv = GameState.Instance.PlayerInventory;
-        var potion = ItemDatabase.Get("potion_hp_small");
+        var potion = ItemDatabase.Get("consumable_hp_small");
         if (potion is not null)
         {
             inv.TryAdd(potion, 3);
