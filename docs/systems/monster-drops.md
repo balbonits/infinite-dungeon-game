@@ -152,7 +152,7 @@ Boss encounters (first kill per save slot, per boss) follow a **guaranteed-bundl
 | Floor 10 miniboss | 3× Tier 2 generics, 1× signature (zone's dominant species) | 1 item, quality roll shifted +1 bracket (so Superior guaranteed at floor 10) |
 | Floor 25 miniboss | 4× Tier 3 generics, 2× signature | 1 item, Elite guaranteed |
 | Floor 50 elite | 5× Tier 4 generics, 3× signature, 1× Bone Dust (Skeleton King callback) | 1 item, Masterwork guaranteed |
-| Floor 100 elite | 5× Tier 5 generics, 3× signature, 1× of every Zone 1–3 signature | 1 item, Mythic guaranteed |
+| Floor 101 elite | 5× Tier 5 generics, 3× signature, 1× of every Zone 1–3 signature | 1 item, Mythic guaranteed |
 | Floor 150+ boss | 5× Arcane materials per type, 5× of any 3 signatures | 1 item, Transcendent guaranteed |
 
 **One-time only per save slot.** Subsequent kills of the same boss instance use the normal species drop table with a +1 quality bracket shift.

@@ -24,6 +24,10 @@ public partial class Toast : Control
     {
         Instance = this;
         MouseFilter = MouseFilterEnum.Ignore;
+        // Toasts must animate while the tree is paused (splash/menu flows pause the tree
+        // before invoking paths that can fail, e.g., Load-Game failure). Without this,
+        // fade-in tweens never tick and the toast sits at alpha 0 for its whole lifetime.
+        ProcessMode = ProcessModeEnum.Always;
     }
 
     public void Show(string message, Color? color = null, float duration = DefaultDuration)
