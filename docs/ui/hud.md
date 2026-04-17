@@ -26,11 +26,12 @@ Migrating from Phaser 3 prototype to Godot 4:
 ### Future HUD Elements
 
 As systems are added, the HUD will expand:
-- **HP/MP orbs** -- Diablo-style globe indicators. HP orb (red) on the left, Mana orb (blue) on the right. Liquid level drops as resource depletes. Positioned at bottom corners of the screen, flanking a skill/action bar.
+- **HP/MP orbs** -- Diablo-style globe indicators. HP orb (red) on the left, Mana orb (blue) on the right. Liquid level drops as resource depletes. Positioned at bottom corners of the screen, flanking an ability bar.
 - **XP bar** -- progress toward next level (rested XP shown as shimmer/glow)
 - **Gold counter** -- current gold amount
 - **Map overlay** -- Diablo 2-style semi-transparent map overlay toggled with Tab/M key. Shows explored rooms, corridors, entrance/exit, and player position. Overlays on top of gameplay (not a minimap in a corner). Semi-transparent so gameplay is visible underneath.
-- **Status effects** -- icons for active buffs/debuffs (Haste, Sense, Fortify, mana exhaustion)
+- **Status effects** -- icons for active buffs/debuffs (Armor, Haste, Sense, Fortify, mana exhaustion)
+- **Ability cooldown overlays** -- each of the 4 hotbar slots shows a radial sweep animation (clockwise fill from 12 o'clock) while the ability is on cooldown, with remaining seconds displayed as centered text over the dimmed slot. Sweep clears and slot re-lights when the ability is ready.
 - **Backpack quick-view** -- slot count indicator (e.g., "17/25")
 
 ### Styling

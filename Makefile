@@ -53,6 +53,15 @@ test-gdunit: ## Run GdUnit4 E2E/scene tests (requires GODOT_BIN or Godot on PATH
 		--verbosity normal \
 		-m:1 2>&1
 
+test-ui: build ## Run GoDotTest in-game UI tests (keyboard nav, windows, etc)
+	@$(GODOT) --headless --path . --run-tests --quit-on-finish 2>&1 | \
+		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
+
+test-ui-suite: build ## Run a specific GoDotTest suite: make test-ui-suite SUITE=SplashTests
+	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-suite SUITE=<name>" && exit 1 || true
+	@$(GODOT) --headless --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | \
+		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
+
 # ─── Sandbox ─────────────────────────────────────────────────────────────────
 # SCENE values: sprite-viewer, tile-viewer, projectile-viewer,
 #               floor-gen, inventory, loot-table, bank, death-penalty, skill-tree,

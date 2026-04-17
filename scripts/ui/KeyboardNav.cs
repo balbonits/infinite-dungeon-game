@@ -1,97 +1,46 @@
 using Godot;
-using System.Collections.Generic;
 
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// FF SNES-style keyboard navigation for all UI panels.
-/// Up/Down (or Q/E shoulders) = move cursor between buttons.
-/// S (action_cross) = confirm / press focused button.
-/// Focused button shows highlight. Description panels update via FocusEntered.
+/// Minimal keyboard helpers for the UI layer.
+/// Navigation (Up/Down) is handled by Godot's built-in focus system (ui_up/ui_down).
+/// ScrollContainers with FollowFocus=true auto-scroll to the focused control.
+/// This class only handles: S/cross confirm, cancel detection, and WindowStack gating.
 /// </summary>
 public static class KeyboardNav
 {
     /// <summary>
-    /// Process input for a container of buttons. Call from _UnhandledInput.
-    /// Handles: Up/Down cursor movement, S/cross confirm (presses focused button).
-    /// Auto-scrolls parent ScrollContainer to keep focused button visible.
-    /// Returns true if the event was handled.
+    /// Press the currently focused button when S/action_cross is pressed.
+    /// Godot's built-in focus system handles arrow key navigation;
+    /// this bridges the game's S-key confirm to the focused button.
+    /// Returns true if a button was pressed.
     /// </summary>
-    public static bool HandleInput(InputEvent @event, Control container)
+    public static bool HandleConfirm(InputEvent @event, Viewport viewport)
     {
         if (@event is not InputEventKey keyEvent || !keyEvent.Pressed)
             return false;
 
-        var buttons = GetFocusableButtons(container);
-        if (buttons.Count == 0)
+        if (!@event.IsActionPressed(Constants.InputActions.ActionCross))
             return false;
 
-        int currentIndex = GetFocusedIndex(buttons);
-
-        // Up arrow = move cursor up
-        if (@event.IsActionPressed(Constants.InputActions.MoveUp) ||
-            keyEvent.Keycode == Key.Up)
+        if (viewport.GuiGetFocusOwner() is Button btn && !btn.Disabled)
         {
-            int nextIndex = currentIndex <= 0 ? buttons.Count - 1 : currentIndex - 1;
-            buttons[nextIndex].GrabFocus();
-            EnsureVisible(buttons[nextIndex]);
+            btn.EmitSignal(BaseButton.SignalName.Pressed);
             return true;
         }
-
-        // Down arrow = move cursor down
-        if (@event.IsActionPressed(Constants.InputActions.MoveDown) ||
-            keyEvent.Keycode == Key.Down)
-        {
-            int nextIndex = currentIndex >= buttons.Count - 1 ? 0 : currentIndex + 1;
-            buttons[nextIndex].GrabFocus();
-            EnsureVisible(buttons[nextIndex]);
-            return true;
-        }
-
-        // S (cross) or Enter = confirm / press the focused button
-        if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
-            (keyEvent.Keycode == Key.Enter))
-        {
-            if (currentIndex >= 0)
-            {
-                buttons[currentIndex].EmitSignal(BaseButton.SignalName.Pressed);
-                return true;
-            }
-        }
-
         return false;
-    }
-
-    /// <summary>
-    /// Scroll the nearest parent ScrollContainer so that the control is visible.
-    /// </summary>
-    public static void EnsureVisible(Control control)
-    {
-        var scroll = FindParentScroll(control);
-        scroll?.EnsureControlVisible(control);
-    }
-
-    private static ScrollContainer? FindParentScroll(Node node)
-    {
-        Node? current = node.GetParent();
-        while (current != null)
-        {
-            if (current is ScrollContainer sc)
-                return sc;
-            current = current.GetParent();
-        }
-        return null;
     }
 
     /// <summary>
     /// Check if this window should skip input because another window is on top.
     /// Call at the top of _UnhandledInput. Returns true if input was blocked.
     /// </summary>
-    public static bool BlockIfNotTopmost(Godot.Control window, Godot.InputEvent @event)
+    public static bool BlockIfNotTopmost(Control window, InputEvent @event)
     {
         if (WindowStack.IsBlocked(window))
         {
-            if (@event is Godot.InputEventKey k && k.Pressed)
+            if (@event is InputEventKey k && k.Pressed)
                 window.GetViewport().SetInputAsHandled();
             return true;
         }
@@ -105,47 +54,5 @@ public static class KeyboardNav
     {
         return @event.IsActionPressed(Constants.InputActions.ActionCircle) ||
                (@event is InputEventKey key && key.Pressed && key.Keycode == Key.Escape);
-    }
-
-    /// <summary>
-    /// Consume movement input so the player doesn't walk behind open panels.
-    /// Returns true if consumed.
-    /// </summary>
-    public static bool ConsumeMovement(InputEvent @event)
-    {
-        if (@event.IsActionPressed(Constants.InputActions.MoveUp) ||
-            @event.IsActionPressed(Constants.InputActions.MoveDown) ||
-            @event.IsActionPressed(Constants.InputActions.MoveLeft) ||
-            @event.IsActionPressed(Constants.InputActions.MoveRight))
-            return true;
-        return false;
-    }
-
-    private static List<Button> GetFocusableButtons(Control container)
-    {
-        var buttons = new List<Button>();
-        CollectButtons(container, buttons);
-        return buttons;
-    }
-
-    private static void CollectButtons(Node node, List<Button> buttons)
-    {
-        foreach (Node child in node.GetChildren())
-        {
-            if (child is Button btn && !btn.Disabled && btn.Visible)
-                buttons.Add(btn);
-            else if (child is Control)
-                CollectButtons(child, buttons);
-        }
-    }
-
-    private static int GetFocusedIndex(List<Button> buttons)
-    {
-        for (int i = 0; i < buttons.Count; i++)
-        {
-            if (buttons[i].HasFocus())
-                return i;
-        }
-        return -1;
     }
 }

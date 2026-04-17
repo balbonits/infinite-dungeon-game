@@ -6,7 +6,138 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Session 13 — Various Fixes & Visual Polish (2026-04-14)
+### Session 19 — Load Game Spec (2026-04-17)
+
+#### Documentation
+- NEW: `docs/flows/load-game.md` — full spec for the Load Game screen (3 slots, Class-Select-style layout, delete-with-confirmation dialog, SaveManager multi-slot API, splash-to-LoadGame interaction).
+- UPDATED: `docs/flows/splash-screen.md` — button order now Continue (above New Game) / Tutorial / Settings / Exit. Inline CharacterCard removed.
+- UPDATED: `docs/flows/save-load.md` — documents the 3-slot save file layout (`user://save_0.json` through `save_2.json`) and `SaveManager` multi-slot methods.
+- NEW tickets in `docs/dev-tracker.md`: UI-02 (Load Game implementation, new branch) and ART-01 (splash background image, blocked on PixelLab MCP reconnection).
+
+(Implementation deferred to new branches per the current branch's wind-down directive.)
+
+### Session 18 — Shop/Forge UX Polish (2026-04-17)
+
+#### Fixed
+- **Focus highlight made item text unreadable.** Shop/Blacksmith list item buttons only overrode `font_color` (normal state). The GameWindow theme's `font_focus_color`/`font_hover_color` (both `BgDark`) bleed through when a row was focused, rendering black text on a dark-accent highlight. Fix: new `UiTheme.StyleListItemButton()` helper overrides all four font color states (normal/hover/focus/pressed) to `Colors.Ink` (white) so list rows stay legible under any state.
+- **Buy button stayed enabled when player couldn't afford.** `ShopWindow.UpdateDescription()` now checks `gold >= item.BuyPrice` and sets `_buyButton.Disabled` accordingly. After a purchase, affordability is re-checked (gold dropped). Applies in both Buy and Sell modes.
+- **Keyboard nav dead-end in Forge/Quests/Bank/Teleport when list is empty.** Each window called `FocusFirstButton(ScrollContent)` which found nothing when the list was empty (no craftable items, no quests, etc.), leaving no initial focus — keyboard users couldn't even reach the Cancel/Close button. Fix: new `UiTheme.FocusFirstButtonOrFallback(primary, fallback)` helper tries the primary list first, falls back to `ContentBox` (whole window) if empty. `FocusFirstButton` now returns `bool` so callers can compose fallbacks.
+
+#### Added
+- `UiTheme.StyleListItemButton(Button)` — consistent styling for list rows across Shop, Blacksmith, and future windows. Accent-tinted highlight + white text in all states.
+- `UiTheme.FocusFirstButtonOrFallback(Control primary, Control fallback)` — guarantees keyboard users can always reach SOME button on window open, even when the primary list is empty.
+
+### Session 17 — Work Discipline Codified (2026-04-17)
+
+#### Added
+- `docs/conventions/work-discipline.md` — canonical convention for AI work discipline ("slow is smooth, smooth is fast"). 7 rules, rework-throughput rationale, warning signs, examples.
+- "Work Discipline" section in `AGENTS.md` as a top-level principle (second only to Paradigm).
+- Jump-to row in `CLAUDE.md` for Work Discipline; promoted "slow is smooth" to Hard Rule #1.
+
+#### Fixed
+- Removed invented AI tool filenames (`CURSOR.md`, `COPILOT.md`) from `docs/conventions/ai-context-files.md` and the `AGENTS.md`/`CLAUDE.md` pointers. Replaced with verified filenames from official docs.
+
+### Session 16 — Tabbed PauseMenu, GoDotTest Rewrite, Transition Fixes, SoulsBorne Death (2026-04-17)
+
+#### Added
+- **Tabbed PauseMenu** (Diablo 2-style, 8 tabs: Inventory, Equip, Skills, Abilities*, Quests, Ledger, Stats, System) — replaces the old flat button list. Q/E cycles tabs, Esc toggles open/close, D closes.
+- **GoDotTest** (`Chickensoft.GoDotTest` v2.0.28) as the in-game UI test framework. Replaces the old AutoPilot/FullRunSandbox system entirely.
+- **Test infrastructure**: `GameTestBase`, `InputHelper` (keyboard/action sim via GodotTestDriver), `UiHelper` (focus/window/pause queries)
+- **Test suites** (all keyboard-only, all tied to `docs/flows/*.md` specs):
+  - `SplashTests`, `ClassSelectTests`, `TownTests`, `PauseMenuTests`, `NpcTests`, `DeathTests`, `TransitionTests`, `DeathCinematicTests`
+- **SoulsBorne "YOU DIED" cinematic** on player death — 6.3s dramatic sequence (overlay fade, red text appears, holds, fades, menu reveals). See `docs/flows/death.md`.
+- **`docs/development-paradigm.md`** — public-facing doc on the AI+Human natural-language programming paradigm
+- **Prominent README section** describing the paradigm on the GitHub front page
+- **Resource leak monitoring** in DebugPanel: orphan node count, node count, modal count (via Godot's `Performance.Monitor`)
+- **Auto mode** configured as default via `.claude/settings.local.json`
+- Makefile targets: `test-ui`, `test-ui-suite`
+
+#### Fixed
+- **Screen transition flash bug** — Every caller using `ScreenTransition.Play()` to swap worlds now hides source content INSIDE the midpoint callback (when overlay is opaque), never before `Play()` starts. Prevents the new scene from briefly rendering under a translucent overlay. Applied to: ClassSelect, splash Continue, TeleportDialog, AscendDialog (3 buttons), FloorWipeDialog (2 buttons), DeathScreen respawn. Verified by `TransitionTests` asserting `OverlayAlpha ≥ 0.99` when new world enters tree.
+- **DeathScreen respawn had no transition** — Now uses ScreenTransition so the dungeon→town swap is hidden behind fade-to-black.
+- **Resource leaks at exit** — Orphaned Scroll nodes freed in GameWindow._ExitTree(), Theme and tab styles cached as singletons. RID leaks reduced dramatically at shutdown.
+
+#### Changed
+- `ScreenTransition.OverlayAlpha` public property added for test inspection
+- `WindowStack.Count` and `TopTypeName` added for test assertions
+- `UiTheme.CreateGameTheme()` + `CreateTabStyle()` cached as static singletons
+- `GameWindow.Close()` only unpauses if `!WindowStack.HasModal` (fixes NPC→Shop race)
+- `FocusFirstButton` skips buttons with `FocusMode.None`
+- PauseMenu is now a programmatic GameWindow subclass (old `pause_menu.tscn` removed)
+
+#### Removed
+- `scripts/testing/AutoPilot*.cs` — replaced by GoDotTest infrastructure
+- `scripts/sandbox/FullRunSandbox.cs` + `scenes/sandbox/FullRunSandbox.tscn`
+- `scenes/pause_menu.tscn`
+- Custom `KeyboardNav.HandleInput` method — replaced by Godot's built-in focus system
+
+### Session 15 — Skills & Abilities Code Implementation (2026-04-16)
+
+#### Added
+- New data layer: `MasteryDef`, `AbilityDef`, `MasteryState`, `AbilityState`, `SkillAbilityDatabase` (130 registrations), `ProgressionTracker`
+- `GameWindow.cs` — unified base class for all game windows
+- `GameTabPanel.cs` — reusable Q/E tab switching system
+- `AbilitiesDialog.cs` — class-specific abilities tab (Warrior Arts / Ranger Crafts / Arcane Spells)
+- AbilitiesDialog node in `main.tscn`, Abilities button in `pause_menu.tscn`
+- 72 new unit tests for data layer
+
+#### Fixed
+- NPC crash: `Npc.cs` called `Hide()` instead of `Close()`, corrupting WindowStack and freezing game
+- Resource leaks at exit: orphaned Scroll nodes, unreleased GameTabPanel, uncached Theme/StyleBox resources
+- Keyboard nav: replaced custom `KeyboardNav.HandleInput` with Godot's built-in focus system (`ui_up`/`ui_down` + `FollowFocus`)
+- Focus warnings: `FocusFirstButton` now skips buttons with `FocusMode.None`
+
+#### Changed
+- `SkillTreeDialog.cs` — rewritten on GameWindow + GameTabPanel, shows masteries only
+- `GameState.cs` — awards SP (2/lvl) + AP (3/lvl) on level-up
+- `SaveData.cs` + `SaveSystem.cs` — new fields for masteries, abilities, use counts, category AP
+- `Player.cs` — movement blocked when any modal window is open
+- `ShopWindow.cs` — Buy/Sell merged into colored buttons, fixed panel resizing
+- `UiTheme.cs` — added `CreateTabStyle`, made `CreateColoredButtonStyle` public
+- All 13 ScrollContainers — `FollowFocus = true` for keyboard navigation
+
+#### Removed
+- Old skill system: `SkillDef.cs`, `SkillDatabase.cs`, `SkillState.cs`, `SkillTracker.cs`
+- 671 lines of duplicate window boilerplate (all 14 windows migrated to GameWindow base)
+
+#### Documentation
+- `docs/reference/godot4-engine-reference.md` — comprehensive catalog of built-in engine systems and usage status
+
+### Session 14 — Skills & Abilities System Complete (2026-04-15)
+
+#### Added
+- `docs/world/class-lore.md` — Class backstories and magic philosophy for Warrior, Ranger, Mage
+- `docs/systems/point-economy.md` — SP/AP rates, sources, and total budget at key levels
+- `docs/systems/synergy-bonuses.md` — Mastery threshold bonuses (Lv.5/10/25/50/100) with per-mastery procs
+- `docs/systems/ability-affinity.md` — Cosmetic use-based milestones (100/500/1,000/5,000 uses)
+- `assets/icons/abilities_icons.png` — Combined 512x1024 sprite sheet with 131 icons (all 3 classes + innate)
+- `assets/icons/abilities_icons.json` — Icon atlas index for combined sheet
+
+#### Changed
+- `docs/systems/skills.md` — Complete rewrite: dual system (Skills + Abilities), all 3 class trees, SP/AP split
+- `docs/systems/magic.md` — Mage: Arcane→Elemental, added Aether, Conduit→Attunement; Armor innate added
+- `docs/systems/classes.md` — Updated mastery structure, SP/AP terminology
+- `docs/ui/pause-menu-tabs.md` — 7→8 tabs, new Abilities tab (class-specific)
+- `docs/systems/combat.md` — Skill Hotbar→Ability Hotbar, dual XP tracking
+- `docs/systems/leveling.md` — SP/AP references replace old "skill points"
+- `docs/ui/hud.md` — Ability cooldown overlays, status effect icons
+- `docs/ui/controls.md` — Abilities terminology for hotbar
+- `docs/flows/combat.md` — Ability activation flow
+- `docs/flows/progression.md` — SP/AP allocation flows
+- `docs/dev-tracker.md` — SPEC-13 tickets added
+- `AGENTS.md` — New doc references
+- `scripts/generate_icons.py` — Rewritten for combined abilities sheet
+- Ranger ability renames: Steady Shot→Bead, Burst Fire→Spray, Guard→Hunker
+
+### Session 13 — Skill & Spell Icon Sprite Sheets (2026-04-14)
+
+#### Added
+- `assets/icons/skills_icons.png` — 512x512 sprite sheet with 73 skill icons (Warrior + Ranger + Innate, 32x32 each)
+- `assets/icons/spells_icons.png` — 512x512 sprite sheet with 45 spell icons (Mage Arcane + Conduit, 32x32 each)
+- `assets/icons/skills_icons.json` — JSON atlas index for skill icons (name → x, y, w, h)
+- `assets/icons/spells_icons.json` — JSON atlas index for spell icons (name → x, y, w, h)
+- `scripts/generate_icons.py` — Pillow-based icon sprite sheet generator (re-runnable)
+### Session 14 — Various Fixes & Visual Polish (2026-04-14)
 
 #### Fixed
 - Floor tile chaos: weighted variant selection (50/25/25%) instead of equal random

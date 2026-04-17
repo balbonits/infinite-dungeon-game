@@ -5,13 +5,12 @@ namespace DungeonGame.Ui;
 /// <summary>
 /// NPC interaction dialog. Centered on screen with semi-transparent overlay.
 /// Shows NPC name, greeting, and service button. Dismisses when player walks away.
+/// Uses GameWindow for lifecycle/input, but overrides Close() to do a tween fade.
 /// </summary>
-public partial class NpcPanel : Control
+public partial class NpcPanel : GameWindow
 {
     public static NpcPanel Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
     private Label _nameLabel = null!;
     private Label _greetingLabel = null!;
     private VBoxContainer _serviceButtons = null!;
@@ -19,51 +18,29 @@ public partial class NpcPanel : Control
     public override void _Ready()
     {
         Instance = this;
-        MouseFilter = MouseFilterEnum.Ignore;
+        ReturnToPauseMenu = false;
+        WindowWidth = 320;
+        base._Ready();
+    }
 
-        // Semi-transparent background overlay
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.4f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        // Centered container
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        // Panel
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(320, 0);
-        _center.AddChild(panel);
-
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
-        var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 10);
-        margin.AddChild(vbox);
-
+    protected override void BuildContent(VBoxContainer content)
+    {
         _nameLabel = new Label();
         UiTheme.StyleLabel(_nameLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         _nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        vbox.AddChild(_nameLabel);
+        content.AddChild(_nameLabel);
 
-        vbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
         _greetingLabel = new Label();
         UiTheme.StyleLabel(_greetingLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
         _greetingLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _greetingLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        vbox.AddChild(_greetingLabel);
+        content.AddChild(_greetingLabel);
 
         _serviceButtons = new VBoxContainer();
         _serviceButtons.AddThemeConstantOverride("separation", 8);
-        vbox.AddChild(_serviceButtons);
+        content.AddChild(_serviceButtons);
     }
 
     public void Show(string npcName, string greeting)
@@ -92,39 +69,70 @@ public partial class NpcPanel : Control
         dismissBtn.CustomMinimumSize = new Vector2(200, 38);
         dismissBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleSecondaryButton(dismissBtn, UiTheme.FontSizes.Body);
-        dismissBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Hide()));
+        dismissBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => HideWithFade()));
         _serviceButtons.AddChild(dismissBtn);
 
-        _overlay.Visible = true;
-        _center.Visible = true;
-        WindowStack.Push(this);
+        // GameWindow.Show() handles overlay, WindowStack, pause
+        Show();
 
         // Auto-focus first button for keyboard nav
         UiTheme.FocusFirstButton(_serviceButtons);
 
-        // Fade in
-        _center.Modulate = new Color(1, 1, 1, 0);
+        // Fade in the content
+        ContentBox.Modulate = new Color(1, 1, 1, 0);
         var tween = CreateTween();
-        tween.TweenProperty(_center, "modulate:a", 1.0f, 0.15f);
+        tween.TweenProperty(ContentBox, "modulate:a", 1.0f, 0.15f);
     }
 
-    public new void Hide()
+    /// <summary>
+    /// Animated hide: release button focus, fade out, then let GameWindow close.
+    /// </summary>
+    private void HideWithFade()
     {
-        if (!_center.Visible)
+        if (!IsOpen)
             return;
 
+        // Release focus immediately so the next window can grab it
+        foreach (Node child in _serviceButtons.GetChildren())
+            if (child is Button btn)
+                btn.FocusMode = FocusModeEnum.None;
+
         var tween = CreateTween();
-        tween.TweenProperty(_center, "modulate:a", 0.0f, 0.1f);
+        tween.TweenProperty(ContentBox, "modulate:a", 0.0f, 0.1f);
         tween.TweenCallback(Callable.From(() =>
         {
-            _overlay.Visible = false;
-            _center.Visible = false;
+            Close();
         }));
+    }
+
+    /// <summary>
+    /// Override to use HideWithFade (animated close) instead of plain Close on cancel.
+    /// </summary>
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (!IsOpen) return;
+        if (KeyboardNav.BlockIfNotTopmost(this, @event)) return;
+
+        if (KeyboardNav.IsCancelPressed(@event))
+        {
+            HideWithFade();
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+
+        if (@event is InputEventKey k && k.Pressed)
+            GetViewport().SetInputAsHandled();
     }
 
     private void OnServicePressed(string npcName)
     {
-        Hide();
+        HideWithFade();
         if (npcName == Strings.Npcs.Shopkeeper)
         {
             var shopItems = new System.Collections.Generic.List<ItemDef>(ItemDatabase.All);
@@ -150,32 +158,6 @@ public partial class NpcPanel : Control
         {
             Toast.Instance?.Info($"{npcName}'s services coming soon.");
         }
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_center.Visible)
-            return;
-
-        if (KeyboardNav.BlockIfNotTopmost(this, @event)) return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            _center.Visible = false;
-            _overlay.Visible = false;
-            WindowStack.Pop(this);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (KeyboardNav.HandleInput(@event, _serviceButtons))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 
     private static string GetServiceLabel(string npcName)

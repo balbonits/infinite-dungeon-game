@@ -108,6 +108,6 @@ public partial class Npc : StaticBody2D
             return;
         _playerNearby = false;
         _promptLabel.Visible = false;
-        NpcPanel.Instance?.Hide();
+        NpcPanel.Instance?.Close();
     }
 }

@@ -18,6 +18,7 @@ public partial class ScrollList : ScrollContainer
         var scroll = new ScrollList();
         scroll.CustomMinimumSize = new Vector2(0, minHeight);
         scroll.HorizontalScrollMode = ScrollMode.Disabled;
+        scroll.FollowFocus = true;
 
         scroll._list = new VBoxContainer();
         scroll._list.AddThemeConstantOverride("separation", spacing);
@@ -36,10 +37,6 @@ public partial class ScrollList : ScrollContainer
 
     /// <summary>Add a node to the list.</summary>
     public void Add(Node item) => _list.AddChild(item);
-
-    /// <summary>Handle keyboard nav within the list. Returns true if handled.</summary>
-    public bool HandleInput(InputEvent @event) =>
-        KeyboardNav.HandleInput(@event, _list);
 
     /// <summary>Handle arrow key scrolling for read-only lists (no buttons). Returns true if handled.</summary>
     public bool HandleScrollInput(InputEvent @event)

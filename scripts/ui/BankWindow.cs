@@ -8,73 +8,44 @@ namespace DungeonGame.Ui;
 /// Also handles bank slot expansion purchasing.
 /// Town-only access.
 /// </summary>
-public partial class BankWindow : Control
+public partial class BankWindow : GameWindow
 {
     public static BankWindow Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
     private VBoxContainer _bankList = null!;
     private VBoxContainer _backpackList = null!;
     private Label _bankHeader = null!;
     private Label _backpackHeader = null!;
     private Label _goldLabel = null!;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-        BuildUi();
+        WindowWidth = 550f;
+        ReturnToPauseMenu = false;
+        base._Ready();
     }
 
-    private void BuildUi()
+    protected override void BuildContent(VBoxContainer content)
     {
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.6f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(550, 0);
-        _center.AddChild(panel);
-
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
-        var outerVbox = new VBoxContainer();
-        outerVbox.AddThemeConstantOverride("separation", 8);
-        margin.AddChild(outerVbox);
-
         // Title
         var title = new Label();
         title.Text = Strings.Bank.Title;
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        outerVbox.AddChild(title);
+        content.AddChild(title);
 
         _goldLabel = new Label();
         UiTheme.StyleLabel(_goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
         _goldLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        outerVbox.AddChild(_goldLabel);
+        content.AddChild(_goldLabel);
 
-        outerVbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
-        // Two-column layout: Bank | Backpack
+        // Two-column layout: Bank | Backpack (own scrolls, not GameWindow's Scroll)
         var columns = new HBoxContainer();
         columns.AddThemeConstantOverride("separation", 16);
-        outerVbox.AddChild(columns);
+        content.AddChild(columns);
 
         // Bank column
         var bankCol = new VBoxContainer();
@@ -87,7 +58,7 @@ public partial class BankWindow : Control
         _bankHeader.HorizontalAlignment = HorizontalAlignment.Center;
         bankCol.AddChild(_bankHeader);
 
-        var bankScroll = new ScrollContainer();
+        var bankScroll = new ScrollContainer { FollowFocus = true };
         bankScroll.CustomMinimumSize = new Vector2(240, 280);
         bankCol.AddChild(bankScroll);
         _bankList = new VBoxContainer();
@@ -105,7 +76,7 @@ public partial class BankWindow : Control
         _backpackHeader.HorizontalAlignment = HorizontalAlignment.Center;
         bpCol.AddChild(_backpackHeader);
 
-        var bpScroll = new ScrollContainer();
+        var bpScroll = new ScrollContainer { FollowFocus = true };
         bpScroll.CustomMinimumSize = new Vector2(240, 280);
         bpCol.AddChild(bpScroll);
         _backpackList = new VBoxContainer();
@@ -116,7 +87,7 @@ public partial class BankWindow : Control
         var bottomRow = new HBoxContainer();
         bottomRow.AddThemeConstantOverride("separation", 12);
         bottomRow.Alignment = BoxContainer.AlignmentMode.Center;
-        outerVbox.AddChild(bottomRow);
+        content.AddChild(bottomRow);
 
         var expandBtn = new Button();
         expandBtn.Text = Strings.Bank.Expand;
@@ -135,23 +106,30 @@ public partial class BankWindow : Control
 
     public void Open()
     {
-        if (_isOpen) return;
-        _isOpen = true;
-        WindowStack.Push(this);
-        GetTree().Paused = true;
-        Refresh();
-        _overlay.Visible = true;
-        _center.Visible = true;
+        Show();
     }
 
-    public void Close()
+    protected override void OnShow()
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        GetTree().Paused = false;
-        _overlay.Visible = false;
-        _center.Visible = false;
+        Refresh();
     }
+
+    protected override bool HandleTabInput(InputEvent @event)
+    {
+        // Q/E switch focus between bank list and backpack list
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            UiTheme.FocusFirstButton(_bankList);
+            return true;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            UiTheme.FocusFirstButton(_backpackList);
+            return true;
+        }
+        return false;
+    }
+
 
     private void Refresh()
     {
@@ -164,7 +142,10 @@ public partial class BankWindow : Control
 
         RefreshBankList(bank, backpack);
         RefreshBackpackList(bank, backpack);
-        UiTheme.FocusFirstButton(_bankList);
+        // Bank list → backpack list → whole window (so keyboard can always reach Close).
+        if (!UiTheme.FocusFirstButton(_bankList) &&
+            !UiTheme.FocusFirstButton(_backpackList))
+            UiTheme.FocusFirstButton(ContentBox);
     }
 
     private void RefreshBankList(Bank bank, Inventory backpack)
@@ -265,42 +246,5 @@ public partial class BankWindow : Control
         {
             Toast.Instance?.Warning($"Not enough gold! Need {cost}g.");
         }
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen) return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Q/E switch focus between bank list and backpack list
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
-        {
-            UiTheme.FocusFirstButton(_bankList);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
-        {
-            UiTheme.FocusFirstButton(_backpackList);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Up/Down + S navigate and confirm within whichever list has focus
-        if (KeyboardNav.HandleInput(@event, _bankList) ||
-            KeyboardNav.HandleInput(@event, _backpackList))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 }

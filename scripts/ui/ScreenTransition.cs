@@ -23,6 +23,9 @@ public partial class ScreenTransition : Control
 
     public bool IsTransitioning => _isTransitioning;
 
+    /// <summary>Current alpha of the black overlay (0 = transparent, 1 = fully opaque). For tests.</summary>
+    public float OverlayAlpha => _overlay?.Color.A ?? 0f;
+
     public override void _Ready()
     {
         Instance = this;

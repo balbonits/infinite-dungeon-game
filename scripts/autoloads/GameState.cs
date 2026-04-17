@@ -99,7 +99,7 @@ public partial class GameState : Node
     public PlayerClass SelectedClass { get; set; } = PlayerClass.Warrior;
     public Inventory PlayerInventory { get; set; } = new(25);
     public StatBlock Stats { get; private set; } = new();
-    public SkillTracker Skills { get; set; } = new(PlayerClass.Warrior);
+    public ProgressionTracker Progression { get; set; } = new(PlayerClass.Warrior);
     public Bank PlayerBank { get; set; } = new();
     public QuestTracker Quests { get; set; } = new();
     public AchievementTracker Achievements { get; set; } = new();
@@ -134,7 +134,7 @@ public partial class GameState : Node
         PlayerInventory = new Inventory(25);
         PlayerInventory.Gold = 100;
         Stats = new StatBlock();
-        Skills = new SkillTracker(SelectedClass);
+        Progression = new ProgressionTracker(SelectedClass);
         PlayerBank = new Bank();
         Quests = new QuestTracker();
         Quests.GenerateQuests(1);
@@ -158,9 +158,10 @@ public partial class GameState : Node
             // Apply class stat bonuses for this level
             Stats.ApplyClassLevelBonus(SelectedClass);
 
-            // Spec (leveling.md): skill points — 2 per level, +1 extra at milestones (every 10th)
+            // Spec (point-economy.md): SP — 2 per level, +1 at milestones; AP — 3 per level, +2 at milestones
             bool isMilestone = Level % 10 == 0;
-            Skills.SkillPoints += isMilestone ? 3 : 2;
+            Progression.SkillPoints += isMilestone ? 3 : 2;
+            Progression.AbilityPoints += isMilestone ? 5 : 3;
 
             // Spec (leveling.md): stat points — 3 per level, +2 extra at milestones (every 10th)
             if (isMilestone)

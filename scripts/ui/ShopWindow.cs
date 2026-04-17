@@ -8,65 +8,36 @@ namespace DungeonGame.Ui;
 /// JRPG-style shop window. Two-panel layout: item list (left) + description (right).
 /// Buy tab shows shop inventory, Sell tab shows player backpack.
 /// </summary>
-public partial class ShopWindow : Control
+public partial class ShopWindow : GameWindow
 {
     public static ShopWindow Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
     private Label _goldLabel = null!;
     private VBoxContainer _itemList = null!;
     private Label _descName = null!;
     private Label _descText = null!;
     private Label _descStats = null!;
-    private Button _actionButton = null!;
-    private Label _tabIndicator = null!;
+    private Button _buyButton = null!;
+    private Button _sellButton = null!;
 
     private List<ItemDef> _shopItems = new();
     private ItemDef? _selectedItem;
     private int _selectedIndex = -1;
     private bool _isBuyMode = true;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-        BuildUi();
+        WindowWidth = 600f;
+        ReturnToPauseMenu = false;
+        base._Ready();
     }
 
-    private void BuildUi()
+    protected override void BuildContent(VBoxContainer content)
     {
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.5f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var mainPanel = new PanelContainer();
-        mainPanel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        mainPanel.CustomMinimumSize = new Vector2(600, 400);
-        _center.AddChild(mainPanel);
-
-        var margin = new MarginContainer();
-        mainPanel.AddChild(margin);
-
-        var outerVbox = new VBoxContainer();
-        outerVbox.AddThemeConstantOverride("separation", 8);
-        margin.AddChild(outerVbox);
-
         // Header: title + gold
         var header = new HBoxContainer();
-        outerVbox.AddChild(header);
+        content.AddChild(header);
 
         var shopTitle = new Label();
         shopTitle.Text = Strings.Shop.Title;
@@ -78,38 +49,13 @@ public partial class ShopWindow : Control
         UiTheme.StyleLabel(_goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Button);
         header.AddChild(_goldLabel);
 
-        outerVbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
-        // Tab buttons
-        var tabs = new HBoxContainer();
-        tabs.AddThemeConstantOverride("separation", 8);
-        outerVbox.AddChild(tabs);
-
-        var buyTab = new Button();
-        buyTab.Text = Strings.Shop.BuyTab;
-        buyTab.CustomMinimumSize = new Vector2(100, 30);
-        UiTheme.StyleButton(buyTab, UiTheme.FontSizes.Body);
-        buyTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(true)));
-        tabs.AddChild(buyTab);
-
-        var sellTab = new Button();
-        sellTab.Text = Strings.Shop.SellTab;
-        sellTab.CustomMinimumSize = new Vector2(100, 30);
-        UiTheme.StyleButton(sellTab, UiTheme.FontSizes.Body);
-        sellTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => SetMode(false)));
-        tabs.AddChild(sellTab);
-
-        _tabIndicator = new Label();
-        UiTheme.StyleLabel(_tabIndicator, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        _tabIndicator.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        _tabIndicator.HorizontalAlignment = HorizontalAlignment.Right;
-        tabs.AddChild(_tabIndicator);
-
-        // Two-panel layout
+        // Two-panel layout (own scroll, not GameWindow's Scroll)
         var panels = new HBoxContainer();
         panels.AddThemeConstantOverride("separation", 12);
         panels.SizeFlagsVertical = SizeFlags.ExpandFill;
-        outerVbox.AddChild(panels);
+        content.AddChild(panels);
 
         // Left: item list (scrollable)
         var leftPanel = new PanelContainer();
@@ -118,7 +64,7 @@ public partial class ShopWindow : Control
         leftPanel.SizeFlagsStretchRatio = 1.2f;
         panels.AddChild(leftPanel);
 
-        var scroll = new ScrollContainer();
+        var scroll = new ScrollContainer { FollowFocus = true };
         scroll.SizeFlagsVertical = SizeFlags.ExpandFill;
         leftPanel.AddChild(scroll);
 
@@ -127,10 +73,12 @@ public partial class ShopWindow : Control
         _itemList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         scroll.AddChild(_itemList);
 
-        // Right: description panel
+        // Right: description panel (fixed height to prevent resizing)
         var rightPanel = new PanelContainer();
         rightPanel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.5f));
         rightPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        rightPanel.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+        rightPanel.CustomMinimumSize = new Vector2(0, 260);
         panels.AddChild(rightPanel);
 
         var rightMargin = new MarginContainer();
@@ -159,46 +107,85 @@ public partial class ShopWindow : Control
         spacer.SizeFlagsVertical = SizeFlags.ExpandFill;
         descVbox.AddChild(spacer);
 
-        _actionButton = new Button();
-        _actionButton.CustomMinimumSize = new Vector2(140, 36);
-        _actionButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        UiTheme.StyleButton(_actionButton, UiTheme.FontSizes.Body);
-        _actionButton.Connect(BaseButton.SignalName.Pressed, Callable.From(OnActionPressed));
-        _actionButton.Visible = false;
-        descVbox.AddChild(_actionButton);
+        // Buy/Sell buttons — these ARE the action buttons
+        var modeRow = new HBoxContainer();
+        modeRow.AddThemeConstantOverride("separation", 8);
+        modeRow.Alignment = BoxContainer.AlignmentMode.Center;
+        descVbox.AddChild(modeRow);
+
+        _buyButton = new Button();
+        _buyButton.Text = Strings.Shop.BuyTab;
+        _buyButton.CustomMinimumSize = new Vector2(120, 36);
+        _buyButton.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
+        _buyButton.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
+        _buyButton.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);
+        _buyButton.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        _buyButton.AddThemeStyleboxOverride("normal", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, false));
+        _buyButton.AddThemeStyleboxOverride("hover", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
+        _buyButton.AddThemeStyleboxOverride("focus", UiTheme.CreateColoredButtonStyle(UiTheme.Colors.Safe, true));
+        _buyButton.FocusMode = FocusModeEnum.All;
+        _buyButton.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            if (_isBuyMode && _selectedItem != null)
+                OnActionPressed();
+            else
+                SetMode(true);
+        }));
+        modeRow.AddChild(_buyButton);
+
+        _sellButton = new Button();
+        _sellButton.Text = Strings.Shop.SellTab;
+        _sellButton.CustomMinimumSize = new Vector2(120, 36);
+        UiTheme.StyleDangerButton(_sellButton, UiTheme.FontSizes.Body);
+        _sellButton.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+        {
+            if (!_isBuyMode && _selectedItem != null)
+                OnActionPressed();
+            else
+                SetMode(false);
+        }));
+        modeRow.AddChild(_sellButton);
 
         // Close button
-        outerVbox.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
         var closeBtn = new Button();
         closeBtn.Text = Strings.Shop.Close;
         closeBtn.CustomMinimumSize = new Vector2(120, 36);
         closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleButton(closeBtn, UiTheme.FontSizes.Body);
-        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(Close));
-        outerVbox.AddChild(closeBtn);
+        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Close()));
+        content.AddChild(closeBtn);
     }
 
     public void Open(List<ItemDef> shopInventory)
     {
         _shopItems = shopInventory;
-        _isOpen = true;
-        WindowStack.Push(this);
         _isBuyMode = true;
-        GetTree().Paused = true;
-        _overlay.Visible = true;
-        _center.Visible = true;
+        Show();
+    }
+
+    protected override void OnShow()
+    {
         RefreshList();
         UiTheme.FocusFirstButton(_itemList);
     }
 
-    public void Close()
+    protected override bool HandleTabInput(InputEvent @event)
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        GetTree().Paused = false;
-        _overlay.Visible = false;
-        _center.Visible = false;
+        // Q/E (shoulder) switch Buy/Sell tabs
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
+        {
+            SetMode(true);
+            return true;
+        }
+        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
+        {
+            SetMode(false);
+            return true;
+        }
+        return false;
     }
+
 
     private void SetMode(bool buyMode)
     {
@@ -215,11 +202,13 @@ public partial class ShopWindow : Control
             child.QueueFree();
 
         UpdateGold();
-        _tabIndicator.Text = _isBuyMode ? Strings.Shop.BuyMode : Strings.Shop.SellMode;
+        // Update button text to reflect current mode
+        _buyButton.Text = Strings.Shop.BuyTab;
+        _sellButton.Text = Strings.Shop.SellTab;
         _descName.Text = "";
         _descText.Text = Strings.Shop.SelectItem;
         _descStats.Text = "";
-        _actionButton.Visible = false;
+        _selectedItem = null;
 
         if (_isBuyMode)
         {
@@ -242,31 +231,8 @@ public partial class ShopWindow : Control
     {
         var row = new Button();
         row.Text = $"  {item.Name}    {price}";
-        row.Alignment = HorizontalAlignment.Left;
         row.CustomMinimumSize = new Vector2(0, 28);
-        row.FocusMode = FocusModeEnum.All;
-
-        var normal = new StyleBoxFlat();
-        normal.BgColor = new Color(0, 0, 0, 0.01f);
-        normal.SetCornerRadiusAll(4);
-        normal.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("normal", normal);
-
-        var hover = new StyleBoxFlat();
-        hover.BgColor = new Color(UiTheme.Colors.Accent, 0.15f);
-        hover.SetCornerRadiusAll(4);
-        hover.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("hover", hover);
-
-        // FF-style: focused row is clearly highlighted (cursor)
-        var focus = new StyleBoxFlat();
-        focus.BgColor = new Color(UiTheme.Colors.Accent, 0.25f);
-        focus.SetCornerRadiusAll(4);
-        focus.ContentMarginLeft = 8;
-        row.AddThemeStyleboxOverride("focus", focus);
-
-        row.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
-        row.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
+        UiTheme.StyleListItemButton(row);
 
         // FF-style: description updates on FOCUS (cursor move), not on press
         int capturedIndex = index;
@@ -300,10 +266,20 @@ public partial class ShopWindow : Control
         if (item.ProjectileDamageMultiplier > 1) stats.AppendLine($"Damage: x{item.ProjectileDamageMultiplier:F1}");
         _descStats.Text = stats.ToString();
 
-        _actionButton.Visible = true;
-        _actionButton.Text = _isBuyMode
-            ? Strings.Shop.Buy(item.BuyPrice)
-            : Strings.Shop.Sell(item.SellPrice);
+        // Update Buy/Sell button text with price + disable when unaffordable
+        int gold = GameState.Instance.PlayerInventory.Gold;
+        if (_isBuyMode)
+        {
+            _buyButton.Text = Strings.Shop.Buy(item.BuyPrice);
+            _buyButton.Disabled = gold < item.BuyPrice;
+            _sellButton.Disabled = false; // sell mode switch always allowed
+        }
+        else
+        {
+            _sellButton.Text = Strings.Shop.Sell(item.SellPrice);
+            _sellButton.Disabled = false; // selling never blocked by affordability
+            _buyButton.Disabled = false;
+        }
     }
 
     private void OnActionPressed()
@@ -318,6 +294,8 @@ public partial class ShopWindow : Control
             {
                 Toast.Instance.Success($"Bought {_selectedItem.Name}");
                 UpdateGold();
+                // Re-check affordability after purchase (gold dropped)
+                UpdateDescription(_selectedItem, _selectedIndex);
             }
             else
             {
@@ -338,43 +316,5 @@ public partial class ShopWindow : Control
     private void UpdateGold()
     {
         _goldLabel.Text = Strings.Shop.GoldDisplay(GameState.Instance.PlayerInventory.Gold);
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen) return;
-
-        // FF-style: D (circle) or Esc = cancel/close
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Up/Down navigate the item list (cursor), description follows via FocusEntered
-        if (KeyboardNav.HandleInput(@event, _itemList))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Q/E (shoulder) switch Buy/Sell tabs
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
-        {
-            SetMode(true);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
-        {
-            SetMode(false);
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Block ALL input when open — nothing passes through to game or panels behind
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 }

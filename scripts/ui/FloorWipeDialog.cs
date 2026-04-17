@@ -7,57 +7,29 @@ namespace DungeonGame.Ui;
 /// Shown when all enemies on a floor are killed (floor wipe).
 /// Awards bonus loot and presents navigation choices.
 /// </summary>
-public partial class FloorWipeDialog : Control
+public partial class FloorWipeDialog : GameWindow
 {
     public static FloorWipeDialog Instance { get; private set; } = null!;
 
-    private ColorRect _overlay = null!;
-    private CenterContainer _center = null!;
     private VBoxContainer _content = null!;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
+        ReturnToPauseMenu = false;
+        WindowWidth = 360;
+        base._Ready();
+    }
 
-        _overlay = new ColorRect();
-        _overlay.Color = new Color(0, 0, 0, 0.5f);
-        _overlay.SetAnchorsPreset(LayoutPreset.FullRect);
-        _overlay.MouseFilter = MouseFilterEnum.Stop;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
-        _center = new CenterContainer();
-        _center.SetAnchorsPreset(LayoutPreset.FullRect);
-        _center.Visible = false;
-        AddChild(_center);
-
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.95f, true));
-        panel.CustomMinimumSize = new Vector2(360, 0);
-        _center.AddChild(panel);
-
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
+    protected override void BuildContent(VBoxContainer content)
+    {
         _content = new VBoxContainer();
         _content.AddThemeConstantOverride("separation", 10);
-        margin.AddChild(_content);
+        content.AddChild(_content);
     }
 
     public void ShowWipe()
     {
-        if (_isOpen)
-            return;
-
-        _isOpen = true;
-        WindowStack.Push(this);
-        GetTree().Paused = true;
-
         int floor = GameState.Instance.FloorNumber;
 
         // Award bonus rewards
@@ -94,11 +66,14 @@ public partial class FloorWipeDialog : Control
         // Choices
         AddButton(Strings.FloorWipe.NextFloor(floor + 1), () =>
         {
-            Close();
             GameState.Instance.FloorNumber = floor + 1;
             ScreenTransition.Instance.Play(
                 Strings.Floor.FloorNumber(floor + 1),
-                () => Scenes.Main.Instance.LoadDungeon(),
+                () =>
+                {
+                    Close();
+                    Scenes.Main.Instance.LoadDungeon();
+                },
                 Strings.Floor.Descending);
         });
 
@@ -119,25 +94,19 @@ public partial class FloorWipeDialog : Control
 
         AddButton(Strings.FloorWipe.ReturnToTown, () =>
         {
-            Close();
             ScreenTransition.Instance.Play(
                 Strings.Town.DungeonEntrance,
-                () => Scenes.Main.Instance.LoadTown(),
+                () =>
+                {
+                    Close();
+                    Scenes.Main.Instance.LoadTown();
+                },
                 Strings.Ascend.ReturningToTown);
         });
 
-        _overlay.Visible = true;
-        _center.Visible = true;
+        // Show the window (GameWindow handles overlay, WindowStack, pause)
+        Show();
         UiTheme.FocusFirstButton(_content);
-    }
-
-    private void Close()
-    {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        _overlay.Visible = false;
-        _center.Visible = false;
-        GetTree().Paused = false;
     }
 
     private void ClearContent()
@@ -164,27 +133,5 @@ public partial class FloorWipeDialog : Control
         UiTheme.StyleButton(btn, UiTheme.FontSizes.Body);
         btn.Connect(BaseButton.SignalName.Pressed, Callable.From(action));
         _content.AddChild(btn);
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen)
-            return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (KeyboardNav.HandleInput(@event, _content))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
     }
 }

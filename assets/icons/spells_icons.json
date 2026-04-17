@@ -1,0 +1,407 @@
+{
+  "fire": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "fireball": {
+    "x": 32,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "flame_wall": {
+    "x": 64,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "ignite": {
+    "x": 96,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "inferno": {
+    "x": 128,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "water": {
+    "x": 160,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "frost_bolt": {
+    "x": 192,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "freeze": {
+    "x": 224,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "tidal_wave": {
+    "x": 256,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "mist_veil": {
+    "x": 288,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "air": {
+    "x": 320,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "lightning": {
+    "x": 352,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "gust": {
+    "x": 384,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "chain_shock": {
+    "x": 416,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 13,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "tempest": {
+    "x": 448,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 14,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "earth": {
+    "x": 480,
+    "y": 0,
+    "w": 32,
+    "h": 32,
+    "col": 15,
+    "row": 0,
+    "sheet": "spells_icons.png"
+  },
+  "stone_spike": {
+    "x": 0,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "quake": {
+    "x": 32,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "petrify": {
+    "x": 64,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "earthen_armor": {
+    "x": 96,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "light": {
+    "x": 128,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "energy_blast": {
+    "x": 160,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "radiance": {
+    "x": 192,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "heal": {
+    "x": 224,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "purify": {
+    "x": 256,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "dark": {
+    "x": 288,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "drain_life": {
+    "x": 320,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "curse": {
+    "x": 352,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "shadow_bolt": {
+    "x": 384,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "void_zone": {
+    "x": 416,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 13,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "restoration": {
+    "x": 448,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 14,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "mend": {
+    "x": 480,
+    "y": 32,
+    "w": 32,
+    "h": 32,
+    "col": 15,
+    "row": 1,
+    "sheet": "spells_icons.png"
+  },
+  "barrier": {
+    "x": 0,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 0,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "cleanse": {
+    "x": 32,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 1,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "regeneration": {
+    "x": 64,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 2,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "amplification": {
+    "x": 96,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 3,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "mana_surge": {
+    "x": 128,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 4,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "quick_cast": {
+    "x": 160,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 5,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "attunement": {
+    "x": 192,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 6,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "focus_channel": {
+    "x": 224,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 7,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "overcharge": {
+    "x": 256,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 8,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "neural_burn": {
+    "x": 288,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 9,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "mana_frenzy": {
+    "x": 320,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 10,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "pain_conduit": {
+    "x": 352,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 11,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  },
+  "last_resort": {
+    "x": 384,
+    "y": 64,
+    "w": 32,
+    "h": 32,
+    "col": 12,
+    "row": 2,
+    "sheet": "spells_icons.png"
+  }
+}

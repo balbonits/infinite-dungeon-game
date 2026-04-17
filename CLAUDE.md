@@ -1,60 +1,61 @@
 # Claude Code Instructions
 
-All project guidelines and AI context live in [AGENTS.md](AGENTS.md).
-Read that file for all rules, conventions, and game design references.
+**Context chain:** `docs/` (source of truth) → [AGENTS.md](AGENTS.md) (AI-readable index) → **CLAUDE.md** (you are here — fast navigation) → AI output.
 
-For detailed game design documentation, see the [docs/](docs/) folder.
-For development progress tracking, see [docs/dev-tracker.md](docs/dev-tracker.md).
+This file is a jump-index into AGENTS.md. Never answer from this file alone — always follow the chain back to the relevant spec in `docs/`. The specs are the truth; AGENTS.md organizes them for AI consumption; this file helps Claude find the right section fast.
 
-## The User
+## Jump-to Index (→ AGENTS.md sections)
 
-**The user is the product owner / client — not a developer.** They direct game vision, make design decisions, and approve outcomes. They do not write, review, or debug code. All implementation is handled by AI.
+| Need to... | Section |
+|------------|---------|
+| Understand the paradigm (AI+Human, specs-driven) | [Paradigm](AGENTS.md#paradigm--read-this-first) |
+| Avoid speculation / rework (core discipline) | [Work Discipline](AGENTS.md#work-discipline--slow-is-smooth-smooth-is-fast) |
+| Know who the user is / how to communicate | [Who You're Working For](AGENTS.md#who-youre-working-for) |
+| Route work to the right AI team | [AI Team Structure](AGENTS.md#ai-team-structure) |
+| Stay in scope / avoid scope creep | [Scope Discipline](AGENTS.md#1-scope-discipline-read-this-first) |
+| Follow the workflow cycle | [AI Workflow Protocol](AGENTS.md#2-ai-workflow-protocol) |
+| After making a change (before commit) | [Post-Task Protocol](AGENTS.md#2a-post-task-protocol) |
+| Update docs correctly | [Documentation Maintenance](AGENTS.md#2b-documentation-maintenance) |
+| Find conventions (naming, C#, Godot) | [C# Conventions](AGENTS.md#4-c-conventions) · [Naming](AGENTS.md#6-naming-conventions) |
+| Check tech stack / NuGet deps | [Tech Stack](AGENTS.md#5-tech-stack) |
+| Find the project layout | [Project Structure](AGENTS.md#7-project-structure) |
+| Pick the right test framework | [Tech Stack → Testing layers](AGENTS.md#5-tech-stack) |
 
-- Ask about the **game** ("how should this feel to the player?"), not about **code** ("which data structure should we use?")
-- Make all technical decisions autonomously — the user approves what the game *does*, not how it's built
-- When the user says "do X", do it — don't explain the plan unless asked
-- Present options as player experience tradeoffs, not architecture tradeoffs
-- The AI is the entire dev team. The user is the client.
+## Jump-to Index (→ docs/ — source of truth)
 
-## Current Mode
+| Working on... | Spec location |
+|---------------|---------------|
+| Game design, systems | [docs/systems/](docs/systems/) |
+| Flow (splash, town, NPC, death, etc.) | [docs/flows/](docs/flows/) |
+| World/lore | [docs/world/](docs/world/) |
+| UI (pause menu, HUD, death screen) | [docs/ui/](docs/ui/) |
+| Architecture (autoloads, signals) | [docs/architecture/](docs/architecture/) |
+| Conventions (AI workflow, teams, code) | [docs/conventions/](docs/conventions/) |
+| Dev history | [docs/dev-journal.md](docs/dev-journal.md) · [docs/dev-tracker.md](docs/dev-tracker.md) |
+| Paradigm (why this repo exists) | [docs/development-paradigm.md](docs/development-paradigm.md) |
 
-**Fresh start.** All 26 specs are locked. All code, scenes, and tests were deleted (see dev-journal Session 8). Rebuilding from scratch with visual-first development.
+## Quick Commands
 
-**Stack:** Godot 4 + C# (.NET 8+). No code exists yet. See [docs/architecture/setup-guide.md](docs/architecture/setup-guide.md) for environment setup.
+```bash
+make test           # xUnit unit + integration
+make test-ui        # GoDotTest in-game keyboard-nav tests
+make test-gdunit    # GdUnit4 scene/asset tests
+make build          # Build C# project
+make run            # Launch Godot
+```
 
-## AI Teams
+## Hard Rules Reminder (full detail in AGENTS.md)
 
-Specialized team leads are defined in `.claude/agents/`. Route work to the right team automatically, or @mention a lead directly. See [docs/conventions/teams.md](docs/conventions/teams.md).
+1. **Slow is smooth, smooth is fast.** Verify, don't speculate. Rework is the enemy. ([docs/conventions/work-discipline.md](docs/conventions/work-discipline.md))
+2. **Stay in scope.** Do exactly what's asked.
+3. **Read the spec first** in `docs/`.
+4. **Specs are source of truth.** If code and docs disagree, one needs updating.
+5. **Tests before code.** Reference or write test cases first.
+6. **Post-task protocol is non-negotiable.** Test → Docs → Journal → Changelog → Counts → Commit.
+7. **Never hardcode volatile numbers** (test counts, file counts) in AI-context files.
 
-Active now: `@design-lead`, `@qa-lead`, `@devops-lead`
+---
 
-## Critical Rules
+**Precedence:** `docs/` > `AGENTS.md` > `CLAUDE.md`. If any two disagree, the higher-precedence source wins. Add new rules to `AGENTS.md` (or the relevant `docs/` file) — not here.
 
-1. **Stay in scope.** Do exactly what is asked. Nothing more. Do not add features, refactors, or extras beyond the current task.
-2. **Do not assume.** If something is unclear, ask. Do not guess or hallucinate requirements.
-3. **Read the spec first.** Check the relevant doc in `docs/` before writing or modifying any code.
-4. **Tests before code.** Write or reference test cases before writing implementation.
-5. **Docs are the source of truth.** If code and docs disagree, one needs updating.
-6. **Specs before code.** Every system must be fully specified in `docs/` before implementation begins. No exceptions.
-
-## Post-Task Protocol
-
-After any code change, before committing:
-
-1. **Test:** Run `make test` — all tests must pass
-2. **Docs:** Update the relevant spec in `docs/` if game behavior changed
-3. **Journal:** Add what changed to `docs/dev-journal.md` under today's session
-4. **Changelog:** Add a summary line to `CHANGELOG.md`
-5. **Counts:** Update test counts in docs if tests were added/removed
-6. **Commit:** Use conventional format: `type(scope): description`
-   - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
-   - Examples: `feat(combat): add elemental damage system`, `docs(journal): session 6d entry`
-
-This protocol is non-negotiable. Do not commit without completing these steps.
-
-## Documentation Maintenance
-
-- **Never hardcode volatile numbers** in AGENTS.md or CLAUDE.md (test counts, file counts, step counts). Reference commands instead: "Run `make test` for current count."
-- **Journal first, then commit.** The dev journal entry must exist before the git commit.
-- **CHANGELOG.md must stay current.** Every commit that changes behavior gets a changelog entry.
-- **New systems need docs.** If you create a new system (new .cs files with game logic), create a corresponding spec in `docs/systems/` or `docs/world/`.
+**Adding a new AI tool's context file?** Each tool has its own convention (Claude Code: `CLAUDE.md`; Gemini CLI: `GEMINI.md`; Copilot: `.github/copilot-instructions.md`; Cursor: `.cursor/rules/*.mdc`; etc.). Verify the filename in the tool's official docs first — do not guess. Template and full guidance in [docs/conventions/ai-context-files.md](docs/conventions/ai-context-files.md).

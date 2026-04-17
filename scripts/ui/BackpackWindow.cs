@@ -9,34 +9,24 @@ namespace DungeonGame.Ui;
 /// Accessible from pause menu — available anywhere (dungeon or town).
 /// Spec: docs/inventory/backpack.md
 /// </summary>
-public partial class BackpackWindow : Control
+public partial class BackpackWindow : GameWindow
 {
     public static BackpackWindow? Instance { get; private set; }
 
-    private ColorRect _overlay = null!;
     private Label _headerLabel = null!;
     private Label _detailLabel = null!;
     private ScrollContainer _scrollContainer = null!;
     private VBoxContainer _itemList = null!;
-    private bool _isOpen;
-
-    public bool IsOpen => _isOpen;
 
     public override void _Ready()
     {
         Instance = this;
-        ProcessMode = ProcessModeEnum.Always;
-        MouseFilter = MouseFilterEnum.Ignore;
-        BuildUi();
+        WindowWidth = 400f;
+        base._Ready();
     }
 
-    private void BuildUi()
+    protected override void BuildContent(VBoxContainer content)
     {
-        var (overlay, content) = UiTheme.CreateDialogWindow(400f);
-        _overlay = overlay;
-        _overlay.Visible = false;
-        AddChild(_overlay);
-
         // Header
         _headerLabel = new Label();
         UiTheme.StyleLabel(_headerLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
@@ -68,7 +58,7 @@ public partial class BackpackWindow : Control
         content.AddChild(_detailLabel);
 
         // Scrollable slot grid
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 320);
         content.AddChild(_scrollContainer);
 
@@ -87,31 +77,11 @@ public partial class BackpackWindow : Control
         content.AddChild(closeBtn);
     }
 
-    public void Open()
-    {
-        if (_isOpen) return;
-        _isOpen = true;
-        WindowStack.Push(this);
-        GetTree().Paused = true;
-        Refresh();
-        _overlay.Visible = true;
-    }
+    public void Open() => Show();
 
-    public void Close()
+    protected override void OnShow()
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
-        _overlay.Visible = false;
-        var pauseMenu = GetNodeOrNull<Control>("../PauseMenu");
-        if (pauseMenu != null)
-        {
-            pauseMenu.Visible = true;
-            UiTheme.FocusFirstButton(pauseMenu.GetNode<VBoxContainer>("CenterContainer/PanelContainer/MarginContainer/VBoxContainer"));
-        }
-        else
-        {
-            GetTree().Paused = false;
-        }
+        Refresh();
     }
 
     private void Refresh()
@@ -119,7 +89,7 @@ public partial class BackpackWindow : Control
         var inv = GameState.Instance.PlayerInventory;
         _headerLabel.Text = $"BACKPACK ({inv.UsedSlots}/{inv.SlotCount})";
 
-        var goldLabel = _overlay.GetNodeOrNull<Label>("CenterContainer/PanelContainer/VBoxContainer/GoldLabel");
+        var goldLabel = Overlay.GetNodeOrNull<Label>("CenterContainer/PanelContainer/VBoxContainer/GoldLabel");
         if (goldLabel != null)
             goldLabel.Text = $"Gold: {inv.Gold}";
 
@@ -241,25 +211,4 @@ public partial class BackpackWindow : Control
         ActionMenu.Instance?.Show(position, actions.ToArray());
     }
 
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        if (!_isOpen) return;
-        if (ActionMenu.Instance?.IsOpen == true) return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (KeyboardNav.HandleInput(@event, _itemList))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
-    }
 }

@@ -113,7 +113,7 @@ public static class UiTheme
         button.FocusMode = Control.FocusModeEnum.All;
     }
 
-    private static StyleBoxFlat CreateColoredButtonStyle(Color baseColor, bool bright)
+    public static StyleBoxFlat CreateColoredButtonStyle(Color baseColor, bool bright)
     {
         var style = new StyleBoxFlat();
         style.BgColor = bright ? new Color(baseColor, 0.9f) : new Color(baseColor, 0.7f);
@@ -124,6 +124,41 @@ public static class UiTheme
         style.ContentMarginRight = 16;
         style.ContentMarginTop = 8;
         style.ContentMarginBottom = 8;
+        return style;
+    }
+
+    private static StyleBoxFlat? _activeTabStyle;
+    private static StyleBoxFlat? _inactiveTabStyle;
+
+    /// <summary>Tab button style (active = bright accent, inactive = muted). Cached — shared across all tabs.</summary>
+    public static StyleBoxFlat CreateTabStyle(bool active)
+    {
+        if (active) return _activeTabStyle ??= BuildTabStyle(true);
+        return _inactiveTabStyle ??= BuildTabStyle(false);
+    }
+
+    private static StyleBoxFlat BuildTabStyle(bool active)
+    {
+        var style = new StyleBoxFlat();
+        if (active)
+        {
+            style.BgColor = Colors.Action;
+            style.BorderColor = Colors.Action;
+        }
+        else
+        {
+            style.BgColor = new Color(Colors.BgPanel, 0.6f);
+            style.BorderColor = new Color(Colors.Muted, 0.3f);
+        }
+        style.SetBorderWidthAll(1);
+        style.BorderWidthBottom = active ? 3 : 1;
+        style.SetCornerRadiusAll(0);
+        style.CornerRadiusTopLeft = 4;
+        style.CornerRadiusTopRight = 4;
+        style.ContentMarginLeft = 8;
+        style.ContentMarginRight = 8;
+        style.ContentMarginTop = 4;
+        style.ContentMarginBottom = 4;
         return style;
     }
 
@@ -142,21 +177,77 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Grabs focus on the first focusable button in a container (recursive). Call after adding buttons.</summary>
-    public static void FocusFirstButton(Control container)
+    /// <summary>
+    /// Grabs focus on the first focusable button in a container (recursive).
+    /// Returns true if a focusable button was found. Call after adding buttons.
+    /// </summary>
+    public static bool FocusFirstButton(Control container)
     {
         var btn = FindFirstButton(container);
         if (btn != null)
         {
             btn.CallDeferred(Control.MethodName.GrabFocus);
+            return true;
         }
+        return false;
+    }
+
+    /// <summary>
+    /// Tries to focus the first button in `primary`. If nothing focusable is found there
+    /// (e.g., empty scroll content), falls back to `fallback` so keyboard users can always
+    /// reach some button (like Cancel/Close) via the window's spatial focus navigation.
+    /// </summary>
+    public static void FocusFirstButtonOrFallback(Control primary, Control fallback)
+    {
+        if (!FocusFirstButton(primary))
+            FocusFirstButton(fallback);
+    }
+
+    /// <summary>
+    /// Styles a Button as a list row item (used in shop/blacksmith lists, inventory slots):
+    /// transparent background, subtle accent highlight on hover, brighter accent on focus,
+    /// white text in ALL three states (normal, hover, focus) so the row stays legible
+    /// when the focus cursor lands on it. Caller sets Text, size, and signals separately.
+    /// </summary>
+    public static void StyleListItemButton(Button btn)
+    {
+        btn.Alignment = Godot.HorizontalAlignment.Left;
+        btn.FocusMode = Control.FocusModeEnum.All;
+
+        var normal = new StyleBoxFlat();
+        normal.BgColor = new Color(0, 0, 0, 0.01f);
+        normal.SetCornerRadiusAll(4);
+        normal.ContentMarginLeft = 8;
+        btn.AddThemeStyleboxOverride("normal", normal);
+
+        var hover = new StyleBoxFlat();
+        hover.BgColor = new Color(Colors.Accent, 0.15f);
+        hover.SetCornerRadiusAll(4);
+        hover.ContentMarginLeft = 8;
+        btn.AddThemeStyleboxOverride("hover", hover);
+
+        var focus = new StyleBoxFlat();
+        focus.BgColor = new Color(Colors.Accent, 0.25f);
+        focus.SetCornerRadiusAll(4);
+        focus.ContentMarginLeft = 8;
+        btn.AddThemeStyleboxOverride("focus", focus);
+
+        // Override ALL three font color states so the white text stays readable on the
+        // accent-tinted highlight. Without this, the GameWindow Theme's default
+        // font_focus_color / font_hover_color (both BgDark) bleed through and make text
+        // invisible when the row is focused.
+        btn.AddThemeColorOverride("font_color", Colors.Ink);
+        btn.AddThemeColorOverride("font_hover_color", Colors.Ink);
+        btn.AddThemeColorOverride("font_focus_color", Colors.Ink);
+        btn.AddThemeColorOverride("font_pressed_color", Colors.Ink);
+        btn.AddThemeFontSizeOverride("font_size", FontSizes.Body);
     }
 
     private static Button? FindFirstButton(Node node)
     {
         foreach (Node child in node.GetChildren())
         {
-            if (child is Button btn && !btn.Disabled && btn.Visible)
+            if (child is Button btn && !btn.Disabled && btn.Visible && btn.FocusMode != Control.FocusModeEnum.None)
                 return btn;
             if (child is Control ctrl)
             {
@@ -165,6 +256,53 @@ public static class UiTheme
             }
         }
         return null;
+    }
+
+    private static Theme? _cachedGameTheme;
+
+    /// <summary>
+    /// Returns the shared Godot Theme resource with all standard UI styles.
+    /// Apply to a root Control (e.g., GameWindow overlay) so all children inherit
+    /// consistent button/label/panel styling without per-node overrides.
+    /// </summary>
+    public static Theme CreateGameTheme() => _cachedGameTheme ??= BuildGameTheme();
+
+    private static Theme BuildGameTheme()
+    {
+        var theme = new Theme();
+
+        // --- Button (primary/action — blue bg, dark text) ---
+        theme.SetStylebox("normal", "Button", CreateButtonStyle(false));
+        theme.SetStylebox("hover", "Button", CreateButtonStyle(true));
+        theme.SetStylebox("focus", "Button", CreateButtonFocusStyle());
+        theme.SetStylebox("pressed", "Button", CreateButtonStyle(true));
+        theme.SetStylebox("disabled", "Button", CreateColoredButtonStyle(Colors.Muted, false));
+        theme.SetColor("font_color", "Button", Colors.BgDark);
+        theme.SetColor("font_hover_color", "Button", Colors.BgDark);
+        theme.SetColor("font_focus_color", "Button", Colors.BgDark);
+        theme.SetColor("font_pressed_color", "Button", Colors.BgDark);
+        theme.SetColor("font_disabled_color", "Button", new Color(Colors.Muted, 0.4f));
+        theme.SetFontSize("font_size", "Button", FontSizes.Button);
+
+        // --- Label ---
+        theme.SetColor("font_color", "Label", Colors.Ink);
+        theme.SetFontSize("font_size", "Label", FontSizes.Body);
+
+        // --- PanelContainer ---
+        theme.SetStylebox("panel", "PanelContainer", CreatePanelStyle(0.95f, true));
+
+        // --- HSeparator ---
+        var sepStyle = new StyleBoxLine();
+        sepStyle.Color = Colors.PanelBorder;
+        sepStyle.Thickness = 1;
+        theme.SetStylebox("separator", "HSeparator", sepStyle);
+        theme.SetConstant("separation", "HSeparator", 8);
+
+        // --- ScrollContainer (hide scrollbar visual noise) ---
+        var emptyStylebox = new StyleBoxEmpty();
+        theme.SetStylebox("scroll", "ScrollContainer", emptyStylebox);
+
+        return theme;
     }
 
     /// <summary>

@@ -102,6 +102,10 @@ public partial class DebugPanel : Control
             $"Spell dmg: {s.SpellDamageMultiplier:F2}x\n" +
             $"---COMBAT---\n" +
             $"Enemies: {enemyCount}  Kills: {_killCount}\n" +
-            $"Session: {minutes}:{seconds:D2}";
+            $"Session: {minutes}:{seconds:D2}\n" +
+            $"---ENGINE---\n" +
+            $"Nodes: {(int)Performance.GetMonitor(Performance.Monitor.ObjectNodeCount)}" +
+            $"  Orphans: {(int)Performance.GetMonitor(Performance.Monitor.ObjectOrphanNodeCount)}" +
+            $"  Modals: {WindowStack.Count}";
     }
 }

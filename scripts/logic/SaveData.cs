@@ -35,9 +35,13 @@ public record SaveData
     public int Gold { get; init; } = 100;
     public SavedItemStack[] Items { get; init; } = System.Array.Empty<SavedItemStack>();
 
-    // Skills
+    // Skills & Abilities (new system)
     public int SkillPoints { get; init; }
-    public SavedSkillState[] SkillStates { get; init; } = System.Array.Empty<SavedSkillState>();
+    public int AbilityPoints { get; init; }
+    public SavedMasteryState[] MasteryStates { get; init; } = System.Array.Empty<SavedMasteryState>();
+    public SavedAbilityState[] AbilityStates { get; init; } = System.Array.Empty<SavedAbilityState>();
+    public Dictionary<string, int>? CategoryUseCounts { get; init; }
+    public Dictionary<string, int>? CategoryApSpent { get; init; }
 
     // Bank
     public SavedBankData? BankData { get; init; }
@@ -63,12 +67,7 @@ public record SavedItemStack
     public int Count { get; init; } = 1;
 }
 
-public record SavedSkillState
-{
-    public string SkillId { get; init; } = "";
-    public int Level { get; init; }
-    public int Xp { get; init; }
-}
+// SavedMasteryState and SavedAbilityState are defined in ProgressionTracker.cs
 
 public record SavedBankData
 {

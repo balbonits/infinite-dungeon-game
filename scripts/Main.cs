@@ -1,5 +1,9 @@
 using Godot;
 using DungeonGame.Autoloads;
+#if DEBUG
+using System.Reflection;
+using Chickensoft.GoDotTest;
+#endif
 
 namespace DungeonGame.Scenes;
 
@@ -37,6 +41,13 @@ public partial class Main : Node
 
         // Start with splash screen
         CallDeferred(MethodName.ShowSplashScreen);
+
+#if DEBUG
+        // After the game boots, run tests if --run-tests was passed
+        var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
+        if (testEnv.ShouldRunTests)
+            CallDeferred(MethodName.RunTests);
+#endif
     }
 
     private void ShowSplashScreen()
@@ -54,11 +65,20 @@ public partial class Main : Node
 
         splash.Connect(Ui.SplashScreen.SignalName.ContinuePressed, Callable.From(() =>
         {
-            splash.Visible = false;
-            splash.QueueFree();
-            Autoloads.SaveManager.Instance.Load();
-            GetTree().Paused = false;
-            LoadTown();
+            // Let ScreenTransition cover the splash screen during fade-to-black,
+            // then hide splash, load save, and swap in the town — all while the
+            // overlay is fully opaque. Prevents the town from flashing into view.
+            Ui.ScreenTransition.Instance.Play(
+                Strings.Town.Title,
+                () =>
+                {
+                    splash.Visible = false;
+                    splash.QueueFree();
+                    Autoloads.SaveManager.Instance.Load();
+                    GetTree().Paused = false;
+                    LoadTown();
+                },
+                Strings.Town.Arriving);
         }));
 
         GetNode<CanvasLayer>("UILayer").AddChild(splash);
@@ -131,4 +151,18 @@ public partial class Main : Node
         if (_deathScreen is Ui.DeathScreen ds)
             ds.ShowDeathFlow();
     }
+
+#if DEBUG
+    private void RunTests()
+    {
+        // Attach test runner to the SceneTree root (not Main) so it survives scene changes.
+        // GoDotTest uses the passed node as TestScene — if that node is freed during tests
+        // (e.g., when ChangeSceneToFile is called during class select confirm), all subsequent
+        // tests throw ObjectDisposedException. Root-level attachment avoids this.
+        var testRoot = new Node { Name = "TestRoot" };
+        GetTree().Root.AddChild(testRoot);
+        testRoot.ProcessMode = ProcessModeEnum.Always;
+        _ = GoTest.RunTests(Assembly.GetExecutingAssembly(), testRoot);
+    }
+#endif
 }

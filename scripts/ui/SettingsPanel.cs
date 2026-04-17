@@ -9,19 +9,16 @@ namespace DungeonGame.Ui;
 /// Q/E to switch tabs, Up/Down to navigate settings, S to toggle/adjust.
 /// Reusable — opened from both title screen and pause menu.
 /// </summary>
-public partial class SettingsPanel : Control
+public partial class SettingsPanel : GameWindow
 {
     public static SettingsPanel? ActiveInstance { get; private set; }
 
-    private ColorRect _overlay = null!;
-    private VBoxContainer _content = null!;
     private HBoxContainer _tabBar = null!;
     private readonly Button[] _tabButtons = new Button[4];
     private ScrollContainer _scrollContainer = null!;
     private VBoxContainer _settingsList = null!;
 
     private int _currentTab;
-    private bool _isOpen;
     private Action? _onClose;
 
     // Rebinding state
@@ -30,8 +27,6 @@ public partial class SettingsPanel : Control
     private readonly List<(string action, Label label)> _derivedSkillLabels = new();
 
     private static readonly string[] TabNames = { "Gameplay", "Display", "Audio", "Controls" };
-
-    public bool IsOpen => _isOpen;
 
     /// <summary>Create and show the settings panel as a child of the given parent.</summary>
     public static SettingsPanel Open(Node parent, Action? onClose = null)
@@ -46,27 +41,30 @@ public partial class SettingsPanel : Control
     public override void _Ready()
     {
         ActiveInstance = this;
-        _isOpen = true;
-        WindowStack.Push(this);
-        ProcessMode = ProcessModeEnum.Always;
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        WindowWidth = 420f;
+        base._Ready();
 
-        (_overlay, _content) = UiTheme.CreateDialogWindow(420f, 0.7f);
-        _content.AddThemeConstantOverride("separation", 8);
-        AddChild(_overlay);
+        // Auto-show on ready since this is dynamically created
+        Show();
+        BuildTab(0);
+    }
+
+    protected override void BuildContent(VBoxContainer content)
+    {
+        content.AddThemeConstantOverride("separation", 8);
 
         // Title
         var title = new Label();
         title.Text = "SETTINGS";
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
-        _content.AddChild(title);
+        content.AddChild(title);
 
         // Tab bar — actual clickable/focusable tab buttons like D2R
         _tabBar = new HBoxContainer();
         _tabBar.AddThemeConstantOverride("separation", 0);
         _tabBar.Alignment = BoxContainer.AlignmentMode.Center;
-        _content.AddChild(_tabBar);
+        content.AddChild(_tabBar);
 
         for (int i = 0; i < TabNames.Length; i++)
         {
@@ -87,20 +85,20 @@ public partial class SettingsPanel : Control
         tabHint.Text = $"[{lKey}] / [{rKey}] switch tabs";
         UiTheme.StyleLabel(tabHint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         tabHint.HorizontalAlignment = HorizontalAlignment.Center;
-        _content.AddChild(tabHint);
+        content.AddChild(tabHint);
 
-        _content.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
         // Scrollable settings list
-        _scrollContainer = new ScrollContainer();
+        _scrollContainer = new ScrollContainer { FollowFocus = true };
         _scrollContainer.CustomMinimumSize = new Vector2(0, 300);
-        _content.AddChild(_scrollContainer);
+        content.AddChild(_scrollContainer);
 
         _settingsList = new VBoxContainer();
         _settingsList.AddThemeConstantOverride("separation", 4);
         _scrollContainer.AddChild(_settingsList);
 
-        _content.AddChild(new HSeparator());
+        content.AddChild(new HSeparator());
 
         // Back button
         var backBtn = new Button();
@@ -110,9 +108,7 @@ public partial class SettingsPanel : Control
         backBtn.FocusMode = FocusModeEnum.All;
         UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Body);
         backBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(Close));
-        _content.AddChild(backBtn);
-
-        BuildTab(0);
+        content.AddChild(backBtn);
     }
 
     private void BuildTab(int tabIndex)
@@ -474,50 +470,30 @@ public partial class SettingsPanel : Control
         GetViewport().SetInputAsHandled();
     }
 
-    public void Close()
+    public new void Close()
     {
-        _isOpen = false;
-        WindowStack.Pop(this);
         ActiveInstance = null;
         GameSettings.Save();
+        base.Close();
         _onClose?.Invoke();
         QueueFree();
     }
 
-    public override void _UnhandledInput(InputEvent @event)
+    protected override bool HandleTabInput(InputEvent @event)
     {
-        if (!_isOpen) return;
-
-        if (KeyboardNav.IsCancelPressed(@event))
-        {
-            Close();
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        // Q/E switch tabs
         if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
         {
             BuildTab((_currentTab - 1 + TabNames.Length) % TabNames.Length);
-            GetViewport().SetInputAsHandled();
-            return;
+            return true;
         }
         if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
         {
             BuildTab((_currentTab + 1) % TabNames.Length);
-            GetViewport().SetInputAsHandled();
-            return;
+            return true;
         }
-
-        if (KeyboardNav.HandleInput(@event, _settingsList))
-        {
-            GetViewport().SetInputAsHandled();
-            return;
-        }
-
-        if (@event is InputEventKey k && k.Pressed)
-            GetViewport().SetInputAsHandled();
+        return false;
     }
+
 
     private static string GetActionKeyName(string action)
     {

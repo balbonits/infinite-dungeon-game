@@ -201,6 +201,23 @@ Enemies deal contact damage through an Area2D hit area with cooldown timer:
 
 Flow: `BodyEntered` signal fires -> checks player group + cooldown -> `GameState.Instance.TakeDamage()` -> `player.DamageFlash()` -> `FloatingText.Damage` -> starts cooldown timer.
 
+### Ability Hotbar
+
+4 ability slots activated by shoulder + face button combos (Q+W, Q+S, E+W, E+S). Only active abilities are assigned to the hotbar — passive abilities (e.g. Keen Senses) are always-on and do not occupy slots.
+
+**Script:** `scripts/ui/AbilityBarHud.cs` *(was `SkillBarHud.cs`)*
+
+**Ability Activation:**
+
+1. `DetectSlot()` returns slot index (0-3) or -1
+2. `AbilityBar.TryActivate(slotIndex, cooldown)` returns `AbilityDef` *(was `SkillDef`)* or null
+3. If null (on cooldown or empty slot) — return
+4. Check mana cost: `GameState.Mana >= ability.ManaCost`
+5. Deduct mana, execute attack with ability's `AttackConfig`
+6. Record use — grants Ability XP to the ability used AND Skill XP to its parent mastery
+
+See [docs/flows/combat.md](../flows/combat.md) for the full hotbar input mapping and flow details.
+
 ### Stat Integration (P2)
 
 Phase 2 replaces the flat damage formula with stat-driven combat. The current `12 + floor(level * 1.5)` base damage is a placeholder — P2 uses the full stat system from [stats.md](stats.md).
@@ -238,6 +255,9 @@ dex_crit_bonus = effective_dex * 0.5%    // from dodge, also feeds crit
 total_crit = base_crit_chance + skill_crit_bonus
 crit_multiplier = 1.5x (base) + gear bonuses
 ```
+
+**P2 mastery passive bonuses:**
+Parent Skill (mastery) level feeds into the final damage/cooldown formula for all child Abilities. At synergy thresholds, the mastery grants flat bonuses (e.g. -5% mana cost, +10% damage, -0.5s cooldown) that are applied as modifiers in the final ability calculation. See [SKILLS_AND_ABILITIES_SYSTEMS.md](SKILLS_AND_ABILITIES_SYSTEMS.md) for threshold details.
 
 See [stats.md](stats.md) for the full diminishing returns math. The transition from P1 flat formulas to P2 stat-driven formulas will happen when P2-02 (stats system) is implemented.
 

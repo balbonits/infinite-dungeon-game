@@ -2,6 +2,30 @@
 
 **Scripts:** `scripts/autoloads/SaveManager.cs`, `scripts/logic/SaveSystem.cs`
 
+## Save Slots
+
+The game uses **3 save slots**, each a separate file on disk:
+
+| Slot | Path |
+|------|------|
+| 0 | `user://save_0.json` |
+| 1 | `user://save_1.json` |
+| 2 | `user://save_2.json` |
+
+`GameState.CurrentSaveSlot` (int 0/1/2) tracks which slot the live play session writes to. It's set when the player either (a) creates a new character via New Game (first empty slot is chosen) or (b) loads an existing character from the [Load Game screen](load-game.md).
+
+`SaveManager` exposes:
+
+```csharp
+public bool HasSave(int slotIndex)
+public SaveData? LoadSlot(int slotIndex)
+public void SaveToSlot(int slotIndex, SaveData data)
+public void DeleteSlot(int slotIndex)
+public int? FindFirstEmptySlot()  // null if all 3 full
+```
+
+The legacy single-file `SaveManager.Save()` / `SaveManager.Load()` methods route through `CurrentSaveSlot`.
+
 ## Auto-Save Triggers
 
 Save happens automatically on:

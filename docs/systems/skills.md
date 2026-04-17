@@ -1,51 +1,67 @@
-# Skills
+# Skills & Abilities
 
 ## Summary
 
-Each class has a unique skill tree organized into **categories**, **base skills**, and **specific skills**. All skills use infinite leveling. Base skills provide passive bonuses and gate access to their specific skills.
+Each class has two interconnected progression systems: **Skills** (passive masteries) and **Abilities** (active combat actions). Skills provide passive bonuses and gate access to their child Abilities. Both use infinite leveling with separate point pools.
 
-Inspired by Project Zomboid's hierarchical skill system, adapted for infinite progression.
+Inspired by Project Zomboid's hierarchical skill system (passive proficiency through use), combined with ARPG-style active abilities (Diablo, Path of Exile).
+
+For class lore and magic philosophy, see [class-lore.md](../world/class-lore.md).
 
 ## Current State
 
-**Spec status: LOCKED.** Skill hierarchy, leveling model, passive bonus formulas, and skill XP system are defined. All three class skill trees are designed with full skill lists. Individual skill tuning numbers (exact cooldowns, damage values, ranges) are implementation-phase balancing — the formulas and structure are locked.
+**Spec status: LOCKED.** Skill/Ability hierarchy, leveling model, passive bonus formulas, XP system, and all three class trees are defined. Individual tuning numbers (exact cooldowns, damage values, ranges) are implementation-phase balancing -- the formulas and structure are locked.
 
+---
 
-
-## Skill System Design
+## System Design
 
 ### Hierarchy
 
 ```
-Category (organizational label, not a skill — has no level)
-  └── Base Skill (leveled infinitely, provides passive bonuses, gates specific skills)
-        └── Specific Skill (unlocked at base skill level 1, leveled infinitely)
+Category (organizational label -- has no level)
+  +-- Skill / Mastery (leveled infinitely, provides passive bonuses, gates Abilities)
+        +-- Ability (unlocked at parent Skill level 1, leveled infinitely)
 ```
 
-Two layers of actual skills. Categories are purely organizational — they group base skills visually but have no levels or stats of their own.
+Two layers of actual progression. Categories are purely organizational -- they group Skills visually but have no levels or stats of their own.
+
+### Taxonomy
+
+**Skills** are passive masteries you improve over time. They provide passive bonuses (damage %, cast speed %, block chance, etc.) and gate access to their child Abilities. Examples: Bladed, Bowmanship, Fire, Awareness.
+
+**Abilities** are active combat actions you use in fights. They have mana costs, cooldowns, ranges, and damage values. They are assigned to the 4-slot hotbar. Examples: Slash, Dead Eye, Fireball, Snare.
+
+Each Ability belongs to exactly one parent Skill. Using an Ability in combat grants XP to both the Ability and its parent Skill.
+
+### Architecture
+
+**Reactive/pull pattern.** The Ability looks UP to its parent Skill to read data (level, passive bonus values). The Ability then adjusts its own values based on what it reads. All logic lives in the Ability -- the Skill is just a data source.
+
+**No shared type framework.** Each Ability is individually coded with its own specific behavior. No Passive/Toggle/Active base classes or type enums. This avoids coupling where modifying one Ability's framework breaks others.
 
 ### Progression Model
 
-1. **Base skills** are the entry point. The player levels a base skill (e.g., "Unarmed") through use and XP investment.
-2. When a base skill reaches **level 1**, all specific skills underneath it **unlock immediately**.
-3. Each specific skill is then leveled independently and infinitely.
-4. The base skill continues to be leveled infinitely alongside its specific skills.
+1. **Skills** are the entry point. The player levels a Skill (e.g., "Bladed") through use and SP investment.
+2. When a Skill reaches **level 1**, all Abilities underneath it **unlock immediately**.
+3. Each Ability is then leveled independently and infinitely.
+4. The Skill continues to be leveled infinitely alongside its Abilities.
 
-**Hybrid leveling:** Skills gain XP through two paths:
-- **Use-based XP** — performing actions with a skill earns XP toward that skill (e.g., swinging a sword levels Bladed, casting fire spells levels Fire)
-- **Skill points on level-up** — on each character level-up, the player receives skill points to allocate freely to any base or specific skill
+**Hybrid leveling:** Both Skills and Abilities gain XP through two paths:
+- **Use-based XP** -- performing actions earns XP automatically (swinging a sword levels Bladed and Slash)
+- **Point allocation** -- on level-up, the player receives SP (for Skills) and AP (for Abilities) to allocate manually
 
 Both paths feed progression simultaneously.
 
-**Base skills provide two things:**
-- **Passive bonuses** that scale with level (e.g., Unarmed level 10 gives a passive unarmed damage bonus)
-- **Gating** — specific skills require at least level 1 in the parent base skill
+**Skills provide two things:**
+- **Passive bonuses** that scale with level (e.g., Bladed level 10 = passive bladed damage bonus)
+- **Gating** -- Abilities require at least level 1 in the parent Skill
 
-**Specific skills** are the actionable abilities used in combat. Each level improves the skill's stats (damage, cooldown, range, duration, etc.). Exact per-level scaling is implementation-phase balancing — the formula structure is locked.
+**Abilities** are the actionable powers used in combat. Each level improves the Ability's stats (damage, cooldown, range, duration, etc.). Exact per-level scaling is implementation-phase balancing.
 
-### Base Skill Passive Bonus Formula
+### Skill Passive Bonus Formula
 
-Every base skill provides a passive bonus that scales with its level. All base skills use the same formula structure, with a class-appropriate multiplier:
+Every Skill provides a passive bonus that scales with its level. All Skills use the same formula structure, with a class-appropriate multiplier:
 
 ```
 passive_bonus(skill_level) = skill_level * base_multiplier * (100 / (skill_level + 100))
@@ -63,343 +79,396 @@ This reuses the same diminishing returns curve as stats (see [stats.md](stats.md
 | Chance % (crit, dodge, block) | 0.5 | +4.5% | +16.7% |
 | Regen / utility | 0.3 | +2.7% | +10.0% |
 
-**Example — Warrior Bladed base skill at level 25:**
+**Example -- Warrior Bladed Skill at level 25:**
 - Passive damage bonus: `25 * 1.5 * (100 / 125)` = **30.0%** bonus bladed weapon damage
 - Passive crit chance: `25 * 0.5 * (100 / 125)` = **10.0%** bladed crit chance
 
-These bonuses are always active while the skill is at that level — no activation needed.
+These bonuses are always active while the Skill is at that level -- no activation needed.
 
-### Skill XP System
+### XP System
 
-Skills gain XP through two simultaneous paths:
+Skills and Abilities gain XP through two simultaneous paths:
 
 #### Use-Based XP
 
-Every time a skill is used in combat, it earns XP toward that skill's next level.
+Every time an Ability is used in combat, it earns XP for both itself AND its parent Skill.
 
 ```
-skill_xp_per_use(skill) = base_xp_per_use * floor_multiplier
+xp_per_use(type) = base_xp_per_use * floor_multiplier
 ```
 
-| Skill Type | Base XP Per Use |
-|-----------|----------------|
-| Base skill (passive — levels when any child specific skill is used) | 5 |
-| Specific skill (active ability) | 10 |
-| Innate skill (per second while active) | 2 |
+| Type | Base XP Per Use |
+|------|----------------|
+| Skill (passive -- levels when any child Ability is used) | 5 |
+| Ability (active -- levels on direct use) | 10 |
+| Innate Skill (per second while active) | 2 |
 
 `floor_multiplier` = same as enemy XP floor multiplier from [leveling.md](leveling.md): `1 + (floor - 1) * 0.5`
 
-Using deeper-floor skills earns more skill XP, keeping skill leveling relevant at all stages.
+Using deeper-floor Abilities earns more XP, keeping progression relevant at all stages.
 
-#### Skill Point Allocation
+#### Point Allocation
 
-On level-up, the player receives skill points (2 per level, 3 at milestones). Each point can be allocated to any base or specific skill to grant a flat XP boost:
-
-```
-xp_from_skill_point = 50 * (1 + target_skill_level * 0.1)
-```
-
-This scales with the target skill's current level — points invested in higher-level skills give proportionally more XP, preventing "one point = one level" at any stage.
-
-#### Skill Level-Up Formula
+**Skill Points (SP)** are allocated to Skills (passive masteries). **Ability Points (AP)** are allocated to Abilities (active combat actions). Each point grants a flat XP boost:
 
 ```
-skill_xp_to_next_level(skill_level) = floor(skill_level^2 * 20)
+xp_from_point = 50 * (1 + target_level * 0.1)
 ```
 
-Same quadratic shape as character XP but with a smaller constant (20 vs 45), so skill levels come faster than character levels.
+This scales with the target's current level -- points invested in higher-level Skills/Abilities give proportionally more XP.
 
-| Skill Level | XP Required |
-|-------------|------------|
-| 0 → 1 | 0 (instant — all skills start available) |
-| 1 → 2 | 20 |
-| 5 → 6 | 500 |
-| 10 → 11 | 2,000 |
-| 25 → 26 | 12,500 |
-| 50 → 51 | 50,000 |
+**SP sources:** Character level-up.
+
+**AP sources (3):**
+1. **Leveling** (primary, ~60% of total AP) -- AP per character level-up
+2. **Combat milestones** (bonus, ~25%) -- AP from boss kills, floor clears
+3. **Use-based per-category** (trickle, ~15%) -- earn AP by using Abilities in combat, tracked per category (Body AP, Survival AP, Elemental AP, etc.)
+
+*Exact rates defined in [point-economy.md](point-economy.md).*
+
+#### Level-Up Formula
+
+```
+xp_to_next_level(current_level) = floor(current_level^2 * 20)
+```
+
+Same quadratic shape as character XP but with a smaller constant (20 vs 45), so Skill/Ability levels come faster than character levels. Same formula for both Skills and Abilities.
+
+| Level | XP Required |
+|-------|------------|
+| 0 -> 1 | 0 (instant -- all Skills start available) |
+| 1 -> 2 | 20 |
+| 5 -> 6 | 500 |
+| 10 -> 11 | 2,000 |
+| 25 -> 26 | 12,500 |
+| 50 -> 51 | 50,000 |
 
 ### Weapon Equipment Requirements
 
-**Weapon-type base skills require a matching weapon equipped to use their specific skills.**
+**Weapon-type Skills require a matching weapon equipped to use their child Abilities.**
 
-| Base Skill | Required Equipment |
-|-----------|-------------------|
-| Unarmed | No weapon equipped (or fists) |
-| Bladed | Sword, axe, or dagger in main hand |
-| Blunt | Club, hammer, or mace in main hand |
-| Polearms | Spear, halberd, or staff in main hand |
-| Shields | Shield in off hand |
-| Drawn | Bow or crossbow in main hand |
-| Thrown | Throwing weapon in main hand |
-| Firearms | Firearm in main hand |
-| Melee (Ranger) | Defensive offhand weapon equipped |
+| Skill (Mastery) | Required Equipment | Class |
+|-----------------|-------------------|-------|
+| Unarmed | No weapon equipped (or fists) | Warrior |
+| Bladed | Sword, axe, or dagger in main hand | Warrior |
+| Blunt | Club, hammer, or mace in main hand | Warrior |
+| Polearms | Spear, halberd, or staff in main hand | Warrior |
+| Shields | Shield in off hand | Warrior |
+| Dual Wield | Two weapons equipped | Warrior |
+| Bowmanship | Bow or crossbow in main hand | Ranger |
+| Throwing | Throwing weapon in main hand | Ranger |
+| Firearms | Firearm in main hand | Ranger |
+| CQC | Defensive offhand weapon equipped | Ranger |
 
-**Mind/Instinct/Arcane/Conduit skills have no weapon requirement** — they are mental/magical and work regardless of equipment.
+**Mind/Survival/Elemental/Aether/Attunement Skills have no weapon requirement** -- they are mental/magical and work regardless of equipment.
 
-**Base skill passive bonuses are always active** even without the matching weapon — they represent general proficiency. Only the specific skills (active abilities) require the weapon.
+**Skill passive bonuses are always active** even without the matching weapon -- they represent general proficiency. Only the Abilities (active combat actions) require the weapon.
 
-### Specific Skill Unlock Rules
+### Ability Unlock Rules
 
-**All specific skills under a base skill unlock at base level 1.** Higher base levels do NOT unlock additional specific skills. The full roster is available immediately once the player puts their first point into the base skill.
+**All Abilities under a Skill unlock at Skill level 1.** Higher Skill levels do NOT unlock additional Abilities. The full roster is available immediately once the player puts their first point into the parent Skill.
 
-**Design rationale:** This encourages breadth of experimentation. Players can try all abilities early and discover which ones fit their build. Depth comes from leveling individual specific skills higher, not from gating access.
+**Design rationale:** This encourages breadth of experimentation. Players can try all Abilities early and discover which ones fit their build. Depth comes from leveling individual Abilities higher, not from gating access.
 
 ### Infinite Leveling
 
-Every base skill and specific skill has **no level cap**. Consistent with the game's infinite dungeon theme, players can always grind deeper into any skill. Combined with diminishing returns on stats (see [stats.md](stats.md)), each level is always rewarding but with decreasing marginal gains.
+Every Skill and Ability has **no level cap**. Consistent with the game's infinite dungeon theme, players can always grind deeper. Combined with diminishing returns on stats (see [stats.md](stats.md)), each level is always rewarding but with decreasing marginal gains.
 
 ### Class-Locked
 
-Class skills are strictly locked to their class. No skill sharing between classes. See [classes.md](classes.md) for class design.
+Class Skills and Abilities are strictly locked to their class. No sharing between classes. See [classes.md](classes.md) for class design.
 
-**Exception: Innate skills.** There is a universal Innate skill category (Haste, Sense, Fortify) available to all classes. These are species-level magicule abilities, not class skills. See [magic.md](magic.md) for full Innate skill design.
-
-**Innate skill UI:** Innate skills display in separate sub-panels per category (one sub-panel for each innate skill), distinct from the class skill tree panel. This prevents visual clutter and reinforces that innate skills are a separate system from class combat skills.
+**Exception: Innate Skills.** There is a universal Innate category (Haste, Sense, Fortify, Armor) available to all classes. These are species-level magicule abilities, not class skills. See [magic.md](magic.md) for full Innate design.
 
 ---
 
-## Warrior Skills
+## Innate Skills (4, All Classes)
 
-The Warrior is the melee-focused class. Power comes from close combat mastery.
+Innate Skills are species-level magicule abilities every human possesses. They sit outside the class skill trees and are available to all classes. See [magic.md](magic.md) for full lore and mechanics.
 
-**Categories:** Body, Mind
+| Skill | Type | Warrior Name | Ranger Name | Mage Name | Description |
+|-------|------|-------------|-------------|-----------|-------------|
+| Haste | Toggle (mana drain) | Haste | Haste | Haste | Magicule-enhanced burst of speed + dodge chance |
+| Sense | Toggle (mana drain) | Sense | Sense | Sense | Magicule-enhanced perception, detect through walls |
+| Fortify | Toggle (mana drain) | Fortify | Fortify | Fortify | Magicule-reinforced body, damage resistance |
+| Armor | Always-on passive | Ironhide | Nimbleguard | Spellweave | Armor proficiency, class-specific equipment mastery |
+
+**Innate UI:** Innate Skills display in a separate sub-section of the Skills tab, distinct from class masteries.
+
+---
+
+## Warrior
+
+**Categories:** Body (6 masteries) + Mind (2 masteries)
+**Tab name:** Warrior Arts
+**Total: 8 masteries, 33 abilities**
+
+*Class lore: see [class-lore.md](../world/class-lore.md#warrior)*
 
 ### Body
 
-Physical combat techniques. Five base skills covering all melee fighting styles.
+Physical combat techniques. Six masteries reflecting mercenary pragmatism -- trained in all weapon forms.
 
 #### Unarmed
 
 Hand-to-hand combat. Passive bonuses: unarmed damage, unarmed attack speed.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Punch | Fast straight strikes, high attack speed |
-| Kick | Leg strikes, knockback effect |
-| Grapple | Holds and throws, close-range crowd control |
-| Elbow/Knee | Short-range burst damage |
+| Kick | Leg strike with knockback |
+| Grappling | Holds, throws, pins |
+| Elbow Strike | Short-range burst damage |
 
 #### Bladed
 
 Swords, axes, and daggers. Passive bonuses: bladed weapon damage, bladed critical chance.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Slash | Wide arc swing, can hit multiple enemies |
-| Thrust | Precision stab, high single-target damage |
-| Cleave | Heavy overhead strike, hits multiple enemies |
-| Parry | Deflect incoming melee attack, opens a counter window |
+| Ability | Description |
+|---------|-------------|
+| Slash | Wide arc swing, multi-target |
+| Thrust | Precision stab, high single-target |
+| Cleave | Heavy overhead, multi-target |
+| Parry | Deflect attack, counter window |
 
 #### Blunt
 
 Clubs, hammers, and maces. Passive bonuses: blunt weapon damage, stun chance.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Smash | Heavy overhead hit, bonus damage vs armored enemies |
-| Sweep | Low arc swing, knockback effect |
+| Ability | Description |
+|---------|-------------|
+| Smash | Heavy overhead, bonus vs armored |
+| Bump | Blunt thrust, knocks enemy back ~1 tile |
 | Crush | Charged hit, chance to stun |
-| Shatter | Break enemy guard or shields |
+| Shatter | Break enemy guard/shields |
 
 #### Polearms
 
 Spears, halberds, and quarterstaffs. Passive bonuses: polearm damage, attack range.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Thrust | Long-range poke, keeps distance from enemies |
-| Sweep | Wide arc, crowd control |
-| Brace | Set weapon against charging enemies, counter-charge bonus |
-| Vault | Use polearm to reposition or dodge |
+| Ability | Description |
+|---------|-------------|
+| Pierce | Long-range stab, keeps distance |
+| Sweep | Horizontal AoE swing |
+| Brace | Set against charge, counter bonus |
+| Vault | Polearm reposition/dodge |
+| Haft Blow | Thrust blunt end for knockback |
 
 #### Shields
 
 Shield techniques. Passive bonuses: block chance, block damage reduction.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Block | Active damage reduction stance |
-| Shield Bash | Offensive shield strike, staggers enemy |
-| Deflect | Reflect incoming projectiles |
-| Bulwark | Sustained defensive stance, increased defense at the cost of movement speed |
+| Shield Bash | Offensive strike, staggers |
+| Deflect | Reflect projectiles |
+| Bulwark | Sustained defense, reduced movement |
+
+#### Dual Wield
+
+Two-weapon fighting. Passive bonuses: dual wield attack speed, dual wield damage.
+
+| Ability | Description |
+|---------|-------------|
+| Dual Stab | Simultaneous stab, upped crit chance |
+| Dual Slash | X-shaped slash, upped bleed chance |
+| Spin Attack | Single spin AoE |
+| Rapid Combo | 3-strike combo; +1 strike every 5 ability levels, caps at 15 -> becomes **Omnislash** |
 
 ### Mind
 
-Mental discipline for a solo warrior. Two base skills covering internal resilience and external presence.
+Mental discipline for a solo warrior. Two masteries covering internal resilience and external presence.
 
-#### Inner
+#### Discipline
 
-Self-focused mental discipline. Passive bonuses: damage resistance, HP regeneration.
+Self-focused mental toughness. Passive bonuses: damage resistance, HP regeneration.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Battle Focus | Heightened awareness, increases accuracy and critical hit chance |
-| Pain Tolerance | Passive damage reduction |
-| Second Wind | Self-heal over time, cooldown-based |
-| Iron Will | Resist debuffs and status effects |
+| Ability | Description |
+|---------|-------------|
+| Focus | Heightened awareness, +accuracy +crit |
+| Endure | Damage reduction + debuff resistance |
+| Deep Breaths | Self-heal over time, cooldown-based |
+| Blood Lust | Kills extend effect. +ATK, +DMG, +SPD, +HP/MP regen, +status resist. BUT -DEF, -MP capacity |
 
-#### Outer
+#### Intimidation
 
-Enemy-focused mental presence. Passive bonuses: enemy stat debuff aura range, debuff potency.
+Enemy-focused magicule projection. Passive bonuses: debuff aura range, debuff potency.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| War Cry | AoE shout that weakens nearby enemies |
-| Intimidate | Single-target fear or stagger |
-| Menacing Presence | Passive aura that debuffs nearby enemy stats |
-| Battle Roar | AoE shout that slows enemy attack speed |
+| Ability | Description |
+|---------|-------------|
+| Shout | AoE weakens nearby enemies |
+| Intimidate | Single-target fear/stagger |
+| Ugly Mug | Debuff aura on nearby enemies |
+| Battle Roar | AoE slows enemy attack speed + chance to stun |
 
 ---
 
-## Ranger Skills
+## Ranger
 
-The Ranger is the ranged combat class (formerly "Archer"). Power comes from distance, precision, and preparation. Not as physically dominant as the Warrior, but compensates with mental calculation — range, trajectory, and situational awareness.
+**Categories:** Weaponry (4 masteries) + Survival (3 masteries)
+**Tab name:** Ranger Crafts
+**Total: 7 masteries, 37 abilities**
 
-**Categories:** Arms, Instinct
+*Class lore: see [class-lore.md](../world/class-lore.md#ranger)*
 
-**Ammo system:** Ammo is unlimited, but requires a "magazine" item equipped (quivers, mags, projectile bags, bandoliers). These are purchased, not crafted from drops.
+**Ammo system:** Ammo is unlimited, but requires a "magazine" item equipped (quivers, mags, projectile bags, bandoliers). Purchased, not crafted.
 
-### Arms
+### Weaponry
 
-Ranged weapon mastery and close-range defense. Four base skills covering all Ranger fighting styles.
+The tools of the hunt. Each weapon solves a specific engagement problem.
 
-#### Drawn
+#### Bowmanship
 
-Bows and crossbows. Passive bonuses: drawn weapon damage, draw speed.
+Bows and crossbows. The identity weapon -- silent, precise. Passive bonuses: bow/crossbow damage, draw speed. No auto-crossbows in the game for now.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Power Shot | High-damage single shot, slow draw |
-| Rapid Fire | Fast consecutive shots, reduced damage per hit |
-| Arc Shot | Arcing trajectory, hits behind cover or over obstacles |
-| Pin Shot | Pins enemy in place briefly, movement denial |
+| Ability | Description |
+|---------|-------------|
+| Dead Eye | Aimed shot, high damage, slow draw. The kill shot. |
+| Pepper | Fast consecutive shots, reduced per-hit damage. When stealth breaks. |
+| Lob | Arcing trajectory, hits behind cover or obstacles |
+| Pin | Pins enemy in place, movement denial. The prey doesn't run. |
+| Flame Arrow | Fire-imbued shot, DoT on impact. Tinkered. |
 
-#### Thrown
+#### Throwing
 
-Throwing knives, axes, and other projectiles. Passive bonuses: thrown weapon damage, throw speed.
+Throwing knives, axes, and other projectiles. Quick deployment tools from the belt. Passive bonuses: thrown weapon damage, throw speed.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Knife Throw | Fast, low-damage throw, quick cooldown |
-| Axe Throw | Slower, heavier throw, higher damage |
-| Fan Throw | Multiple projectiles in a spread arc |
-| Bounce Shot | Projectile ricochets between nearby enemies |
+| Ability | Description |
+|---------|-------------|
+| Flick | Fast knife throw, low damage, quick cooldown. The quick option. |
+| Chuck | Heavy throw (axe), higher damage, slower. For bigger targets. |
+| Fan | Multiple projectiles in spread arc. Group coverage. |
+| Ricochet | Bounces between enemies. The trick shot. |
+| Frost Blade | Cold-imbued throw, slows target. Tinkered. |
 
 #### Firearms
 
-Pistols, rifles, and other guns. Passive bonuses: firearm damage, reload speed.
+Pistols, rifles, and other guns. The loud option. Passive bonuses: firearm damage, reload speed.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Quick Draw | Fast shot from holster, short-range |
-| Steady Shot | Aimed shot, high accuracy, moderate damage |
-| Burst Fire | Multiple rapid shots, spread increases |
-| Snipe | Long-range precision shot, high damage, long cooldown |
+| Ability | Description |
+|---------|-------------|
+| Quick Draw | Fast shot from holster, short range. Surprise encounters. |
+| Bead | Aimed shot, high accuracy. Draw a bead on 'em. |
+| Spray | Multiple rapid shots, spread increases. Suppressive. |
+| Snipe | Long-range precision, high damage, long cooldown. THE shot. |
+| Shock Round | Lightning-imbued bullet, chains to nearby enemy. Tinkered. |
 
-#### Melee
+#### CQC
 
-Defensive offhand weapons — knives, small bucklers, claw gauntlets. Passive bonuses: melee block chance, melee counter damage. These are offhand-only weapons that don't interfere with the Ranger's primary ranged weapon.
+Close Quarters Combat. The backup plan -- when prey gets too close, survive and get back to range. Passive bonuses: melee block chance, melee counter damage.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Parry | Deflect incoming melee attack |
-| Block | Reduce damage with offhand buckler or gauntlet |
-| Riposte | Counter-attack after a successful parry or block |
-| Disarm | Knock weapon from enemy's grip, reducing their damage temporarily |
+| Ability | Description |
+|---------|-------------|
+| Parry | Deflect incoming melee attack. Buy time. |
+| Hunker | Reduce damage with offhand buckler. Absorb what you can't dodge. |
+| Riposte | Counter-strike after parry/guard. Punish their approach. |
+| Shiv | Quick dirty stab, chance to stagger. Create an opening to escape. |
 
-### Instinct
+### Survival
 
-Gut-level reactions and tactical sense. Three base skills covering offensive calculation, defensive awareness, and tactical preparation.
-
-#### Precision
-
-Offensive mental calculation — accuracy, targeting, ballistics. Passive bonuses: accuracy, critical hit chance.
-
-| Specific Skill | Description |
-|----------------|-------------|
-| Steady Aim | Increases accuracy while stationary, stacking buff |
-| Weak Spot | Identify and target enemy vulnerabilities, bonus damage |
-| Range Calc | Improved damage at long range, reduced falloff |
-| Lead Shot | Predict enemy movement, hit moving targets more reliably |
+What the wilderness teaches you. Preparation, observation, and engineering solutions.
 
 #### Awareness
 
-Defensive situational reading — threat detection, evasion, positioning. Passive bonuses: evasion chance, threat detection range. Evasion skills are equipment-independent — pure skill, not gear. Melee offhand equipment can bonus these skills but is not required.
+The ghillie suit. See without being seen. Passive bonuses: evasion chance, detection range. 4 passive + 4 active.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Threat Sense | Detect enemies before they enter visual range |
-| Dodge Roll | Quick roll to evade attacks, brief invulnerability |
-| Disengage | Create distance from nearby enemies, movement burst |
-| Tumble | Recover from knockback or stagger, reduced stun duration |
+| Ability | Behavior | Description |
+|---------|----------|-------------|
+| Keen Senses | Passive | Increased detection range |
+| Tip Toes | Toggle | Active evasion/concealment effect (turn on/off) |
+| Disengage | Active | Step back 1 tile + i-frames. Level-up adds duration, max 1.5s |
+| Steady Breathing | Passive | Slight HP recovery, better MP recovery. Sniper calming breath |
+| Rangefinding | Passive | Better hit & crit chance while standing still |
+| Tracking | Passive | Better movement speed, but decreased range & accuracy while moving/firing |
+| Steady Aim | Active | Charge 1-shot. Guaranteed crit & hit, locks into stance. Up to 1.5s charge |
+| Weak Spot | Active | Single target. +attack speed +hit chance for 5-10s. Duration from repeated use on same target (10 uses to max) |
+
+Design tensions:
+- Rangefinding (better standing) vs Tracking (better moving) -- playstyle choice
+- Steady Aim (burst precision) vs Weak Spot (sustained bonus) -- two precision modes
+- Tip Toes (sustained evasion) vs Disengage (burst escape) -- two defensive modes
 
 #### Trapping
 
-Tactical preparation — area denial, enemy manipulation, ambush setup. Passive bonuses: trap damage, trap duration.
+The patient hunter's toolkit. Area denial, enemy manipulation, ambush setup. Passive bonuses: trap damage, trap duration.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Snare | Place a trap that roots enemies in place |
-| Tripwire | Line trap that triggers knockdown on contact |
-| Decoy | Place a dummy that draws enemy attention |
-| Ambush | Bonus damage on first attack against unaware enemies |
+| Ability | Description |
+|---------|-------------|
+| Snare | Place trap that roots enemies. Hold the prey. |
+| Tripwire | Line trap triggers knockdown on contact. Area denial. |
+| Decoy | Dummy that draws enemy attention. Misdirection. |
+| Bait | Lure that attracts enemies to a specific spot. Sets up kill zones. |
+| Ambush | Bonus damage on first strike against unaware enemies. The hunter's advantage. |
 
-## Mage Skills
+#### Sapping
 
-The Mage is the spell-based class. Power comes entirely from magic and mental mastery. The Mage's hypothesis: mana is rooted in the brain and nervous system — enhancing these bodily systems directly improves magical ability.
+The tinkerer's workshop. Homemade explosives and area denial devices. Passive bonuses: explosive damage, explosive radius.
 
-**Categories:** Arcane, Conduit
+| Ability | Description |
+|---------|-------------|
+| Frag | AoE explosion damage. Simple, effective boom. |
+| Smoke Bomb | Obscure area, reduces enemy accuracy. Cover for escape or repositioning. |
+| Flashbang | AoE blind/stun, brief. Disorient and reposition. |
+| Caltrops | Scatter on ground, slows enemies in area. Passive area denial. |
+| Sticky Bomb | Attach to enemy, delayed explosion. Targeted demolition. |
+
+---
+
+## Mage
+
+**Categories:** Elemental (4 masteries) + Aether (1 mastery) + Attunement (3 masteries)
+**Tab name:** Arcane Spells
+**Total: 8 masteries, 33 abilities**
+
+*Class lore and magic philosophy: see [class-lore.md](../world/class-lore.md#mage)*
 
 **Spell acquisition:** Mages learn spells through two methods:
-- **Spell books:** Buy or find a spell book → learn the spell directly (Diablo 1 style)
-- **Spell scrolls (osmosis learning):** Consume one scroll to establish a base understanding of the spell, then consume additional copies of the same scroll to fully learn it. Learning by repeated casting and experience.
+- **Spell books:** Buy or find a spell book -> learn the spell directly (Diablo 1 style)
+- **Spell scrolls (osmosis learning):** Use scrolls to gradually internalize a spell through repeated casting
 
-Full spell acquisition system design is deferred to a dedicated doc (crosses into items/inventory territory).
+Three states: Unknown -> Learning (scroll progress bar) -> Learned. Unlearned spells show as grayed out "Unknown Spell" in the Abilities tab.
 
-**Offhand slot:** Grimoires, ward orbs, and magic-enabled defensive items. These are passive equipment that enhance existing skills (e.g., a fire grimoire buffs Fire spells). No dedicated base skill — offhand mastery comes from the skills it enhances.
+Full spell acquisition design in [magic.md](magic.md).
 
-**Base skill vs specific skill roles:**
-- **Base skill level (e.g., Fire):** Improves *casting* — cast speed, spell range, mana efficiency
-- **Specific skill level (e.g., Fireball):** Improves the *spell itself* — damage, area of effect, duration, healing amount, etc.
+**Offhand slot:** Grimoires, ward orbs, and magic-enabled defensive items. Passive equipment that enhances existing Skills (e.g., a fire grimoire buffs Fire spells).
 
-This mirrors Warrior/Ranger where base skills improve general weapon handling and specific skills improve individual techniques.
+**Skill vs Ability roles:**
+- **Skill level (e.g., Fire):** Improves *casting* -- cast speed, spell range, mana efficiency
+- **Ability level (e.g., Fireball):** Improves the *spell itself* -- damage, AoE, duration, healing amount
 
-### Arcane
+### Elemental
 
-Spell mastery across six elemental schools. Six base skills — the most of any class, reflecting the breadth of magical knowledge.
-
-Spells are divided into two groups:
-- **Elemental** (physical forces): Fire, Water, Air, Earth
-- **Null** (non-physical forces): Light, Dark
+Nature manipulation. Mental models built on everyday sensory experience. Low-moderate mana cost.
 
 #### Fire
 
-Fire magic — heat, flame, combustion. Passive bonuses: fire cast speed, fire spell range, fire mana efficiency.
+Heat, flame, combustion. Passive bonuses: fire cast speed, fire spell range, fire mana efficiency.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Fireball | Projectile explosion, area damage on impact |
-| Flame Wall | Line of fire that damages enemies passing through |
+| Flame Wall | Line of fire, damages enemies passing through |
 | Ignite | Set target ablaze, damage over time |
 | Inferno | Large area sustained fire, high mana cost |
 
 #### Water
 
-Water and ice magic — cold, frost, tides. Passive bonuses: water cast speed, water spell range, water mana efficiency.
+Cold, frost, tides. Passive bonuses: water cast speed, water spell range, water mana efficiency.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Frost Bolt | Ice projectile, slows target on hit |
 | Freeze | Immobilize target in ice, duration scales with level |
-| Tidal Wave | Wide frontal wave, pushes and damages enemies |
-| Mist Veil | Create obscuring mist, reduces enemy accuracy in area |
+| Tidal Wave | Wide frontal wave, pushes and damages |
+| Mist Veil | Obscuring mist, reduces enemy accuracy in area |
 
 #### Air
 
-Air and electricity magic — wind, lightning, storms. Passive bonuses: air cast speed, air spell range, air mana efficiency.
+Wind, lightning, storms. Passive bonuses: air cast speed, air spell range, air mana efficiency.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Lightning | Fast bolt, high single-target damage |
 | Gust | Knockback wind blast, repositions enemies |
 | Chain Shock | Lightning jumps between nearby enemies |
@@ -407,75 +476,100 @@ Air and electricity magic — wind, lightning, storms. Passive bonuses: air cast
 
 #### Earth
 
-Earth and stone magic — rock, tremors, petrification. Passive bonuses: earth cast speed, earth spell range, earth mana efficiency.
+Stone, tremors, petrification. Passive bonuses: earth cast speed, earth spell range, earth mana efficiency.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Stone Spike | Sharp rock eruption from ground, single-target |
-| Quake | Area tremor, damages and staggers nearby enemies |
-| Petrify | Turn target to stone temporarily, hard crowd control |
+| Ability | Description |
+|---------|-------------|
+| Stone Spike | Rock eruption from ground, single-target |
+| Quake | Area tremor, damages and staggers nearby |
+| Petrify | Turn target to stone temporarily, hard CC |
 | Earthen Armor | Coat self in stone, temporary damage absorption |
 
-#### Light
+### Aether
 
-Light and energy magic — radiance, energy blasts, purification. Offensive light spells are energy-based (concentrated energy blasts, not "holy" themed). Passive bonuses: light cast speed, light spell range, light mana efficiency.
+Cosmic force -- light and dark as two expressions of one phenomenon. Star and black hole. Push and pull. High mana cost, limited but powerful.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Energy Blast | Concentrated energy projectile, high direct damage |
-| Radiance | Burst of light energy around caster, damages nearby enemies |
-| Heal | Restore HP to self, amount scales with level |
-| Purify | Remove debuffs and negative status effects from self |
+#### Aether
 
-#### Dark
+Light (outward: energy, creation, welding-style restoration) and Dark (inward: gravity, consumption, compression) under one mastery. Passive bonuses: aether cast speed, aether spell range, aether mana efficiency.
 
-Shadow and void magic — draining, cursing, darkness. Passive bonuses: dark cast speed, dark spell range, dark mana efficiency.
+| Ability | Direction | Description |
+|---------|-----------|-------------|
+| Nova | Light | Radiant energy burst around caster, AoE damage |
+| Weld | Light | Burst heal -- fuses wounds shut with raw energy. Expensive, powerful |
+| Purify | Light | Cleanse all debuffs and status effects with purifying energy |
+| Drain | Dark | Gravitational pull on target's life force, heals caster |
+| Singularity | Dark | Gravity well at target location, pulls enemies in and damages over time |
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Drain Life | Steal HP from target, heals self for a portion |
-| Curse | Debuff target, reduces their damage and defense |
-| Shadow Bolt | Dark projectile, high damage, slow cast |
-| Void Zone | Area of darkness that damages enemies standing in it |
+**Purify vs Cleanse:** Purify (Aether) removes ALL debuffs including magical curses, high cost. Cleanse (Attunement: Restoration) removes physical ailments only (poison, bleed), low cost.
 
-### Conduit
+**Earthen Armor vs Barrier:** Earthen Armor is literal stone coating (nature manipulation). Barrier is a pure mana shield (internal magic). Different sources, can stack.
 
-The body as a vessel for magic. A Mage's physical training isn't about combat strength — it's about defense, healing, and enhancing the nervous system to channel more magic. Think Monk or Priest physicality, not Warrior.
+### Attunement
 
-Three base skills covering bodily restoration, neural enhancement, and dangerous overcharge.
+The science of internal mana. Training the brain and body to process magic better. Low-moderate mana cost.
 
 #### Restoration
 
 Body defense and self-repair. Passive bonuses: damage resistance, HP regeneration.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Mend | Quick self-heal, low mana cost, short cooldown |
 | Barrier | Magical shield that absorbs incoming damage |
-| Cleanse | Remove physical ailments (poison, bleed, etc.) |
-| Regeneration | Sustained HP recovery over time, longer duration than Mend |
+| Cleanse | Remove physical ailments (poison, bleed, burn) |
+| Regeneration | Sustained HP recovery over time, longer duration |
 
 #### Amplification
 
-Neural enhancement — expanding the brain's capacity to channel magic. Passive bonuses: max mana, mana regeneration rate.
+Neural enhancement -- expanding the brain's capacity to channel magic. Passive bonuses: max mana, mana regeneration rate.
 
-| Specific Skill | Description |
-|----------------|-------------|
-| Mana Surge | Burst of mana recovery, cooldown-based |
+| Ability | Description |
+|---------|-------------|
+| Mana Surge | Burst mana recovery, cooldown-based |
 | Quick Cast | Temporarily reduce cast time of all spells |
-| Attunement | Increase elemental affinity, boosting damage of attuned element |
+| Resonance | Boost damage of an attuned element |
 | Focus Channel | Reduce mana cost of all spells while stationary |
 
 #### Overcharge
 
-Push the nervous system beyond safe limits — massive power at bodily cost. The Mage's "berserk" equivalent. Passive bonuses: overcharge duration, reduced overcharge self-damage.
+Push the nervous system beyond safe limits -- massive power at bodily cost. The Mage's "berserk" equivalent. Passive bonuses: overcharge duration, reduced overcharge self-damage.
 
-| Specific Skill | Description |
-|----------------|-------------|
+| Ability | Description |
+|---------|-------------|
 | Neural Burn | Greatly boost spell damage, drains HP over time |
-| Mana Frenzy | Eliminate mana costs temporarily, take HP damage per cast instead |
-| Pain Conduit | Convert incoming damage into mana, risk/reward tradeoff |
-| Last Resort | When near death, massively amplify all abilities for a short burst |
+| Mana Frenzy | Eliminate mana costs temporarily, HP damage per cast instead |
+| Pain Gate | Convert incoming damage into mana, risk/reward tradeoff |
+| Last Resort | Near death -> massively amplify all abilities for a short burst |
+
+---
+
+## UI Tabs
+
+### Skills Tab (Tab 3)
+
+- Header: "SKILLS" + "SP: N available"
+- Class masteries grouped by category
+- Each mastery row: name, level, XP bar, passive bonus value, [+] allocate SP button
+- Cross-tab link: each mastery shows which Abilities it unlocks
+- Separator + "INNATE" sub-section: Haste, Sense, Fortify, Armor
+
+### Abilities Tab (Tab 4, class-specific)
+
+Tab label changes per class:
+- Warrior: **Warrior Arts**
+- Ranger: **Ranger Crafts**
+- Mage: **Arcane Spells**
+
+Content:
+- Header: class-specific name + "AP: N available"
+- Abilities grouped by parent Skill mastery
+- Each ability row: name, level, XP bar, mana cost, cooldown, [+] allocate AP, [hotbar] assign
+- Locked abilities: grayed out, "Requires [Skill Name] Lv.1"
+- Mage-specific: unlearned spells show name + "Unknown Spell"
+- Cross-tab link: each ability shows parent Skill mastery level + bonus
+
+See [pause-menu-tabs.md](../ui/pause-menu-tabs.md) for full tab layout.
 
 ---
 
@@ -485,8 +579,35 @@ Push the nervous system beyond safe limits — massive power at bodily cost. The
 |----------|----------|
 | Passive bonuses per level? | Universal formula: `skill_level * multiplier * (100 / (skill_level + 100))`. Same DR curve as stats. |
 | Diminishing returns? | Same K=100 curve as character stats. Consistent across all systems. |
-| How are skills leveled? | Both: use-based XP (automatic) + skill point allocation (manual). Simultaneous paths. |
-| Specific skill cooldowns/ranges? | Defined during implementation phase. Structure and formulas are locked; tuning numbers are not. |
-| Unlock more skills at higher base? | No. All specific skills unlock at base level 1. Depth from leveling, not gating. |
-| Weapon requirements? | Specific skills require matching weapon. Base passive bonuses are always active. |
-| Mage spell acquisition? | Defined in [magic.md](magic.md) — spell books (direct) and scroll osmosis (learn by repeated use). |
+| How are Skills leveled? | Both: use-based XP (automatic) + SP allocation (manual). Simultaneous paths. |
+| How are Abilities leveled? | Both: use-based XP (automatic) + AP allocation (manual). Simultaneous paths. |
+| Ability tuning numbers? | Defined during implementation phase. Structure and formulas are locked; tuning numbers are not. |
+| Unlock more Abilities at higher Skill? | No. All Abilities unlock at parent Skill level 1. Depth from leveling, not gating. |
+| Weapon requirements? | Abilities require matching weapon. Skill passive bonuses are always active. |
+| Mage spell acquisition? | Defined in [magic.md](magic.md) -- spell books (direct) and scroll osmosis (learn by repeated use). |
+| Shared type framework? | No. Each Ability is individually coded. No Passive/Toggle/Active base classes. |
+| Skill-Ability relationship? | Reactive/pull. Ability reads from parent Skill. All logic lives in the Ability. |
+| Point pools? | Separate: SP (Skill Points) for Skills, AP (Ability Points) for Abilities. |
+| AP sources? | 3: leveling (~60%), combat milestones (~25%), use-based per-category (~15%). |
+| Tab layout? | 8 tabs. Tab 3 = Skills, Tab 4 = class-specific Abilities (Warrior Arts / Ranger Crafts / Arcane Spells). |
+| Innate skills? | 4: Haste, Sense, Fortify, Armor. Armor is always-on passive with class-specific names. |
+| Synergy bonuses? | Yes -- Skill mastery thresholds unlock bonuses for child Abilities. Details in synergy-bonuses.md (TBD). |
+| Ability affinity? | Yes -- cosmetic visual flair at use-based milestones. Details in ability-affinity.md (TBD). |
+
+## Acceptance Criteria
+
+- [ ] All three classes have full Skill + Ability trees implemented with correct hierarchy
+- [ ] Skills provide passive bonuses using the diminishing returns formula
+- [ ] Abilities unlock at parent Skill level 1
+- [ ] Use-based XP tracks for both Abilities (direct) and parent Skills (indirect)
+- [ ] SP and AP are separate pools with separate allocation UI
+- [ ] AP comes from 3 sources: leveling, combat milestones, use-based per-category
+- [ ] Weapon equipment requirements enforced for Abilities, not for Skill passive bonuses
+- [ ] Innate Skills (Haste, Sense, Fortify, Armor) available to all classes
+- [ ] Armor Innate has class-specific names (Ironhide/Nimbleguard/Spellweave)
+- [ ] Skills tab shows SP counter, masteries by category, cross-tab links to Abilities
+- [ ] Abilities tab shows AP counter, abilities by parent mastery, hotbar assignment
+- [ ] Abilities tab label changes per class (Warrior Arts / Ranger Crafts / Arcane Spells)
+- [ ] Mage unlearned spells show as grayed "Unknown Spell"
+- [ ] Infinite leveling with no caps on Skills or Abilities
+- [ ] Each Ability is individually coded with no shared type framework

@@ -46,9 +46,9 @@ finalDamage = (baseDamage + flatBonus) * attack.DamageMultiplier * statBonus
 cooldown = attack.Cooldown / stats.AttackSpeedMultiplier (DEX speeds it up)
 ```
 
-## Skill Hotbar
+## Ability Hotbar
 
-**Script:** `scripts/ui/SkillBarHud.cs`
+**Script:** `scripts/ui/AbilityBarHud.cs` *(was `SkillBarHud.cs`)*
 
 4 slots activated by shoulder + face button combos:
 
@@ -61,15 +61,15 @@ cooldown = attack.Cooldown / stats.AttackSpeedMultiplier (DEX speeds it up)
 
 Detection: `Input.IsActionPressed(shoulder)` AND `Input.IsActionJustPressed(face)`
 
-### Skill Activation
+### Ability Activation
 
 ```
 1. DetectSlot() returns slot index (0-3) or -1
-2. SkillBar.TryActivate(slotIndex, cooldown) → returns skill ID or null
+2. AbilityBar.TryActivate(slotIndex, cooldown) → returns ability ID or null
 3. If null (on cooldown or empty) → return
-4. Check mana cost: GameState.Mana >= skill.ManaCost
-5. Deduct mana, execute attack with skill's AttackConfig
-6. Record use in SkillTracker (XP for skill + parent)
+4. Check mana cost: GameState.Mana >= ability.ManaCost
+5. Deduct mana, execute attack with ability's AttackConfig
+6. Record use — grants Ability XP to the ability used AND Skill XP to its parent mastery
 ```
 
 ## Enemy Death

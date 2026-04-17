@@ -4,7 +4,323 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
-## Session 13 — Various Fixes & Visual Polish (2026-04-14)
+## Session 19 — Load Game Spec + Splash Redesign (2026-04-17)
+
+### What Happened
+
+User asked why Enter worked on splash buttons but not on the saved-character card. Answer: CharacterCard is a `PanelContainer`, not a `Button` — Godot's built-in `ui_accept` only fires on Buttons. A 2-line fix would have added `ui_accept` to CharacterCard's input handler.
+
+Instead, the user pivoted to a bigger redesign: replace the single-card splash UI with a proper 3-slot "Load Game" screen, with delete-with-confirmation, modeled on Class Select. The Load Game button is labeled **"Continue"** and sits **above** New Game on the splash.
+
+Also requested: a proper splash screen background image generated from the icon.
+
+### Spec Work Delivered (this branch)
+
+1. **`docs/flows/load-game.md`** — NEW. Full spec for the Load Game screen: 3 save slots, layout, keyboard navigation (same model as Class Select — zone-based with Left/Right cycling cards, Down to Load/Back buttons), delete confirmation dialog, save file layout (`user://save_0.json` through `save_2.json`), SaveManager API additions, interaction with New Game (first empty slot, toast error if full).
+2. **`docs/flows/splash-screen.md`** — UPDATED. Button order changed: Continue (top) → New Game → Tutorial → Settings → Exit. Continue is greyed out when no saves exist. Removed the inline Character Card. Added note about `splash_background.png`.
+3. **`docs/flows/save-load.md`** — UPDATED. Added "Save Slots" section documenting the 3-slot filesystem layout and `SaveManager` multi-slot API (`HasSave`, `LoadSlot`, `SaveToSlot`, `DeleteSlot`, `FindFirstEmptySlot`).
+4. **`docs/dev-tracker.md`** — NEW tickets:
+   - **UI-02**: Load Game screen implementation (new branch)
+   - **ART-01**: Splash screen background image (blocked on PixelLab MCP reconnection)
+
+### Deferred (separate branches / later sessions)
+
+- **UI-02 implementation** — `LoadGameScreen.cs`, `DeleteConfirmDialog.cs`, CharacterCard delete-X button, SaveManager slot API, SplashScreen button reshuffle. All tracked; implementation on a new branch per the branch wind-down directive.
+- **ART-01 splash background** — art-lead attempted generation but PixelLab MCP server wasn't connected in this session. The agent's recommended approach (PixelLab-generated archway + rocks, Pillow-composited into a 1920x1080 scene with gradient background + radial gold glow + starfield noise) is captured in the ticket for when PixelLab is available.
+
+### Why Spec-Only On This Branch
+
+The user said the `feat/skills-and-spells-tree-update` branch has "lived through too many lifecycles" and needs to close. New features go on new branches. Spec work is safe to land here — it's documentation that reflects the decided design but doesn't touch compiled code.
+
+---
+
+## Session 18 — Shop/Forge UX Polish, Branch Wind-Down (2026-04-17)
+
+### What Happened
+
+Three bugs reported against the Shop window screenshot:
+
+1. **Focus highlight made item text black/unreadable.** The focused row in the shop's item list rendered with black text on a dark-brown highlight. Diagnosis: list-item buttons only overrode `font_color` (normal state). The GameWindow theme defaults `font_focus_color` and `font_hover_color` to `BgDark`, which bled through when the row was focused.
+2. **Buy button stayed active at 0 gold.** No affordability check.
+3. **Keyboard nav broken in Forge/Quests/Bank/Teleport** — reported as "still can't navigate." Root cause wasn't the nav itself (Godot's built-in focus system was working) but initial focus: when a list is empty (no craftable items, no quests), `FocusFirstButton(ScrollContent)` found nothing, so no focus was set at all. With no starting point, arrow keys did nothing, and the Close button was keyboard-unreachable.
+
+All three share a common root: the GameWindow framework made good defaults, but list-item creation code in each window was re-implementing styles and focus setup inconsistently.
+
+### Fixes
+
+Added two reusable helpers to `UiTheme`:
+
+- `StyleListItemButton(Button)` — one-call style for list rows. Transparent bg, accent-tinted hover/focus, white text in ALL four font color states. Shop + Blacksmith now use it; replaced ~25 lines of per-window styling in each.
+- `FocusFirstButton(...)` now returns `bool` + new `FocusFirstButtonOrFallback(primary, fallback)` — tries primary container, falls back to a broader one if empty. Applied in Blacksmith / Quests / Teleport (fallback to `ContentBox` = whole window), and in BankWindow (tries bank list → backpack list → whole window).
+
+ShopWindow's `UpdateDescription` now also checks affordability and disables the Buy button when `gold < price`, re-checking after each purchase.
+
+### User Direction: Close This Branch
+
+Mid-session, the user said: *"we'll try & close out this branch, it's lived through too many lifecycles, it needs to be closed."*
+
+The `feat/skills-and-spells-tree-update` branch started as "implement the Skills & Abilities code" but grew across ~15 sessions to include: GameWindow unification, tabbed PauseMenu, GoDotTest test framework rewrite, screen transition fixes, SoulsBorne death cinematic, work-discipline convention, and now this UX polish. That's far beyond the branch's stated scope. Wrapping now, then opening a PR to main.
+
+### Deferred (to other branches)
+
+- **Bank redesign**: user wants bank to use the same slot-grid UI as the backpack. Deferred to a separate branch per user direction ("let's discuss the bank system on a different branch").
+
+### Metrics
+
+- 4 files changed: ShopWindow, BlacksmithWindow, BankWindow, TeleportDialog, QuestPanel, UiTheme
+- Net code removed from BlacksmithWindow.CreateItemButton: ~20 lines → 5 lines
+- Net code removed from ShopWindow.AddItemRow: ~25 lines → 5 lines
+- 385 xUnit tests still pass
+
+---
+
+## Session 17 — Work Discipline Codified (2026-04-17)
+
+### What Happened
+
+Mid-session, I speculated about AI tool filename conventions (`CURSOR.md`, `COPILOT.md`) without verifying. User pushed back: *"does Gemini actually use GEMINI.md?"* Forced a verification pass against official docs, which found that only `GEMINI.md` was real — the other two were invented. Corrective commit followed.
+
+The user then escalated the principle: *"it goes beyond 'guessing filenames'. it's a full paradigm for work and tasks. slow is smooth, smooth is fast. do it once, do it right, never do it more than once."*
+
+This session's work was encoding that discipline permanently across the context chain so the class of mistake doesn't recur.
+
+### Artifacts Created
+
+- **`docs/conventions/work-discipline.md`** — full canonical convention: the principle, why it matters for AI dev, 7 rules (verify/no-confident-wrongness/read-first/test-what-you-claim/one-task/ask-when-unsure/reflect-on-corrections), the rework-throughput trap, warning signs, and real examples from this very session.
+- **`AGENTS.md`** — added a top-level "Work Discipline" section right after Paradigm, with the principle inline + the 7 rules summarized + pointer to the full convention doc.
+- **`CLAUDE.md`** — added jump-to index row for Work Discipline, promoted "Slow is smooth" to Hard Rule #1 in the reminder block.
+
+### Key Lesson
+
+When the user corrects a specific mistake, the correction almost always encodes a broader principle. The job isn't "fix the instance" — it's "find the class of mistake, encode the lesson into the context files so future AI sessions catch the next instance automatically."
+
+Done right, each correction strengthens the system. Done wrong (fixing only the instance), the same class of mistake recurs.
+
+### What Triggered This
+
+Commit `24078f5` (the verified-filenames fix) was correct but reactive. This session's work makes it proactive — the principle that would have caught the original speculation is now in `AGENTS.md`, read at the top of every session.
+
+---
+
+## Session 16 — Tabbed PauseMenu, GoDotTest Rewrite, Transition Fixes, SoulsBorne Death (2026-04-17)
+
+### What Happened
+
+Big session. Four major threads:
+1. **Rebuilt the PauseMenu as Diablo 2-style tabbed panels** (8 tabs: Inventory / Equip / Skills / Abilities* / Quests / Ledger / Stats / System).
+2. **Scrapped the old sandbox-based E2E test system** (AutoPilot + FullRunSandbox) and replaced it with Chickensoft **GoDotTest** running inside the live game, driving it via simulated keyboard input. Wrote fresh test suites for every major flow.
+3. **Fixed a flash-of-new-content bug in every screen transition** — when opening town from splash/class-select/death, the town briefly rendered under a translucent overlay before the loading screen covered it. Traced to the pattern "`Close()` dialog, then call `ScreenTransition.Play()`" which left the viewport empty during the fade-out.
+4. **Added a SoulsBorne-style "YOU DIED" cinematic** before the death menu appears.
+
+Also: configured auto mode as the default Claude Code permission mode, published a prominent README section + `docs/development-paradigm.md` documenting the AI+Human natural-language programming approach the entire repo is built on.
+
+### Code Written / Changed
+
+**PauseMenu:**
+- `scripts/ui/PauseMenu.cs` — full rewrite as `GameWindow` subclass + `GameTabPanel` with 8 tabs, built programmatically (old `pause_menu.tscn` deleted)
+- Each tab builds its own content inline (Inventory grid, Skills list, Abilities list, etc.) using the same patterns as standalone windows
+
+**Testing infrastructure:**
+- `scripts/testing/GameTestBase.cs` — abstract base providing `Expect()` + `WaitUntil()`
+- `scripts/testing/InputHelper.cs` — keyboard simulation wrapping GodotTestDriver (`PressKey`, `NavUp/Down/Left/Right`, `PressEnter`, `Confirm`, `Cancel`, `TabLeft/Right`, `Move`)
+- `scripts/testing/UiHelper.cs` — focus/window/pause state queries (`FocusedControl`, `ModalCount`, `PauseMenuOpen`, `IsOpen<T>`, `Paused`, `InputBlocked`, `FindNodeOfType<T>`)
+- `scripts/Main.cs` — hooks GoDotTest via `--run-tests` flag; attaches to SceneTree root (not Main) so tests survive scene changes
+
+**Test suites written** (all keyboard-only, all in `scripts/testing/tests/`):
+- `SplashTests` — 5 assertions, all pass
+- `ClassSelectTests` — 9 assertions, 7 pass
+- `TownTests`, `PauseMenuTests`, `NpcTests`, `DeathTests` — written, await timing polish
+- `TransitionTests` — 10/10 pass, verifies overlay opacity invariant
+- `DeathCinematicTests` — 6/8 pass, verifies cinematic plays and menu hidden during it
+
+**Transition fix** (every caller using `ScreenTransition.Play` to swap worlds now puts Close() inside the midpoint callback):
+- `scripts/ui/ClassSelect.cs` OnConfirmPressed
+- `scripts/Main.cs` splash Continue handler
+- `scripts/ui/TeleportDialog.cs` TeleportToFloor
+- `scripts/ui/AscendDialog.cs` (3 buttons: Return to Town, Go Up One Floor, Select Floor)
+- `scripts/ui/FloorWipeDialog.cs` (2 buttons: Next Floor, Return to Town)
+- `scripts/ui/DeathScreen.cs` respawn (previously had NO transition — added one)
+
+**SoulsBorne death cinematic:**
+- `scripts/ui/DeathScreen.cs` — new `PlayYouDiedCinematic()` method, `IsPlayingCinematic` public flag, tween with `TweenPauseMode.Process` so it runs while tree is paused
+- 5-phase sequence: overlay fade (1.2s) → "YOU DIED" text fade-in (1.5s) → hold (2.5s) → fade-out (0.8s) → menu reveal (0.3s) = ~6.3s total
+
+**Other:**
+- `scripts/ui/ScreenTransition.cs` — exposed `OverlayAlpha` public getter for test inspection
+- `scripts/ui/WindowStack.cs` — added `Count` + `TopTypeName`
+- `scripts/ui/DebugPanel.cs` — added orphan/node/modal counters using Godot's `Performance.Monitor`
+- `DungeonGame.csproj` — added `Chickensoft.GoDotTest` v2.0.28 NuGet package
+- `Makefile` — `test-ui` and `test-ui-suite SUITE=<name>` targets
+- `.claude/settings.local.json` — `defaultMode: "auto"`
+- `README.md` — full paradigm section on the GitHub front page
+- `docs/development-paradigm.md` — full write-up of the AI+Human NLP approach
+
+### Deleted (clean slate on tests)
+- `scripts/testing/AutoPilot.cs`, `AutoPilotActions.cs`, `AutoPilotAssertions.cs`, `DebugTelemetry.cs`
+- `scripts/sandbox/FullRunSandbox.cs`
+- `scenes/sandbox/FullRunSandbox.tscn`
+- `scenes/pause_menu.tscn`
+
+### Key Decisions
+
+1. **GoDotTest replaces AutoPilot, not supplements it.** User explicitly wanted to scrap the old test system. GoDotTest is more idiomatic for Godot — runs inside the engine, has proper lifecycle attributes (`[Setup]`/`[Test]`/`[Cleanup]`), integrates with VSCode debugging.
+2. **Test helpers separate from test runner.** InputHelper + UiHelper are pure utility classes reusable across any test framework. If we later swap GoDotTest for something else, the helpers stay.
+3. **Transitions must cover source content.** The generic rule: never hide a screen before `ScreenTransition.Play()`. Always hide inside the midpoint callback. Codified in `docs/flows/screen-transition.md` as a critical invariant.
+4. **SoulsBorne death cinematic uses `TweenPauseMode.Process`.** Main pauses the tree on `PlayerDied`, but the cinematic tween needs to keep running. This is the correct Godot pattern — tween pause mode is independent of node process mode.
+5. **Paradigm doc on the README front page.** Repo is public — needs to be upfront that every line is AI-built, human-directed. Developers reviewing the code need context on why specs are source of truth.
+
+### What's Not Done
+
+- Test state isolation across suites. Once tests transition splash→town, subsequent suites that expect splash fail their setup. Needs either per-suite `GameState.Reset()` + scene reload, or linear ordering.
+- Full test coverage. Still missing suites for: Shop keyboard nav, Blacksmith keyboard nav, Bank keyboard nav, Save/Load round trip, combat XP gain, achievement unlocks.
+- CI integration for `make test-ui` — not yet in `.github/workflows/ci.yml`.
+- Equipment tab content in PauseMenu — placeholder, blocked by SYS-11.
+
+---
+
+## Session 15 — Skills & Abilities Code Implementation (2026-04-16)
+
+### What Happened
+
+**Implemented the full Skills & Abilities system in code.** Scrapped old skill system (SkillDef/Database/State/Tracker) and rebuilt from locked specs with new data layer, UI, and integration.
+
+### Code Written
+
+**Data layer (pure C#, no Godot):**
+- `MasteryDef.cs` + `AbilityDef.cs` — immutable definition records
+- `MasteryState.cs` + `AbilityState.cs` — mutable runtime state with XP/leveling/affinity
+- `SkillAbilityDatabase.cs` — static registry with 130 registrations (23 masteries + 103 abilities + 4 innate)
+- `ProgressionTracker.cs` — SP + AP allocation, dual XP tracking, category AP, use counting
+
+**UI framework:**
+- `GameWindow.cs` — unified base class for all game windows (overlay, WindowStack, input blocking, cancel/close)
+- `GameTabPanel.cs` — reusable Q/E tab system for tabbed windows
+- `SkillTreeDialog.cs` — Skills tab using GameWindow + GameTabPanel
+- `AbilitiesDialog.cs` — Class-specific abilities tab (Warrior Arts / Ranger Crafts / Arcane Spells)
+
+**Integration:**
+- `GameState.cs` — SP (2/level) + AP (3/level) awards on level-up
+- `SaveData.cs` + `SaveSystem.cs` — new fields for masteries, abilities, use counts, category AP
+- `SkillBarHud.cs` — ability lookup via SkillAbilityDatabase
+- `Player.cs` — movement blocked when any UI window is open
+- `DebugConsole.cs` — +10 SP and +10 AP debug commands
+
+### Bug Fixes
+- ScrollContainer `FollowFocus = true` on all 13 scroll containers (keyboard nav auto-scrolls)
+- Button focus retained on SP/AP allocation (in-place label updates via closure)
+- Player movement blocked when WindowStack has any modal open
+- Shop panel: fixed resizing, moved Buy/Sell to right panel, green/red color coding
+
+### Tests
+- 374 unit tests passing, 0 failing
+- 72 new tests for MasteryState, AbilityState, SkillAbilityDatabase, ProgressionTracker
+
+### UI Refactor — GameWindow Migration
+Migrated all 14 modal windows to use the GameWindow base class, removing 671 lines of duplicate boilerplate (overlay creation, WindowStack push/pop, input blocking, pause toggle). Every window now gets consistent open/close/focus behavior from one shared base class.
+
+Windows migrated: ShopWindow, BlacksmithWindow, BankWindow, TeleportDialog, QuestPanel, BackpackWindow, DungeonLedger, SettingsPanel, TutorialPanel, StatAllocDialog, AscendDialog, FloorWipeDialog, NpcPanel, ActionMenu.
+
+### Bug Fixes (Session 15b)
+- **NPC crash:** `Npc.cs` called `NpcPanel.Instance?.Hide()` (Godot built-in) instead of `Close()` — left WindowStack corrupted and game permanently paused. Fixed to use `GameWindow.Close()`.
+- **Resource leaks at exit (72 CanvasItem RIDs, 15 textures):** Three sources fixed:
+  - GameWindow: 12/16 subclasses never added `Scroll`/`ScrollContent` to the tree — orphaned nodes. Added `_ExitTree()` cleanup.
+  - SkillTreeDialog: `_tabs` removed from parent but never freed on each `OnShow()`. Added `Free()` before recreation.
+  - UiTheme: `CreateGameTheme()` and `CreateTabStyle()` created new resources every call. Cached as static singletons.
+- **Keyboard nav replaced with Godot built-in:** Removed custom `KeyboardNav.HandleInput` (60-line reimplementation of Godot's focus system). Arrow key navigation now handled by Godot's native `ui_up`/`ui_down` + `ScrollContainer.FollowFocus`. Only kept `HandleConfirm` for S-key → focused button bridge.
+- **Focus warnings:** `FocusFirstButton` tried to grab focus on buttons with `FocusMode.None`. Added focusability check.
+
+### Godot 4 Engine Research
+Created `docs/reference/godot4-engine-reference.md` cataloging all built-in engine systems and their usage status. Key findings: Theme resources could replace hundreds of manual style overrides, RichTextLabel with BBCode for formatted ability text, SceneTreeTimer for one-shot delays without nodes, async/await with ToSignal for cleaner coroutines.
+
+---
+
+## Session 14 — Skills & Abilities System Complete (2026-04-15)
+
+### What Happened
+
+**Completed the full Skills & Abilities system redesign** — from research through locked specs. This session finalized the Mage class tree, defined class lore for all three classes, locked Ranger abilities, rewrote all specs, and created synergy bonus and ability affinity systems.
+
+### Design Decisions Made
+
+1. **Mage magic lore framework:** Three types of magic — Elemental (nature manipulation, sensory experience), Aether (cosmic force, light+dark as one), Attunement (internal mana science). Light and Dark merged into single Aether mastery based on astronomy (star = light + gravity).
+2. **Light healing = welding.** Raw energy fuses wounds shut. Expensive, powerful, forceful. Distinct from Restoration's gentle self-repair.
+3. **Dark = gravity.** The magnetic force, the black hole. Limited spells, powerful and mysterious.
+4. **Mage categories renamed:** Arcane → Elemental, Conduit → Attunement, new Aether category added.
+5. **Class lore defined for all three classes:** Warrior (mercenary from combat stable, duty), Ranger (wilderness hunter/tinkerer, thrill of the hunt), Mage (scholar from magic creed, curiosity).
+6. **Naming personality per class:** Warrior = blunt (Smash, Shout), Ranger = whimsical (Tip Toes, Flick, Chuck), Mage = academic (Neural Burn, Singularity).
+7. **Ranger abilities redrawn from lore:** Dead Eye, Pepper, Lob, Pin, Flick, Chuck, Shiv, Bait, Frag. Indirect combat philosophy throughout.
+8. **Synergy bonuses:** Hybrid system — universal Lv.5 (-15% mana cost), per-mastery Lv.10/25 (stat bonuses), Lv.50 (visual + proc), Lv.100 (Master title + unique effect). Informed by PoE, Last Epoch, Grim Dawn research.
+9. **Ability affinity:** Cosmetic-only milestones at 100/500/1,000/5,000 uses. No stats, just visual flair.
+10. **Ranger name audit:** Steady Shot → Bead, Burst Fire → Spray, Guard → Hunker.
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `docs/world/class-lore.md` | Class backstories and magic philosophy for all 3 classes |
+| `docs/systems/point-economy.md` | SP/AP rates, sources, and budget |
+| `docs/systems/synergy-bonuses.md` | Threshold bonuses per mastery (Lv.5/10/25/50/100) |
+| `docs/systems/ability-affinity.md` | Cosmetic use-based milestones |
+| `assets/icons/abilities_icons.png` | Combined sprite sheet (131 icons, 512x1024) |
+| `assets/icons/abilities_icons.json` | Icon atlas index |
+
+### Files Updated
+
+| File | Changes |
+|------|---------|
+| `docs/systems/skills.md` | Complete rewrite — dual system, all 3 class trees, SP/AP, architecture |
+| `docs/systems/magic.md` | Elemental/Aether/Attunement, Armor innate, all class sections |
+| `docs/systems/classes.md` | New mastery structure, SP/AP terminology |
+| `docs/systems/leveling.md` | SP/AP references |
+| `docs/systems/combat.md` | Ability Hotbar, dual XP tracking |
+| `docs/ui/pause-menu-tabs.md` | 7→8 tabs, Abilities tab spec |
+| `docs/ui/hud.md` | Cooldown overlays, status effects |
+| `docs/ui/controls.md` | Terminology pass |
+| `docs/flows/combat.md` | Ability activation terminology |
+| `docs/flows/progression.md` | SP/AP allocation flows |
+| `docs/inventory/items.md` | Terminology fix |
+| `docs/dev-tracker.md` | SPEC-13 tickets added |
+| `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md` | Archived |
+| `AGENTS.md` | New doc references |
+| `scripts/generate_icons.py` | Rewritten for combined sheet |
+
+### System Totals
+
+- **Warrior:** 8 masteries, 33 abilities (Body 6 + Mind 2)
+- **Ranger:** 7 masteries, 37 abilities (Weaponry 4 + Survival 3)
+- **Mage:** 8 masteries, 33 abilities (Elemental 4 + Aether 1 + Attunement 3)
+- **Innate:** 4 skills (Haste, Sense, Fortify, Armor)
+- **Grand total:** 23 masteries, 103 abilities, 4 innate skills
+
+---
+
+## Session 13 — Skill & Spell Icon Sprite Sheets (2026-04-14)
+
+### What Happened
+
+**Created skill and spell icon sprite sheets** for the skill tree UI and shortcuts bar.
+
+- `assets/icons/skills_icons.png` — 512x512 sprite sheet with 73 icons (32x32 each) covering all Warrior, Ranger, and Innate skills
+- `assets/icons/spells_icons.png` — 512x512 sprite sheet with 45 icons (32x32 each) covering all Mage Arcane and Conduit spells
+- `assets/icons/skills_icons.json` — JSON index mapping skill names to grid positions (x, y, w, h, col, row)
+- `assets/icons/spells_icons.json` — JSON index mapping spell names to grid positions
+- `scripts/generate_icons.py` — Pillow-based generator script; re-run to regenerate sheets
+
+### Layout
+
+Icons are arranged in rows of 5: `[base skill] [specific1] [specific2] [specific3] [specific4]`. Color-coded by category:
+
+**Skills sheet:** Gold (Warrior Body), Purple (Warrior Mind), Green (Ranger Arms), Teal (Ranger Instinct), Silver-blue (Innate)
+
+**Spells sheet:** Red (Fire), Blue (Water), Cyan (Air), Brown (Earth), Gold (Light), Purple (Dark), Green (Restoration), Blue (Amplification), Orange (Overcharge)
+
+### Technical Notes
+
+- Attempted PixelLab MCP for generation but tools weren't accessible from subagents. Used Pillow pixel-art drawing instead.
+- Icons are pixel-art style on dark backgrounds (#0f1117), matching the existing icon assets.
+- JSON index files allow code to look up any icon by name and get its atlas region.
+- Script is re-runnable: `python3 scripts/generate_icons.py` regenerates both sheets.
+## Session 14 — Various Fixes & Visual Polish (2026-04-14)
 
 ### What Happened
 

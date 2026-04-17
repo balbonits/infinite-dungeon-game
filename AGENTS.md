@@ -1,8 +1,56 @@
 # AGENTS.md — AI Coding Assistant Reference
 
-This is the single reference file for any AI coding tool helping with **A Dungeon in the Middle of Nowhere** (repo: `infinite-dungeon-game`).
+**Context chain:** `docs/` (source of truth) → **AGENTS.md** (you are here — the AI-readable index) → `CLAUDE.md` (fast navigation) → AI output.
 
-For detailed game design, see the [`docs/`](docs/) folder.
+This file is the **AI-readable index into `docs/`**. It organizes and points to the canonical design specs in the `docs/` folder — it does not replace them. Every rule here is derived from or references material in `docs/`. When code behavior comes up, always trace back to the relevant `docs/systems/`, `docs/flows/`, or `docs/world/` spec.
+
+Tool-specific entry files (e.g., `CLAUDE.md`) point to this document. This document points to `docs/`. Never shortcut the chain.
+
+---
+
+## Paradigm — Read This First
+
+This repo is a real-world experiment in **AI+Human natural-language programming**. The user is a product owner who does not write code. Every line of code, test, doc, and piece of art in this repo is produced by AI, directed by the user in natural-language conversation.
+
+**Specs in `docs/` are the source of truth.** If code and specs disagree, one must be updated. When in doubt, read the spec first, code second.
+
+Full write-up: [`docs/development-paradigm.md`](docs/development-paradigm.md).
+
+---
+
+## Work Discipline — "Slow is Smooth, Smooth is Fast"
+
+This is a foundational principle for how AI agents operate on this repo. Not optional, not domain-specific — it applies to every task.
+
+### The principle
+
+> **"Slow is smooth, smooth is fast. Do it once, do it right, never do it more than once."**
+
+Individual tasks should not be rushed. LLMs bias toward confident-sounding output even when uncertain. Rushing amplifies that bias, produces plausible-but-wrong work, and triggers expensive rework. **Rework is the enemy**: a task done twice costs more than a task done slowly once. Measured, verified work at each step is faster in total than fast guessing followed by correction cycles.
+
+### Rules that implement this principle
+
+1. **Verify, don't speculate.** Before asserting a filename, API, method signature, URL, or behavior: look it up. Use web search, read the actual docs, grep the codebase, inspect the NuGet package, read the spec in `docs/`. If you can't verify, say "uncertain" and research before proceeding.
+
+2. **No confident wrongness.** If you're not sure, say so. "I believe X but haven't verified" is acceptable. "X is Y" when you guessed is not.
+
+3. **Read before writing.** Read the relevant `docs/` spec before writing code. Read the existing file before editing it. Read the tool's official docs before assuming its behavior. Reading takes minutes; fixing wrong assumptions takes hours.
+
+4. **Test what you claim.** Don't claim "it works" without running it. `make build` is the minimum. `make test` for any logic change. Run the game for any UI change. "Should work" ≠ works.
+
+5. **One task, done fully, then stop.** Finish the current task — including docs, tests, and commit — before starting the next. Half-done tasks pile up and rot.
+
+6. **When in doubt, ask the user or spawn a research agent.** Don't guess to save time. A 30-second clarification or a 2-minute research query is cheaper than a wrong implementation plus rework.
+
+7. **Reflect on corrections.** When the user corrects you, the correction usually encodes a broader principle. Encode it into `AGENTS.md` or the relevant `docs/` file so the same class of mistake doesn't recur.
+
+### The trap to avoid
+
+LLMs can produce large volumes of output quickly. The temptation is to treat speed as productivity. It isn't — **rework-adjusted throughput** is the real measure. A single commit that ships correct code, correct tests, and correct docs is worth ten commits that need to be revisited.
+
+When you're about to guess, stop. Verify. Then proceed.
+
+Full convention (examples, signs you're about to violate it, rationale): [docs/conventions/work-discipline.md](docs/conventions/work-discipline.md).
 
 ---
 
@@ -86,6 +134,29 @@ Follow this cycle for every task. Do not skip steps.
 One task = one focused change = one commit. Prefer small, reviewable diffs over large batches.
 
 See [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md) for the full workflow reference.
+
+### 2a. Post-Task Protocol
+
+After any code change, before committing (non-negotiable):
+
+1. **Test** — Run `make test` (unit + integration). For UI changes, also consider `make test-ui`.
+2. **Docs** — Update the relevant spec in `docs/` if game behavior changed.
+3. **Journal** — Add what changed to `docs/dev-journal.md` under today's session.
+4. **Changelog** — Add a summary entry to `CHANGELOG.md`.
+5. **Counts** — Update test counts / feature status in `docs/dev-tracker.md` if tests/features were added/removed.
+6. **Commit** — Use conventional format: `type(scope): description`
+   - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`
+   - Example: `feat(combat): add elemental damage system`
+
+When the user says "update docs," that means ALL of: relevant spec(s), `dev-journal.md`, `dev-tracker.md`, `CHANGELOG.md` — plus `AGENTS.md`/`CLAUDE.md` if conventions changed.
+
+### 2b. Documentation Maintenance
+
+- **Never hardcode volatile numbers** in AGENTS.md or CLAUDE.md (test counts, file counts, step counts). Reference commands instead: "Run `make test` for current count."
+- **Journal first, then commit.** The dev journal entry must exist before the git commit.
+- **CHANGELOG.md must stay current.** Every commit that changes behavior gets a changelog entry.
+- **New systems need docs.** If you create a new system (new .cs files with game logic), create a corresponding spec in `docs/systems/` or `docs/world/`.
+- **AGENTS.md is the canonical reference.** Tool-specific files must delegate to it, not duplicate it. Each AI tool has its own context filename (e.g., Claude Code reads `CLAUDE.md`; Gemini CLI reads `GEMINI.md`; GitHub Copilot reads `.github/copilot-instructions.md`). Before adding a new tool file, **verify the filename in the tool's official docs first** — do not guess. Then follow the pattern in [docs/conventions/ai-context-files.md](docs/conventions/ai-context-files.md).
 
 ### 3. Development Principles
 
@@ -172,7 +243,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Engine | Godot 4.x (.NET edition) | Separate download from standard Godot |
 | Language | C# / .NET 8+ | Strong typing, PascalCase, partial classes |
 | Renderer | GL Compatibility | Broadest hardware support |
-| Testing | GdUnit4 + xUnit | GdUnit4 for Godot scene tests, xUnit for pure logic |
+| Testing | GoDotTest + GdUnit4 + xUnit | GoDotTest (in-game UI/keyboard tests) + GdUnit4 (scene/asset) + xUnit (pure logic) |
 | Serialization (saves) | System.Text.Json | Source-generated, human-readable, AOT-friendly |
 | Serialization (cache) | MessagePack-CSharp v3 | Binary, ~10x faster, source generator support |
 | Object pooling | Microsoft.Extensions.ObjectPool | Pool enemies, effects, projectiles — avoid GC |
@@ -184,19 +255,26 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 | Persistence | FileAccess + JSON/MessagePack | user:// directory |
 | Platform | Desktop native | macOS primary, Windows/Linux supported |
 
-**Target NuGet dependencies** (not yet in .csproj — will be added as features are implemented):
+**Current testing dependencies:**
 ```xml
-<ItemGroup>
-  <PackageReference Include="gdUnit4.api" Version="5.1.0" />
-  <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
-  <PackageReference Include="gdUnit4.analyzers" Version="1.0.0" />
-  <PackageReference Include="xunit" Version="2.9.3" />
-  <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
-  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-  <PackageReference Include="MessagePack" Version="3.1.4" />
-  <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.0" />
-</ItemGroup>
+<!-- DungeonGame.csproj -->
+<PackageReference Include="Chickensoft.GodotTestDriver" Version="3.1.66" />
+<PackageReference Include="Chickensoft.GoDotTest" Version="2.0.28" />
+
+<!-- tests/e2e/DungeonGame.Tests.E2E.csproj -->
+<PackageReference Include="gdUnit4.api" Version="5.0.0" />
+<PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+
+<!-- tests/unit + tests/integration -->
+<PackageReference Include="xunit" Version="2.9.3" />
+<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
 ```
+
+**Testing layers:**
+- **xUnit** (`tests/unit/`, `tests/integration/`) — pure C# logic, no Godot runtime. Fast.
+- **GdUnit4** (`tests/e2e/`) — scene loading, asset validation, system verification. Runs with `make test-gdunit`.
+- **GoDotTest** (`scripts/testing/tests/*.cs`) — in-game UI tests driven by simulated keyboard input. Runs via `godot --headless --run-tests --quit-on-finish` (see `Main.cs`). Run with `make test-ui` or `make test-ui-suite SUITE=<Name>`. Built on `GodotTestDriver` for input simulation + `InputHelper`/`UiHelper` helpers in `scripts/testing/`.
 
 **Known limitation:** C# web export is not supported as of Godot 4.6. Desktop-only.
 
@@ -307,9 +385,11 @@ Detailed design docs live in `docs/`. Here's a summary with links.
 - **3 classes:** Warrior (STR/STA), Ranger (DEX), Mage (INT) — [docs/systems/classes.md](docs/systems/classes.md)
 - **Persistent character** — no rerolls, one character forever
 
-### Skills
+### Skills & Abilities
 
 Hierarchical skill trees per class with unique category names, hybrid leveling (use-based + point-based), infinite scaling — [docs/systems/skills.md](docs/systems/skills.md)
+
+Skills/Abilities redesign (separating passive masteries from active combat actions) — [docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md](docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md)
 
 ### Color System
 
@@ -330,6 +410,10 @@ Feedback loops, session pacing, juice/feel, retention hooks — [docs/systems/pl
 ### Death Penalties
 
 Scale by deepest floor achieved. Gold buyout mitigates EXP and backpack loss. Sacrificial Idol negates backpack loss — [docs/systems/death.md](docs/systems/death.md)
+
+### Class Lore
+
+Class backstories, magic philosophy per class, and how lore shapes each skill tree — [docs/world/class-lore.md](docs/world/class-lore.md)
 
 ### Dungeon
 
@@ -377,7 +461,8 @@ docs/
 │   ├── godot-basics.md        — Godot concepts for web devs
 │   ├── game-dev-concepts.md   — Game dev fundamentals (C#)
 │   ├── game-development.md    — Research journal (accumulated learnings)
-│   └── subagent-research.md   — AI agent design research
+│   ├── subagent-research.md   — AI agent design research
+│   └── godot4-engine-reference.md — Built-in engine systems, what to use vs custom
 ├── objects/
 │   ├── player.md              — Player node, script, movement, attack
 │   ├── enemies.md             — Enemy tiers, AI, damage
@@ -390,7 +475,11 @@ docs/
 ├── systems/
 │   ├── stats.md               — STR/DEX/STA/INT
 │   ├── classes.md             — Warrior/Ranger/Mage
-│   ├── skills.md              — Skill trees per class (hierarchical, infinite leveling)
+│   ├── skills.md              — Skills & Abilities (passive masteries + active combat actions, all class trees)
+│   ├── point-economy.md       — SP/AP rates, sources, budget
+│   ├── synergy-bonuses.md     — Mastery threshold bonuses (Lv.5/10/25/50/100)
+│   ├── ability-affinity.md    — Cosmetic use-based milestones
+│   ├── SKILLS_AND_ABILITIES_SYSTEMS.md — ARCHIVED working document
 │   ├── color-system.md        — Unified color gradient (cool→warm, level-relative)
 │   ├── combat.md              — Auto-targeting, cooldowns, damage
 │   ├── leveling.md            — XP curve, rested XP, floor-scaling enemy XP
@@ -403,7 +492,8 @@ docs/
 ├── world/
 │   ├── dungeon.md             — Infinite descent, floor generation, caching
 │   ├── town.md                — Town hub, NPC list, interaction
-│   └── monsters.md            — Enemy types, danger tiers, spawning
+│   ├── monsters.md            — Enemy types, danger tiers, spawning
+│   └── class-lore.md          — Class backstories, magic philosophy, skill tree rationale
 ├── inventory/
 │   ├── backpack.md            — Risky carry storage (25 slots)
 │   ├── bank.md                — Safe town storage (15 slots)
