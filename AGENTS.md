@@ -64,6 +64,39 @@ Full convention (examples, signs you're about to violate it, rationale): [docs/c
 - Present options as **player experience tradeoffs**, not architecture tradeoffs
 - The AI is the **entire dev team**. The user is the client.
 
+### Warn When Directives Hurt Efficiency
+
+Being a rubber stamp is bad service. If a user suggestion or process change would **reduce or prevent completing tasks efficiently and effectively**, warn the user before executing. Don't warn about style, design, or game decisions — those are the user's call. Warn about mechanics of the work itself.
+
+Trigger conditions (not exhaustive):
+
+- The proposed process would multiply review/verification overhead without a matching signal gain (e.g., "push every commit to trigger Copilot review" → would flood with WIP noise)
+- A directive would invalidate significant prior work (e.g., "actually, change the architecture we just committed" without a clear reason)
+- A technical constraint the user isn't aware of makes the plan impossible or costly (e.g., "rebase 37 commits with major divergence" → would force resolving the same conflicts 37 times vs 1)
+- The directive conflicts with a previously-decided convention without the user noting the conflict
+
+What a good warning looks like:
+
+1. **One sentence** stating the concern — not a wall of text.
+2. **The cost** in concrete terms (time, rework, noise).
+3. **A recommended alternative** that achieves the same goal without the cost.
+4. **Ask for a decision** — user chooses between original plan, alternative, or something new.
+
+What NOT to do:
+
+- Silently execute and let the user discover the cost later
+- Warn about every preference or style choice (that's pushback, not flagging)
+- Refuse to proceed — always propose a workable path
+- Give lengthy defenses after warning; state it and wait
+
+Examples from prior sessions:
+
+| Directive | Correct warning |
+|-----------|-----------------|
+| *"rebase-squash-push PR #3 to main"* (37 commits diverged) | Warned: rebase would mean resolving conflicts 37 times; proposed merging main into branch + GitHub squash-merge → same result, 1 conflict resolution |
+| *"push every commit to the draft PR"* | Warned: would flood Copilot with WIP-noise reviews; proposed milestone-based pushes |
+| *"add CURSOR.md / COPILOT.md for those tools"* | Warned: verified neither is a real convention; proposed using the actual filenames those tools read |
+
 ---
 
 ## AI Team Structure
@@ -150,7 +183,118 @@ After any code change, before committing (non-negotiable):
 
 When the user says "update docs," that means ALL of: relevant spec(s), `dev-journal.md`, `dev-tracker.md`, `CHANGELOG.md` — plus `AGENTS.md`/`CLAUDE.md` if conventions changed.
 
-### 2b. Documentation Maintenance
+### 2b. PR Branch Workflow — Two Patterns
+
+Every branch ends as exactly one commit on `main` (squash-merge). Two patterns within an open PR, picked by branch scope.
+
+#### Pattern A — Quick fix (1-2 sessions, 1-3 files, one concern)
+
+One commit, one PR, merge. Examples: a bug fix, a doc typo, a single small feature.
+
+1. Commit locally, push, open PR:
+   ```bash
+   git commit -m "<conventional message>"
+   git push -u origin <branch>
+   gh pr create --title "..." --body "..."
+   ```
+2. Copilot auto-reviews on push (ruleset rule `copilot_code_review`). Findings arrive in 30–90s. Check with `make pr-copilot-status PR=N`.
+3. Any follow-up (addressing a Copilot finding, a review comment, a doc tweak): **amend + force-push**.
+   ```bash
+   git add -A
+   git commit --amend --no-edit    # or --edit to rewrite the message
+   git push --force-with-lease     # never plain --force
+   ```
+4. When clean: `gh pr merge N --squash`.
+
+#### Pattern B — Major branch (multi-session feature, refactor, system rebuild)
+
+Open a **draft PR from day 1** so Copilot reviews each milestone push throughout development. The goal: catch architectural issues early, not at merge time.
+
+1. Create the branch and an initial commit (even an empty scaffold works):
+   ```bash
+   git checkout -b feat/<name> main
+   git commit --allow-empty -m "scaffold: <branch-purpose>"
+   git push -u origin feat/<name>
+   gh pr create --draft --title "..." --body "..."
+   ```
+2. During development, keep commits local and frequent — but **push only at meaningful milestones**, not every checkpoint. A milestone is a vertical slice that produces a coherent Copilot-reviewable artifact:
+   - Specs locked (new/updated `docs/` files)
+   - Pure-logic layer done (C# logic + unit tests pass)
+   - Scene/UI wired up (game builds and behavior renders)
+   - Integration tests pass (GoDotTest suite added)
+   - Final pass (all tests green, docs updated)
+3. **Between milestones: amend locally.** Don't push WIP — Copilot would review half-finished code and generate noise.
+   ```bash
+   # local checkpoint during the milestone
+   git add -A && git commit -m "wip: <what>"
+   # later, folding into the milestone commit
+   git reset --soft $(git merge-base main HEAD)
+   git commit -m "<milestone message>"
+   ```
+4. **At each milestone: force-push.** The branch stays at exactly one commit throughout the PR's life.
+   ```bash
+   git push --force-with-lease
+   # wait for Copilot:
+   make pr-copilot-wait PR=N
+   make pr-copilot-status PR=N
+   # verify findings per docs/conventions/work-discipline.md
+   # fix or dismiss, amend, force-push again for next milestone
+   ```
+5. When the branch is feature-complete and Copilot is clean: flip the PR from draft → ready-for-review:
+   ```bash
+   gh pr ready N
+   gh pr merge N --squash
+   ```
+
+Why "push only at milestones":
+- **Review cost.** Each push triggers a Copilot review (30–90s + my verification time per finding). Pushing every WIP commit would generate 10-20 reviews per feature branch, most of which flag "this function is incomplete" noise.
+- **Signal per review.** A milestone push shows Copilot a coherent vertical slice — better analysis than a mid-refactor snapshot.
+- **Branch stays tidy.** One commit throughout the PR means the final squash-merge commit message is the one you wrote, not an autogenerated concat.
+
+#### Common rules (both patterns)
+
+- Use `--force-with-lease` instead of `--force` — protects against overwriting remote changes you haven't seen.
+- Never force-push on `main`. Only on feature/fix branches.
+- After any force-push, `make pr-copilot-wait PR=N` blocks until Copilot's new review lands; then `make pr-copilot-status PR=N` shows findings.
+- Each Copilot finding goes through [External AI Feedback discipline](conventions/work-discipline.md) — verify before acting.
+
+#### Copilot Kill-Switch — Disable If Not Adding Value
+
+Copilot's code review is an assistant, not a colleague. If it starts reviewing without understanding the project, disable it immediately. Two AIs talking past each other is worse than one AI working in isolation.
+
+**Signals that Copilot doesn't have the project context** (any one of these, disable):
+
+1. **Flags correct code as wrong because it doesn't know the spec.** Example: "6.3s cinematic duration is a magic number" when `docs/flows/death.md` specifies exactly 6.3s.
+2. **Suggests architectural changes that contradict our documented conventions.** Example: "you should use plain merge commits, not squash-force-push" when `AGENTS.md` §2b establishes the pattern.
+3. **Repeatedly makes false-positive claims that require us to explain our design.** More verification overhead than fixing value = negative signal.
+4. **Doesn't reference spec files in findings that obviously touch spec behavior.** Spec-driven development is core — a reviewer unaware of it reviews the wrong artifact.
+5. **Hit rate drops below ~60% valid findings per review** over a sustained window (3+ reviews). Below that threshold, verification time exceeds fix time — the discipline is paying for the AI, not the AI paying for itself.
+
+**How to disable** (single API call, reversible):
+
+```bash
+# Remove the copilot_code_review rule from the main ruleset
+python3 -c "
+import json, subprocess
+r = subprocess.run(['gh','api','/repos/balbonits/infinite-dungeon-game/rulesets/15183156'],
+                   capture_output=True, text=True)
+d = json.loads(r.stdout)
+d['rules'] = [x for x in d['rules'] if x['type'] != 'copilot_code_review']
+with open('.github/rulesets/main-protection.json','w') as f:
+    json.dump(d, f, indent=2)
+"
+gh api --method PUT /repos/balbonits/infinite-dungeon-game/rulesets/15183156 \
+  --input .github/rulesets/main-protection.json
+```
+
+Commit the updated JSON with a message documenting why. Re-enable later (same API, flipped) if Copilot adds context (via `.github/copilot-instructions.md` or a future GitHub update).
+
+**Not a kill signal:**
+- An occasional false-positive on a general coding issue (no reviewer is perfect)
+- A hedged suggestion that turns out narrowly wrong but points at a real defensive improvement (we applied Copilot's defensive OR-match in PR #4 even though the underlying claim was wrong — net positive)
+- Disagreement on style preferences — Copilot flags both sides of a style debate; not a context problem
+
+### 2c. Documentation Maintenance
 
 - **Never hardcode volatile numbers** in AGENTS.md or CLAUDE.md (test counts, file counts, step counts). Reference commands instead: "Run `make test` for current count."
 - **Journal first, then commit.** The dev journal entry must exist before the git commit.

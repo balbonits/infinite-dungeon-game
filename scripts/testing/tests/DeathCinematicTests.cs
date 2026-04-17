@@ -88,14 +88,38 @@ public class DeathCinematicTests : GameTestBase
     [Test]
     public async Task Death_CinematicStateResetsOnEachDeath()
     {
-        // The cinematic flag should not persist between deaths.
-        // (This test assumes a prior test already triggered death; flag should be false now.)
+        // Self-contained: trigger death, let the cinematic run to completion,
+        // then assert the flag has reset. Previously this test assumed a prior
+        // test had already triggered death (shared state), which breaks when
+        // GoDotTest runs tests in isolation or reorders them. (Copilot PR #3 review.)
+        await GetToTown();
+
+        Main.Instance.LoadDungeon();
+        await WaitUntil(() => GameState.Instance.FloorNumber >= 1 &&
+            !ScreenTransition.Instance.IsTransitioning, timeout: 6f, what: "dungeon loads");
+        await Input.WaitSeconds(0.5f);
+
+        // If player is already dead from a previous test, reset so we can trigger death fresh
+        if (GameState.Instance.IsDead)
+        {
+            GameState.Instance.IsDead = false;
+            GameState.Instance.Hp = GameState.Instance.MaxHp;
+            await Input.WaitFrames(5);
+        }
+
+        GameState.Instance.Hp = 0;
+        await Input.WaitFrames(5);
+
         var death = Ui.FindNodeOfType<DeathScreen>();
         if (death is null) { Expect(false, "DeathScreen missing"); return; }
 
-        // Between deaths, after menu is shown, cinematic should not be playing
-        Expect(!death.IsPlayingCinematic,
-            "IsPlayingCinematic is false between cinematics");
+        // Cinematic should be playing now
+        await Input.WaitFrames(10);
+        Expect(death.IsPlayingCinematic, "Cinematic playing right after death trigger");
+
+        // Wait for cinematic to complete, then flag should reset
+        await WaitUntil(() => !death.IsPlayingCinematic,
+            timeout: 10f, what: "cinematic flag reset after cinematic finishes");
     }
 
     [CleanupAll]

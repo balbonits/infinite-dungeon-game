@@ -105,6 +105,27 @@ C# code, Godot 4, ~90 scripts. Structured with: autoloads, pure-logic separation
 
 All sprites generated via PixelLab (AI art tool) — characters, enemies, tiles, projectiles, UI icons. The AI art-lead agent writes the prompts, manages the asset pipeline, and names files consistently.
 
+## Two-AI Code Review (Claude ↔ Copilot)
+
+A novel part of this workflow: the primary dev (Claude Code) publishes PRs and a second AI (GitHub Copilot's PR reviewer bot) reviews them asynchronously. The human directs but doesn't mediate the technical review.
+
+The loop:
+
+1. Claude pushes a commit to a PR. The branch ruleset's `copilot_code_review` rule auto-triggers a Copilot review (no manual step).
+2. Copilot posts inline review comments — findings on specific lines — within 30-90s.
+3. Claude verifies each finding by tracing the codebase and checking primary-source docs (Godot official docs, NuGet package READMEs, GitHub docs). No silent trust. See [`docs/conventions/work-discipline.md`](conventions/work-discipline.md) "External AI Feedback" for the verification protocol.
+4. Claude replies threaded under each Copilot comment — either *"verified the fix — commit \<sha\>"* or *"verified this claim is incorrect because X, keeping as-is"* — creating an audit-trail dialogue.
+5. Claude force-pushes the fix. Copilot re-reviews. Repeat until clean.
+6. The human reads the final PR state (or not) and approves the merge.
+
+Why this matters: **no single AI is the source of truth.** Claude's implementation is checked by Copilot's review; Copilot's review is checked by Claude's verification against primary sources. Errors from either side get caught before landing on main.
+
+Failure modes to watch for:
+- **Amplification** — one AI's confident-wrong output becoming another AI's confident-wrong fix. Mitigated by the "primary-source verification" rule (Rule 3 of External AI Feedback).
+- **Sycophancy** — one AI rubber-stamping the other's suggestions to be agreeable. Mitigated by documenting rejected claims explicitly in the PR thread and journal.
+
+The PR threads are public and permanent. Anyone can read the full dialogue: [github.com/balbonits/infinite-dungeon-game/pulls?q=is%3Aclosed](https://github.com/balbonits/infinite-dungeon-game/pulls?q=is%3Aclosed). Session 20 in the dev journal walks through a concrete example.
+
 ## What We've Learned So Far
 
 ### Works Well
@@ -113,6 +134,7 @@ All sprites generated via PixelLab (AI art tool) — characters, enemies, tiles,
 - **Decomposition via agents.** Delegating research, art, and QA to specialized agents scales the work in parallel.
 - **Automated tests are non-negotiable.** Without them, the AI can't verify its own work and behavior drifts silently.
 - **Conventional commits + changelogs.** Machine-readable history makes every change auditable.
+- **Two-AI review catches what one misses.** Claude's verification-against-primary-sources has caught one Copilot hedged/incorrect claim (see Session 20); Copilot has caught multiple Claude architectural bugs. Neither alone would have caught both.
 
 ### Failure Modes (and guards)
 

@@ -4,7 +4,7 @@
 GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 
-.PHONY: help build run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit sandbox sandbox-headless kill clean clean-all status verify doctor branch squash done
+.PHONY: help build run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit test-ui test-ui-suite sandbox sandbox-headless sandbox-headless-all pr-copilot-request pr-copilot-wait pr-copilot-status kill clean clean-all status verify doctor branch squash done export-all export-mac export-win export-linux
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -61,6 +61,41 @@ test-ui-suite: build ## Run a specific GoDotTest suite: make test-ui-suite SUITE
 	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-suite SUITE=<name>" && exit 1 || true
 	@$(GODOT) --headless --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | \
 		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
+
+# ─── PR / Copilot helpers ──────────────────────────────────────────────────
+# Usage patterns:
+#   make pr-copilot-request PR=4     — ask Copilot to review PR #4
+#   make pr-copilot-wait PR=4        — block until Copilot's next review lands
+#   make pr-copilot-status PR=4      — show latest Copilot review + comments
+
+pr-copilot-request: ## Request Copilot PR review: make pr-copilot-request PR=4
+	@[ -z "$(PR)" ] && echo "Usage: make pr-copilot-request PR=<num>" && exit 1 || true
+	@gh pr edit $(PR) --add-reviewer "@copilot"
+
+pr-copilot-wait: ## Wait until Copilot's review count increases: make pr-copilot-wait PR=4
+	@[ -z "$(PR)" ] && echo "Usage: make pr-copilot-wait PR=<num>" && exit 1 || true
+	@REPO=$$(gh repo view --json nameWithOwner -q .nameWithOwner); \
+	BEFORE=$$(gh api repos/$$REPO/pulls/$(PR)/reviews -q '[.[] | select(.user.login=="copilot-pull-request-reviewer[bot]")] | length'); \
+	echo "Waiting for new Copilot review on PR #$(PR) (current count: $$BEFORE)..."; \
+	for i in $$(seq 1 40); do \
+		NOW=$$(gh api repos/$$REPO/pulls/$(PR)/reviews -q '[.[] | select(.user.login=="copilot-pull-request-reviewer[bot]")] | length'); \
+		if [ "$$NOW" -gt "$$BEFORE" ]; then \
+			echo "✓ Copilot review landed (now $$NOW total). Latest:"; \
+			gh api repos/$$REPO/pulls/$(PR)/reviews -q 'map(select(.user.login=="copilot-pull-request-reviewer[bot]")) | last | .body' | head -5; \
+			exit 0; \
+		fi; \
+		sleep 15; \
+	done; \
+	echo "✗ Timed out after 10 min waiting for Copilot review"; exit 1
+
+pr-copilot-status: ## Show latest Copilot review + inline comments: make pr-copilot-status PR=4
+	@[ -z "$(PR)" ] && echo "Usage: make pr-copilot-status PR=<num>" && exit 1 || true
+	@REPO=$$(gh repo view --json nameWithOwner -q .nameWithOwner); \
+	echo "=== Reviews ==="; \
+	gh api repos/$$REPO/pulls/$(PR)/reviews -q '.[] | select(.user.login=="copilot-pull-request-reviewer[bot]") | "[\(.submitted_at)] \(.state)\n\(.body[:400])\n"'; \
+	echo ""; \
+	echo "=== Inline comments ==="; \
+	gh api repos/$$REPO/pulls/$(PR)/comments -q '.[] | select(.user.login=="Copilot" or .user.login=="copilot-pull-request-reviewer[bot]") | "\(.path):\(.line)\n  \(.body[:400])\n"'
 
 # ─── Sandbox ─────────────────────────────────────────────────────────────────
 # SCENE values: sprite-viewer, tile-viewer, projectile-viewer,

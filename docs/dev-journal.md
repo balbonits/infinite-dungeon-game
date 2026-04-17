@@ -4,6 +4,62 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## Session 20 — Copilot Review + Post-Merge Verification (2026-04-17)
+
+### What Happened
+
+After PR #3 was squash-merged to main, `github-copilot-pull-request-reviewer` posted 4 review comments. I initially applied fixes for all 4 based on code inspection, then the user pushed back: *"did you validate its comments before working on fixes?"* followed by *"if an advice isn't fully supported by facts, ignore it & move on. otherwise, test the statement first for truth. again, you have access to the internet, best to use it."*
+
+This session locked in the verification discipline for external AI advice.
+
+### Copilot's 4 Claims + Independent Verification
+
+| # | Claim | How I Verified | Outcome |
+|---|-------|----------------|---------|
+| 1 | `GameWindow` misses FullRect anchor → dynamically created windows (`SettingsPanel.Open`, `TutorialPanel.Open`) render 0×0 | Traced `uiLayer.AddChild(new SettingsPanel())` — adds to CanvasLayer with no anchors; Godot docs confirm **CanvasLayer does NOT auto-size Control children** (Control default `size=(0,0)`, anchors `(0,0,0,0)`). | ✅ Valid |
+| 2 | `GameWindow.Close()` unpauses after ALL modals close → breaks splash/class-select flows where parent paused | Traced Main.cs — splash sets `Paused=true` directly, doesn't push to WindowStack; prior fix unpaused on stack-empty, leaking to splash | ✅ Valid |
+| 3 | NpcPanel fade tweens `ContentBox` (inner VBox) → panel background stays visible | Traced `UiTheme.CreateDialogWindow`: hierarchy is `Overlay (ColorRect) → CenterContainer → PanelContainer → ContentBox (VBox)`. Confirmed on Godot docs: **`CanvasItem.Modulate` cascades to descendants** (multiplied down the chain), so fading `Overlay.Modulate` fades everything. Fading only ContentBox leaves panel visible. | ✅ Valid |
+| 4 | `DeathCinematicTests.Death_CinematicStateResetsOnEachDeath` assumes prior test set state → flaky when run alone | Self-knowledge (I wrote the test) | ✅ Valid |
+
+All 4 claims were fact-backed. Fixes applied and verified (xUnit passes 11/11 integration tests, build clean).
+
+### Godot-Behavior Citations (for future AI context)
+
+- **`CanvasItem.modulate` cascades:** [docs.godotengine.org/en/stable/classes/class_canvasitem.html#class-canvasitem-property-modulate](https://docs.godotengine.org/en/stable/classes/class_canvasitem.html#class-canvasitem-property-modulate) — *"This property does affect child CanvasItems, unlike `self_modulate` which only affects the node itself."*
+- **CanvasLayer no Control auto-sizing:** [docs.godotengine.org/en/stable/classes/class_control.html](https://docs.godotengine.org/en/stable/classes/class_control.html) — size updates only from Container parents; CanvasLayer is not a Container. Confirmed via [Size and Anchors tutorial](https://docs.godotengine.org/en/stable/tutorials/ui/size_and_anchors.html).
+
+### Principle Codified: External AI Advice is a Grain of Salt
+
+User directive: *"advices are grains of salt, best not to take too much of it."*
+
+Applying this to the work discipline (see [docs/conventions/work-discipline.md](conventions/work-discipline.md)):
+
+**Rule for external AI feedback** (Copilot PR reviews, Cursor suggestions, ChatGPT code comments, etc.):
+1. **Default skepticism.** An AI suggestion is a hypothesis, not a finding.
+2. **Trace before acting.** Read the cited code paths yourself. Verify the mechanism claimed.
+3. **Fact-check behavior claims via primary sources.** For Godot/framework behavior: official docs, not AI summaries of docs. Web search is the tool here.
+4. **If unsupported by facts: ignore and move on.** Don't half-apply a fix "just in case" — that creates stale code with no clear rationale.
+5. **Document which claims were verified how** (like the table above). Future-you needs to know whether a fix was evidence-based or cargo-culted.
+
+This protects against two failure modes:
+- **Amplification** — one AI's confident wrong-output becoming another AI's confident fix.
+- **Waste** — spending real time fixing non-bugs that sound plausible.
+
+### On Claude ↔ Copilot Direct Dialogue
+
+I cannot live-chat with Copilot. The practical loop is async via PR comments:
+- `gh api` can post threaded replies on Copilot's review comments
+- Re-review can be requested via the PR web UI
+- Copilot re-scans and posts new findings
+
+It's a real dialogue, just turn-based through GitHub's system.
+
+### What Lands in This Branch (fix/post-merge-cleanup)
+
+4 code fixes (all fact-verified), the branch ruleset JSON for auditability, and this journal entry.
+
+---
+
 ## Session 19 — Load Game Spec + Splash Redesign (2026-04-17)
 
 ### What Happened
