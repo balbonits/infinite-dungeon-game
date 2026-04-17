@@ -137,15 +137,25 @@ public partial class Enemy : CharacterBody2D, IDamageable
             FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 10),
                 $"+{gold}g", UiTheme.Colors.Accent, 11);
 
-            var itemDrop = LootTable.RollItemDrop(Level);
-            if (itemDrop != null)
+            // ITEM-02 — species-aware equipment + material drops.
+            var species = (EnemySpecies)SpeciesIndex;
+            int floor = GameState.Instance.FloorNumber;
+
+            var equip = MonsterDropTable.RollEquipment(species, floor);
+            if (equip != null && GameState.Instance.PlayerInventory.TryAdd(equip))
             {
-                if (GameState.Instance.PlayerInventory.TryAdd(itemDrop))
+                FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 20),
+                    equip.Name, UiTheme.Colors.Safe, 12, 1.5f);
+                if (Toast.Instance != null)
+                    Toast.Instance.Success($"Found: {equip.Name}");
+            }
+
+            foreach (var mat in MonsterDropTable.RollMaterials(species, floor))
+            {
+                if (GameState.Instance.PlayerInventory.TryAdd(mat))
                 {
-                    FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 20),
-                        itemDrop.Name, UiTheme.Colors.Safe, 12, 1.5f);
-                    if (Toast.Instance != null)
-                        Toast.Instance.Success($"Found: {itemDrop.Name}");
+                    FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 30),
+                        mat.Name, UiTheme.Colors.Info, 10, 1.2f);
                 }
             }
 
