@@ -75,13 +75,33 @@ create branch → research → plan → verify plan (research bot cross-check)
 - Push to remote, create PR if needed
 - Delete the feature branch after merge
 
+**10a-prelude. One branch at a time, parallelize files within it.**
+
+Solo dev (you, the AI) gets zero parallelism benefit from multiple in-flight branches and pays the full concurrency cost: rebase conflicts on shared files (especially `docs/dev-tracker.md`), split attention across async Copilot rounds, and a multi-PR brief the user has to parse instead of one PR's-worth of context.
+
+**Within one branch, freely edit multiple files in parallel** — a feature that touches code + spec + tests is one branch, not three.
+
+**Across branches, work strictly serial:** pick one branch, take it from creation through Copilot-clean review through merge, **with 100% focus and intent**, then start the next. Context is lost between runs; mid-PR state does not survive a session boundary, so half-finished branches are dangerous. Finish atomically.
+
+**Exceptions:** if a previously-pushed PR is genuinely waiting on something external (Copilot round, user review, agent revising in background), it is acceptable to draft the *next* branch's work locally — but DO NOT push it, request its review, or open the PR until the prior one is merged. Local commits or stash to preserve in-progress work are fine.
+
+User feedback (2026-04-17): "don't work on multiple PR's, go at it one by one"; "work on parallel files, not parallel branches"; "complete a branch/PR with 100% focus & intent. you'll be losing context on the next run."
+
+**10a-postscript. After a PR or branch is done, run `/compact` or `/clear` to free up context space.**
+
+Once a branch is merged and there is no active follow-up to it, immediately invoke `/compact` (preserve summary, drop intermediate detail) or `/clear` (start fresh) before moving to the next branch. Don't carry the previous PR's debugging detours, Copilot back-and-forth, and intermediate tool output into the next ticket — context is finite and gets noisier with every additional history.
+
+Use `/compact` when the next branch will benefit from a concise memory of what just shipped (e.g., a triage follow-up, a dependent feature). Use `/clear` when the next branch is independent (different system, no shared code).
+
+User feedback (2026-04-17): "after a PR or branch is done, either run `/compact` or `/clear`, to free up context space."
+
 **10a. Pair every PR push with a Copilot review request and a polling cron — atomic step.**
 
 Every `git push` to a PR branch is incomplete until all of these happened in the same response:
 
 1. `make pr-copilot-request PR=N` — the ruleset's auto-review trigger is unreliable (especially on force-push; confirmed PR #5, Session 21). Do the manual request as the source of truth.
 2. `make pr-copilot-wait PR=N` started in background — do NOT skip and "wait for the notify-claude workflow." The notify workflow has gating issues; the explicit poller is what closes the loop.
-3. Verify both started: PR URL returned + background task ID returned. If either failed, retry.
+3. **Verify the poller actually entered its loop, not just that the shell launched.** PR URL returned + background task ID returned only confirm the shell process started. After kicking off the background poller, immediately read its output file (`/private/tmp/claude-501/.../tasks/<task-id>.output`) and confirm the first `Waiting for new Copilot review on PR #N (current count: X)...` line is present. If it's missing, the script crashed silently before its main loop — and silent-crashed background processes do NOT fire completion notifications, so you'd wait forever for a signal that never comes. Restart and investigate before scheduling the wakeup.
 4. **Cap the wait at 20 minutes total.** The Make target's built-in 10-min loop is too short. Either run two consecutive 10-min waits, or schedule a wakeup at 20 min to kill the poller if no review has landed.
 5. **On 20-min timeout:** kill the poller, surface the failure to the user, and decide — re-request the review (Copilot may have dropped it) or proceed without (with explicit user OK). Do not let a stalled poller linger.
 
