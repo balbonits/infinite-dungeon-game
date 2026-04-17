@@ -73,6 +73,7 @@ public static class SaveSystem
                 ClearedFloors = gs.Attunement.ExportClearedFloors(),
                 ActiveKeystone = gs.Attunement.ActiveKeystone,
             },
+            EquipmentData = gs.Equipment.CaptureState(),
         };
     }
 
@@ -182,6 +183,11 @@ public static class SaveSystem
 
         // Intelligence is session-scoped, always starts fresh
         gs.Intelligence = new DungeonIntelligence();
+
+        // Restore equipment (SYS-11)
+        gs.Equipment = new EquipmentSet();
+        if (data.EquipmentData != null)
+            gs.Equipment.RestoreState(data.EquipmentData);
     }
 
     public static string Serialize(SaveData data) => JsonSerializer.Serialize(data, JsonOptions);

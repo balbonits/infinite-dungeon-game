@@ -261,15 +261,176 @@ public partial class PauseMenu : GameWindow
 
     private void BuildEquipmentTab()
     {
-        _pointsLabel.Text = "";
-        _detailLabel.Text = "";
+        var gs = GameState.Instance;
+        var eq = gs.Equipment;
+        _pointsLabel.Text = $"Equipped: {eq.EquippedCount} / 19";
+        _detailLabel.Text = "Select a slot to equip or unequip an item";
 
-        var placeholder = new Label();
-        placeholder.Text = "Equipment\n\nComing Soon\n\n(10 slots: Head, Body, Arms, Legs, Feet,\nNeck, Ring x10, Main Hand, Off Hand, Ammo)";
-        UiTheme.StyleLabel(placeholder, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-        placeholder.HorizontalAlignment = HorizontalAlignment.Center;
-        placeholder.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _tabs.ScrollContent.AddChild(placeholder);
+        AddEquipSlotRow("Main Hand", EquipSlot.MainHand);
+        AddEquipSlotRow("Off Hand", EquipSlot.OffHand);
+        AddEquipSlotRow("Ammo", EquipSlot.Ammo);
+        _tabs.ScrollContent.AddChild(new HSeparator());
+        AddEquipSlotRow("Head", EquipSlot.Head);
+        AddEquipSlotRow("Body", EquipSlot.Body);
+        AddEquipSlotRow("Arms", EquipSlot.Arms);
+        AddEquipSlotRow("Legs", EquipSlot.Legs);
+        AddEquipSlotRow("Feet", EquipSlot.Feet);
+        _tabs.ScrollContent.AddChild(new HSeparator());
+        AddEquipSlotRow("Neck", EquipSlot.Neck);
+
+        var ringHeader = new Label();
+        int ringsEquipped = 0;
+        for (int i = 0; i < EquipmentSet.RingSlotCount; i++)
+            if (eq.Rings[i] != null) ringsEquipped++;
+        ringHeader.Text = $"Rings ({ringsEquipped} / {EquipmentSet.RingSlotCount})";
+        UiTheme.StyleLabel(ringHeader, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
+        _tabs.ScrollContent.AddChild(ringHeader);
+
+        for (int i = 0; i < EquipmentSet.RingSlotCount; i++)
+            AddEquipSlotRow($"  Ring {i + 1}", EquipSlot.Ring, ringIndex: i);
+
+        _tabs.ScrollContent.AddChild(new HSeparator());
+
+        var bonuses = eq.GetTotalBonuses(gs.SelectedClass);
+        var summary = new Label();
+        summary.Text = BuildBonusSummary(bonuses);
+        UiTheme.StyleLabel(summary, UiTheme.Colors.Info, UiTheme.FontSizes.Small);
+        summary.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _tabs.ScrollContent.AddChild(summary);
+    }
+
+    private void AddEquipSlotRow(string label, EquipSlot slot, int ringIndex = 0)
+    {
+        var gs = GameState.Instance;
+        var eq = gs.Equipment;
+        var item = eq.GetSlot(slot, ringIndex);
+
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 8);
+
+        var nameLabel = new Label();
+        nameLabel.Text = label;
+        UiTheme.StyleLabel(nameLabel, UiTheme.Colors.Ink, UiTheme.FontSizes.Body);
+        nameLabel.CustomMinimumSize = new Vector2(100, 0);
+        row.AddChild(nameLabel);
+
+        var btn = new Button();
+        btn.Text = item?.Name ?? "[empty]";
+        btn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        btn.FocusMode = FocusModeEnum.All;
+        UiTheme.StyleSecondaryButton(btn, UiTheme.FontSizes.Small);
+        if (item == null)
+            btn.AddThemeColorOverride("font_color", UiTheme.Colors.Muted);
+
+        int capturedRingIndex = ringIndex;
+        EquipSlot capturedSlot = slot;
+        btn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+            ShowEquipActionMenu(btn, capturedSlot, capturedRingIndex)));
+
+        if (item != null)
+        {
+            string detail = $"{item.Name}\n{item.Description}";
+            if (item.ClassAffinity.HasValue)
+                detail += $"\nAffinity: {item.ClassAffinity} (+25% when matched)";
+            btn.FocusEntered += () => _detailLabel.Text = detail;
+        }
+
+        row.AddChild(btn);
+        _tabs.ScrollContent.AddChild(row);
+    }
+
+    private void ShowEquipActionMenu(Control anchor, EquipSlot slot, int ringIndex)
+    {
+        var gs = GameState.Instance;
+        var eq = gs.Equipment;
+        var current = eq.GetSlot(slot, ringIndex);
+        var actions = new System.Collections.Generic.List<(string label, System.Action action)>();
+
+        if (current != null)
+        {
+            actions.Add(("Unequip", () =>
+            {
+                if (eq.Unequip(slot, gs.PlayerInventory, ringIndex) != null)
+                {
+                    Toast.Instance?.Success($"Unequipped {current.Name}");
+                    RefreshEquipmentTab();
+                }
+                else
+                {
+                    Toast.Instance?.Error("Backpack full");
+                }
+            }
+            ));
+        }
+        else
+        {
+            // Empty slot — list compatible backpack items.
+            var compatibles = FindCompatibleItems(slot);
+            if (compatibles.Count == 0)
+            {
+                actions.Add(("(no compatible items)", () => { }));
+            }
+            else
+            {
+                foreach (var itemDef in compatibles)
+                {
+                    var captured = itemDef;
+                    actions.Add(($"Equip {captured.Name}", () =>
+                    {
+                        if (eq.TryEquip(slot, captured, gs.PlayerInventory, ringIndex))
+                        {
+                            Toast.Instance?.Success($"Equipped {captured.Name}");
+                            RefreshEquipmentTab();
+                        }
+                        else
+                        {
+                            Toast.Instance?.Error("Equip failed (backpack full?)");
+                        }
+                    }
+                    ));
+                }
+            }
+        }
+
+        ActionMenu.Instance?.Show(anchor.GlobalPosition, actions.ToArray());
+    }
+
+    private static System.Collections.Generic.List<ItemDef> FindCompatibleItems(EquipSlot slot)
+    {
+        var results = new System.Collections.Generic.List<ItemDef>();
+        var inv = GameState.Instance.PlayerInventory;
+        var seen = new System.Collections.Generic.HashSet<string>();
+        for (int i = 0; i < inv.SlotCount; i++)
+        {
+            var stack = inv.GetSlot(i);
+            if (stack == null) continue;
+            if (seen.Contains(stack.Item.Id)) continue;
+            if (EquipmentSet.IsCompatible(slot, stack.Item))
+            {
+                results.Add(stack.Item);
+                seen.Add(stack.Item.Id);
+            }
+        }
+        return results;
+    }
+
+    private void RefreshEquipmentTab()
+    {
+        _tabs.SelectTab(_tabs.CurrentTab);
+    }
+
+    private static string BuildBonusSummary(EquipmentBonuses b)
+    {
+        if (b.Str == 0 && b.Dex == 0 && b.Sta == 0 && b.Int == 0 && b.Hp == 0 && b.Damage == 0)
+            return "No equipment bonuses.";
+        var parts = new System.Collections.Generic.List<string>();
+        if (b.Str != 0) parts.Add($"STR {b.Str:+0.#;-0.#}");
+        if (b.Dex != 0) parts.Add($"DEX {b.Dex:+0.#;-0.#}");
+        if (b.Sta != 0) parts.Add($"STA {b.Sta:+0.#;-0.#}");
+        if (b.Int != 0) parts.Add($"INT {b.Int:+0.#;-0.#}");
+        if (b.Hp != 0) parts.Add($"HP {b.Hp:+0.#;-0.#}");
+        if (b.Damage != 0) parts.Add($"DMG {b.Damage:+0.#;-0.#}");
+        return "Equipment bonuses: " + string.Join(", ", parts);
     }
 
     // ─── Tab 3: Skills ──────────────────────────────────────────────────

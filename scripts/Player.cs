@@ -196,14 +196,29 @@ public partial class Player : CharacterBody2D
         if (target == null)
             return;
 
+        AttackConfig primary = GetEffectivePrimary();
+        AttackConfig? fallback = _meleeFallback;
+
         // Pick attack: use melee fallback if enemy is close enough, otherwise primary
         float distToTarget = GlobalPosition.DistanceTo(target.GlobalPosition);
-        AttackConfig attack = (_meleeFallback != null && distToTarget <= _meleeFallback.Range)
-            ? _meleeFallback
-            : _primaryAttack;
+        AttackConfig attack = (fallback != null && distToTarget <= fallback.Range)
+            ? fallback
+            : primary;
 
         ExecuteAttack(attack, target);
         EventBus.Instance.EmitSignal(EventBus.SignalName.PlayerAttacked, target);
+    }
+
+    /// <summary>
+    /// Returns the primary attack with equipment-aware adjustments (SYS-11).
+    /// Ranger without an equipped quiver → bow becomes a melee bash.
+    /// </summary>
+    private AttackConfig GetEffectivePrimary()
+    {
+        var gs = GameState.Instance;
+        if (gs.SelectedClass == PlayerClass.Ranger && !gs.Equipment.HasQuiver())
+            return ClassAttacks.RangerBowBash;
+        return _primaryAttack;
     }
 
     /// <summary>

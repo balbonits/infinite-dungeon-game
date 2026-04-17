@@ -91,6 +91,8 @@ public static class ItemDatabase
             LevelRequirement = 1,
             BonusDamage = 3,
             BonusStr = 1,
+            Slot = EquipSlot.MainHand,
+            ClassAffinity = PlayerClass.Warrior,
         });
         Register(new ItemDef
         {
@@ -103,6 +105,8 @@ public static class ItemDatabase
             LevelRequirement = 1,
             BonusDamage = 2,
             BonusInt = 2,
+            Slot = EquipSlot.MainHand,
+            ClassAffinity = PlayerClass.Mage,
         });
         Register(new ItemDef
         {
@@ -115,7 +119,175 @@ public static class ItemDatabase
             LevelRequirement = 1,
             BonusDamage = 2,
             BonusDex = 1,
+            Slot = EquipSlot.MainHand,
+            ClassAffinity = PlayerClass.Ranger,
         });
+
+        // --- Starting gear (SYS-11) — per docs/systems/equipment.md §Starting Equipment ---
+        Register(new ItemDef
+        {
+            Id = "sword_iron_short",
+            Name = "Iron Short Sword",
+            Description = "A basic short sword. Warrior starting weapon.",
+            Category = ItemCategory.Weapon,
+            BuyPrice = 80,
+            SellPrice = 32,
+            LevelRequirement = 1,
+            BonusDamage = 2,
+            Slot = EquipSlot.MainHand,
+            ClassAffinity = PlayerClass.Warrior,
+        });
+        Register(new ItemDef
+        {
+            Id = "staff_short",
+            Name = "Short Staff",
+            Description = "A novice mage's wooden staff. Mage starting weapon.",
+            Category = ItemCategory.Weapon,
+            BuyPrice = 70,
+            SellPrice = 28,
+            LevelRequirement = 1,
+            BonusDamage = 1,
+            BonusInt = 1,
+            Slot = EquipSlot.MainHand,
+            ClassAffinity = PlayerClass.Mage,
+        });
+        Register(new ItemDef
+        {
+            Id = "shield_wooden_small",
+            Name = "Wooden Small Shield",
+            Description = "A rough wooden buckler. Warrior starting off-hand.",
+            Category = ItemCategory.Shield,
+            BuyPrice = 60,
+            SellPrice = 24,
+            LevelRequirement = 1,
+            BonusSta = 1,
+            Slot = EquipSlot.OffHand,
+            ClassAffinity = PlayerClass.Warrior,
+        });
+        Register(new ItemDef
+        {
+            Id = "spellbook_basic",
+            Name = "Basic Spellbook",
+            Description = "A thin grimoire with starter incantations. Mage starting off-hand.",
+            Category = ItemCategory.Spellbook,
+            BuyPrice = 60,
+            SellPrice = 24,
+            LevelRequirement = 1,
+            BonusInt = 1,
+            Slot = EquipSlot.OffHand,
+            ClassAffinity = PlayerClass.Mage,
+        });
+        Register(new ItemDef
+        {
+            Id = "quiver_iron_arrows",
+            Name = "Iron Arrows Quiver",
+            Description = "A quiver of simple iron-tipped arrows. Ranger starting ammo.",
+            Category = ItemCategory.Quiver,
+            BuyPrice = 40,
+            SellPrice = 16,
+            LevelRequirement = 1,
+            ProjectileDamageMultiplier = 1.0f,
+            Slot = EquipSlot.Ammo,
+            ClassAffinity = PlayerClass.Ranger,
+        });
+
+        // Tag existing quivers with their Slot so they can be swapped at runtime.
+        UpdateSlot("quiver_basic", EquipSlot.Ammo);
+        UpdateSlot("quiver_fire", EquipSlot.Ammo);
+        UpdateSlot("quiver_poison", EquipSlot.Ammo);
+
+        // --- Minimal armor / accessory sample set (for testing & early loot) ---
+        // Note: a full base-item catalog is deferred to ITEM-01.
+        Register(new ItemDef
+        {
+            Id = "helm_leather_cap",
+            Name = "Leather Cap",
+            Description = "A padded leather cap.",
+            Category = ItemCategory.Head,
+            BuyPrice = 50,
+            SellPrice = 20,
+            LevelRequirement = 1,
+            BonusSta = 1,
+            Slot = EquipSlot.Head,
+        });
+        Register(new ItemDef
+        {
+            Id = "body_leather_vest",
+            Name = "Leather Vest",
+            Description = "Basic leather body armor.",
+            Category = ItemCategory.Body,
+            BuyPrice = 90,
+            SellPrice = 36,
+            LevelRequirement = 1,
+            BonusSta = 2,
+            Slot = EquipSlot.Body,
+        });
+        Register(new ItemDef
+        {
+            Id = "arms_leather_braces",
+            Name = "Leather Braces",
+            Description = "Simple arm guards.",
+            Category = ItemCategory.Arms,
+            BuyPrice = 40,
+            SellPrice = 16,
+            LevelRequirement = 1,
+            BonusSta = 1,
+            Slot = EquipSlot.Arms,
+        });
+        Register(new ItemDef
+        {
+            Id = "legs_leather_breeches",
+            Name = "Leather Breeches",
+            Description = "Lightweight leg armor.",
+            Category = ItemCategory.Legs,
+            BuyPrice = 50,
+            SellPrice = 20,
+            LevelRequirement = 1,
+            BonusSta = 1,
+            Slot = EquipSlot.Legs,
+        });
+        Register(new ItemDef
+        {
+            Id = "feet_leather_boots",
+            Name = "Leather Boots",
+            Description = "Soft leather boots.",
+            Category = ItemCategory.Feet,
+            BuyPrice = 40,
+            SellPrice = 16,
+            LevelRequirement = 1,
+            BonusDex = 1,
+            Slot = EquipSlot.Feet,
+        });
+        Register(new ItemDef
+        {
+            Id = "neck_copper_chain",
+            Name = "Copper Chain",
+            Description = "A simple copper chain.",
+            Category = ItemCategory.Neck,
+            BuyPrice = 60,
+            SellPrice = 24,
+            LevelRequirement = 1,
+            BonusHp = 5,
+            Slot = EquipSlot.Neck,
+        });
+        Register(new ItemDef
+        {
+            Id = "ring_copper",
+            Name = "Copper Ring",
+            Description = "A plain copper ring.",
+            Category = ItemCategory.Ring,
+            BuyPrice = 50,
+            SellPrice = 20,
+            LevelRequirement = 1,
+            BonusStr = 1,
+            Slot = EquipSlot.Ring,
+        });
+    }
+
+    private static void UpdateSlot(string id, EquipSlot slot)
+    {
+        if (Items.TryGetValue(id, out var def))
+            Items[id] = def with { Slot = slot };
     }
 
     private static void Register(ItemDef item)

@@ -113,6 +113,9 @@ public partial class GameState : Node
     public DungeonIntelligence Intelligence { get; set; } = new();
     public MagiculeAttunement Attunement { get; set; } = new();
 
+    // Equipment (SYS-11)
+    public EquipmentSet Equipment { get; set; } = new();
+
     public override void _Ready()
     {
         Instance = this;
@@ -144,6 +147,31 @@ public partial class GameState : Node
         Pacts = new DungeonPacts();
         Intelligence = new DungeonIntelligence();
         Attunement = new MagiculeAttunement();
+        Equipment = new EquipmentSet();
+        EquipStartingGear();
+    }
+
+    private void EquipStartingGear()
+    {
+        // Per docs/systems/equipment.md: starting weapon + off-hand/ammo, no armor or accessories.
+        string mainHandId = SelectedClass switch
+        {
+            PlayerClass.Warrior => "sword_iron_short",
+            PlayerClass.Ranger => "bow_short",
+            PlayerClass.Mage => "staff_short",
+            _ => "sword_iron_short",
+        };
+        (string offOrAmmoId, EquipSlot slot) = SelectedClass switch
+        {
+            PlayerClass.Warrior => ("shield_wooden_small", EquipSlot.OffHand),
+            PlayerClass.Ranger => ("quiver_iron_arrows", EquipSlot.Ammo),
+            PlayerClass.Mage => ("spellbook_basic", EquipSlot.OffHand),
+            _ => ("shield_wooden_small", EquipSlot.OffHand),
+        };
+        var main = ItemDatabase.Get(mainHandId);
+        if (main != null) Equipment.ForceEquip(EquipSlot.MainHand, main);
+        var off = ItemDatabase.Get(offOrAmmoId);
+        if (off != null) Equipment.ForceEquip(slot, off);
     }
 
     public void AwardXp(int amount)

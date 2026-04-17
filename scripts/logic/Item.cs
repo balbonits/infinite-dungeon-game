@@ -30,6 +30,13 @@ public record ItemDef
     // Quiver properties (Ranger)
     public string Element { get; init; } = "";
     public float ProjectileDamageMultiplier { get; init; } = 1.0f;
+
+    // Equipment slotting (SYS-11). Defaults to None (not equippable).
+    public EquipSlot Slot { get; init; } = EquipSlot.None;
+
+    // Class affinity — null means generic gear (no class bonus). When the player's
+    // class matches, all stat bonuses on this item are multiplied by 1.25.
+    public PlayerClass? ClassAffinity { get; init; }
 }
 
 public enum ItemCategory
@@ -41,6 +48,36 @@ public enum ItemCategory
     Quiver,
     Material,
     QuestItem,
+    // SYS-11 equipment categories
+    Head,
+    Body,
+    Arms,
+    Legs,
+    Feet,
+    Neck,
+    Ring,
+    Shield,
+    Spellbook,
+    DefensiveMelee,
+}
+
+/// <summary>
+/// Equipment slot types. Rings have 10 sub-slots (ringIndex 0..9); all other slots are single.
+/// See docs/systems/equipment.md.
+/// </summary>
+public enum EquipSlot
+{
+    None,
+    Head,
+    Body,
+    Arms,
+    Legs,
+    Feet,
+    Neck,
+    Ring,
+    MainHand,
+    OffHand,
+    Ammo,
 }
 
 /// <summary>
