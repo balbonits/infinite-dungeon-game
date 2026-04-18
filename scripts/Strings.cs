@@ -178,13 +178,26 @@ public static class Strings
     public static class Blacksmith
     {
         public const string Title = "BLACKSMITH";
+        public const string ForgeTab = "Forge";
         public const string CraftTab = "Craft";
         public const string RecycleTab = "Recycle";
-        public const string CraftHint = "Select an equipment item to add affixes.";
+        public const string ShopTab = "Shop";
+        public const string ForgeHint = "Select an equipment item to add affixes.";
+        public const string CraftHint = "Recipe-based crafting — coming soon.";
         public const string RecycleHint = "Break down equipment for gold.";
+        public const string ShopHint = "Caravan-stocked basics — materials and consumables.";
         public const string Recycle = "Recycle";
-        public const string NoCraftable = "No equipment in backpack to craft.";
+        public const string NoForgeable = "No equipment in backpack to forge.";
         public const string NoRecyclable = "No equipment to recycle.";
+        public const string NoShopStock = "Shop is empty — come back once the caravan rolls through.";
+    }
+
+    // --- Guild Maid Window ---
+    public static class Guild
+    {
+        public const string Title = "GUILD";
+        public const string BankTab = "Bank";
+        public const string TeleportTab = "Teleport";
     }
 
     // --- Bank ---

@@ -6,25 +6,27 @@ using DungeonGame.Autoloads;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Merged Store + Bank + Transfer window, opened via the Guild Maid NPC.
-/// Three tabs: <c>Store</c>, <c>Bank</c>, <c>Transfer</c>. Opens on Bank by default.
-/// Replaces the old ShopWindow and BankWindow.
+/// Guild Maid's service window. Two tabs per SPEC-GUILD-MAID-MERGED-MENU-01:
+/// <c>Bank</c> (storage + two-column transfer layout + gold controls) and
+/// <c>Teleport</c> (floor fast-travel, absorbed from the retired Teleporter NPC).
+/// Opens on Bank by default. Store tab moved OUT to the Blacksmith's Shop tab
+/// per SPEC-BLACKSMITH-MERGED-MENU-01. Transfer tab collapsed INTO Bank.
 ///
-/// Spec: docs/ui/guild-window.md, docs/inventory/bank.md, docs/inventory/backpack.md
+/// Spec: docs/ui/guild-maid-menu.md (new), docs/ui/guild-window.md (partially
+/// superseded), docs/inventory/bank.md, docs/inventory/backpack.md.
 /// </summary>
 public partial class GuildWindow : GameWindow
 {
     public static GuildWindow? Instance { get; private set; }
 
-    private const int StoreTabIndex = 0;
-    private const int BankTabIndex = 1;
-    private const int TransferTabIndex = 2;
+    private const int BankTabIndex = 0;
+    private const int TeleportTabIndex = 1;
 
     private GameTabPanel _tabs = null!;
     private Label _goldFooter = null!;
 
-    // Sticky choice: last "Send to" target from a Store buy (Bank default, remembered per session)
-    private bool _buySendToBank = true;
+    private SlotGrid _bankGrid = null!;
+    private SlotGrid _backpackGrid = null!;
 
     public override void _Ready()
     {
@@ -36,15 +38,14 @@ public partial class GuildWindow : GameWindow
     protected override void BuildContent(VBoxContainer content)
     {
         var title = new Label();
-        title.Text = "Guild";
+        title.Text = Strings.Guild.Title;
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         content.AddChild(title);
 
         _tabs = new GameTabPanel();
-        _tabs.AddTab("Store", BuildStoreTab);
-        _tabs.AddTab("Bank", BuildBankTab);
-        _tabs.AddTab("Transfer", BuildTransferTab);
+        _tabs.AddTab(Strings.Guild.BankTab, BuildBankTab);
+        _tabs.AddTab(Strings.Guild.TeleportTab, BuildTeleportTab);
         content.AddChild(_tabs);
 
         _goldFooter = new Label();
@@ -60,7 +61,7 @@ public partial class GuildWindow : GameWindow
 
     protected override void OnShow()
     {
-        _tabs.SelectTab(BankTabIndex); // Y2: c — open on Bank
+        _tabs.SelectTab(BankTabIndex);
         UpdateGoldFooter();
     }
 
@@ -73,107 +74,25 @@ public partial class GuildWindow : GameWindow
                            $"Backpack gold: {NumberFormat.Abbrev(gs.PlayerInventory.Gold)}";
     }
 
-    // ──────────────────────── STORE TAB ────────────────────────
-
-    private void BuildStoreTab()
-    {
-        var scroll = _tabs.ScrollContent;
-
-        // Store stocks basic consumables. Full catalog (materials, ammo) is a content ticket;
-        // today we surface everything from ItemDatabase that has a BuyPrice and is Consumable.
-        foreach (var item in ItemDatabase.All)
-        {
-            if (item.Category != ItemCategory.Consumable || item.BuyPrice <= 0) continue;
-
-            var btn = new Button();
-            btn.Text = $"{item.Name}  —  {item.BuyPrice}g";
-            btn.CustomMinimumSize = new Vector2(0, 32);
-            btn.FocusMode = FocusModeEnum.All;
-            UiTheme.StyleListItemButton(btn);
-            var captured = item;
-            btn.Connect(BaseButton.SignalName.Pressed,
-                Callable.From(() => ShowBuyDialog(captured)));
-            scroll.AddChild(btn);
-        }
-    }
-
-    private void ShowBuyDialog(ItemDef item)
-    {
-        // Simple modal: current amount + +/- buttons + confirm "Send to Bank/Backpack"
-        // Full slider UI spec'd in guild-window.md; MVP uses preset buttons.
-        var actions = new List<(string, Action)>
-        {
-            ($"Buy 1 ({item.BuyPrice}g) → {(_buySendToBank ? "Bank" : "Backpack")}",
-                () => DoBuy(item, 1)),
-            ($"Buy 10 ({item.BuyPrice * 10}g) → {(_buySendToBank ? "Bank" : "Backpack")}",
-                () => DoBuy(item, 10)),
-            ($"Toggle target: now {(_buySendToBank ? "Bank (→switch to Backpack)" : "Backpack (→switch to Bank)")}",
-                () => { _buySendToBank = !_buySendToBank; ShowBuyDialog(item); }),
-        };
-
-        var pos = GetViewport().GetMousePosition();
-        ActionMenu.Instance?.Show(pos, actions.ToArray());
-    }
-
-    private void DoBuy(ItemDef item, long amount)
-    {
-        var gs = GameState.Instance;
-        long totalCost = item.BuyPrice * amount;
-        long available = gs.PlayerInventory.Gold + gs.PlayerBank.Gold;
-        if (available < totalCost)
-        {
-            Toast.Instance?.Error("Not enough gold (combined bank + backpack)");
-            return;
-        }
-
-        var target = _buySendToBank ? gs.PlayerBank.Storage : gs.PlayerInventory;
-        if (!target.TryAdd(item, amount))
-        {
-            Toast.Instance?.Warning($"{(_buySendToBank ? "Bank" : "Backpack")} is full");
-            return;
-        }
-
-        // Draw from backpack pocket first, then bank
-        long fromBackpack = Math.Min(gs.PlayerInventory.Gold, totalCost);
-        gs.PlayerInventory.Gold -= fromBackpack;
-        long remaining = totalCost - fromBackpack;
-        if (remaining > 0) gs.PlayerBank.Gold -= remaining;
-
-        Toast.Instance?.Success(
-            $"Bought {amount}x {item.Name} → {(_buySendToBank ? "Bank" : "Backpack")}");
-        UpdateGoldFooter();
-    }
-
     // ──────────────────────── BANK TAB ────────────────────────
-
-    private SlotGrid _bankGrid = null!;
+    // Merges the prior Bank + Transfer tabs: gold controls on top, then
+    // two-column Bank ⇄ Backpack layout, then an upgrade button.
 
     private void BuildBankTab()
     {
         var scroll = _tabs.ScrollContent;
         var gs = GameState.Instance;
 
-        var header = new Label();
-        header.Text = $"Bank ({gs.PlayerBank.Storage.UsedSlots}/{gs.PlayerBank.TotalSlots})";
-        UiTheme.StyleLabel(header, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
-        header.HorizontalAlignment = HorizontalAlignment.Center;
-        scroll.AddChild(header);
-
-        _bankGrid = new SlotGrid { Columns = 5, SlotSize = 56f };
-        _bankGrid.SlotActivated += OnBankSlotActivated;
-        scroll.AddChild(_bankGrid);
-        _bankGrid.SetInventory(gs.PlayerBank.Storage);
-
-        // Gold row
+        // Gold row (Withdraw/Deposit All).
         var goldRow = new HBoxContainer();
         goldRow.AddThemeConstantOverride("separation", 8);
         goldRow.Alignment = BoxContainer.AlignmentMode.Center;
         scroll.AddChild(goldRow);
 
-        var goldLabel = new Label();
-        goldLabel.Text = $"Bank gold: {NumberFormat.Abbrev(gs.PlayerBank.Gold)}";
-        UiTheme.StyleLabel(goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
-        goldRow.AddChild(goldLabel);
+        var bankGoldLabel = new Label();
+        bankGoldLabel.Text = $"Bank: {NumberFormat.Abbrev(gs.PlayerBank.Gold)}g";
+        UiTheme.StyleLabel(bankGoldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
+        goldRow.AddChild(bankGoldLabel);
 
         var withdrawBtn = new Button();
         withdrawBtn.Text = "Withdraw All";
@@ -187,29 +106,83 @@ public partial class GuildWindow : GameWindow
         depositBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(OnDepositAll));
         goldRow.AddChild(depositBtn);
 
-        // Upgrade button
+        scroll.AddChild(new HSeparator());
+
+        // Two-column Bank ⇄ Backpack.
+        var row = new HBoxContainer();
+        row.AddThemeConstantOverride("separation", 12);
+        scroll.AddChild(row);
+
+        var bankSide = new VBoxContainer();
+        var bankLbl = new Label();
+        bankLbl.Text = $"BANK ({gs.PlayerBank.Storage.UsedSlots}/{gs.PlayerBank.TotalSlots})";
+        UiTheme.StyleLabel(bankLbl, UiTheme.Colors.Accent, UiTheme.FontSizes.Small);
+        bankSide.AddChild(bankLbl);
+        _bankGrid = new SlotGrid { Columns = 3, SlotSize = 48f };
+        _bankGrid.SlotActivated += (idx, stack) => OnSlotClicked(idx, stack, fromBank: true);
+        bankSide.AddChild(_bankGrid);
+        _bankGrid.SetInventory(gs.PlayerBank.Storage);
+        row.AddChild(bankSide);
+
+        var arrow = new Label();
+        arrow.Text = "⇄";
+        UiTheme.StyleLabel(arrow, UiTheme.Colors.Muted, UiTheme.FontSizes.Title);
+        arrow.VerticalAlignment = VerticalAlignment.Center;
+        row.AddChild(arrow);
+
+        var bpSide = new VBoxContainer();
+        var bpLbl = new Label();
+        bpLbl.Text = $"BACKPACK ({gs.PlayerInventory.UsedSlots}/{gs.PlayerInventory.SlotCount})";
+        UiTheme.StyleLabel(bpLbl, UiTheme.Colors.Accent, UiTheme.FontSizes.Small);
+        bpSide.AddChild(bpLbl);
+        _backpackGrid = new SlotGrid { Columns = 3, SlotSize = 48f };
+        _backpackGrid.SlotActivated += (idx, stack) => OnSlotClicked(idx, stack, fromBank: false);
+        bpSide.AddChild(_backpackGrid);
+        _backpackGrid.SetInventory(gs.PlayerInventory);
+        row.AddChild(bpSide);
+
+        // Upgrade button.
+        scroll.AddChild(new HSeparator());
         var upgradeBtn = new Button();
-        upgradeBtn.Text = $"Upgrade (+1 slot) — {gs.PlayerBank.GetNextExpansionCost()}g";
+        upgradeBtn.Text = $"Upgrade Bank (+1 slot) — {gs.PlayerBank.GetNextExpansionCost()}g";
+        upgradeBtn.CustomMinimumSize = new Vector2(0, 32);
         UiTheme.StyleButton(upgradeBtn, UiTheme.FontSizes.Small);
         upgradeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(OnUpgradePressed));
         scroll.AddChild(upgradeBtn);
     }
 
-    private void OnBankSlotActivated(int slotIdx, ItemStack? stack)
+    private void OnSlotClicked(int slotIdx, ItemStack? stack, bool fromBank)
     {
         if (stack == null) return;
         var gs = GameState.Instance;
+        var source = fromBank ? gs.PlayerBank.Storage : gs.PlayerInventory;
+        var dest = fromBank ? gs.PlayerInventory : gs.PlayerBank.Storage;
         var actions = new List<(string, Action)>();
 
-        // Sell (greyed out via not-adding if Locked)
-        if (!stack.Locked)
+        // Transfer to the other side (primary action for both sides).
+        actions.Add(($"Transfer to {(fromBank ? "Backpack" : "Bank")} ({NumberFormat.Abbrev(stack.Count)})", () =>
+        {
+            if (source.Transfer(slotIdx, dest, stack.Count))
+            {
+                Toast.Instance?.Info($"Moved to {(fromBank ? "backpack" : "bank")}");
+                _tabs.SelectTab(BankTabIndex);
+            }
+            else
+            {
+                Toast.Instance?.Warning($"{(fromBank ? "Backpack" : "Bank")} full");
+            }
+        }
+        ));
+
+        // Sell — only from bank side (backpack-side sell flows through a different path).
+        if (fromBank && !stack.Locked)
         {
             actions.Add(($"Sell 1 ({stack.Item.SellPrice}g)", () =>
             {
                 gs.PlayerBank.Storage.RemoveAt(slotIdx, 1);
                 gs.PlayerBank.Gold += stack.Item.SellPrice;
                 Toast.Instance?.Info($"Sold 1 {stack.Item.Name}");
-                _tabs.SelectTab(BankTabIndex); // rebuild
+                _tabs.SelectTab(BankTabIndex);
                 UpdateGoldFooter();
             }
             ));
@@ -225,26 +198,16 @@ public partial class GuildWindow : GameWindow
             ));
         }
 
-        actions.Add((stack.Locked ? "Unlock" : "Lock", () =>
+        // Lock toggle (bank side only — backpack lock is managed elsewhere).
+        if (fromBank)
         {
-            gs.PlayerBank.Storage.ToggleLock(slotIdx);
-            _tabs.SelectTab(BankTabIndex);
-        }
-        ));
-
-        actions.Add(("Transfer to Backpack", () =>
-        {
-            if (gs.PlayerBank.Storage.Transfer(slotIdx, gs.PlayerInventory, stack.Count))
+            actions.Add((stack.Locked ? "Unlock" : "Lock", () =>
             {
-                Toast.Instance?.Info($"Moved to backpack");
+                gs.PlayerBank.Storage.ToggleLock(slotIdx);
                 _tabs.SelectTab(BankTabIndex);
             }
-            else
-            {
-                Toast.Instance?.Warning("Backpack full");
-            }
+            ));
         }
-        ));
 
         var pos = GetViewport().GetMousePosition();
         ActionMenu.Instance?.Show(pos, actions.ToArray());
@@ -284,105 +247,58 @@ public partial class GuildWindow : GameWindow
         }
     }
 
-    // ──────────────────────── TRANSFER TAB ────────────────────────
+    // ──────────────────────── TELEPORT TAB ────────────────────────
+    // Absorbed from the prior TeleportDialog / retired Teleporter NPC.
 
-    private SlotGrid _transferBankGrid = null!;
-    private SlotGrid _transferBackpackGrid = null!;
-
-    private void BuildTransferTab()
+    private void BuildTeleportTab()
     {
         var scroll = _tabs.ScrollContent;
-        var gs = GameState.Instance;
 
-        var row = new HBoxContainer();
-        row.AddThemeConstantOverride("separation", 12);
-        scroll.AddChild(row);
+        var hint = new Label();
+        hint.Text = Strings.Teleport.Subtitle;
+        UiTheme.StyleLabel(hint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        scroll.AddChild(hint);
 
-        // Bank side
-        var bankSide = new VBoxContainer();
-        var bankLbl = new Label();
-        bankLbl.Text = $"BANK ({gs.PlayerBank.Storage.UsedSlots}/{gs.PlayerBank.TotalSlots})";
-        UiTheme.StyleLabel(bankLbl, UiTheme.Colors.Accent, UiTheme.FontSizes.Small);
-        bankSide.AddChild(bankLbl);
-        _transferBankGrid = new SlotGrid { Columns = 3, SlotSize = 48f };
-        _transferBankGrid.SlotActivated += (idx, stack) => OnTransferSlotClicked(stack, idx, fromBank: true);
-        bankSide.AddChild(_transferBankGrid);
-        _transferBankGrid.SetInventory(gs.PlayerBank.Storage);
-        row.AddChild(bankSide);
-
-        var arrow = new Label();
-        arrow.Text = "⇄";
-        UiTheme.StyleLabel(arrow, UiTheme.Colors.Muted, UiTheme.FontSizes.Title);
-        arrow.VerticalAlignment = VerticalAlignment.Center;
-        row.AddChild(arrow);
-
-        // Backpack side
-        var bpSide = new VBoxContainer();
-        var bpLbl = new Label();
-        bpLbl.Text = $"BACKPACK ({gs.PlayerInventory.UsedSlots}/{gs.PlayerInventory.SlotCount})";
-        UiTheme.StyleLabel(bpLbl, UiTheme.Colors.Accent, UiTheme.FontSizes.Small);
-        bpSide.AddChild(bpLbl);
-        _transferBackpackGrid = new SlotGrid { Columns = 3, SlotSize = 48f };
-        _transferBackpackGrid.SlotActivated += (idx, stack) => OnTransferSlotClicked(stack, idx, fromBank: false);
-        bpSide.AddChild(_transferBackpackGrid);
-        _transferBackpackGrid.SetInventory(gs.PlayerInventory);
-        row.AddChild(bpSide);
-
-        // Gold transfer row
-        scroll.AddChild(new HSeparator());
-        var goldRow = new HBoxContainer();
-        goldRow.Alignment = BoxContainer.AlignmentMode.Center;
-        goldRow.AddThemeConstantOverride("separation", 8);
-        scroll.AddChild(goldRow);
-
-        var sendToBank = new Button();
-        sendToBank.Text = "Backpack → Bank (all)";
-        UiTheme.StyleSecondaryButton(sendToBank, UiTheme.FontSizes.Small);
-        sendToBank.Connect(BaseButton.SignalName.Pressed, Callable.From(TransferGoldToBank));
-        goldRow.AddChild(sendToBank);
-
-        var sendToBackpack = new Button();
-        sendToBackpack.Text = "Bank → Backpack (all)";
-        UiTheme.StyleSecondaryButton(sendToBackpack, UiTheme.FontSizes.Small);
-        sendToBackpack.Connect(BaseButton.SignalName.Pressed, Callable.From(TransferGoldToBackpack));
-        goldRow.AddChild(sendToBackpack);
-    }
-
-    private void TransferGoldToBank()
-    {
-        var gs = GameState.Instance;
-        if (gs.PlayerInventory.Gold <= 0) return;
-        gs.PlayerBank.DepositGold(gs.PlayerInventory, gs.PlayerInventory.Gold);
-        _tabs.SelectTab(TransferTabIndex); // stay on Transfer tab after a transfer-tab action
-        UpdateGoldFooter();
-    }
-
-    private void TransferGoldToBackpack()
-    {
-        var gs = GameState.Instance;
-        if (gs.PlayerBank.Gold <= 0) return;
-        gs.PlayerBank.WithdrawGold(gs.PlayerInventory, gs.PlayerBank.Gold);
-        _tabs.SelectTab(TransferTabIndex); // stay on Transfer tab after a transfer-tab action
-        UpdateGoldFooter();
-    }
-
-    private void OnTransferSlotClicked(ItemStack? stack, int slotIdx, bool fromBank)
-    {
-        if (stack == null) return;
-        var gs = GameState.Instance;
-
-        // Simple MVP: Transfer All. Full amount-input dialog per B1: a is a follow-up ticket.
-        var source = fromBank ? gs.PlayerBank.Storage : gs.PlayerInventory;
-        var dest = fromBank ? gs.PlayerInventory : gs.PlayerBank.Storage;
-
-        if (source.Transfer(slotIdx, dest, stack.Count))
+        int deepestFloor = GameState.Instance.FloorNumber;
+        if (deepestFloor <= 1)
         {
-            Toast.Instance?.Info($"Moved {NumberFormat.Abbrev(stack.Count)} {stack.Item.Name}");
-            _tabs.SelectTab(TransferTabIndex); // rebuild both grids
+            var noFloors = new Label();
+            noFloors.Text = Strings.Teleport.NoFloorsVisited;
+            UiTheme.StyleLabel(noFloors, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
+            noFloors.HorizontalAlignment = HorizontalAlignment.Center;
+            scroll.AddChild(noFloors);
+            return;
         }
-        else
+
+        for (int floor = deepestFloor; floor >= 1; floor--)
         {
-            Toast.Instance?.Warning($"{(fromBank ? "Backpack" : "Bank")} full");
+            int targetFloor = floor;
+            string label = Strings.Floor.FloorNumber(targetFloor);
+            int zone = Constants.Zones.GetZone(targetFloor);
+            string zoneLabel = $"{label}  (Zone {zone})";
+
+            var btn = new Button();
+            btn.Text = zoneLabel;
+            btn.CustomMinimumSize = new Vector2(0, 34);
+            UiTheme.StyleButton(btn, UiTheme.FontSizes.Body);
+            btn.Connect(BaseButton.SignalName.Pressed,
+                Callable.From(() => TeleportToFloor(targetFloor)));
+            scroll.AddChild(btn);
         }
+    }
+
+    private void TeleportToFloor(int floor)
+    {
+        GameState.Instance.FloorNumber = floor;
+        ScreenTransition.Instance.Play(
+            Strings.Floor.FloorNumber(floor),
+            () =>
+            {
+                Close();
+                Scenes.Main.Instance.LoadDungeon();
+            },
+            Strings.Teleport.Teleporting);
     }
 }

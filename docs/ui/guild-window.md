@@ -1,14 +1,21 @@
 # Guild Window
 
+> **SUPERSEDED 2026-04-18 by [guild-maid-menu.md](guild-maid-menu.md) (SPEC-GUILD-MAID-MERGED-MENU-01)** + **[blacksmith-menu.md](blacksmith-menu.md) (SPEC-BLACKSMITH-MERGED-MENU-01)**. The Guild Window is now a **2-tab Bank + Teleport** window per GUILD-MAID-MENU-IMPL-01 (2026-04-18). The Store tab moved to the Blacksmith's Shop tab. The Transfer tab collapsed INTO the Bank tab's two-column layout. Keep this doc for legacy-reference behavior (the detailed rules on Sell/Lock/Transfer action-menu semantics still apply — those rules live inside the new Bank tab unchanged).
+
 ## Summary
 
-The Guild window is a town-only UI panel owned by the **Guild Maid** NPC. It merges the Store, Bank, and Transfer functions into a three-tab interface. Title: "Guild". Always opens on the **Bank** tab.
+The Guild window is a town-only UI panel owned by the **Guild Maid** NPC. **Post-GUILD-MAID-MENU-IMPL-01:** two-tab interface (Bank + Teleport). Title: "Guild". Always opens on the **Bank** tab.
 
 ## Current State
 
-**Spec status: LOCKED.** Implemented in `scripts/ui/GuildWindow.cs` and registered in
-`scenes/main.tscn`. Replaces the planned separate `ShopWindow` / `BankWindow` (those scripts
-still exist for test compat but are not placed in the town scene).
+**Spec status: LOCKED, partially superseded.** Implemented in `scripts/ui/GuildWindow.cs` and registered in `scenes/main.tscn`. Replaces the prior separate `ShopWindow` / `BankWindow` (those scripts still exist for test compat but are not placed in the town scene).
+
+**What changed on 2026-04-18 (GUILD-MAID-MENU-IMPL-01):**
+- Store tab removed — consumable sales moved to the Blacksmith's new Shop tab.
+- Transfer tab removed — its two-column Bank↔Backpack view is now the main body of the Bank tab.
+- Teleport tab added — absorbs the former Teleporter NPC's `TeleportDialog`.
+
+The Bank-tab behavior rules (Sell, Lock, Transfer, upgrade) from this doc's Design section below still apply, now inside the new Bank tab.
 
 **MVP deviations from the full spec** (tracked as polish tickets):
 

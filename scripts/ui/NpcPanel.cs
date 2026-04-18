@@ -147,9 +147,11 @@ public partial class NpcPanel : GameWindow
 
     /// <summary>
     /// Service-menu entries per NPC. First entry is the primary service
-    /// (default-focused button). Post-NPC-ROSTER-REWIRE-01: Guild Maid hosts
-    /// Teleport as a second button; legacy NPCs (Teleporter, Shopkeeper,
-    /// Banker, GuildMaster) kept as single-entry for test/code backward compat.
+    /// (default-focused button). Post-GUILD-MAID-MENU-IMPL-01 + BLACKSMITH-
+    /// MENU-IMPL-01: each active NPC has exactly one service button — the
+    /// tabbed service window handles multi-service routing internally.
+    /// Legacy NPCs (Teleporter, Shopkeeper, Banker, GuildMaster) kept as
+    /// single-entry for test/code backward compat.
     /// </summary>
     private static IEnumerable<(string label, Action handler)> GetServices(string npcName)
     {
@@ -157,7 +159,6 @@ public partial class NpcPanel : GameWindow
         {
             case var n when n == Strings.Npcs.GuildMaid:
                 yield return (Strings.NpcServices.OpenGuild, () => GuildWindow.Instance?.Open());
-                yield return (Strings.NpcServices.Teleport, () => TeleportDialog.Instance?.Show());
                 break;
             case var n when n == Strings.Npcs.Blacksmith:
                 yield return (Strings.NpcServices.OpenForge, () => BlacksmithWindow.Instance?.Open());
