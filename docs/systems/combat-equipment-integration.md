@@ -100,11 +100,11 @@ public readonly record struct EquipmentCombatStats
     // Weapon/gear flat damage (added to baseDamage before STR/INT multiplier)
     public float BonusDamage { get; init; }
 
-    // Combat-ring aggregates (0..1 floats; already capped per formula below)
-    public float CritChance   { get; init; }  // 0..0.60
-    public float HasteMult    { get; init; }  // multiplicative, 1.00..~1.60
-    public float DodgeBonus   { get; init; }  // added to DEX dodge, pre-cap
-    public float BlockChance  { get; init; }  // 0..0.60
+    // Combat-ring aggregates (raw %, NOT pre-capped — callers apply SoftCap + overflow per §7/§8)
+    public float CritRaw   { get; init; }  // raw %, e.g. 24 for 24% raw
+    public float HasteRaw  { get; init; }  // raw %, attack-speed side
+    public float DodgeRaw  { get; init; }  // raw %, ring-contributed only (DEX-derived dodge is on StatBlock)
+    public float BlockRaw  { get; init; }  // raw %
 }
 ```
 
@@ -174,76 +174,175 @@ float finalDamage = (weaponBase + flatBonus) * attack.DamageMultiplier * statBon
 
 This also makes equipment items consistent with the "Weapon base damage scaling" spec in [item-generation.md](item-generation.md): a rolled Mega Sword with `BonusDamage = 180` is treated as a 180-damage weapon, not a +180 flat bonus.
 
-### 7. Ring combat focuses — formulas
+### 7. Ring combat focuses — formulas (split chance-vs-power with soft-cap conversion)
 
-The catalog ships 4 combat-ring focuses (Precision / Haste / Evasion / Bulwark), 5 tiers each, with ring stacking across the 10 ring slots being the primary build vector. Each ring contributes a **per-tier contribution** to the combat stat. Values are additive across stacked rings, then clamped.
+The catalog ships 4 combat-ring focuses (Precision / Haste / Evasion / Bulwark), 5 tiers each, with ring stacking across the 10 ring slots being the primary build vector. Each ring contributes a **per-tier contribution** to the combat stat. Values are additive across stacked rings, then passed through a **soft-cap curve** identical in shape to the stats.md diminishing-returns formula. The raw sum doesn't just clamp — the portion above the soft cap **converts** into a secondary power stat, so continued stacking stays meaningful at arbitrary depth.
 
-| Focus | Per-tier contribution | Stacked formula | Cap | Stack point in combat |
-|---|---|---|---|---|
-| Crit (Precision) | 2% per tier-level | `sum(ring.Tier) * 0.02` | 60% | Final damage multiplier |
-| Haste | 3% per tier-level | `sum(ring.Tier) * 0.03` | +60% attack speed | Attack cooldown |
-| Dodge (Evasion) | 1.5% per tier-level | `sum(ring.Tier) * 0.015` | combines with DEX, global 60% | Incoming hit resolution |
-| Block (Bulwark) | 2% per tier-level | `sum(ring.Tier) * 0.02` | 60% | Incoming damage negation |
+**Soft-cap curve (all four focuses):**
 
-"Per tier-level" means a Tier 3 ring contributes 3× the per-tier value; a Tier 5 ring contributes 5×. Stacking ten Tier 5 Precision rings yields `10 * 5 * 2% = 100% raw`, capped to 60%. That cap is deliberate — the catalog advertises 10-ring stacking as a "legitimate goal," but uncapped stacking would let the player achieve guaranteed crits and break enemy design.
-
-**Where each focus applies in `ExecuteAttack`:**
-
-```csharp
-// 1. HASTE — modifies cooldown AFTER DEX attack-speed
-_attackTimer = attack.Cooldown
-             / stats.AttackSpeedMultiplier
-             / (1.0f + Min(es.HasteMult, 0.60f));
-
-// 2. CRIT — post-damage multiplier, rolled per-attack
-float critRoll = _rng.NextSingle();
-float critMultiplier = (critRoll < Min(es.CritChance, 0.60f)) ? 1.5f : 1.0f;
-finalDamage = (int)(finalDamage * critMultiplier);
-
-// 3. (DODGE/BLOCK live in the enemy→player hit path, not ExecuteAttack — see §8)
+```
+raw       = sum(ring.Tier * per_tier_contribution)   // in %, as a number like 24 or 100
+effective = raw * (60 / (raw + 60))                  // asymptotes at 60%, never reaches it
+overflow  = raw - effective                          // always ≥ 0, grows without bound
 ```
 
-**Why these numbers:** the per-tier rate was chosen so a mid-game player (say 4 Tier 3 rings of Precision + 6 empty slots) lands at `4 * 3 * 2% = 24%` crit — a meaningful but non-dominating tilt. A late-game dedicated stacker (10 Tier 5) caps out. A casual player (2 Tier 2 rings) sits at 8% — a light tickle. The slope is gentle enough to reward investment without punishing neglect.
+This is the **same shape** as `stats.md`'s universal DR curve (`raw * (K / (raw + K))`) with K=60 instead of K=100. Using the same curve shape everywhere is a consistency win — players who already understand stat DR immediately understand combat-focus DR, and build-guide authors can reuse the same intuition.
 
-Crit multiplier is fixed at 1.5× to match [combat.md §P2 crit](combat.md) notation. Future affixes can add crit damage bonus; that's out of scope here.
+**Per-focus contribution + overflow conversion:**
+
+| Focus | Per-tier raw% | Stacked raw formula | Soft-cap asymptote (chance side) | Overflow conversion (power side) | Hard cap |
+|---|---|---|---|---|---|
+| Crit (Precision) | 2% per tier-level | `sum(ring.Tier) * 2%` | 60% crit chance | overflow × 2 → crit-damage bonus (adds to 1.5× base multiplier) | none on crit-damage |
+| Haste | 3% per tier-level | `sum(ring.Tier) * 3%` | +60% attack speed | overflow × 0.5 → Flurry chance (free extra swing on attack) | **Flurry hard-capped at 40%** |
+| Dodge (Evasion) | 1.5% per tier-level | `sum(DEX_dodge + ring.Tier * 1.5%)` | 60% dodge chance | overflow × 1 → Phase duration in ms (i-frame window after successful dodge) | **Phase hard-capped at 500 ms** |
+| Block (Bulwark) | 2% per tier-level | `sum(ring.Tier) * 2%` | 60% block chance | overflow × 0.5 → block reduction % above 50% baseline | **Block reduction hard-capped at 80%** (i.e. overflow reduction gain capped at +30%) |
+
+**Why Flurry is the one hard cap:** Haste's overflow becomes a second swing. A double-attack that fires on 60%+ of swings would trivialize enemy telegraph timing — the window players have to react to an enemy wind-up is designed around "one player swing per tempo," and a multi-swing loop at high frequency effectively removes that window. 40% is the frequency where Flurry still *feels* like a bonus proc rather than a rhythm change. The other three overflows compound damage or survival on a single action, which doesn't break enemy design the same way.
+
+#### Worked example — 10× Tier 5 Precision (the "does infinite work?" proof)
+
+A max-commitment crit stacker: ten Tier 5 Precision rings in all ten ring slots.
+
+```
+raw crit chance        = 10 * 5 * 2% = 100%
+effective crit chance  = 100 * (60 / (100 + 60)) = 100 * 0.375 = 37.5%
+overflow raw           = 100 - 37.5 = 62.5
+crit-damage bonus      = 62.5 * 2 = 125%
+effective crit multiplier = 1.5 (base) + 1.25 (overflow bonus) = 2.75×
+```
+
+**Per-swing expected damage multiplier:**
+
+```
+E[multiplier] = (1 - 0.375) * 1.0 + 0.375 * 2.75
+             = 0.625 + 1.031
+             = 1.656×
+```
+
+A naked-ring player sits at 1.0×. A 10× T5 Precision stacker averages 1.66× damage output. The "infinite part" works: raw% keeps climbing as the player adds more tiers or better rings, effective chance keeps climbing toward its asymptote, and overflow crit-damage has **no ceiling** — at 200 raw%, effective chance is 46.2% and overflow is 153.8, giving a 4.58× crit multiplier. The curve rewards commitment at any depth.
+
+#### Mid-game sanity check — the original rationale still holds
+
+The old spec's mid-game example was "4 Tier 3 Precision rings = 24% crit." Under the soft-cap curve:
+
+```
+raw       = 4 * 3 * 2% = 24%
+effective = 24 * (60 / (24 + 60)) = 24 * 0.714 = 17.1%
+overflow  = 24 - 17.1 = 6.9   → crit-damage bonus = +13.8%
+```
+
+Mid-game is pre-overflow in feel: a ~17% crit chance with a ~1.64× crit multiplier is functionally "a meaningful crit happens about 1 in 6 swings for a bit of extra punch." The player experience at mid-game is essentially unchanged — the DR curve only bites hard at high raw, which is the exact range the soft-cap is designed for.
+
+#### Where each focus applies in `ExecuteAttack`
+
+```csharp
+// 1. HASTE — effective chance modifies cooldown; overflow rolls Flurry
+float hasteEffective = SoftCap(es.HasteRaw);           // 0..60
+float hasteOverflow  = es.HasteRaw - hasteEffective;
+float flurryChance   = Min(hasteOverflow * 0.005f, 0.40f);  // 0..0.40
+
+_attackTimer = attack.Cooldown
+             / stats.AttackSpeedMultiplier
+             / (1.0f + hasteEffective / 100f);
+
+// 2. CRIT — effective chance rolls crit; overflow inflates crit damage
+float critEffective   = SoftCap(es.CritRaw);
+float critOverflow    = es.CritRaw - critEffective;
+float critMultiplier  = 1.5f + (critOverflow * 0.02f);  // +2% per raw-overflow, no cap
+
+bool didCrit = _rng.NextSingle() < (critEffective / 100f);
+if (didCrit) finalDamage = (int)(finalDamage * critMultiplier);
+
+// 3. FLURRY — free extra swing proc after the main attack resolves
+if (_rng.NextSingle() < flurryChance)
+{
+    // Re-enter the attack pipeline once, no cooldown consumed
+    ExecuteAttack(attack, isFlurry: true);
+}
+
+// 4. (DODGE/BLOCK live in the enemy→player hit path, not ExecuteAttack — see §8)
+
+// Helper:
+static float SoftCap(float raw) => raw * (60f / (raw + 60f));
+```
+
+**Why these numbers (unchanged):** per-tier rates are the same as the old flat-cap model. A mid-game player (4× T3 Precision) still sits at 17.1% effective crit — the curve bends, not breaks. A late-game stacker (10× T5) doesn't brick at 60% anymore; they keep getting returns in the form of crit damage. A casual player (2× T2) sits at `2 * 2 * 2% = 8% raw → 7.1% effective`, which feels identical to the old spec at that scale. The curve is gentle where the catalog's mid-game players live, and firm where dedicated stackers live.
+
+**Tooltip implications (UI, not spec):** each combat ring focus now exposes **two numbers** to the player: the effective chance (soft-capped) and the overflow-conversion (crit damage / Flurry / Phase ms / block %). A Tier 5 Precision ring's tooltip will read something like "+10% Crit Chance (soft-capped at 60%; excess converts to crit damage)" — both the per-ring contribution and the global conversion must be visible. This is a UI story, not a spec blocker — tooltip copy and layout can be iterated without touching the formulas.
 
 ### 8. Dodge and Block — incoming-damage path
 
-Dodge and Block resolve in the **enemy→player** hit path, not outgoing. The enemy hit area (see [combat.md §Enemy Damage to Player](combat.md)) calls `GameState.TakeDamage()`; wrap that entrypoint with a dodge/block resolution:
+Dodge and Block resolve in the **enemy→player** hit path, not outgoing. The enemy hit area (see [combat.md §Enemy Damage to Player](combat.md)) calls `GameState.TakeDamage()`; wrap that entrypoint with soft-capped dodge/block resolution that mirrors the §7 overflow model.
+
+**Phase state (new):** a successful dodge grants a short **i-frame window** — for its duration, the next incoming hit is auto-consumed (no Hp subtract, no subsequent dodge/block roll). Phase duration comes from dodge overflow:
+
+```csharp
+public class GameState
+{
+    // ... existing fields ...
+    private float _phaseExpiresAt;  // in-game time (seconds); 0 = no active phase
+    public bool IsPhased => TimeNow < _phaseExpiresAt;
+}
+```
+
+Phase consumes on **one next hit** OR expires at its duration, whichever comes first.
 
 ```csharp
 public void TakeDamage(int incoming)
 {
     var es = Equipment.GetCombatStats(SelectedClass);
 
-    // DODGE — combined DEX + ring contribution, global 60% cap
-    float dodge = Min(Stats.DodgeChance + es.DodgeBonus, 0.60f);
-    if (_rng.NextSingle() < dodge)
+    // PHASE — i-frame window from a prior successful dodge
+    if (IsPhased)
     {
-        // Full negation
-        FloatingText.Dodge(player, position);  // new text type
+        _phaseExpiresAt = 0f;                // consume on this hit
+        FloatingText.Phase(player, position); // "PHASED" variant
         return;
     }
 
-    // BLOCK — partial negation
-    float block = Min(es.BlockChance, 0.60f);
-    if (_rng.NextSingle() < block)
+    // DODGE — soft-capped; overflow becomes Phase duration (ms)
+    // Combined raw: DEX-derived dodge% + ring-contributed dodge%
+    float dodgeRaw      = Stats.DodgeChance * 100f + es.DodgeRaw;  // in %
+    float dodgeEffective = SoftCap(dodgeRaw);                       // 0..60
+    float dodgeOverflow  = dodgeRaw - dodgeEffective;
+
+    if (_rng.NextSingle() < dodgeEffective / 100f)
     {
-        incoming = (int)(incoming * 0.50f);    // halve damage
-        FloatingText.Block(player, position);
+        float phaseMs = Min(dodgeOverflow, 500f);                   // hard cap 500ms
+        _phaseExpiresAt = TimeNow + phaseMs / 1000f;
+        FloatingText.Dodge(player, position);                       // "MISS"
+        return;
+    }
+
+    // BLOCK — soft-capped chance; overflow raises reduction % above 50% baseline
+    float blockRaw       = es.BlockRaw;
+    float blockEffective = SoftCap(blockRaw);                       // 0..60
+    float blockOverflow  = blockRaw - blockEffective;
+
+    if (_rng.NextSingle() < blockEffective / 100f)
+    {
+        // Base 50% reduction; overflow adds up to +30% (hard ceiling = 80% total)
+        float reduction = 0.50f + Min(blockOverflow * 0.005f, 0.30f);
+        incoming = (int)(incoming * (1.0f - reduction));
+        FloatingText.Block(player, position);                       // "BLOCK"
     }
 
     // ... existing Hp subtract + flash ...
 }
+
+static float SoftCap(float raw) => raw * (60f / (raw + 60f));
 ```
 
-**Dodge** fully negates; **Block** halves. Two clearly different fantasies:
-- Dodge is the Ranger fantasy — "I wasn't there." Binary. Visually, the hit misses.
-- Block is the Warrior/Shield fantasy — "I ate half of it." Partial. Visually, the hit connects but reads as absorbed.
+**Three clearly different fantasies:**
+- **Dodge** — the Ranger fantasy. "I wasn't there." Full negation. Overflow extends into a **Phase** window so the very next incoming hit is also ignored. Late-game evasion feels like "I am repeatedly not where you swung."
+- **Block** — the Warrior/Shield fantasy. "I ate it." Partial. Baseline halves; overflow raises reduction toward 80%. Late-game block feels like "your hits barely move the HP bar."
+- **Phase** — the carry-over from dodge. Brief and deterministic ("I slip the next one too"), never stacks, never granted without a prior successful dodge.
 
-Dodge takes precedence (checked first) so block doesn't waste its roll on a hit that dodge would have avoided.
+**Resolution order (unchanged): Phase → Dodge → Block.** Phase is checked first because if a prior dodge set it, the current hit is already spoken for; dodge is checked before block so block doesn't waste its roll on a hit that dodge would have avoided.
 
-**Floor text:** `FloatingText.Dodge` and `FloatingText.Block` are new variants (yellow "MISS" and teal "BLOCK" respectively). Reuse the existing floating-text system ([targeting.md](targeting.md)-adjacent — the floating-text infrastructure is in place; just two new color/label variants needed).
+**Floating text variants:** `FloatingText.Dodge` ("MISS", yellow), `FloatingText.Block` ("BLOCK", teal), `FloatingText.Phase` ("PHASED", cyan). Reuse the existing floating-text system — three new color/label variants, no new infrastructure.
+
+**Block reduction hard-cap rationale (80%):** unlike Flurry's timing argument, Block's cap is about Hp-bar legibility at high depth. A 100% reduction would make the shielded Warrior literally invincible to certain attacks, which breaks the "meaningful death" pillar. 80% keeps every hit's numbers on the HUD readable and every enemy attack at least slightly threatening.
 
 ### 9. Data flow diagram
 
@@ -278,23 +377,36 @@ Per-attack:
 Per-incoming-hit:
 ┌───────────────────────────┐
 │ GameState.TakeDamage      │ ← reads EquipmentSet.GetCombatStats()
-│ • Dodge roll              │
-│ • Block roll              │
+│ • Phase check (prior i-frame) │
+│ • Dodge roll (soft-cap + Phase overflow on success) │
+│ • Block roll (soft-cap + reduction overflow)         │
 └───────────────────────────┘
 ```
+
+`GameState._phaseExpiresAt` is transient (in-game time, not serialized) — it naturally resets on save/load since Phase is a ~500 ms window and save/load never fires mid-combat.
+
+### 10. Why split caps and not flat caps
+
+In an infinite-depth roguelike with no run-length cap, a flat 60% cap on crit/haste/dodge/block turns every combat-focus ring worthless the moment the cap is reached. At floor 150, a player with 10 Tier 5 Precision rings would be in the *exact same damage regime* as a player with 10 Tier 3 Precision rings — both hit the 60% wall and further investment does nothing. That outcome contradicts the "infinite progression, no level cap" pillar in `overview.md`.
+
+The split-cap model (soft-cap for the chance side, overflow conversion into a paired power stat) keeps every additional ring meaningful at any depth. It mirrors the genre precedent Diablo 3 established with crit-chance + crit-damage as linked sliders — once crit-chance approaches its soft ceiling, build attention shifts to crit-damage, and the two multiply. We're doing the same thing but generalized across all four combat focuses, so each focus has a well-defined "where my next ring goes" story. The soft-cap curve shape is borrowed directly from `stats.md` so players only have to learn one DR intuition for the whole game.
 
 ## Acceptance Criteria
 
 - [ ] `EquipmentSet` caches `EquipmentCombatStats`; cache invalidates on all mutators (`TryEquip`, `Unequip`, `ForceEquip`, `RestoreState`, `DestroyRandomEquipped`).
-- [ ] `EquipmentCombatStats` exposes Str/Dex/Sta/Int/BonusHp/BonusDamage/CritChance/HasteMult/DodgeBonus/BlockChance.
+- [ ] `EquipmentCombatStats` exposes Str/Dex/Sta/Int/BonusHp/BonusDamage/CritRaw/HasteRaw/DodgeRaw/BlockRaw.
 - [ ] Allocated stats + equipment stats merge BEFORE the DR curve is applied (single effective value per stat).
 - [ ] `MaxHp` and `MaxMana` recompute uses a single helper (`GameState.RecomputeDerivedStats`) invoked from all four current callsites.
 - [ ] `Player.ExecuteAttack` folds `es.BonusDamage` into weapon base damage before STR/INT scaling.
-- [ ] Haste divides the post-DEX cooldown, capped at +60% attack speed.
-- [ ] Crit is rolled per-attack against `Min(es.CritChance, 0.60f)`; on crit, damage ×1.5.
-- [ ] Dodge resolves first in `TakeDamage`, fully negating; Block resolves second, halving.
-- [ ] Floating text `Dodge` (yellow "MISS") and `Block` (teal "BLOCK") variants exist.
-- [ ] Unit tests cover: cache invalidation on each mutator; affinity multiplier per-item; combined DR curve math; crit/haste/dodge/block cap behavior.
+- [ ] Soft-cap curve `effective = raw * (60 / (raw + 60))` applies to all four combat focuses (Crit, Haste, Dodge, Block); asymptotes at 60%, never reaches it.
+- [ ] Overflow conversions produce the spec'd values at three sample points: raw = 0% (effective 0, overflow 0), raw = cap-reaching 60% (effective 30, overflow 30), and raw = 300% (5× past cap — effective 50, overflow 250).
+- [ ] Crit: crit damage multiplier = `1.5 + overflow * 0.02`, unbounded (no hard cap).
+- [ ] Haste: Flurry chance = `min(overflow * 0.005, 0.40)` — **Flurry hard-capped at 40%**; a Flurry proc re-enters the attack pipeline once with no cooldown consumed.
+- [ ] Dodge: on success, Phase duration = `min(overflow, 500)` ms — **Phase hard-capped at 500 ms**; Phase auto-consumes the next incoming hit OR expires at its duration, whichever comes first.
+- [ ] Block: reduction % = `0.50 + min(overflow * 0.005, 0.30)` — **Block reduction hard-capped at 80%** total.
+- [ ] Resolution order in `TakeDamage`: Phase (if active) consumes the hit first; else Dodge rolls; else Block rolls.
+- [ ] Floating text variants exist: `Dodge` (yellow "MISS"), `Block` (teal "BLOCK"), `Phase` (cyan "PHASED").
+- [ ] Unit tests cover: cache invalidation on each mutator; affinity multiplier per-item; combined DR curve math; soft-cap + overflow math for all four focuses at 0%, at-cap, and 5× past cap; Flurry 40% ceiling holds; Phase consume-or-expire semantics; Block 80% reduction ceiling holds.
 - [ ] Equipping a Tier 5 Mega Sword visibly changes damage output in-game (manual smoke test — the "SYS-11 feels real" criterion).
 
 ## Implementation Notes

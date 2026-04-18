@@ -222,3 +222,7 @@ All stats use the same diminishing returns curve: `effective = raw * (100 / (raw
 | DEX | Attack speed bonus: `eff * 1.0%` | Dodge chance: `eff * 0.5%` |
 | STA | Bonus max HP: `eff * 5.0` | HP regen/sec: `eff * 0.15` |
 | INT | Bonus mana: `eff * 4.0`, Mana regen/sec: `eff * 0.2` | Processing efficiency: `eff * 0.6%`, Spell damage: `eff * 1.2%` |
+
+### Equipment Overlay
+
+Equipment bonuses (STR/DEX/STA/INT from gear) stack onto the allocated raw stat **before** the DR curve is applied — one raw sum, one DR pass. Ring combat focuses (Crit / Haste / Dodge / Block) use the **same soft-cap curve shape** with K = 60 instead of K = 100, and the portion above the soft cap converts into a paired power stat rather than being clamped away. See [combat-equipment-integration.md](combat-equipment-integration.md) for the full overlay model, per-focus formulas, and worked examples.
