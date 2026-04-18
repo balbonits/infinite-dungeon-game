@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace DungeonGame.Ui;
@@ -52,18 +54,26 @@ public partial class NpcPanel : GameWindow
         foreach (Node child in _serviceButtons.GetChildren())
             child.QueueFree();
 
-        // Service button
-        var serviceBtn = new Button();
-        serviceBtn.Text = GetServiceLabel(npcName);
-        serviceBtn.CustomMinimumSize = new Vector2(200, 38);
-        serviceBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        UiTheme.StyleButton(serviceBtn, UiTheme.FontSizes.Body);
-        string capturedName = npcName;
-        serviceBtn.Connect(BaseButton.SignalName.Pressed,
-            Callable.From(() => OnServicePressed(capturedName)));
-        _serviceButtons.AddChild(serviceBtn);
+        // One service button per (label, handler) entry. First button is the
+        // default-focused one; tests rely on the first entry matching the
+        // NPC's "primary" service (e.g. Guild Maid primary = Open Guild).
+        foreach (var (label, handler) in GetServices(npcName))
+        {
+            var btn = new Button();
+            btn.Text = label;
+            btn.CustomMinimumSize = new Vector2(200, 38);
+            btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+            UiTheme.StyleButton(btn, UiTheme.FontSizes.Body);
+            var capturedHandler = handler;
+            btn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
+            {
+                HideWithFade();
+                capturedHandler();
+            }));
+            _serviceButtons.AddChild(btn);
+        }
 
-        // Dismiss button (secondary/cancel style)
+        // Dismiss button (secondary/cancel style) — always last
         var dismissBtn = new Button();
         dismissBtn.Text = Strings.Ui.Cancel;
         dismissBtn.CustomMinimumSize = new Vector2(200, 38);
@@ -135,55 +145,51 @@ public partial class NpcPanel : GameWindow
             GetViewport().SetInputAsHandled();
     }
 
-    private void OnServicePressed(string npcName)
+    /// <summary>
+    /// Service-menu entries per NPC. First entry is the primary service
+    /// (default-focused button). Post-NPC-ROSTER-REWIRE-01: Guild Maid hosts
+    /// Teleport as a second button; legacy NPCs (Teleporter, Shopkeeper,
+    /// Banker, GuildMaster) kept as single-entry for test/code backward compat.
+    /// </summary>
+    private static IEnumerable<(string label, Action handler)> GetServices(string npcName)
     {
-        HideWithFade();
-        if (npcName == Strings.Npcs.GuildMaid)
+        switch (npcName)
         {
-            GuildWindow.Instance?.Open();
-        }
-        else if (npcName == Strings.Npcs.Teleporter)
-        {
-            TeleportDialog.Instance?.Show();
-        }
-        else if (npcName == Strings.Npcs.Blacksmith)
-        {
-            BlacksmithWindow.Instance?.Open();
-        }
-        else if (npcName == Strings.Npcs.VillageChief || npcName == Strings.Npcs.GuildMaster)
-        {
-            QuestPanel.Instance?.Open();
-        }
-        // Legacy NPCs — retired from town scene but still dispatched if encountered via tests/code
-        else if (npcName == Strings.Npcs.Shopkeeper)
-        {
-            var shopItems = new System.Collections.Generic.List<ItemDef>(ItemDatabase.All);
-            ShopWindow.Instance?.Open(shopItems);
-        }
-        else if (npcName == Strings.Npcs.Banker)
-        {
-            BankWindow.Instance?.Open();
-        }
-        else
-        {
-            Toast.Instance?.Info($"{npcName}'s services coming soon.");
-        }
-    }
+            case var n when n == Strings.Npcs.GuildMaid:
+                yield return (Strings.NpcServices.OpenGuild, () => GuildWindow.Instance?.Open());
+                yield return (Strings.NpcServices.Teleport, () => TeleportDialog.Instance?.Show());
+                break;
+            case var n when n == Strings.Npcs.Blacksmith:
+                yield return (Strings.NpcServices.OpenForge, () => BlacksmithWindow.Instance?.Open());
+                break;
+            case var n when n == Strings.Npcs.VillageChief:
+                yield return (Strings.NpcServices.ViewQuests, () => QuestPanel.Instance?.Open());
+                break;
 
-    private static string GetServiceLabel(string npcName)
-    {
-        return npcName switch
-        {
-            Strings.Npcs.GuildMaid => Strings.NpcServices.OpenGuild,
-            Strings.Npcs.Blacksmith => Strings.NpcServices.OpenForge,
-            Strings.Npcs.VillageChief => Strings.NpcServices.ViewQuests,
-            Strings.Npcs.Teleporter => Strings.NpcServices.Teleport,
+            // Legacy NPCs — retired from town scene but still dispatched if
+            // encountered via tests or direct code invocation.
+            case var n when n == Strings.Npcs.GuildMaster:
+                yield return (Strings.NpcServices.ViewQuests, () => QuestPanel.Instance?.Open());
+                break;
+            case var n when n == Strings.Npcs.Teleporter:
+                yield return (Strings.NpcServices.Teleport, () => TeleportDialog.Instance?.Show());
+                break;
+            case var n when n == Strings.Npcs.Shopkeeper:
+                yield return (Strings.NpcServices.OpenShop, () =>
+                {
+                    var shopItems = new List<ItemDef>(ItemDatabase.All);
+                    ShopWindow.Instance?.Open(shopItems);
+                }
+                );
+                break;
+            case var n when n == Strings.Npcs.Banker:
+                yield return (Strings.NpcServices.OpenBank, () => BankWindow.Instance?.Open());
+                break;
 
-            // Legacy
-            Strings.Npcs.GuildMaster => Strings.NpcServices.ViewQuests,
-            Strings.Npcs.Shopkeeper => Strings.NpcServices.OpenShop,
-            Strings.Npcs.Banker => Strings.NpcServices.OpenBank,
-            _ => Strings.NpcServices.Talk,
-        };
+            default:
+                yield return (Strings.NpcServices.Talk,
+                    () => Toast.Instance?.Info($"{npcName}'s services coming soon."));
+                break;
+        }
     }
 }
