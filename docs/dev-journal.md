@@ -111,6 +111,22 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — Phase I complete: movement + gamepad + rebinding UI locked
+
+Three specs landed together. Movement is the lead — confirmed current instant-movement behavior as the spec rather than changing it; gamepad and rebinding inherit the movement contract.
+
+- **SPEC-MOVEMENT-ACCEL-01** → [docs/systems/movement.md §Acceleration](systems/movement.md). PO picked Option A from the MC (instant, keep current) over light-ease and full-ease alternatives. Rationale: Diablo 1 genre reference + precision-dodge requirements for boss telegraphs (especially the Bone Overlord's 900 ms ground-slam) + keyboard-first expectation. Haste multiplier + slow-zone multipliers both apply instantly with no ramp. Guardrail in the spec: if a future PR adds `Lerp` / `MoveToward` to the velocity assignment in `Player.HandleMovement()`, block it in review citing this spec.
+
+- **SPEC-GAMEPAD-INPUT-01** (FUT-01) → [docs/systems/gamepad-input.md](systems/gamepad-input.md). Twin-source movement (left stick + d-pad both bind to movement, deadzone 0.25) — players can use whichever they prefer per controller. D-pad up/left/right/down → skill slots 1-4 (more ergonomic than mapping skills to face buttons, which are already holding action_cross/circle/square/triangle). Bumpers do double duty: left bumper is stats-peek-hold in gameplay AND tab-cycle-left in service menus (contexts don't overlap thanks to WindowStack routing). Triggers handle Haste (right trigger hold) and Fortify (right bumper tap); left trigger taps Sense. Disconnect auto-pauses the game. Single-player only — second controller is ignored. Out of scope: rumble, DualSense adaptive triggers, right-stick bindings (reserved for a future cursor/camera spec if one surfaces). Accessibility: swap-confirm/cancel toggle for players who expect east=confirm / south=cancel.
+
+- **SPEC-INPUT-REBINDING-UI-01** (FUT-02) → [docs/ui/input-rebinding.md](ui/input-rebinding.md). Pause → Settings → Controls sub-panel with a row-per-action list. Each row shows current bindings as chips + Add-binding / Reset buttons. New-binding capture via a modal that listens to `_UnhandledInput`; conflict detection surfaces a reassign-or-cancel prompt on cross-action collision. Escape is reserved — cannot be bound to anything (always cancels). Persistence is a Godot `ConfigFile` at `user://input_bindings.cfg` that loads at game start to override `project.godot` defaults. Preview-rebind with Escape-discards-changes — only "Done" saves. Controller-type-appropriate button labels render via `InputEvent.AsText()`. Fully keyboard-navigable (no mouse required).
+
+**Impl scope snapshot:** SPEC-MOVEMENT-ACCEL-01 is zero-code (confirmation spec). SPEC-GAMEPAD-INPUT-01 is project.godot edits only (InputMap bindings + deadzone attributes) — the `Input.GetVector` / `Input.IsActionPressed` abstractions already in place make it code-free at the gameplay layer. SPEC-INPUT-REBINDING-UI-01 has real implementation scope — new autoload `InputBindings` + new modal `BindingCaptureDialog` + new sub-scene `controls_settings.tscn`. It's a P2 ticket; lands when the rest of Phase I is ready to ship.
+
+Next up: Phase J — deferrable/future. Everything there is optional and unblocked by nothing currently active. I'll present the options as an MC so you can pick which (if any) to spec now.
+
+---
+
 ## 2026-04-18 — Phase H complete: UI canonical decisions locked (font, scaling, HUD, shake, hitstop)
 
 All five Phase H specs landed together — the UI-wide constants every downstream spec inherits.

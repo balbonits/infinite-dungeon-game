@@ -93,6 +93,23 @@ _rotations = DirectionalSprite.LoadRotations(rotationsPath);
 
 The velocity is set explicitly each frame and naturally clamped to `MoveSpeed` after normalization. No additional max velocity capping is needed.
 
+### Acceleration (SPEC-MOVEMENT-ACCEL-01)
+
+**Movement is instant — no acceleration curve, no momentum, no ramp on start or stop.** Press direction → full speed on the next physics frame; release direction → stop on the next physics frame.
+
+**Why instant:**
+- **Diablo 1 reference:** the art pivot is cartoonish true-iso Diablo 1 style. Diablo uses instant movement; easing would fight the reference.
+- **Precision dodging:** boss telegraphs (e.g., the 900 ms Bone Overlord ground-slam per [SPEC-BOSS-BONE-OVERLORD-01](../world/bosses/bone-overlord.md)) depend on the player being able to step out on the exact frame. Easing would introduce a reaction-time penalty.
+- **Keyboard-first expectation:** the game is keyboard-first; keyboard movement feels best with 100% responsive state mapping.
+
+**Interaction with other movement modifiers:**
+- **Haste Innate** (hold to sprint per [magic.md §Innate Skills](magic.md)): speed multiplier applies instantly on press, removes instantly on release. No sprint-charge-up.
+- **Slow zones** (e.g., Chitin Matriarch's ground-web per [SPEC-BOSS-CHITIN-MATRIARCH-01](../world/bosses/chitin-matriarch.md)): multiplier applies on the first frame inside the zone; removes on the first frame outside. No gradual transition.
+
+**Rejected alternatives:** light ease (~80 ms) and full ease (~200 ms) were both considered and rejected. Even 80 ms breaks precision-dodge feel; 200 ms is incompatible with the genre reference.
+
+**Guardrail:** if a future PR adds `Lerp` or `MoveToward` to the `Velocity` assignment path in `Player.HandleMovement()`, block it in review citing this spec as the reason.
+
 ### Wall Collision
 
 | Property | Detail |
@@ -131,6 +148,6 @@ On spawn and floor descent, the player gets a brief invincibility window:
 
 ## Open Questions
 
-- Should there be acceleration/deceleration (easing into movement) or is instant full-speed acceptable?
-- Should controller (gamepad) input be supported? Godot's Input Map can map joystick axes to the same actions.
-- Should pointer/click-to-move be added for touch/mobile support?
+- ~~Should there be acceleration/deceleration (easing into movement) or is instant full-speed acceptable?~~ **Resolved 2026-04-18 by SPEC-MOVEMENT-ACCEL-01 — instant, no easing.** See §Acceleration above.
+- ~~Should controller (gamepad) input be supported?~~ **Resolved 2026-04-18 by [SPEC-GAMEPAD-INPUT-01](gamepad-input.md) — yes, twin-stick convention.**
+- Should pointer/click-to-move be added for touch/mobile support? (No current ticket; P3 future.)

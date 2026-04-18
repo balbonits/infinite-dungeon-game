@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase H complete — all 5 UI canonical decisions locked: Press Start 2P canonical font, integer-only scaling strategy with 1280×720 design res, HUD zone map + Tab hold-to-peek Stats overlay, damage-proportional camera shake with accessibility toggle, 60-FPS-reference hitstop frame counts with framerate-independent durations).
+**Last updated:** 2026-04-18 (Phase I complete — all 3 movement & input specs locked: instant-movement confirmed (no easing, matches current code), gamepad bindings for Xbox/PlayStation with twin-source movement + D-pad skill slots + bumper-triggers for modes, rebinding UI in Pause→Settings→Controls with ConfigFile persistence).
 
-**Next up:** Phase I — movement & input completion. SPEC-MOVEMENT-ACCEL-01 (instant vs eased player movement), then gamepad input + input-rebinding UI.
+**Next up:** Phase J — deferrable/future work. Everything here is optional and unblocked by nothing currently active. Options: art FX redraw (deferred per PO until iso pivot complete), export platform decision, analytics stack, i18n, audio (explicitly skipped per PO but on horizon), multiplayer confirmation.
 
 ---
 
@@ -160,9 +160,11 @@ Each defines: AI behavior tree, phase-shift trigger thresholds, FlashFx hooks, f
 
 ## Phase I — Movement / input completion
 
-- [ ] **SPEC-MOVEMENT-ACCEL-01** — instant vs eased.
-- [ ] **SPEC-GAMEPAD-INPUT-01** (FUT-01). Depends on #36.
-- [ ] **SPEC-INPUT-REBINDING-UI-01** (FUT-02). Depends on #37.
+- [x] **SPEC-MOVEMENT-ACCEL-01** — locked 2026-04-18 in [docs/systems/movement.md §Acceleration](systems/movement.md). **Instant** — no acceleration, no easing, no momentum. Press direction → full speed next physics frame; release → stop next physics frame. Matches current `Player.cs:178` code. Rejected light-ease (~80ms) and full-ease (~200ms) alternatives; both break precision-dodge feel needed for boss telegraphs and fight the Diablo 1 genre reference. Haste multiplier + slow-zone multipliers apply instantly (no ramp in/out). Movement.md's two related Open Questions resolved: instant-movement confirmed, gamepad support redirected to SPEC-GAMEPAD-INPUT-01. Guardrail: future PRs adding `Lerp`/`MoveToward` to `Velocity` assignment get blocked in review.
+- [x] **SPEC-GAMEPAD-INPUT-01** (FUT-01) — locked 2026-04-18 in [docs/systems/gamepad-input.md](systems/gamepad-input.md). Xbox/PlayStation gamepad bindings for every keyboard action. Left stick + d-pad both bind to movement (deadzone 0.25); D-pad up/left/right/down bind to skill slots 1-4; bumpers handle tab-cycling in service menus and stats-peek in gameplay (non-overlapping contexts); triggers handle Haste/Fortify toggles. No rumble, no right-stick in scope (reserved for future cursor/camera spec). Disconnect → pause; reconnect → resume. Single-player only (second controller ignored). Accessibility swap-confirm/cancel Options toggle. Inherits instant-movement contract from SPEC-MOVEMENT-ACCEL-01.
+- [x] **SPEC-INPUT-REBINDING-UI-01** (FUT-02) — locked 2026-04-18 in [docs/ui/input-rebinding.md](ui/input-rebinding.md). Pause Menu → Settings → Controls sub-panel. Row-per-action layout with current bindings + Add/Reset per row; Reset-all-to-defaults at the bottom. Capture-mode modal for new binding press. Conflict handling with reassign-or-cancel prompt. Escape reserved (cannot be bound — always cancel). Persistence: `user://input_bindings.cfg` ConfigFile, loaded at game start to override project.godot defaults. Preview-rebind with Escape-discards-changes (only "Done" saves). Controller-type-appropriate button labels via Godot's `InputEvent.AsText()`. Fully keyboard-navigable.
+
+**Phase I complete.**
 
 ---
 

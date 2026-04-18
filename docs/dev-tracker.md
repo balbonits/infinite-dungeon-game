@@ -271,6 +271,18 @@ Tracked here once spec'd. Full roadmap: [docs/spec-roadmap.md](spec-roadmap.md).
 
 ---
 
+## Spec Roadmap Tickets — Phase I (Movement & Input)
+
+Phase I locks player movement feel + gamepad support + rebinding UI. Movement is the lead spec (confirms current instant-movement behavior); the other two build on it.
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| SPEC-MOVEMENT-ACCEL-01 | Instant player movement (no easing) | Spec'd | P1 | Locked 2026-04-18. See [movement.md §Acceleration](systems/movement.md). Confirms current `Player.cs:178` as spec: `Velocity = inputDir.Normalized() * MoveSpeed` on press, `Velocity = Vector2.Zero` on release. No Lerp/MoveToward anywhere in the velocity assignment. Rationale: Diablo 1 genre reference, precision-dodge feel for boss telegraphs, keyboard-first expectation. Haste multiplier + slow-zone multipliers both apply instantly (no ramp). Guardrail: block future PRs that introduce easing on Velocity. Movement.md Open Questions partially resolved here (easing) — gamepad routed to SPEC-GAMEPAD-INPUT-01. |
+| SPEC-GAMEPAD-INPUT-01 | Xbox/PlayStation gamepad bindings | Spec'd | P2 | Locked 2026-04-18. See [gamepad-input.md](systems/gamepad-input.md). `project.godot` InputMap additions only — zero gameplay code changes needed since `Input.GetVector`/`Input.IsActionPressed` already abstract the source. Left-stick + D-pad → movement (deadzone 0.25); south/east/west/north buttons → action_cross/circle/square/triangle; D-pad up/left/right/down → skill_1/2/3/4; bumpers handle tab-cycling and stats-peek (non-overlapping contexts resolved by WindowStack.BlockIfNotTopmost); triggers handle Haste/Fortify toggles. Disconnect → auto-pause via `JoyConnectionChanged`. Single-player only (second controller ignored). Out of scope: rumble, DualSense haptics, right-stick (reserved for future cursor/camera spec). Accessibility swap-confirm/cancel Options toggle. Godot auto-renders PS/Xbox button labels via `InputEvent.AsText()`. |
+| SPEC-INPUT-REBINDING-UI-01 | Input-rebinding Options sub-panel | Spec'd | P2 | Locked 2026-04-18. See [input-rebinding.md](ui/input-rebinding.md). Pause → Settings → Controls sub-panel. Row-per-action UI: action name + current-bindings chips + Add binding + Reset per row; Reset-all-to-defaults at bottom. Capture-mode modal for new binding (listens to next `_UnhandledInput`). Conflict handling: reassign-or-cancel prompt on cross-action collision; silent ignore on same-action duplicate. Escape reserved (cannot be bound — always cancel). Persistence: `user://input_bindings.cfg` ConfigFile, loaded at game start to override project.godot defaults. Preview-rebind with Escape-discards; only "Done" saves. Button labels use `InputEvent.AsText()` for controller-type correctness. Fully keyboard-navigable. Impl: new `InputBindings` autoload + `BindingCaptureDialog` (WindowStack-compatible modal). |
+
+---
+
 ## Spec Roadmap Tickets — Phase H (UI Canonical Decisions)
 
 Phase H locks the UI-wide constants every downstream UI spec inherits: font, scaling, HUD layout, feel effects. Font is load-bearing — every text surface uses it; changing it later means retouching every screen.
