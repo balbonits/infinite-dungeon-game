@@ -155,7 +155,7 @@ Tab 4 label changes per class:
 | Fortify | Toggle (mana drain) | Fortify | Fortify | Fortify | Magicule-reinforced body, damage resistance |
 | Armor | Always-on passive | **Ironhide** | **Nimbleguard** | **Spellweave** | Armor proficiency, class-specific equipment mastery |
 
-Innate synergies affect ALL abilities at threshold levels (details TBD).
+Innate synergies affect ALL abilities at threshold levels — see [synergy-bonuses.md](synergy-bonuses.md#innate-synergies-affect-all-abilities) for the locked per-Innate bonus ladder (Haste/Sense/Fortify/Armor at Lv. 5/10/25/50/100).
 
 ---
 
@@ -456,54 +456,27 @@ The science of internal mana. Training the brain and body to process magic bette
 
 ---
 
-## Synergy Bonuses — TBD
+## Synergy Bonuses — Resolved (SPEC-INNATE-SYNERGIES-01)
 
-When a Skill mastery reaches threshold levels, ALL its child Abilities receive a bonus.
+Canonical spec: **[synergy-bonuses.md](synergy-bonuses.md)** (status: LOCKED).
 
-Proposed thresholds (to be refined per mastery):
-
-| Skill Level | Synergy Bonus (template) |
-|-------------|------------------------|
-| Lv. 5 | -5% mana cost on all child Abilities |
-| Lv. 10 | +10% damage / healing on all child Abilities |
-| Lv. 25 | -0.5s cooldown on all child Abilities |
-| Lv. 50 | Unlock a unique visual effect on all child Abilities |
-| Lv. 100 | "Master" title + all bonuses doubled |
-
-Innate synergies affect ALL abilities (not just children). Details TBD.
+Thresholds, universal Lv.5 bonus, per-mastery Lv.10/25/50/100 bonuses, and Innate synergies (affecting ALL abilities) are fully defined there. The template proposed in earlier drafts of this archive was superseded — the live spec has specific bonuses per mastery and per Innate, not placeholder percentages.
 
 ---
 
-## Ability Affinity — TBD
+## Ability Affinity — Resolved (SPEC-MASTERY-THRESHOLD-FX-01)
 
-Cosmetic-only milestones from repeated use of a specific ability.
+Canonical spec: **[ability-affinity.md](ability-affinity.md)** (status: LOCKED).
 
-| Uses | Affinity Tier | Visual Effect |
-|------|--------------|---------------|
-| 100 | Familiar | Slightly brighter particles |
-| 500 | Practiced | Unique particle color tint |
-| 1,000 | Expert | Trail effect added |
-| 5,000 | Mastered | Full visual overhaul (premium particles, sound) |
-
-No stat bonuses. Pure cosmetic reward for dedication.
+Four tiers (Familiar/Practiced/Expert/Mastered) at 100/500/1,000/5,000 uses, with cumulative cosmetic effects. Passive and toggle abilities have distinct tracking rules; Armor Innate is excluded from the system. All details fully specified in the live spec.
 
 ---
 
-## Point Systems — TBD
+## Point Systems — Resolved (SPEC-SKILL-POINTS-RATE-01)
 
-### Skill Points (SP)
+Canonical spec: **[point-economy.md](point-economy.md)** (status: LOCKED).
 
-- Source: Character level-up
-- Rate: TBD (was 2/level, 3 at milestones — needs adjustment for separate pools)
-
-### Ability Points (AP)
-
-Three sources:
-1. **Leveling** (primary, ~60% of total AP income): AP per level-up
-2. **Combat milestones** (bonus, ~25%): AP from boss kills, floor clears
-3. **Use-based per-category** (trickle, ~15%): Earn AP by using abilities in combat, tracked per category (Body AP, Survival AP, etc.)
-
-Exact rates TBD.
+SP: 2/level, +1 bonus at milestones (every 10th). AP: 3/level, +5 at milestones, plus combat-milestone AP and use-based per-category AP. Separate-pools design resolved the "needs adjustment for separate pools" TBD in this archive. See the live spec for the XP-per-point formula, AP-source split percentages, and total-by-level estimates.
 
 ---
 
@@ -511,9 +484,9 @@ Exact rates TBD.
 
 - [x] Review remaining Ranger abilities (Bowmanship, Throwing, Firearms, CQC, Trapping, Sapping)
 - [x] Full Mage class redesign
-- [ ] Define synergy bonus specifics per mastery
-- [ ] Define ability affinity cosmetic tiers
-- [ ] Define SP/AP exact rates and milestone schedule
+- [x] Define synergy bonus specifics per mastery — LOCKED in [synergy-bonuses.md](synergy-bonuses.md) (SPEC-INNATE-SYNERGIES-01)
+- [x] Define ability affinity cosmetic tiers — LOCKED in [ability-affinity.md](ability-affinity.md) (SPEC-MASTERY-THRESHOLD-FX-01)
+- [x] Define SP/AP exact rates and milestone schedule — LOCKED in [point-economy.md](point-economy.md) (SPEC-SKILL-POINTS-RATE-01)
 - [ ] Refine pass on all three classes ("finer toothcomb")
 - [ ] Update locked specs (skills.md, pause-menu-tabs.md, controls.md, magic.md, combat.md)
 - [ ] Update icon sprite sheets to match new taxonomy

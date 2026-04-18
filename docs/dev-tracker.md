@@ -271,6 +271,18 @@ Tracked here once spec'd. Full roadmap: [docs/spec-roadmap.md](spec-roadmap.md).
 
 ---
 
+## Spec Roadmap Tickets — Phase C (Skills/Abilities Completion)
+
+All three Phase C specs resolved by reconciliation on 2026-04-18. The ARCHIVED `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md` had stale TBD sections (Point Systems / Synergy Bonuses / Ability Affinity) that were already fully defined in LOCKED live specs. Reconciliation edits re-pointed the archive at the live specs; no new design work.
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| SPEC-SKILL-POINTS-RATE-01 | SP/AP rates + milestone schedule (reconciliation) | Spec'd | P2 | Locked 2026-04-18 via reconciliation. Canonical live spec: [point-economy.md](systems/point-economy.md) (already LOCKED). SP: 2/level, +1 at milestones (every 10th); AP: 3/level, +5 at milestones, plus combat-milestone AP (boss first-kill/floor clear/depth milestone) and use-based per-category AP trickle (~60/25/15 source split). XP-per-point formula `xp = 50 * (1 + target_level * 0.1)` same for both pools. The ARCHIVED SKILLS_AND_ABILITIES_SYSTEMS.md §Point Systems "needs adjustment for separate pools" TBD was already resolved by the separate-pools architecture in point-economy.md — this ticket just re-pointed the archive at the live spec. No new design decisions; no code edits; balance-tuning knobs remain open for playtesting per the live spec's own note. |
+| SPEC-INNATE-SYNERGIES-01 | Innate synergies affect ALL abilities (reconciliation) | Spec'd | P2 | Locked 2026-04-18 via reconciliation. Canonical live spec: [synergy-bonuses.md §Innate Synergies](systems/synergy-bonuses.md#innate-synergies-affect-all-abilities) (already LOCKED). All four Innates (Haste/Sense/Fortify/Armor) have full Lv. 5/10/25/50/100 bonus ladders; Innate synergies affect ALL Abilities across all categories, not just their own children (unlike per-mastery synergies which scope to their parent Skill's children). Archive's "Innate synergies affect ALL abilities at threshold levels (details TBD)" line re-pointed at the live spec. Impl note for future: synergy application is a passive recalc at Skill level-up; Innate synergy applies globally across all equipped ability loadouts. No new design decisions; no code edits. |
+| SPEC-MASTERY-THRESHOLD-FX-01 | Use-based cosmetic affinity tiers (reconciliation) | Spec'd | P2 | Locked 2026-04-18 via reconciliation. Canonical live spec: [ability-affinity.md](systems/ability-affinity.md) (already LOCKED). Four tiers: Familiar (100 uses), Practiced (500), Expert (1,000), Mastered (5,000). Cumulative cosmetic effects — no stat bonuses. Passive abilities track time active (1 sec = 1 use); toggle abilities track activations; Armor Innate explicitly excluded. Spec name is a misnomer in the roadmap ("MASTERY-THRESHOLD-FX" sounds like mastery synergy but is actually the use-based affinity system). Archive's "§Ability Affinity — TBD" section re-pointed at the live spec. No new design decisions; no code edits. **Phase C now complete.** |
+
+---
+
 ## Audit Findings — 2026-04-17
 
 Full report: [docs/audits/2026-04-17-full-project.md](audits/2026-04-17-full-project.md). Each ticket below is one finding — fix in its own branch / PR. Pick by priority.

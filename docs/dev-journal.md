@@ -4,6 +4,20 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-18 — Phase C complete via reconciliation (SPEC-SKILL-POINTS-RATE-01, SPEC-INNATE-SYNERGIES-01, SPEC-MASTERY-THRESHOLD-FX-01)
+
+All three Phase C specs from `docs/spec-roadmap.md` closed in a single reconciliation pass — no new design decisions, no MC questions, no agent dispatches. The roadmap's Phase C entries flagged TBDs in the ARCHIVED `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md`, but each of those TBDs was already fully resolved in a LOCKED live spec:
+
+- **SPEC-SKILL-POINTS-RATE-01** → [point-economy.md](systems/point-economy.md) already defines SP (2/level + 1 at milestones), AP (3/level + 5 at milestones plus combat-milestone + use-based sources), XP-per-point formula, and the 60/25/15 AP-source split. The archive's "needs adjustment for separate pools" line was stale — the separate-pools architecture in point-economy.md *was* the adjustment.
+- **SPEC-INNATE-SYNERGIES-01** → [synergy-bonuses.md §Innate Synergies](systems/synergy-bonuses.md#innate-synergies-affect-all-abilities) already defines the Lv. 5/10/25/50/100 ladder for all four Innates (Haste/Sense/Fortify/Armor) and spells out that Innate synergies affect ALL Abilities, not just children — the exact thing the archive said was TBD.
+- **SPEC-MASTERY-THRESHOLD-FX-01** → [ability-affinity.md](systems/ability-affinity.md) already defines the four use-based affinity tiers (Familiar 100 / Practiced 500 / Expert 1,000 / Mastered 5,000 uses) with cumulative cosmetic effects, passive/toggle tracking rules, and Armor exclusion. The "MASTERY-THRESHOLD-FX" spec name is a misnomer — it's actually the use-based affinity system, not a mastery-level FX system.
+
+Edits: replaced four stale TBD blocks in the archive with one-line pointers at the live specs ([§Synergy Bonuses](systems/SKILLS_AND_ABILITIES_SYSTEMS.md), §Ability Affinity, §Point Systems, and line 158's "Innate synergies ... (details TBD)"). Checked the three completed items in the archive's TODO list. Updated spec-roadmap Phase C boxes with resolution notes; dev-tracker gained a new Phase C section with full reconciliation provenance for each spec.
+
+**This is the same pattern as Phase A's AUDIT-09/10/11:** the archive had drifted out of sync with the live specs, and the reconciliation ticket just realigned the pointers. Zero new design, zero code, zero impl ticket surface. Phase C total edit size: 5 files, ~50 lines net. Next up: Phase D (mage combat formula, feeds off the Phase B density curve).
+
+---
+
 ## 2026-04-18 — SPEC-INNATE-STACKING-01 locked (Phase B complete)
 
 Locked the concurrency rule for toggle Innates. Design decision: **Option A — Free stacking, no hard concurrency cap.** Haste, Sense, and Fortify can all be activated in any combination simultaneously; Armor is always-on and does not participate. The mana economy is the sole governor — combined drain sums additively. At level 1, running all three costs **23.33 mana/sec** (13.33 + 6.67 + 3.33), which burns a Mage's 200-mana base pool in **~8.6 seconds** with no regen. Pair combinations give intermediate uptime (Haste+Sense ~10s, Haste+Fortify ~12s, Sense+Fortify ~20s) and enable three named combo plays: Fortify+Haste durable sprinter, Sense+Haste scout, Sense+Fortify cautious explorer.

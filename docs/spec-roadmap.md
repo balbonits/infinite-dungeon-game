@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (SPEC-INNATE-STACKING-01 locked — free stacking: Haste/Sense/Fortify can all run simultaneously with no hard cap. Mana drain sums (all three = 23.33 mana/s at level 1, burns Mage 200-mana pool in ~8.6s). Self-balancing via mana economy; rewards Attunement/INT investment. Closes Open Question 5. Phase B now complete).
+**Last updated:** 2026-04-18 (Phase C complete via reconciliation — all three Phase C specs were already resolved by LOCKED live specs: point-economy.md, synergy-bonuses.md, ability-affinity.md. Stale TBDs in the ARCHIVED SKILLS_AND_ABILITIES_SYSTEMS.md were re-pointed at the live specs. No new design work.).
 
-**Next up:** Phase C — SPEC-SKILL-POINTS-RATE-01 — skill points per level + mastery threshold rates (depends on Phase B numbers for mage mana-economy balance).
+**Next up:** Phase D — SPEC-MAGIC-COMBAT-FORMULA-01 (mage spell damage scaling: INT-only vs INT × density; feeds off the locked Phase B density curve).
 
 ---
 
@@ -57,16 +57,16 @@ Zero new design; every downstream spec inherits cleaner numbers. Highest "value 
 
 ## Phase C — Skills/Abilities completion (kills SKILLS_AND_ABILITIES_SYSTEMS.md TBDs)
 
-- [ ] **SPEC-SKILL-POINTS-RATE-01**
-   Skill points per level + mastery threshold rates ("needs adjustment for separate pools" TBD).
-   *Defines*: progression speed. Depends on Phase B (mage rate must match mana economy).
+- [x] **SPEC-SKILL-POINTS-RATE-01** — locked 2026-04-18 (reconciliation)
+   Canonical live spec: [point-economy.md](systems/point-economy.md) (status: LOCKED). SP: 2/level, +1 at milestones. AP: 3/level, +5 at milestones, plus combat-milestone AP and use-based per-category AP (~60/25/15 split). Separate-pools design already resolved the archive's "needs adjustment for separate pools" TBD — Phase C reconciliation pointed the ARCHIVED SKILLS_AND_ABILITIES_SYSTEMS.md §Point Systems at the live spec. No new design work.
+   *Defines*: progression speed. Depends on Phase B (mage rate must match mana economy — verified compatible with SPEC-INNATE-MANA-COST-01's drain numbers).
 
-- [ ] **SPEC-INNATE-SYNERGIES-01**
-   "Innate synergies affect ALL abilities at threshold levels (details TBD)" — cross-pool synergy.
+- [x] **SPEC-INNATE-SYNERGIES-01** — locked 2026-04-18 (reconciliation)
+   Canonical live spec: [synergy-bonuses.md §Innate Synergies](systems/synergy-bonuses.md#innate-synergies-affect-all-abilities) (status: LOCKED). All four Innates (Haste/Sense/Fortify/Armor) have full per-level bonus ladders (Lv. 5/10/25/50/100); Innate synergies affect ALL Abilities across all categories, not just their own children. Archive's "details TBD" line pointed at the live spec. No new design work.
    *Defines*: build-complexity ceiling. Depends on #6 + #7.
 
-- [ ] **SPEC-MASTERY-THRESHOLD-FX-01**
-   Cosmetic flair at use-based milestones (`ability-affinity.md` TBD details).
+- [x] **SPEC-MASTERY-THRESHOLD-FX-01** — locked 2026-04-18 (reconciliation)
+   Canonical live spec: [ability-affinity.md](systems/ability-affinity.md) (status: LOCKED). Four use-based affinity tiers (Familiar/Practiced/Expert/Mastered at 100/500/1,000/5,000 uses) with cumulative cosmetic effects; passive and toggle tracking rules defined; Armor Innate excluded. Archive's "ability-affinity.md TBD" pointed at the live spec. No new design work.
    *Defines*: feedback-loop visuals. Depends on #8.
 
 ---
