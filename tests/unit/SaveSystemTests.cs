@@ -34,6 +34,14 @@ public class SaveSystemTests
     }
 
     [Fact]
+    public void FakeStorage_Write_ReturnsTrueOnSuccess()
+    {
+        // AUDIT-02: Write returns bool so SaveManager can propagate I/O failure to a Toast.
+        var storage = new FakeSaveStorage();
+        storage.Write("k", "v").Should().BeTrue();
+    }
+
+    [Fact]
     public void FakeStorage_Write_Overwrites()
     {
         var storage = new FakeSaveStorage();

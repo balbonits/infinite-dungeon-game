@@ -891,7 +891,8 @@ public partial class PauseMenu : GameWindow
         AddSystemButton("Back to Main Menu", () =>
         {
             Close();
-            SaveManager.Instance?.Save();
+            if (SaveManager.Instance != null && !SaveManager.Instance.Save())
+                Toast.Instance?.Error("Save failed — progress may be lost");
             GetTree().ReloadCurrentScene();
         });
 

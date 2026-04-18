@@ -269,7 +269,8 @@ public partial class DeathScreen : Control
                 // Fate, then returns to main menu. Save so the penalty is preserved on next
                 // load, then reload to the splash screen. (PauseMenu's separate "Quit Game"
                 // button exits the application — that path is NOT used here.)
-                Autoloads.SaveManager.Instance?.Save();
+                if (Autoloads.SaveManager.Instance != null && !Autoloads.SaveManager.Instance.Save())
+                    Toast.Instance?.Error("Save failed — death penalty may not persist");
                 GetTree().Paused = false;
                 GetTree().ReloadCurrentScene();
             }

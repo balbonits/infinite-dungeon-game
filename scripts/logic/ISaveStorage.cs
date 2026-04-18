@@ -14,7 +14,10 @@ public interface ISaveStorage
 {
     bool Exists(string key);
     string? Read(string key);
-    void Write(string key, string content);
+
+    /// <summary>Persist <paramref name="content"/> under <paramref name="key"/>. Returns false on I/O failure.</summary>
+    bool Write(string key, string content);
+
     void Delete(string key);
 }
 
@@ -27,7 +30,7 @@ public class FakeSaveStorage : ISaveStorage
 
     public bool Exists(string key) => _store.ContainsKey(key);
     public string? Read(string key) => _store.TryGetValue(key, out var v) ? v : null;
-    public void Write(string key, string content) => _store[key] = content;
+    public bool Write(string key, string content) { _store[key] = content; return true; }
     public void Delete(string key) => _store.Remove(key);
 
     public int Count => _store.Count;
