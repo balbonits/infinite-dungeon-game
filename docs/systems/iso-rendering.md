@@ -47,7 +47,7 @@ Related code touched by [ISO-01](../dev-tracker.md):
 - `scripts/Projectile.cs` — verify Y-sort placement under `Entities`.
 - `scenes/dungeon.tscn`, `scenes/town.tscn` — root node gets `y_sort_enabled = true` so the two child Y-sort containers interleave.
 - `scenes/player.tscn`, `scenes/enemy.tscn` — confirm `Sprite2D.offset` + `Node2D.y_sort_origin` set bottom-center anchor.
-- New (optional): `scripts/IsoTransform.cs` — pure-static helper for off-tilemap math (camera bounds, debug overlays). Most callers should keep using `TileMapLayer.MapToLocal` / `LocalToMap`.
+- New: `scripts/IsoTransform.cs` — required pure-static helper for off-tilemap math (camera bounds, debug overlays, future mouse picking outside a tilemap region). Most callers should keep using `TileMapLayer.MapToLocal` / `LocalToMap`; `IsoTransform` exists for the non-`TileMapLayer` cases this spec calls out and is the subject of ISO-01a + the inverse-precision unit test in Acceptance Criteria.
 
 Depends on / informs: [movement.md](movement.md), [camera.md](camera.md), [docs/architecture/scene-tree.md](../architecture/scene-tree.md), [docs/assets/sprite-specs.md](../assets/sprite-specs.md), [docs/world/dungeon.md](../world/dungeon.md), [docs/objects/tilemap.md](../objects/tilemap.md), [docs/basics/tilemap-and-isometric.md](../basics/tilemap-and-isometric.md). Unblocks [ART-12](../dev-tracker.md) and [ART-13](../dev-tracker.md).
 
@@ -78,9 +78,9 @@ A `TileMapLayer` cell's local origin is the **diamond reference point** for that
 - `MapToLocal(Vector2I(1, 0))` → `Vector2(32, 16)` (one cell east-in-world; visually down-right by half a diamond)
 - `MapToLocal(Vector2I(0, 1))` → `Vector2(-32, 16)` (one cell south-in-world; visually down-left by half a diamond)
 
-Every floor tile and wall tile placed via `SetCell` lives at this reference point. Sprite anchors (entities, multi-tile objects) are bottom-center of footprint and align to the same reference point of the cell they occupy. This is the **only** anchor convention in the project; do not introduce per-asset offset overrides.
+Every floor tile and wall tile placed via `SetCell` lives at this reference point. Sprite anchors (entities, multi-tile objects) are bottom-center of footprint and align to the same reference point of the cell they occupy. The bottom-center rule is the **only** anchor convention in the project. Per-asset **authoring/import** adjustments are allowed when needed to make a specific sprite obey that rule — e.g. setting `Sprite2D.offset` in the .tscn so a PixelLab-generated sprite lands on its correct bottom-center pivot. What is **not** allowed is **runtime or per-callsite empirical offset overrides in gameplay code** (the kind of `+ Vector2(0, 40)` hacks ISO-01d removes from `Dungeon.cs`).
 
-**Sprite/entity anchor (a separate convention, do not conflate):** anything that is **not** a TileMapLayer cell uses **bottom-center of the footprint** as its anchor, configured via `Sprite2D.offset` and `Node2D.y_sort_origin`. This makes the entity's `position` correspond to the screen position of its forward floor cell, which makes Y-sort correct for free. Today's empirical `+ Vector2(0, 40)` offset on player spawn (`Dungeon.cs:39`, `:127`) is a hack that the bottom-center anchor convention replaces — once `Sprite2D.offset` and `y_sort_origin` are set on `player.tscn`, the spawn line becomes a clean `_player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);`.
+**Sprite/entity anchor (a separate convention, do not conflate):** anything that is **not** a TileMapLayer cell uses **bottom-center of the footprint** as its anchor, configured via `Sprite2D.offset` and `Node2D.y_sort_origin`. This makes the entity's `position` correspond to the screen position of its forward floor cell, which makes Y-sort correct for free. Asset-specific setup belongs in the authored scene/import configuration; gameplay placement code should remain clean and use the canonical map reference point directly. Today's empirical `+ Vector2(0, 40)` offset on player spawn (`Dungeon.cs:39`, `:127`) is the kind of runtime hack the bottom-center anchor convention replaces — once `Sprite2D.offset` and `y_sort_origin` are set on `player.tscn`, the spawn line becomes a clean `_player.GlobalPosition = _tileMap.MapToLocal(_stairsUpPosition);`.
 
 **Why 64×32 (2:1):** Standard iso ratio. The existing ISS tileset and PixelLab pipeline both produce 64×32 floors (see [project memory: ISS adoption](../../.claude/agent-memory/design-lead/project_tile_standard.md), [docs/assets/sprite-specs.md](../assets/sprite-specs.md)). No reason to deviate.
 
@@ -227,7 +227,7 @@ The camera does **not** need to know about iso projection — it is following a 
 | Player | `CircleShape2D` r=12 | `CircleShape2D` r=12 (unchanged) | Circle approximates a diamond well enough at this scale; collision behavior is identical in screen space. |
 | Enemy | `CircleShape2D` r varies by species | `CircleShape2D` (unchanged) | Same reasoning. |
 | NPC | `CircleShape2D` r=14 (`Constants.Npc.NpcCollisionRadius`) | unchanged | Same. |
-| Wall (TileMap collision) | Rectangle polygon `WallCollisionPolygon` (-32,-16)→(32,16) | **Diamond polygon** `(0,-16), (32,0), (0,16), (-32,0)` | Walls must use a diamond polygon so circles slide correctly along the iso surfaces. The current rectangle is correct for top-down; in iso it protrudes 8px past the visible diamond at every corner and causes "phantom wall" collisions at diagonals. |
+| Wall (TileMap collision) | Rectangle polygon `WallCollisionPolygon` (-32,-16)→(32,16) | **Diamond polygon** `(0,-16), (32,0), (0,16), (-32,0)` | Walls must use a diamond polygon so circles slide correctly along the iso surfaces. The current rectangle is correct for top-down; in iso it protrudes 8px past the visible diamond at every corner and causes "phantom wall" collisions at diagonals. **Doc sync note:** `docs/objects/tilemap.md` still documents the pre-ISO-01 rectangular wall polygon as the current behavior for smooth sliding; that file is updated when ISO-01b lands so readers do not treat the two shapes as simultaneously correct (listed in *Docs to update post-implementation* below). |
 
 **Future optimization (post-ISO-01):** convert entity colliders to diamond `ConvexPolygonShape2D` for pixel-perfect iso feel. Logged in `Open Questions` of this spec → resolve to "future work" not blocking ISO-01.
 
@@ -321,7 +321,7 @@ ISO-01 must touch all of the following. This list is the spec's contract with th
 - [camera.md](camera.md) — add iso-bounds computation rule.
 - [docs/architecture/scene-tree.md](../architecture/scene-tree.md) — update Y-sort flag list to include the scene root; add IsoTransform helper.
 - [docs/world/dungeon.md](../world/dungeon.md) — add wall-occlusion behavior.
-- [docs/objects/tilemap.md](../objects/tilemap.md) — already documents the iso TileSet correctly; add cross-link to this spec for future per-biome variant counts.
+- [docs/objects/tilemap.md](../objects/tilemap.md) — the iso TileSet portion is already correct, but **update the wall collision section for the new diamond polygon** (currently documents the rectangular polygon as intentional for smooth sliding) and add a cross-link to this spec for future per-biome variant counts. ISO-01b is the right PR to land that doc edit alongside the code change.
 - [docs/testing/manual-tests.md](../testing/manual-tests.md) — confirm MT-002 / movement tests reflect the existing W=visual-up behavior (no behavior change expected).
 
 ## Acceptance Criteria
