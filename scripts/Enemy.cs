@@ -50,9 +50,14 @@ public partial class Enemy : CharacterBody2D, IDamageable
         var sat = GameState.Instance.Saturation;
         var intel = GameState.Instance.Intelligence;
 
-        float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone) * intel.SpawnRateModifier;
+        // SpawnRateModifier and AggressionModifier are NOT stat multipliers per
+        // their docstrings (DungeonIntelligence.cs:140, :151) — SpawnRateModifier
+        // drives spawn cadence (applied to Dungeon._spawnTimer.WaitTime) and
+        // AggressionModifier drives attack cooldown (applied to _hitCooldown
+        // below). Do not fold them into hp/dmg/spd.
+        float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone);
         float dmgMult = zoneMult * pacts.EnemyDamageMultiplier * sat.GetDamageMultiplier(zone);
-        float spdMult = zoneMult * pacts.EnemySpeedMultiplier * sat.GetSpeedMultiplier(zone) * intel.AggressionModifier;
+        float spdMult = zoneMult * pacts.EnemySpeedMultiplier * sat.GetSpeedMultiplier(zone);
 
         _hp = (int)(Constants.EnemyStats.GetHp(Level) * hpMult);
         _moveSpeed = Constants.EnemyStats.GetSpeed(Level) * spdMult;
@@ -66,6 +71,7 @@ public partial class Enemy : CharacterBody2D, IDamageable
         _levelLabel = GetNode<Label>("LevelLabel");
         _hitArea = GetNode<Area2D>("HitArea");
         _hitCooldown = GetNode<Timer>("HitCooldownTimer");
+        _hitCooldown.WaitTime = Constants.EnemyStats.HitCooldown / intel.AggressionModifier;
 
         // Apply per-species collision and sprite config
         var speciesConfig = SpeciesDatabase.Get(SpeciesIndex);

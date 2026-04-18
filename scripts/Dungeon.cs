@@ -30,6 +30,7 @@ public partial class Dungeon : Node2D
         _tileMap = GetNode<TileMapLayer>("TileMapLayer");
         _entities = GetNode<Node2D>("Entities");
         _spawnTimer = GetNode<Timer>("SpawnTimer");
+        _spawnTimer.WaitTime = Constants.Spawning.SpawnInterval / GameState.Instance.Intelligence.SpawnRateModifier;
 
         SetupTileset();
         GenerateFloor();
