@@ -45,16 +45,14 @@ public partial class Enemy : CharacterBody2D, IDamageable
         int zone = Constants.Zones.GetZone(floor);
         float zoneMult = Constants.Zones.GetDifficultyMultiplier(floor);
 
-        // Endgame multiplier chain: floor * pact * saturation * intelligence
+        // Endgame stat-multiplier chain: floor * pact * saturation. Intelligence's
+        // SpawnRateModifier and AggressionModifier are NOT stat multipliers per
+        // their docstrings (DungeonIntelligence.cs:140, :151) — they drive
+        // cadence: SpawnRateModifier in Dungeon.OnSpawnTimerTimeout and
+        // AggressionModifier in DealDamageTo (read at use, not cached here, so
+        // each cycle picks up the latest pressure value).
         var pacts = GameState.Instance.Pacts;
         var sat = GameState.Instance.Saturation;
-        var intel = GameState.Instance.Intelligence;
-
-        // SpawnRateModifier and AggressionModifier are NOT stat multipliers per
-        // their docstrings (DungeonIntelligence.cs:140, :151) — SpawnRateModifier
-        // drives spawn cadence (applied to Dungeon._spawnTimer.WaitTime) and
-        // AggressionModifier drives attack cooldown (applied to _hitCooldown
-        // below). Do not fold them into hp/dmg/spd.
         float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone);
         float dmgMult = zoneMult * pacts.EnemyDamageMultiplier * sat.GetDamageMultiplier(zone);
         float spdMult = zoneMult * pacts.EnemySpeedMultiplier * sat.GetSpeedMultiplier(zone);
