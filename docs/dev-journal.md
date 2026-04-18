@@ -4,6 +4,12 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-17 — SPEC-SPECIES-01 locked (design half of tag-team with ART-SPEC-02)
+
+Locked [docs/world/species-template.md](world/species-template.md) — meta-spec for every future monster-species ticket. Eight required sections (Identity / Stats / AI Pattern / Drop-Table Hook / Silhouette Readability / Size-Scale / Color-Coding / Art-Spec Pairing), with locked vocabularies for emotional reaction (5 values) and AI pattern (5 values), three sample-floor stat snapshots (3 / 28 / 75), and an Acceptance Matrix. Worked Bat example included (SPEC-SPECIES-BAT-01). Paired with ART-SPEC-02 — neither half locks without the other.
+
+---
+
 ## Session 22 — PR Ship Train (#8 → #12), Workflow Rule Codification, ISO Spec Reframe (2026-04-17)
 
 ### What Happened
@@ -74,6 +80,10 @@ The bugs:
 - **R3 — pause-state-across-delays miss.** Adding a 3-second timer between failure and reload meant the world resumed during the delay because `Close()` unpauses (PauseMenu) and `Paused = false` was pre-branch (DeathScreen).
 
 Each was a real bug, not a Copilot nit. Codified the four pre-push checks into `ai-workflow.md` §10a-pre-push (scene lifetime / null-default semantics / pause state across delays / symmetric callsites). Logging the saga here so it survives across sessions, not just in unreliable auto-memory.
+
+### ART-SPEC-01 locked (2026-04-17)
+
+Art-lead authored [`docs/assets/prompt-templates.md`](assets/prompt-templates.md) — five named prompt blocks (`CHAR-HUM-STD`, `CHAR-MON-VAR`, `TILE-ISO-FLOOR-WALL`, `OBJ-MAP`, `ICON-UI-64`) plus locked style vocabulary (preamble + palette clause + universal negative prompts), PR-review drift-prevention checklist, and ≥3-asset extension rule. Retroactive fits confirmed for shipped Warrior / Skeleton / dungeon floor / dungeon wall. Open Questions empty. Unblocks ART-03 (75 armor), ART-07a (ability icons), ART-12 (~240 iso tiles), ART-13 (biome objects), ART-14 (beast rework).
 
 ---
 

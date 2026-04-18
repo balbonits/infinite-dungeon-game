@@ -118,6 +118,8 @@ This project uses specialized AI team leads defined in `.claude/agents/`. Each t
 
 **Ownership:** Each team only modifies files in its domain. Cross-domain needs create dependency tickets.
 
+**Design ↔ Art tag-team on visible-content specs:** SPEC-* tickets that produce new visible content (monsters, NPCs, bosses, tile biomes, weapon/armor families, environmental objects) are co-authored by `@design-lead` (game-facing half in `docs/systems/` or `docs/world/`) and `@art-lead` (generation-facing half in `docs/assets/`). Neither half ships without the other. See the "Tag-Team" section in each agent file for the handoff protocol. Pure-mechanics specs (combat formulas, save format, stats curves) and pure-pipeline specs (prompt libraries, manifests) skip this — authored solo.
+
 ---
 
 ## Core Rules
