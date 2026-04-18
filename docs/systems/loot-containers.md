@@ -44,7 +44,7 @@ Three sizes with distinct loot profiles. Spawn counts AND contents both scale on
 | **Crate / Barrel** | Mid-size ground prop | Walk up + press [S] Interact | Bulk of everything — heavy on materials |
 | **Chest** | Large ornate prop | Walk up + press [S] Interact | Equipment-heavy + rare materials |
 
-**All containers use interact (`[S]`) — none are breakable via combat.** Single-use: container is consumed (despawned) once opened.
+**All containers use interact (`[S]`) — none are breakable via combat.** Single-use: once opened, the container swaps to its **open visual** (broken jar / splintered crate / open chest) and stays in place as a "looted" marker for the rest of the floor. Removed on floor change.
 
 ### Spawn counts per floor
 
@@ -105,7 +105,7 @@ During `Dungeon` floor generation, after room carve + wall placement:
    - `Area2D` for the interact zone (reuses NPC `[S] Interact` prompt model)
    - `StaticBody2D` so the player can't walk through it
    - **No** combat-damage path; containers are not in the `Enemies` group and ignore `TakeDamage`.
-4. On open: pop loot via the same `FloatingText` + `Item.cs` drop path used today by enemy drops, then `QueueFree` the container (single-use).
+4. On open: pop loot via the same `FloatingText` + `Item.cs` drop path used today by enemy drops, swap the `Sprite2D` texture to the **open** state (broken jar / splintered crate / open chest lid), disable the `Area2D` interact zone so it can't be re-opened, and leave the prop in the world. The open prop is freed when the floor unloads.
 
 ## Removed from monster-drops.md
 
@@ -136,10 +136,11 @@ During `Dungeon` floor generation, after room carve + wall placement:
 
 - **SPEC-LOOT-01** — this doc.
 - **LOOT-01** — implement `Container.cs` + `ContainerLootTable.cs`; floor-gen integration; rip equipment channel from `MonsterDropTable`. Add unit tests for table distributions + min-1 guarantee.
-- **ART-15** — sprites for Jar (1–3 visual variants), Crate (1–2 variants), Chest (closed + open visual states).
+- **ART-15** — sprites for Jar / Crate / Chest. **Each container has two states: closed (intact) and open (post-loot).** For jars, "open" = broken-jar visual (shards/cracks). For crates, "open" = lid-off / splintered. For chests, "open" = lid-up. The open visual stays in the world for the rest of the floor as a "you already looted this" marker, then despawns on floor change.
 
 ## Locked Decisions (2026-04-17 sign-off)
 
-1. **All containers interact-only.** No combat-break path; jars/crates/chests all use `[S] Interact`. Containers are single-use (consumed on open).
-2. **Signature material zone tilt.** Containers weight signature mats toward the floor's zone species (e.g., chest on floor 5 more likely to drop Bone Dust + Echo Shard than Orc Tusk). Mirrors monster signature drops.
-3. **Generous spawn scaling.** `+1 to upper bound every 10 floors` (floor 100 = `0–12` chests, `2–15` crates, `4–18` jars). Drives the deep-floor loot-rich feel without changing the size hierarchy.
+1. **All containers interact-only.** No combat-break path; jars/crates/chests all use `[S] Interact`. Containers are single-use; opened containers swap to a "looted" visual and stay in the world for the rest of the floor.
+2. **Two-state sprites.** Every container has a closed (intact) and open (looted) sprite — broken jar / splintered crate / open chest lid. Open state is the "already looted" marker.
+3. **Signature material zone tilt.** Containers weight signature mats toward the floor's zone species (e.g., chest on floor 5 more likely to drop Bone Dust + Echo Shard than Orc Tusk). Mirrors monster signature drops.
+4. **Generous spawn scaling.** `+1 to upper bound every 10 floors` (floor 100 = `0–12` chests, `2–15` crates, `4–18` jars). Drives the deep-floor loot-rich feel without changing the size hierarchy.
