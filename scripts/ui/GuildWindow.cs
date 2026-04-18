@@ -31,6 +31,7 @@ public partial class GuildWindow : GameWindow
     public override void _Ready()
     {
         Instance = this;
+        ReturnToPauseMenu = false;
         WindowWidth = 560f;
         base._Ready();
     }

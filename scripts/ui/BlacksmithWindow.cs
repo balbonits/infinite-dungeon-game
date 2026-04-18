@@ -21,7 +21,10 @@ public partial class BlacksmithWindow : GameWindow
 
     private GameTabPanel _tabs = null!;
     private Label _goldFooter = null!;
-    private bool _buySendToBank;
+    // Default to Bank — matches the prior Guild Store's default and the
+    // button text. (Copilot R1 on PR #22: field wasn't initialized, so the
+    // C# default `false` silently changed behavior from the port.)
+    private bool _buySendToBank = true;
 
     public override void _Ready()
     {
@@ -66,7 +69,14 @@ public partial class BlacksmithWindow : GameWindow
 
     private void UpdateGoldFooter()
     {
-        _goldFooter.Text = Strings.Shop.GoldDisplay(GameState.Instance.PlayerInventory.Gold);
+        // Show both pools because Shop-tab purchases spend backpack-first
+        // then bank (see DoBuy). Displaying only backpack would hide bank
+        // spends and make a successful buy look like nothing happened.
+        // (Copilot R1 on PR #22: footer showed only backpack gold despite
+        // combined spending.)
+        var gs = GameState.Instance;
+        _goldFooter.Text = $"Bank: {NumberFormat.Abbrev(gs.PlayerBank.Gold)}g     " +
+                           $"Backpack: {NumberFormat.Abbrev(gs.PlayerInventory.Gold)}g";
     }
 
     // ──────────────────────── FORGE TAB ────────────────────────
@@ -95,7 +105,13 @@ public partial class BlacksmithWindow : GameWindow
 
             int maxTier = AffixDatabase.GetMaxTier(stack.Item.LevelRequirement);
             string label = $"{stack.Item.Name} (Lv.{stack.Item.LevelRequirement})  T{maxTier}";
-            scroll.AddChild(CreateItemButton(label, () => { /* affix dialog — future */ }));
+            // Forge buttons are disabled until the affix-apply dialog ships
+            // — visible so the player can see what's upcoming, but no-op
+            // clicks would give confusing feedback. (Copilot R1 on PR #22.)
+            var btn = CreateItemButton(label, () => { });
+            btn.Disabled = true;
+            btn.TooltipText = "Affix forging coming soon.";
+            scroll.AddChild(btn);
             any = true;
         }
 
