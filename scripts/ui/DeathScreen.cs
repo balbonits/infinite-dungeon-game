@@ -269,10 +269,21 @@ public partial class DeathScreen : Control
                 // Fate, then returns to main menu. Save so the penalty is preserved on next
                 // load, then reload to the splash screen. (PauseMenu's separate "Quit Game"
                 // button exits the application — that path is NOT used here.)
-                if (Autoloads.SaveManager.Instance != null && !Autoloads.SaveManager.Instance.Save())
-                    Toast.Instance?.Error("Save failed — death penalty may not persist");
+                bool ok = Autoloads.SaveManager.Instance?.Save() ?? true;
                 GetTree().Paused = false;
-                GetTree().ReloadCurrentScene();
+                if (ok)
+                {
+                    GetTree().ReloadCurrentScene();
+                    return;
+                }
+                // Save failed: surface the toast and defer the reload long enough for
+                // the player to read it. Toast is mounted under Main's scene tree, so
+                // calling ReloadCurrentScene immediately would tear it down before
+                // it ever rendered (Copilot R1 finding on PR #16).
+                Toast.Instance?.Error("Save failed — death penalty may not persist");
+                var t = GetTree().CreateTimer(3.0);
+                t.Connect(SceneTreeTimer.SignalName.Timeout,
+                    Callable.From(() => GetTree().ReloadCurrentScene()));
             }
             else
             {
