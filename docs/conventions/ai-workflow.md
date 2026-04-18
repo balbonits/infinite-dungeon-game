@@ -169,6 +169,16 @@ Before running `gh pr merge` on any PR — even under auto mode, even on a "ship
 
 Auto mode does NOT override "do not ship known-bad code." But it DOES mean: brief, then merge. Don't sit on a merge waiting for an OK that the rules don't actually require.
 
+**10b-postscript. Docs-only PRs: one Copilot pass, then ship.**
+
+For PRs that touch **only** `docs/`, `*.md`, `.github/`, or other non-code files (no `.cs` / `.tscn` / `.csproj` / `Makefile` / workflow `.yml` changes), take **one** Copilot review pass. Address its substantive findings (factual errors, internal contradictions, broken cross-doc references) in a single fix commit if needed, then merge. Do NOT request a second Copilot round; do NOT iterate prose multiple times.
+
+Code PRs keep the multi-round protocol above — each round can catch a real bug. Docs PRs don't have the same payoff; a second round on a spec usually surfaces nits, not safety issues.
+
+The companion config `.github/copilot-instructions.md` instructs Copilot to be brief on docs-only PRs (skip prose nits, flag only substantive issues) so the single review is high-signal.
+
+User direction (2026-04-17): *"can we just have one pass of copilot review for the specs/docs, then we ignore the rest. it doesn't make sense to spend hours on words that's not code."*
+
 **Why these exist:** PR #8 merged on 2026-04-17 with seven substantive Copilot bugs unaddressed (floor-100 boundary, thematic biases, Load-Game stranding, focus no-op, button-zone navigation, GameState.Reset save-slot clobber, silent-no-op test). The user had to flag both the silent merge AND the bad code. PR #9 was the triage. The rule is "brief always, fix in-scope substantives always" — not "wait for explicit user merge approval on every PR." The user's 2026-04-17 follow-up: *"i don't think y'all need to wait for my call to merge. last time, you merged when even copilot flagged it with issues. so, i reacted."*
 
 **10c. Don't ask the user for manual GitHub-UI dispatch / approval.**

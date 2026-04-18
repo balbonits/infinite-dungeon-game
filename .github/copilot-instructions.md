@@ -36,6 +36,17 @@ This repo configures automatic Copilot review on every push to a PR targeting `m
 
 If a PR is still in draft, it's intentionally work-in-progress. Note incomplete-ness as context, not as bugs.
 
+### Docs-only PRs — one review pass, then done
+
+When a PR touches **only** `docs/`, `*.md`, `.github/`, or other non-code files (no `.cs` / `.tscn` / `.csproj` / `Makefile` / workflow `.yml` changes):
+
+- **Single review pass total.** Don't request follow-up reviews on prose iteration. Claude's workflow (`docs/conventions/ai-workflow.md` §10b-postscript) treats a docs PR's first review as the final review.
+- **Flag only substantive findings:** factual errors, internal contradictions, broken cross-doc references, ambiguity that would block downstream implementation. Skip prose nits, wording preferences, and reorganization suggestions.
+- **No "consider rewording X to Y" comments unless the original is genuinely ambiguous or contradictory.** Wordsmithing wastes review cycles on text that isn't load-bearing.
+- **Cross-doc consistency is the highest-value check.** If a spec change in this PR contradicts another spec in `docs/`, flag the conflict explicitly. That's the single most useful thing reviews can surface for docs.
+
+User direction (2026-04-17): *"can we just have one pass of copilot review for the specs/docs, then we ignore the rest. it doesn't make sense to spend hours on words that's not code."*
+
 ## If Something Doesn't Look Right
 
 We take your findings seriously — Claude verifies each one against the codebase and primary-source docs (Godot docs, NuGet READMEs) before acting, per the work-discipline convention. Rejected claims get threaded replies with the verification evidence so future reviews have that context.
