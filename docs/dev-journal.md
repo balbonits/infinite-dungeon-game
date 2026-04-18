@@ -4,6 +4,16 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-18 — SPEC-MAGIC-COMBAT-FORMULA-01 locked (Phase D partial; COMBAT-03 gated)
+
+Locked Mage spell damage as **INT-only, no density coupling**. The existing `effective_int * 1.2%` formula in stats.md stays canonical; floor density (from SPEC-MAGICULE-DENSITY-01) is explicitly excluded from the spell-damage calculation. Option A chosen over three alternatives that added depth-scaled damage boosts — the concern was class balance: only Mages consciously channel environmental magicules, so a density multiplier on Mage damage would scale them past Warriors and Rangers at depth. Keeping damage INT-only preserves class symmetry at any floor.
+
+The bigger payoff of this spec is a **canonical "what density does and does not modify" table** added to magic.md §Density Formula. Now every Phase E/F/G spec (and any future work that references magicule density) has a single authoritative listing of what density touches: enemy scaling yes, regurgitation rates yes, environmental pressure yes; player combat math no, Innate drain no, spell mana cost no, ability cooldowns no. The guiding principle: *density manifests through the world, not through the player's inherent combat math.* This keeps the player's damage and costs legible at any depth — the world becomes hostile, the player's math doesn't.
+
+Edits: stats.md §INT spell-damage bullet gained an explicit "NOT modified by density" line with SPEC pointer; magic.md §Density Formula gained the canonical affects/doesn't-affect table + a closing paragraph stating the principle. Roadmap Phase D first box checked; dev-tracker gained a new Phase D section. **SPEC-COMBAT-03 stays Blocked** per roadmap — needs COMBAT-01 + COMBAT-02 impl to land first (real equipment to balance against). Next up: Phase E fan-out on per-species specs.
+
+---
+
 ## 2026-04-18 — Phase C complete via reconciliation (SPEC-SKILL-POINTS-RATE-01, SPEC-INNATE-SYNERGIES-01, SPEC-MASTERY-THRESHOLD-FX-01)
 
 All three Phase C specs from `docs/spec-roadmap.md` closed in a single reconciliation pass — no new design decisions, no MC questions, no agent dispatches. The roadmap's Phase C entries flagged TBDs in the ARCHIVED `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md`, but each of those TBDs was already fully resolved in a LOCKED live spec:

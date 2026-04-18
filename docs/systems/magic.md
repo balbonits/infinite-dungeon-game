@@ -299,6 +299,17 @@ else:
 
 **Why this curve:** density grows slowly while floor ≤ 100, so the first hundred floors are a welcoming slope for most players. Past 100, each extra floor multiplies density by `k` — difficulty ramps exponentially as players push past the threshold. The curve has no hard wall; it becomes a gradient of futility that asymptotically prices out every build, no matter how optimized. This is the load-bearing magic number every Phase B/C/D magic spec inherits.
 
+**What density does and does not modify:**
+
+| Affected by density | Not affected by density |
+|---------------------|-------------------------|
+| Enemy stat scaling (HP, damage — per `monster-drops.md` + enemy baselines) | **Innate toggle drain** (SPEC-INNATE-MANA-COST-01 — fixed per-level) |
+| Lethal-gradient environmental pressure at deep floors (narrative) | **Mage spell damage** (SPEC-MAGIC-COMBAT-FORMULA-01 — INT-only per [stats.md §INT](stats.md#int--intelligence-mage-primary)) |
+| Regurgitation / mutation rates (per `dungeon-intelligence.md`) | Spell mana cost (INT-only per stats.md) |
+| Quality shift ceiling on rolls at extreme saturation (per `zone-saturation.md`) | Ability cooldowns (fixed per ability) |
+
+The guiding principle: **density manifests through the world (enemies, environment, dungeon AI), not through the player's inherent combat math.** The player's damage and costs stay legible at any depth; the world becomes hostile instead. This keeps build identity stable and prevents runaway class imbalance at depth (a density-multiplier on Mage damage would scale mages past Warriors/Rangers since only Mages consciously channel environmental magicules).
+
 ---
 
 ### Movement

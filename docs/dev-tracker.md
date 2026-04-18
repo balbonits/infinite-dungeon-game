@@ -271,6 +271,15 @@ Tracked here once spec'd. Full roadmap: [docs/spec-roadmap.md](spec-roadmap.md).
 
 ---
 
+## Spec Roadmap Tickets — Phase D (Combat Tuning Derivatives)
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| SPEC-MAGIC-COMBAT-FORMULA-01 | Mage spell damage: INT-only vs density-coupled | Spec'd | P2 | Locked 2026-04-18. **Decision: Option A — INT only, no density coupling.** Mage spell damage continues to scale only via `effective_int * 1.2%` per [stats.md §INT](systems/stats.md#int--intelligence-mage-primary); floor density from SPEC-MAGICULE-DENSITY-01 is explicitly excluded from the damage formula. Canonical "what density does and does not modify" table added to [magic.md §Density Formula](systems/magic.md#density-formula-spec-magicule-density-01). Stats.md spell-damage bullet updated to explicitly state "Spell damage is NOT modified by magicule density". Rationale: density manifests through the world (enemies, environment, dungeon AI) not player combat math; Mage-only density coupling would have scaled Mages past Warriors/Rangers since only Mages consciously channel environmental magicules. Keeps build identity stable and class balance predictable at depth. Impl: no code changes — current `effective_int * 1.2%` formula is the spec. Defensive note: future work on dungeon-pacts or scroll osmosis that *would* couple to density must explicitly state the scope (density-coupling on player combat math is the exception, not the pattern). |
+| SPEC-COMBAT-03 | Per-archetype weapon tuning (Sword/Axe/Hammer, Shortbow/Longbow/Crossbow) | Blocked | P2 | Deferred per roadmap — waits until COMBAT-01 + COMBAT-02 impl lands. Needs real equipment to balance against. Not picking up in current sprint. |
+
+---
+
 ## Spec Roadmap Tickets — Phase C (Skills/Abilities Completion)
 
 All three Phase C specs resolved by reconciliation on 2026-04-18. The ARCHIVED `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md` had stale TBD sections (Point Systems / Synergy Bonuses / Ability Affinity) that were already fully defined in LOCKED live specs. Reconciliation edits re-pointed the archive at the live specs; no new design work.

@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase C complete via reconciliation — all three Phase C specs were already resolved by LOCKED live specs: point-economy.md, synergy-bonuses.md, ability-affinity.md. Stale TBDs in the ARCHIVED SKILLS_AND_ABILITIES_SYSTEMS.md were re-pointed at the live specs. No new design work.).
+**Last updated:** 2026-04-18 (SPEC-MAGIC-COMBAT-FORMULA-01 locked — Option A, INT-only, no density coupling on Mage spell damage. Added canonical "what density does and does not modify" table to magic.md §Density Formula. SPEC-COMBAT-03 stays gated until COMBAT-01/02 impl lands).
 
-**Next up:** Phase D — SPEC-MAGIC-COMBAT-FORMULA-01 (mage spell damage scaling: INT-only vs INT × density; feeds off the locked Phase B density curve).
+**Next up:** Phase E — per-species instance specs, fan-out starting with SPEC-SPECIES-BAT-01 (template exemplar) + SPEC-SPECIES-SKELETON-01 (zone 1, defines Bone Overlord base). All of Phase E depends on Phase B density but that's now locked.
 
 ---
 
@@ -73,8 +73,8 @@ Zero new design; every downstream spec inherits cleaner numbers. Highest "value 
 
 ## Phase D — Combat tuning derivatives
 
-- [ ] **SPEC-MAGIC-COMBAT-FORMULA-01**
-   Mage spell damage scaling — INT-only or INT × density?
+- [x] **SPEC-MAGIC-COMBAT-FORMULA-01** — locked 2026-04-18
+   **Decision: Option A — INT only, no density coupling.** Mage spell damage continues to scale via `effective_int * 1.2%` per [stats.md §INT](systems/stats.md#int--intelligence-mage-primary). Floor density from SPEC-MAGICULE-DENSITY-01 is explicitly excluded from the damage formula. Rationale: density manifests through the world (enemy stats, environmental pressure, dungeon AI) not through player combat math; coupling Mage damage to density would have scaled Mages past Warriors/Rangers since only Mages consciously channel environmental magicules, creating class imbalance at depth. Added a "what density does and does not modify" table to [magic.md §Density Formula](systems/magic.md#density-formula-spec-magicule-density-01) as canonical cross-reference. Stats.md spell-damage bullet now explicitly states "Spell damage is NOT modified by magicule density" with SPEC pointer.
    *Defines*: mage damage curve. Depends on #4 (density) + COMBAT-01 (locked).
 
 - [ ] **SPEC-COMBAT-03** (flagged in COMBAT-02)

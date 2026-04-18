@@ -172,7 +172,7 @@ Where `class_base_mana` is Mage: 200, Ranger: 100, Warrior: 60 (from [magic.md](
 - **Spell costs reduced** — a spell that normally costs 50 mana costs `50 * mana_cost_multiplier` instead
 - **Scroll osmosis accelerated** — a spell that requires 10 scrolls to learn requires `ceil(10 * scroll_requirement_multiplier)` instead
 
-**Spell damage bonus** applies to all spell and skill damage output (Mage spells benefit most because they deal the most base damage).
+**Spell damage bonus** applies to all spell and skill damage output (Mage spells benefit most because they deal the most base damage). **Spell damage is NOT modified by magicule density** (SPEC-MAGIC-COMBAT-FORMULA-01 — see [magic.md §Density Formula](magic.md#density-formula-spec-magicule-density-01) for the density curve that affects enemy scaling but does *not* touch player spell damage). The scaling lever for mage output is INT investment alone, not floor depth.
 
 **Value table:**
 
