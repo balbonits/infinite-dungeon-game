@@ -115,13 +115,11 @@ Solo dev (you, the AI) gets zero parallelism benefit from multiple in-flight bra
 
 User feedback (2026-04-17): "don't work on multiple PR's, go at it one by one"; "work on parallel files, not parallel branches"; "complete a branch/PR with 100% focus & intent. you'll be losing context on the next run."
 
-**10a-postscript. After a PR or branch is done, run `/compact` or `/clear` to free up context space.**
+**10a-postscript. Do not auto-`/compact` or `/clear` between PRs. The user owns that decision.**
 
-Once a branch is merged and there is no active follow-up to it, immediately invoke `/compact` (preserve summary, drop intermediate detail) or `/clear` (start fresh) before moving to the next branch. Don't carry the previous PR's debugging detours, Copilot back-and-forth, and intermediate tool output into the next ticket — context is finite and gets noisier with every additional history.
+Never invoke `/compact` or `/clear` on your own initiative, and do not prompt the user with "free moment for `/compact`?" between PRs. The user will run them when they want to. Continue straight into the next ticket on the same context.
 
-Use `/compact` when the next branch will benefit from a concise memory of what just shipped (e.g., a triage follow-up, a dependent feature). Use `/clear` when the next branch is independent (different system, no shared code).
-
-User feedback (2026-04-17): "after a PR or branch is done, either run `/compact` or `/clear`, to free up context space."
+Original guidance (2026-04-17, now superseded) treated post-PR compact/clear as a non-negotiable step. That added friction without clear benefit — the user reverted it the same day: "scrap the `/compact`/`/clear` process/order. we'll clear/compact only when we want to."
 
 **10a. Pair every PR push with a Copilot review request and a polling cron — atomic step.**
 
