@@ -38,7 +38,7 @@ Target TTK (class-appropriate melee, level matching floor): **2–3 hits** every
 
 ### 4. Drop-Table Hook
 
-- Signature material: **Echo Shard** (`mat_echo_shard` — placeholder id; see [item-catalog.md § Materials](../../inventory/item-catalog.md)), 8% per kill.
+- Signature material: **Echo Shard** (`material_sig_bat` — matches locked id in `scripts/logic/MonsterDropTable.cs:41`; see [item-catalog.md § Materials](../../inventory/item-catalog.md) for the canonical material entry), 8% per kill.
 - Thematic generic: **Hide** (60% hide, 20% ore, 20% bone on the generic channel — leathery wings).
 - Special drop: None.
 

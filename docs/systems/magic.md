@@ -384,38 +384,36 @@ Haste, Sense, and Fortify all share the same per-level drain-reduction curve. Ar
 **Formula:**
 
 ```
-drain(L) = max(base_drain * 0.96^L, base_drain * 0.25)
+drain(L) = max(base_drain * 0.96^(L - 1), base_drain * 0.25)
 ```
 
 - `L` is the Innate's skill level (starts at 1; leveling is infinite per §Innate Skills).
-- `base_drain` is the level-1 drain rate for that Innate: Haste 13.33, Sense 6.67, Fortify 3.33 mana/sec.
-- Each level multiplies drain by 0.96 (a 4% reduction per level), compounded.
-- Drain floors at 25% of `base_drain` — it gets very cheap at high levels but never zero. The floor is reached at level 35 (0.96^35 ≈ 0.243, so the `max` clamp kicks in).
+- `base_drain` is the **exact level-1 drain rate** for that Innate: Haste 13.33, Sense 6.67, Fortify 3.33 mana/sec. At L=1 the exponent is 0, so `0.96^0 = 1.0` and drain equals `base_drain` exactly.
+- Each level **above 1** multiplies drain by 0.96 (a 4% reduction per level), compounded.
+- Drain floors at 25% of `base_drain` — it gets very cheap at high levels but never zero. The floor is reached at level 35 (0.96^34 ≈ 0.250, where the `max` clamp starts winning).
 - **Drain is NOT modified by floor density.** Innate cost is the brain's processing cost, not an environmental cost. Deep floors make monsters stronger and the air hostile; they do not make your Innates more expensive.
 
-**Plain-language:** Every level you invest makes your Innate a little cheaper. A level-10 Mage's Haste lasts about 50% longer than a level-1 Mage's Haste on the same mana pool. A level-20 Mage's Haste lasts about 2.3× as long. By level 35, drain has bottomed out at 25% of the starting cost — Innates are still metered resources at that point, but they feel almost free. This gives the player a long, legible improvement curve: the Innate you used for 15 seconds on day one eventually gives you nearly a full minute, without ever becoming a spammable toggle that trivializes resource management.
+**Plain-language:** A brand-new Innate at level 1 drains at the full anchor rate — Haste gives exactly 15 seconds of sprint on the Mage's 200-mana pool, Sense exactly 30 seconds, Fortify exactly 60 seconds. Every level you invest makes your Innate a little cheaper. A level-10 Mage's Haste lasts about 44% longer than a level-1 Mage's Haste on the same mana pool. A level-20 Mage's Haste lasts about 2.2× as long. By level 35, drain has bottomed out at 25% of the starting cost — Innates are still metered resources at that point, but they feel almost free. This gives the player a long, legible improvement curve: the Innate you used for 15 seconds on day one eventually gives you a full minute, without ever becoming a spammable toggle that trivializes resource management.
 
 **Drain table (mana/sec at select levels, floored at 25% of base):**
 
 | Level | Multiplier | Haste (base 13.33) | Sense (base 6.67) | Fortify (base 3.33) |
 |-------|------------|--------------------|-------------------|---------------------|
-| 1 | 0.960 | 12.80 | 6.40 | 3.20 |
-| 5 | 0.815 | 10.87 | 5.44 | 2.71 |
-| 10 | 0.664 | 8.85 | 4.43 | 2.21 |
-| 20 | 0.442 | 5.89 | 2.95 | 1.47 |
-| 30 | 0.294 | 3.92 | 1.96 | 0.98 |
+| 1 | 1.000 | 13.33 | 6.67 | 3.33 |
+| 5 | 0.849 | 11.32 | 5.66 | 2.83 |
+| 10 | 0.693 | 9.24 | 4.62 | 2.31 |
+| 20 | 0.461 | 6.15 | 3.08 | 1.54 |
+| 30 | 0.306 | 4.08 | 2.04 | 1.02 |
 | 35+ | 0.250 (floor) | 3.33 | 1.67 | 0.83 |
 | 50 | 0.250 (floor) | 3.33 | 1.67 | 0.83 |
-
-*Note on level 1: the formula applies `0.96^1` at level 1, so even the "base rates" quoted earlier (13.33, 6.67, 3.33) are the pre-level-1 anchor — a freshly-unlocked Innate at level 1 drains slightly less than that anchor (12.80 / 6.40 / 3.20). The round numbers 15s / 30s / 60s uptime at a 200-mana pool are the **design targets** at unlock; actual in-play uptime at level 1 will be ~4% longer than the round number. This asymmetry is intentional — the player's first second with any Innate feels slightly better than the spec promised.*
 
 **Uptime at key levels (Mage, 200 mana pool, no regen, no other active Innates):**
 
 | Innate | Level 1 uptime | Level 10 uptime | Level 20 uptime | Level 35+ uptime |
 |--------|----------------|------------------|-----------------|-------------------|
-| Haste | ~15.6 s | ~22.6 s | ~34.0 s | ~60.0 s |
-| Sense | ~31.3 s | ~45.2 s | ~67.8 s | ~120.0 s |
-| Fortify | ~62.5 s | ~90.5 s | ~135.9 s | ~240.0 s |
+| Haste | **~15.0 s** | ~21.6 s | ~32.5 s | ~60.1 s |
+| Sense | **~30.0 s** | ~43.3 s | ~65.2 s | ~120.0 s |
+| Fortify | **~60.1 s** | ~86.6 s | ~130.7 s | ~240.9 s |
 
 **Innate skill design principles:**
 - There are 4 Innate skills total: Haste, Sense, Fortify, and Armor

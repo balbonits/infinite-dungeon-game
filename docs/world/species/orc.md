@@ -54,7 +54,7 @@ Matches locked entry in `scripts/logic/MonsterDropTable.cs`: `Orc → MonsterTie
 
 ### 6. Size / Scale Rule
 
-- Multiplier: **1.40×** (Large band per template — above Wolf's 1.20× but below boss threshold 1.70×; distinguishes Orc silhouette from any other large ground mob in the current roster).
+- Multiplier: **1.40×** (Large band per template — above Wolf's 1.25× but below boss threshold 1.70×; distinguishes Orc silhouette from any other large ground mob in the current roster).
 - Hitbox radius: **17 px** (round(12 × 1.40) = 17).
 - Z-offset: **0 px** (ground — not airborne).
 

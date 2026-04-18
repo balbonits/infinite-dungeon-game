@@ -137,10 +137,12 @@ Scale multiplier where player = 1.0. Drives both sprite scale and hitbox. Canoni
 
 | Band | Multiplier | Typical species |
 |---|---|---|
-| Small | 0.6–0.8× | Bat, Spider, small swarm units |
-| Standard | 0.9–1.1× | Skeleton, Goblin |
-| Large | 1.2–1.6× | Orc, Wolf (combat size), tanks |
+| Small | 0.6–0.8× | Bat (0.70×), Spider (0.75×), Goblin (0.80×), small swarm units |
+| Standard | 0.9–1.1× | Skeleton (1.00×), Dark Mage (1.00×) |
+| Large | 1.2–1.6× | Wolf (1.25×), Orc (1.40×), tanks |
 | Boss | 1.7–2.5× | Floor bosses, unique elites |
+
+*(The per-species examples above are the authoritative locked values from each species spec's §6. The band ranges are guidance for new species; individual specs may pick any value within their band and should cite the per-species rationale.)*
 
 Spec must state:
 - Numeric multiplier (one value, two decimals).

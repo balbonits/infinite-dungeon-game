@@ -2,7 +2,7 @@
 
 ## Summary
 
-Zone 6 capstone boss (floor 60). Paired species: [Bat](../species/bat.md) (swarm-fused variant). A bat-swarm that has fused at the edges over decades into a single many-winged, many-mouthed creature — no longer individuals, yet still a flight. Unique in the starter roster: **three-phase fight** (the only 3-phase boss in zones 1–8) with a ground-collapse transition on Phase 3.
+Zone 6 capstone boss (floor 60). Paired species: [Bat](../species/bat.md) (swarm-fused variant). A bat-swarm that has fused at the edges over decades into a single many-winged, many-mouthed creature — no longer individuals, yet still a flight. **Three-phase fight** (one of three 3-phase bosses in zones 1–8, alongside [Iron-Gut Goblin King](iron-gut-goblin-king.md) and [Volcano Tyrant](volcano-tyrant.md)) with a distinctive ground-collapse transition on Phase 3 — no other boss in the roster drops from airborne to grounded mid-fight.
 
 ## Current State
 
@@ -36,7 +36,7 @@ Target TTK: **100–130 s**.
 
 ### 3. AI Pattern
 
-- **Primary (Phase 1):** `ranged-kite` inverted — flies above the player and dives periodically. Player must close to hit; the boss evades by flying higher rather than retreating laterally.
+- **Primary (Phase 1):** `ranged-kite` inverted — flies above the player and dives periodically. Player must close to hit; the boss evades by flying higher rather than retreating laterally. **First 3-phase boss by zone order** (three bosses total are 3-phase; see Summary).
 - **Telegraph:** 450 ms dive wind-up with a visible tilt.
 - **Phase 2 trigger: 50% HP.** Starts detaching smaller bat-fragments (1-HP adds) that swarm the player; aura shifts pale-grey → screeching-yellow. `FlashFx.Flash(Color.White, 120ms)`.
 - **Phase 3 trigger: 25% HP.** Boss collapses into a ground-level thrashing mass — switches AI pattern to `melee-chase` with fast sweeping attacks; aura shifts to raw white-hot. **Art requirement:** a ground-collapse frame must be delivered at the Phase 3 transition (z-offset drops from +40 to 0).

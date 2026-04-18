@@ -4,7 +4,7 @@
 
 Voice conventions for the three town NPCs — Blacksmith, Guild Maid, Village Chief — so dialogue writers (human or AI) can match each NPC's speech pattern without re-inventing it per line. SPEC-NPC-DIALOGUE-VOICES-01 (Phase G).
 
-Inspired by the Maoyuu homage (title-only NPCs, distinct job-role voices) from [project_npc_naming.md](../../.claude/agent-memory/) and the PO's 2026-04-18 direction that Blacksmith should read as a "pioneer smith learning," Guild Maid as "crisp service," and Village Chief as "wise elder."
+Inspired by the Maoyuu homage convention locked per PO direction: **all NPCs are title-only in-game** (Blacksmith, Guild Maid, Village Chief — never personal names), and the player is always addressed as **`{Class} Guildmaster`** (never by personal name either). This naming rule is the foundation for all three voice profiles below. The PO further specified (2026-04-18) that Blacksmith should read as a "pioneer smith learning," Guild Maid as "crisp service," and Village Chief as "wise elder."
 
 ## Current State
 

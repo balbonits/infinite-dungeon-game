@@ -10,7 +10,19 @@ Paired with [SPEC-SPECIES-01](../world/species-template.md). Neither locks alone
 
 Seven species ship today (`bat`, `dark_mage`, `goblin`, `orc`, `skeleton`, `spider`, `wolf` under `assets/characters/enemies/`) — all authored pre-template, most with the wrong perspective per ART-SPEC-01 §Current State. ART-14 (Bat / Spider / Wolf re-art) is the first batch to consume this pipeline; future species in P2 + the existing four untouched (goblin, orc, skeleton, dark_mage) retrofit into it opportunistically.
 
-No current species has a filled `SPEC-SPECIES-XX` design spec. ART-14 cannot start until the design half for at least Bat lands.
+**Design-half status:** all seven species now have filled, locked `SPEC-SPECIES-*` design specs under `docs/world/species/`:
+
+| Species | Design spec | Paired art ticket |
+|---------|-------------|-------------------|
+| Bat | [bat.md](../world/species/bat.md) | ART-14 |
+| Skeleton | [skeleton.md](../world/species/skeleton.md) | ART-SKELETON (placeholder) |
+| Wolf | [wolf.md](../world/species/wolf.md) | ART-14 |
+| Spider | [spider.md](../world/species/spider.md) | ART-14 |
+| Dark Mage | [darkmage.md](../world/species/darkmage.md) | ART-DARKMAGE (placeholder) |
+| Orc | [orc.md](../world/species/orc.md) | ART-ORC (placeholder) |
+| Goblin | [goblin.md](../world/species/goblin.md) | ART-GOBLIN (placeholder) |
+
+ART-14 consumes the Bat/Spider/Wolf design specs directly — no longer blocked on design-half work. Future non-ART-14 redraws use the other four placeholders as they're authored.
 
 ## Design
 
@@ -84,21 +96,25 @@ Tension: ART-SPEC-01 §1c clamps every baked pixel to the dungeon palette (`#243
 
 ### 6. Scale Multiplier + Z-Offset Mapping (Godot-side numbers)
 
-Locked `scale` property values per SPEC-SPECIES-01 §6 band, plus z-offset per body plan. Implementers set these on the species root `Node2D`:
+Default/example `scale` baselines per SPEC-SPECIES-01 §6 band. **The authoritative multiplier for each species is the per-species value locked in that species spec's §6, not the table below.** Use this table as a starting point for new species; existing species override per their locked specs.
 
-| Band | `scale` property | Typical species | Hitbox radius (px) |
+| Band | Default `scale` | Per-species locked values | Hitbox radius (px) |
 |---|---|---|---|
-| Small | **0.70** | Bat, Spider, small swarms | 8 |
-| Standard | **1.00** | Skeleton, Goblin, Dark Mage | 12 |
-| Large | **1.30** | Orc, Wolf (combat size) | 16 |
-| Boss | **2.00** | Floor bosses, unique elites | 24 |
+| Small | **0.70** default | Bat 0.70× / Spider 0.75× / Goblin 0.80× | 8 |
+| Standard | **1.00** default | Skeleton 1.00× / Dark Mage 1.00× | 12 |
+| Large | **1.30** default | Wolf 1.25× / Orc 1.40× | 16 |
+| Boss | **2.00** default | Floor bosses (see per-boss specs under `docs/world/bosses/`); 1.8×–2.2× in current roster | 24 |
 
-**Z-offset (airborne only).** Per SPEC-SPECIES-01 §6 and [iso-rendering.md](../systems/iso-rendering.md):
+Implementers set the final value on the species root `Node2D` using the per-species locked number. The band defaults above are authoring guidance only.
+
+**Z-offset (airborne only).** Per SPEC-SPECIES-01 §6 and [iso-rendering.md](../systems/iso-rendering.md). This doc uses Godot screen-space `Sprite2D.position.y` / `offset.y` sign convention: **negative values lift the visual upward, positive values push it downward**.
 
 - Ground species (`.quad`, `.arach`, `.biped-mon`): z-offset = **0 px**.
-- Airborne species (`.wing`): z-offset = **+28 px** applied to the sprite's `position.y` (not to the iso anchor — the iso anchor math stays per ART-SPEC-01 §1a; the +28 is a visual hover lift applied on top).
+- Airborne species (`.wing`): z-offset = **-28 px** applied to the sprite's `position.y` (matches `SpeciesDatabase.SpriteOffsetY = -28f` for Bat in the current code; not applied to the iso anchor — the iso anchor math stays per ART-SPEC-01 §1a; the `-28` is a visual hover lift on top).
 
-A child shadow decal `Sprite2D` at the unmodified anchor point (0 offset) preserves the correct cell footprint for iso Y-sort and collision — the hovering body visually floats above its shadow, but the entity still occupies and sorts from its ground cell.
+A child shadow decal `Sprite2D` at the unmodified anchor point (0 offset) preserves the correct cell footprint for iso Y-sort and collision — the hovering body visually floats above its shadow because the body sprite is lifted by a negative Y offset, but the entity still occupies and sorts from its ground cell.
+
+**Sign-convention guardrail:** if a future refactor changes this convention (e.g., to store z-offset as a positive "height above ground" and invert at render time), update this note AND `SpeciesDatabase.SpriteOffsetY` at the same time so spec and code stay aligned.
 
 ### 7. Handoff Checklist (per-species redraw ticket)
 
