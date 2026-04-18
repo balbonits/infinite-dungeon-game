@@ -269,7 +269,10 @@ public partial class DeathScreen : Control
                 // Fate, then returns to main menu. Save so the penalty is preserved on next
                 // load, then reload to the splash screen. (PauseMenu's separate "Quit Game"
                 // button exits the application — that path is NOT used here.)
-                bool ok = Autoloads.SaveManager.Instance?.Save() ?? true;
+                // ?? false — a missing SaveManager autoload also counts as failure;
+                // we never want to silently bypass the death-penalty save (Copilot
+                // R2 finding on PR #16).
+                bool ok = Autoloads.SaveManager.Instance?.Save() ?? false;
                 GetTree().Paused = false;
                 if (ok)
                 {

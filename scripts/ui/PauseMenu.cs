@@ -891,7 +891,10 @@ public partial class PauseMenu : GameWindow
         AddSystemButton("Back to Main Menu", () =>
         {
             Close();
-            bool ok = SaveManager.Instance?.Save() ?? true;
+            // ?? false — a missing SaveManager autoload also counts as failure;
+            // we never want to silently bypass the toast and lose progress (Copilot
+            // R2 finding on PR #16).
+            bool ok = SaveManager.Instance?.Save() ?? false;
             if (ok)
             {
                 GetTree().ReloadCurrentScene();
