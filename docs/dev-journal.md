@@ -111,6 +111,39 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — Phase J closure: all future/optional specs locked as deferred
+
+Closed the roadmap. Phase J is the "future / deferrable" bucket, and the right Phase J completion is locking every item's deferral status with a gate — not force-speccing things that haven't earned author attention yet. Six items:
+
+- **SPEC-ART-FX-01** — Deferred. Gate: ISO-01 impl lands + iso-rendering pipeline stable. Per PO 2026-04-17 direction. Reopens when the iso era's FX pipeline shape is clear.
+- **SPEC-EXPORT-PLATFORMS-01** — Deferred. Gate: playable MVP + PO signals interest in a store page. Pre-MVP platform picks are wasted effort.
+- **SPEC-ANALYTICS-BACKEND-01** — Deferred. Gate: playable MVP + external playtesters. No telemetry patterns without a player base.
+- **SPEC-I18N-01** — Deferred. Gate: first-platform decision + non-English market priority. English-first today; PS2P covers Basic Latin only; fallback-font registration already in spec.
+- **SPEC-AUDIO-01** — Deferred. Gate: explicit PO go-ahead. PO directly skipped audio to manage spec-phase scope. No ETA.
+- **SPEC-MULTIPLAYER-01** — **Confirmed out of scope** (not deferred — design decision). Game is single-player by design.
+
+No new spec files were needed for Phase J — deferrals don't need their own docs; the deferral IS the decision. Roadmap + tracker capture the gates.
+
+**Roadmap milestone: all 10 phases (A-J) locked in a single session.** Phase breakdown:
+- **Phase A** (reconciliation): 3 specs — bracket drift, affix tier ladder, crafting quality ladder
+- **Phase B** (magic foundation): 3 specs — density curve, Innate mana drain, Innate stacking
+- **Phase C** (skills/abilities reconciliation): 3 specs — SP/AP rates, Innate synergies, affinity (all resolved by pointing at locked live specs)
+- **Phase D** (combat tuning): 1 spec locked (magic combat INT-only) + 1 blocked until impl (COMBAT-03)
+- **Phase E** (per-species): 7 specs — Bat, Skeleton, Wolf, Spider, Dark Mage, Orc, Goblin
+- **Phase F** (per-boss): 8 specs — zones 1-8 capstone bosses with phase-shift mechanics and first-kill drops
+- **Phase G** (NPC dialogue + menus): 4 specs — voices, Village Chief dialogue, Blacksmith 4-tab, Guild Maid 2-tab
+- **Phase H** (UI canonical): 5 specs — font, scaling, HUD, shake, hitstop
+- **Phase I** (movement + input): 3 specs — instant movement, gamepad, rebinding UI
+- **Phase J** (deferrable): 6 deferral decisions, no new spec files
+
+**Total spec work:** ~45 individual specs landed across ~20 commits in one session. Every spec has acceptance criteria, implementation notes (where applicable), and an Open Questions section (most "None — locked"). 21 stale git branches pruned mid-session; auto-delete-on-merge enabled on the repo.
+
+**What's unblocked going forward:** every implementation ticket in `dev-tracker.md` that was waiting on a spec input. Priority order from the tracker: NPC-ROSTER-REWIRE-01 (P1, Phase G unblocked it), LOOT-01 impl, COMBAT-01 impl, AUDIT-03 through AUDIT-17 triage, the ART-14 redraw batch. Design work may still come from playtesting and mid-impl discoveries, but the spec roadmap as originally authored is exhausted.
+
+Next session: consult the roadmap's "Out of scope" section to see what tracks elsewhere, then pick an impl ticket from dev-tracker.
+
+---
+
 ## 2026-04-18 — Phase I complete: movement + gamepad + rebinding UI locked
 
 Three specs landed together. Movement is the lead — confirmed current instant-movement behavior as the spec rather than changing it; gamepad and rebinding inherit the movement contract.

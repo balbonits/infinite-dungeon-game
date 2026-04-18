@@ -271,6 +271,21 @@ Tracked here once spec'd. Full roadmap: [docs/spec-roadmap.md](spec-roadmap.md).
 
 ---
 
+## Spec Roadmap Tickets — Phase J (Future / Deferrable)
+
+Phase J is deliberately deferrable. Every item's decision on 2026-04-18 is "Deferred with gate" (not "not done yet"). Deferrals are themselves a lock — work does not reopen until the gate fires.
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| SPEC-ART-FX-01 | Bucket K effects redraw (sparks / hits / elemental FX) | Deferred | P3 | Gate: ISO-01 impl lands + iso-rendering pipeline stable. Deferred per PO 2026-04-17 direction. Reopens when `docs/systems/iso-rendering.md` is implemented and `asset-inventory.md` Bucket K has a current-state snapshot post-iso. No new spec file — deferral is the lock; reopening will author a fresh SPEC-ART-FX-01 against whatever the iso-era FX pipeline looks like. |
+| SPEC-EXPORT-PLATFORMS-01 | Pick first distribution platform (itch.io / Steam / direct) | Deferred | P3 | Gate: playable MVP + PO signals interest in a store page. Rationale: different platforms need different build flags, icons, and marketing pages; picking pre-MVP is wasted effort. Reopens when game has enough content for closed-group playtest. |
+| SPEC-ANALYTICS-BACKEND-01 | Pick telemetry stack (PostHog / GameAnalytics / homegrown / none) | Deferred | P3 | Gate: playable MVP + external playtesters. Telemetry without a player base has no patterns to surface. Reopens with SPEC-EXPORT-PLATFORMS-01. |
+| SPEC-I18N-01 | Internationalization strategy | Deferred | P3 | Gate: first-platform decision + demonstrated localization market (non-English audience or publisher ask). Current state: English-first development; PS2P covers Basic Latin only per [SPEC-UI-FONT-01](ui/font.md); fallback-font registration already specced so non-Latin glyphs don't tofu when they're added. Reopens when a non-English market becomes a priority. |
+| SPEC-AUDIO-01 | Music + SFX system | Deferred | P3 | Gate: explicit PO go-ahead. **PO has directly skipped audio** to manage spec-phase scope. On the long horizon post-MVP; no ETA. Revisit when PO signals. |
+| SPEC-MULTIPLAYER-01 | Multiplayer support | Confirmed out of scope | P3 | Not a deferral — this is a design decision. The game is designed as single-player (dungeon narrative framing, save-slot-per-class, death-on-death mechanics all assume single-player). A multiplayer retrofit would require architecture-level changes. If multiplayer is ever revived as an option, this row updates to Deferred with a gate. |
+
+---
+
 ## Spec Roadmap Tickets — Phase I (Movement & Input)
 
 Phase I locks player movement feel + gamepad support + rebinding UI. Movement is the lead spec (confirms current instant-movement behavior); the other two build on it.

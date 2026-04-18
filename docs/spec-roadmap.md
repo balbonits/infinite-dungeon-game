@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase I complete — all 3 movement & input specs locked: instant-movement confirmed (no easing, matches current code), gamepad bindings for Xbox/PlayStation with twin-source movement + D-pad skill slots + bumper-triggers for modes, rebinding UI in Pause→Settings→Controls with ConfigFile persistence).
+**Last updated:** 2026-04-18 (**Roadmap complete, Phases A-J all locked**. Phase J closure = explicit deferral of all 6 future/optional items with gates documented for each. No new spec files needed for Phase J since deferrals don't need their own docs).
 
-**Next up:** Phase J — deferrable/future work. Everything here is optional and unblocked by nothing currently active. Options: art FX redraw (deferred per PO until iso pivot complete), export platform decision, analytics stack, i18n, audio (explicitly skipped per PO but on horizon), multiplayer confirmation.
+**Next up:** **Roadmap is exhausted** for the spec-authoring phase. Going forward: (1) implementation tickets (every ticket currently marked `To Do` or `Blocked` in dev-tracker — Audit items, NPC-ROSTER-REWIRE-01, LOOT-01 impl, COMBAT-01 impl, etc.); (2) any new specs that emerge from playtesting or design discoveries; (3) gated re-opens (Phase J items, once their gates fire). Re-read the roadmap if a new session unsure where to start; every `[ ]` remaining means it's genuinely undetermined.
 
 ---
 
@@ -170,12 +170,16 @@ Each defines: AI behavior tree, phase-shift trigger thresholds, FlashFx hooks, f
 
 ## Phase J — Future / deferrable
 
-- [ ] **SPEC-ART-FX-01** — Bucket K effects redraw (deferred per PO; unblock when iso pivot complete).
-- [ ] **SPEC-EXPORT-PLATFORMS-01** — pick first distribution platform (itch.io / Steam / direct).
-- [ ] **SPEC-ANALYTICS-BACKEND-01** — pick telemetry stack.
-- [ ] **SPEC-I18N-01** — internationalization strategy.
-- [ ] **SPEC-AUDIO-01** — explicitly skipped per PO, but on the long horizon.
-- [ ] **SPEC-MULTIPLAYER-01** — does not exist; likely intentional, confirm.
+Every item in Phase J is **deliberately deferred** as of 2026-04-18 — the deferral itself is the decision. These specs are not being written now because the conditions that would make them load-bearing have not yet materialized. Each line below records the deferral status + the gate that would reopen it.
+
+- [x] **SPEC-ART-FX-01** — **Deferred** (2026-04-18). Bucket K effects redraw (sparks, hits, dust, elemental FX). Gate: ISO-01 implementation ticket lands (iso rendering pivot complete). Deferred per PO 2026-04-17 direction that effects work waits until the iso-rendering pipeline is stable. Reopens once `docs/systems/iso-rendering.md` is implemented and assets-inventory Bucket K has a current-state snapshot.
+- [x] **SPEC-EXPORT-PLATFORMS-01** — **Deferred** (2026-04-18). Pick first distribution platform (itch.io / Steam / direct). Gate: playable MVP build exists. Locking a platform before there's something to ship is unnecessary; different platforms want different build flags, icons, and marketing pages. Reopens when the game has enough content to run a closed-group playtest and the PO wants to start building a page.
+- [x] **SPEC-ANALYTICS-BACKEND-01** — **Deferred** (2026-04-18). Pick telemetry stack (PostHog / GameAnalytics / homegrown / none). Gate: playable MVP + external playtesters. Telemetry matters when there's a player base to learn from; while the game is in pre-alpha with only the PO and AI running it, there are no patterns to track. Reopens with SPEC-EXPORT-PLATFORMS-01.
+- [x] **SPEC-I18N-01** — **Deferred** (2026-04-18). Internationalization strategy. Gate: first-platform decision + demonstrated localization market. English-first development is intentional; the UI font (Press Start 2P) covers Basic Latin only per [SPEC-UI-FONT-01](ui/font.md). Fallback-font registration already specced. Reopens when a non-English market (Japanese, Chinese) becomes a priority — likely post-release or via a publisher.
+- [x] **SPEC-AUDIO-01** — **Deferred** (2026-04-18). Music + sound-effects system. Gate: explicit PO go-ahead. **PO has directly skipped audio work** to keep scope manageable during the spec phase. On the long horizon (post-MVP); no ETA. Deferral will be revisited when the PO signals "now is the time."
+- [x] **SPEC-MULTIPLAYER-01** — **Confirmed out of scope** (2026-04-18). The game is designed as single-player. The dungeon's narrative framing ("the dungeon wants adventurers to grow strong before dying" per [magic.md](systems/magic.md)) and the save-slot-per-class persistence model ([save.md](systems/save.md)) are both single-player-oriented. A multiplayer retrofit would require fundamental architecture changes (networking, state sync, death-on-death arbitration). Not a deferral — this spec's decision is "does not exist by design, confirmed intentional."
+
+**Phase J complete** — all items have locked deferral status. No new spec files needed (deferrals don't need their own docs). Reopen gates are tracked above; revisit Phase J when any gate fires.
 
 ---
 
