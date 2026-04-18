@@ -4,6 +4,24 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-18 — SPEC-AFFIX-TIER-LADDER-01 locked (AUDIT-10 spec'd)
+
+Locked T5 (min item level 75) and T6 (min item level 100) affix ladders in [items.md §T5 + T6 Affix Ladder](inventory/items.md#t5--t6-affix-ladder-spec-affix-tier-ladder-01). Option B — extended 8 build-defining families (keen, vicious, sturdy, warding, striking, ruin, bear, swiftness) to T5/T6; niche families (energizing, learning, flame_resist, frozen, shocking, swift, evasion, fiery, fortified) stay capped at T3/T4 to keep Elite/Legendary tiers focused on pillars rather than breadth. Flat values scale ≈1.5× per tier above T4 (damage 22→35→50; max_hp 60→90→130); percent values target the center of each power band (35% at T5, 50% at T6) and cap at 50% to preserve additive-stacking headroom across the 10-ring build space. Gold ≈2.5× per tier (T4 ~860 → T5 ~2200 → T6 ~4500); materials linear (+13, +20) so the gate is gold-dominant. 16 new registrations total, raising AffixDatabase from 28 → 44. Impl ticket AUDIT-10 can copy rows directly into two new `// --- Tier 5 ---` / `// --- Tier 6 ---` blocks — no code logic changes (`GetMaxTier` already returns 5/6 at correct thresholds). Phase A of `docs/spec-roadmap.md` now complete — all three reconciliation specs locked on the same day, unblocking Phase B.
+
+---
+
+## 2026-04-18 — SPEC-CRAFTING-QUALITY-LADDER-01 landed (AUDIT-11 spec'd)
+
+Locked the recycle quality-bonus ladder for the three deep-floor tiers. Option B (geometric, doubles per tier): Normal 0, Superior ×0.25, Elite ×0.5, Masterwork ×1.0, Mythic ×2.0, Transcendent ×4.0 applied to `baseGold = 5 + item.ItemLevel * 2`. Rationale: matches the geometric shape of the existing craft-cost multiplier (1.0/1.2/1.5/2.0/3.0/5.0) and the "infinite descent, infinite incentive" design intent — deep items cost more to build and return more when broken down. Canonical formula table now lives in `docs/systems/depth-gear-tiers.md` §Interaction with Other Systems → Recycling (previously just a vague "proportionally more materials" line). `docs/flows/blacksmith.md` Recycle Flow preview also updated to match, with a pointer back to depth-gear-tiers.md as canonical. Impl ticket can copy the three new switch arms directly into `Crafting.RecycleItem` without further design. Out-of-scope follow-up flagged: current recycle returns gold only, not materials — if that's ever wanted, it needs its own spec. Phase A Reconciliation now 2 of 3 specs locked (SPEC-AFFIX-TIER-LADDER-01 still open).
+
+---
+
+## 2026-04-18 — SPEC-RECONCILE-BRACKETS-01 landed (AUDIT-09 resolved)
+
+`item-generation.md` §Quality Distribution superseded by `depth-gear-tiers.md` §Drop Rates. Stale 5-bracket / 3-quality table deleted, replaced with a single-line pointer. The 5-bracket floor-tier system stays canonical for catalog tier + material tier; the 7-bracket system is canonical for BaseQuality rolls. Code already matched the 7-bracket canon — docs-only edit. First Phase A reconciliation spec in `docs/spec-roadmap.md` checked off.
+
+---
+
 ## 2026-04-17 — ART-SPEC-01 rewritten for true-iso / Diablo 1 reference
 
 Rewrote [docs/assets/prompt-templates.md](assets/prompt-templates.md) from scratch. **v1 (commit `375f42e`) superseded** — it was authored under the mistaken assumption that the engine renders in "low top-down" and that PixelLab's `view: low top-down` was a close-enough match. The live engine is true 2:1 isometric per SPEC-ISO-01, and v1's framing is the root cause of the empirical `+Vector2(0,40)` spawn offset in `Dungeon.cs` that ISO-01d removes.

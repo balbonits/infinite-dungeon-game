@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (after Wave 2 art-spec completion, commit `0eab934`).
+**Last updated:** 2026-04-18 (Phase A complete — all three reconciliation specs locked: SPEC-RECONCILE-BRACKETS-01, SPEC-AFFIX-TIER-LADDER-01, SPEC-CRAFTING-QUALITY-LADDER-01).
 
-**Next up:** Phase A reconciliation specs (3 mechanical edits, no new design, but unblock everything downstream).
+**Next up:** Phase B — Magic system foundation, starting with SPEC-MAGICULE-DENSITY-01 (the load-bearing magic number that every Phase B/C/D spec inherits).
 
 ---
 
@@ -20,17 +20,19 @@
 
 Zero new design; every downstream spec inherits cleaner numbers. Highest "value per token" specs in the whole roadmap.
 
-- [ ] **SPEC-RECONCILE-BRACKETS-01** (AUDIT-09)
+- [x] **SPEC-RECONCILE-BRACKETS-01** (AUDIT-09)
    `item-generation.md` says 5 brackets, `depth-gear-tiers.md` says 7, code matches 7. Pick canonical, edit the loser.
    *Defines for next*: which bracket count appears in every loot/affix/quality discussion.
+   *Resolution*: Option A — deleted stale §Quality Distribution subsection in `item-generation.md`; replaced with pointer to `depth-gear-tiers.md` §Drop Rates. The 5-bracket system remains canonical for catalog tier and material tier only; 7-bracket system is canonical for quality rolls.
 
-- [ ] **SPEC-AFFIX-TIER-LADDER-01** (AUDIT-10)
-   `AffixDatabase.GetMaxTier` claims tiers 5/6 exist; registry only has 1-4. Either add 5/6 affixes or pin GetMaxTier at 4.
+- [x] **SPEC-AFFIX-TIER-LADDER-01** (AUDIT-10) — locked 2026-04-18
+   `AffixDatabase.GetMaxTier` claims tiers 5/6 exist; registry only has 1-4. **Decision: Option B — add T5/T6 affixes** covering 8 build-defining families (keen, vicious, sturdy, warding, striking, ruin, bear, swiftness). Full value + cost tables in [items.md §T5 + T6 Affix Ladder](inventory/items.md#t5--t6-affix-ladder-spec-affix-tier-ladder-01). Impl ticket AUDIT-10 can register without further design input.
    *Defines*: affix space size. Depends on #1.
 
-- [ ] **SPEC-CRAFTING-QUALITY-LADDER-01** (AUDIT-11)
+- [x] **SPEC-CRAFTING-QUALITY-LADDER-01** (AUDIT-11)
    `Crafting.RecycleItem` quality-bonus switch missing Masterwork/Mythic/Transcendent.
    *Defines*: recycle gold values designers balance against. Depends on #1 + #2.
+   *Resolution*: Option B — geometric ladder (doubles per tier). Normal 0, Superior ×0.25, Elite ×0.5, Masterwork ×1.0, Mythic ×2.0, Transcendent ×4.0 applied to `baseGold = 5 + item.ItemLevel * 2`. Rationale: matches the geometric shape of the craft-cost multiplier (1.0/1.2/1.5/2.0/3.0/5.0) and the "infinite descent, infinite incentive" intent. Canonical formula now lives in `docs/systems/depth-gear-tiers.md` §Interaction with Other Systems → Recycling; `docs/flows/blacksmith.md` Recycle Flow preview updated to match. Impl ticket can copy the switch arms directly without further design. Follow-up (separate spec if raised): whether recycle should also yield materials — currently `RecycleItem` returns gold only.
 
 ---
 

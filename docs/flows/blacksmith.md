@@ -32,8 +32,9 @@
 1. Select equipment item
 2. Preview gold return: Crafting.RecycleItem(item)
    - Base: 5 + itemLevel * 2
-   - Quality bonus: Superior +25%, Elite +50%
+   - Quality bonus: Normal 0, Superior ×0.25, Elite ×0.5, Masterwork ×1.0, Mythic ×2.0, Transcendent ×4.0 (applied to base)
    - Per-affix bonus: +10 gold each
+   - Canonical ladder lives in depth-gear-tiers.md §Interaction with Other Systems → Recycling
 3. Press confirm
 4. Item destroyed, gold awarded
 ```

@@ -36,15 +36,7 @@ Equipment is split 50/50 between weapons and armor. All equipment drops without 
 
 #### Quality Distribution by Floor Range
 
-Floor brackets are unified across the project: **1–10 / 11–25 / 26–50 / 51–100 / 101+**. These are the same brackets used by [item-catalog.md](../inventory/item-catalog.md) (tier assignment) and [monster-drops.md](monster-drops.md) (material tier). A single shared bracketing so all three specs agree — floor 100 resolves to Tier 4, floor 101 is the first Tier 5 floor.
-
-| Floor Range | Tier | Normal | Superior | Elite |
-|-------------|------|--------|----------|-------|
-| 1–10 | 1 | 100% | 0% | 0% |
-| 11–25 | 2 | 80% | 20% | 0% |
-| 26–50 | 3 | 60% | 35% | 5% |
-| 51–100 | 4 | 30% | 50% | 20% |
-| 101+ | 5 | 15% | 50% | 35% |
+Quality distribution by floor depth is specified in [depth-gear-tiers.md](./depth-gear-tiers.md) §Drop Rates (the canonical 6-tier BaseQuality ladder Normal..Transcendent over 7 floor brackets). The 5-bracket system defined in §Floor Brackets = Tiers above governs catalog tier and material tier only — not quality rolls.
 
 #### Quality Stat Bonuses
 

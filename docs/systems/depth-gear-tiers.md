@@ -86,7 +86,24 @@ This multiplier applies to both material and gold costs for adding affixes. Craf
 
 - **Zone Saturation (zone-saturation.md):** Quality shift from saturation can push effective floor for quality rolls, making Masterwork drops possible slightly earlier than floor 50 at high saturation.
 - **Item Color (color-system.md):** The color gradient still applies independently of tier. A Transcendent item 20 levels below you still shows as blue/grey.
-- **Recycling:** Higher-tier items yield proportionally more materials when recycled at the Blacksmith (`tier_multiplier * base_yield`).
+- **Recycling:** Higher-tier items yield proportionally more gold when recycled at the Blacksmith. Quality-bonus ladder (applied on top of `baseGold = 5 + item.ItemLevel * 2` from `Crafting.RecycleItem`, plus the existing `+10 gold × affix count` bonus):
+
+  | Tier | Quality bonus | Formula |
+  |------|---------------|---------|
+  | Normal | 0 | — |
+  | Superior | ×0.25 | `baseGold / 4` |
+  | Elite | ×0.5 | `baseGold / 2` |
+  | **Masterwork** | **×1.0** | **`baseGold`** |
+  | **Mythic** | **×2.0** | **`baseGold * 2`** |
+  | **Transcendent** | **×4.0** | **`baseGold * 4`** |
+
+  Curve is geometric (doubles per tier), matching the shape of the Crafting affix-cost multiplier above (1.0 / 1.2 / 1.5 / 2.0 / 3.0 / 5.0) — deep-floor items are more expensive to build AND more valuable to break down.
+
+  Worked example at item level 50 (baseGold = 5 + 50·2 = 105), no affixes: Normal recycles for 105g, Superior 131g, Elite 157g, Masterwork 210g, Mythic 315g, Transcendent 525g.
+
+  Full recycle return: `baseGold + qualityBonus + (item.Affixes.Count * 10)`.
+
+  *Follow-up note (out of scope for this spec):* the phrasing elsewhere in earlier revisions of this doc mentioned "materials" from recycling; current `Crafting.RecycleItem` returns **gold only**. Whether recycle should also return materials (and on what curve) is a separate open design question — raise a new spec if/when that direction is pursued.
 - **Dungeon Pacts (dungeon-pacts.md):** The "Fortune" pact line could shift quality rolls upward, stacking with floor depth.
 
 ### Design Rationale
@@ -102,7 +119,7 @@ This multiplier applies to both material and gold costs for adding affixes. Craf
 - [ ] Masterwork allows 4+4 affixes, Mythic 5+5, Transcendent 6+6
 - [ ] Drop distribution tables are extended to include new tiers at appropriate floors
 - [ ] Crafting costs scale with tier multiplier (2x, 3x, 5x)
-- [ ] Recycling yields scale with tier
+- [ ] Recycling gold scales with tier per the 6-tier ladder (Normal 0, Superior ×0.25, Elite ×0.5, Masterwork ×1.0, Mythic ×2.0, Transcendent ×4.0 applied to `baseGold`)
 - [ ] Visual indicators distinguish each tier in inventory UI
 - [ ] Quality shift from saturation can influence tier roll outcomes
 
