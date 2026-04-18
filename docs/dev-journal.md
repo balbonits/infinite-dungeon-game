@@ -39,6 +39,19 @@ Batch 2 queued: ART-SPEC-NPC-01 pair + ART-SPEC-04 (map objects) + ART-SPEC-05 (
 
 ---
 
+## 2026-04-18 — Wave 2 Batch 2 lands (overnight autonomous run)
+
+**Four specs locked while PO stepped away:**
+
+- **SPEC-NPC-ART-01** ([docs/world/npc-art.md](world/npc-art.md)) — Three NPCs locked: Blacksmith (forge+craft+shop), Guild Maid (bank+teleport), Village Chief (quests, fresh design — sage-green robes, silver chain-of-office, gnarled staff). Scale 0.95×, 4-direction + idle only (NPCs static), PCs exempt from player-blue accent to maintain NPC-vs-PC silhouette distinction. 5 hard constraints on differentiation.
+- **ART-SPEC-NPC-01** ([docs/assets/npc-pipeline.md](assets/npc-pipeline.md)) — Art half of the NPC tag-team. Three copy-paste prompts, 128×128 @ 0.95× render, `breathing-idle` animation only, 12-frame town budget. Bucket C sweep deletes 4 obsolete NPC dirs (banker/shopkeeper/guild_master/teleporter) in same PR. Gated on `NPC-ROSTER-REWIRE-01` code landing first.
+- **ART-SPEC-04** ([docs/assets/object-pipeline.md](assets/object-pipeline.md)) — Map objects. 5 families (Light/Structural/Sacred/Hazard/Decor), 16 Dungeon slots with full prompts, 7-biome palette+motif substitution table with 4 worked examples. Family-first directory layout. Hazard family re-categorizes 6 existing `assets/effects/*.png` files as bottom-center iso props; 12 remain as FX for future ART-SPEC-FX-01. Town sacred slots reframed (altar→fountain, shrine→sign-post, gargoyle→weathervane).
+- **ART-SPEC-05** ([docs/assets/container-pipeline.md](assets/container-pipeline.md)) — Container pipeline for SPEC-LOOT-01. 3 types × 2 states × 2 variants = 12 sprites. Chest-open taller canvas (64×96) with documented `Sprite2D.Offset` adjustment from `(0, -32)` → `(0, -48)` at state swap; bottom-center anchor stable across swap. Per-biome variation via runtime `Modulate` only, no per-biome sprite variants.
+
+All four IP-clean per ART-SPEC-01 §11. Batch 3 queued: ART-SPEC-06 (equipment catalog) + ART-SPEC-07 (projectiles) + ART-SPEC-08 (ability/skill icons).
+
+---
+
 ## Session 22 — PR Ship Train (#8 → #12), Workflow Rule Codification, ISO Spec Reframe (2026-04-17)
 
 ### What Happened
