@@ -8,6 +8,8 @@
 
 **Spec status: DRAFT.** Awaiting product-owner review before [ISO-01](../dev-tracker.md) implementation begins.
 
+Today's renderer is a **hybrid**: tile placement, the TileSet config, and player movement velocity are all already iso-correct, but a few gameplay-layer pieces still treat the world as orthographic — wall collision is a screen-aligned rectangle, sprite anchors rely on an empirical pixel offset rather than a documented bottom-center convention, the scene root is not Y-sort-enabled (so the multi-row sort case is brittle), and there is no wall occlusion when the player walks behind a tall wall. ISO-01 closes those gaps; movement and the engine-level tilemap config are explicitly preserved as-is. The audit table below shows each subsystem's current status.
+
 ### Audit — what is already iso vs what is not
 
 | Subsystem | Status | Where |
@@ -148,7 +150,7 @@ This means the **scene root** (`Dungeon (Node2D)`, `Town (Node2D)`) must have `y
 2. **Shared `TileMapLayer`** — `y_sort_enabled = true` (already set). Holds **both** floor and wall tiles. One cell = one tile entry; floors and walls do not coexist in the same cell.
 3. **`Entities` `Node2D`** — `y_sort_enabled = true` (already set). Holds player, enemies, NPCs, projectiles, dropped items, multi-tile object nodes.
 
-With all three Y-sort-enabled, the scene root sorts its two children (TileMapLayer and Entities) and inside each child the inner Y-sort takes over. Net effect: every visible thing — wall cell, floor cell, entity — sorts against every other visible thing by `global_position.y`.
+With all three Y-sort-enabled, the scene root sorts its two children (TileMapLayer and Entities) by their effective Y, and inside each child the inner Y-sort orders that container's contents (TileMapLayer cells against each other; entities against each other). The required gameplay-facing result is that an entity at world (5, 4) draws **behind** a wall at (5, 5) and **in front of** a wall at (5, 3) — verified by the acceptance criteria below. If that result is not achieved with sibling y-sort under a y-sorted root, the fallback mechanism is to push entities into the same TileMapLayer's `Entities` child slot or to use a single y-sorted parent that holds both walls (as `Sprite2D` siblings of entities, not as TileMapLayer cells); the implementing PR (`ISO-01c`) picks whichever mechanism produces the correct visual result on the acceptance test scene and updates this spec with the chosen layout.
 
 **Sort key is `global_position.y`** (Godot's default for Y-sort). Combined with the wall-tile placement and the entity bottom-center anchor convention, this means:
 - A wall tile at world (5, 5) sits at screen y ≈ 160 (the cell's local origin maps there). The player at world (5, 4) sits at screen y ≈ 144. Player.y < Wall.y → player draws first → wall draws over player.
@@ -208,7 +210,7 @@ The "world cell delta" column is informational; the implementation never compute
 | Camera type | `Camera2D` |
 | Parent | Player (camera is a child of `Player.tscn`) |
 | Position offset | `(0, 0)` — camera sits on the player anchor |
-| Zoom | 2.0 (current value, unchanged by iso pivot) |
+| Zoom | 2.0 (current value, unchanged by ISO-01) |
 | Smoothing | `position_smoothing_enabled = true`, `position_smoothing_speed = 5.0` (matches `scenes/player.tscn` and [camera.md](camera.md) — do not change as part of ISO-01) |
 | Limits | Set per-scene to the iso-projected bounding box of the dungeon: transform the four world-grid corners via `WorldToScreen` (or `MapToLocal` after the tilemap exists), take min/max of x/y, add a small margin. Computed in `Dungeon.cs` after generation. |
 
@@ -247,8 +249,10 @@ The shader needs a way to identify wall fragments vs floor fragments — easiest
 
 ### Sprite Atlas Layout per Biome
 
+The current in-repo layout is `assets/tiles/<biome>/` (loaded as `res://assets/tiles/<biome>/...`). ART-12 / ART-13 expand inside that existing structure — no directory rename. Per-biome subfolders for `floors/`, `walls/`, `objects/`, `stairs/` are added under each biome as the variant counts grow:
+
 ```
-assets/iso/
+assets/tiles/
   dungeon/
     floors/      # 4-6 diamond variants (cobble, cracked, mossy, dark, drain)
     walls/       # NW face / NE face / SW face / SE face / corners / T-junctions / cross
@@ -261,13 +265,13 @@ assets/iso/
   volcano/        # same
   water/          # same
   town/           # same — buildings instead of walls
-  shared/
-    fx/           # smoke, dust, particle sprites that look the same per biome
 ```
+
+Cross-biome shared particles (smoke, dust, generic FX) live under `assets/effects/` (already in repo).
 
 **Per biome: ~30 tiles** (6 floors + 16 walls + 8 objects approximately) **× 8 biomes = ~240 tiles** for [ART-12](../dev-tracker.md), plus **~64 environmental objects** for [ART-13](../dev-tracker.md). These numbers match the dev-tracker rows; this spec locks the directory shape so ART-12/13 can begin atlas generation in parallel with the engine-tightening work.
 
-**The current `assets/isometric/tiles/stone-soup/` ISS pack remains as the bootstrap tileset** while the per-biome PixelLab atlases fill in. ISO-01 ships using ISS art; ART-12 swaps it biome-by-biome later.
+**Current art is each biome's single-floor + single-wall pair under `assets/tiles/<biome>/`** (see [docs/objects/tilemap.md](../objects/tilemap.md)). ISO-01 ships against this existing art; ART-12 expands biome-by-biome by adding the subfolders above and growing the variant count per slot.
 
 ### Migration Path
 

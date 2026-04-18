@@ -8,7 +8,7 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ### What Happened
 
-Five-PR cascade in one session, with three durable workflow rules added to `docs/conventions/ai-workflow.md` along the way:
+Five-PR cascade in one session, with four durable workflow rules added to `docs/conventions/ai-workflow.md` along the way:
 
 | PR | Branch | What | Outcome |
 |---|---|---|---|
@@ -18,7 +18,7 @@ Five-PR cascade in one session, with three durable workflow rules added to `docs
 | #11 | `docs/spec-iso-01` | SPEC-ISO-01 isometric rendering spec | **In flight (this session continues into PR #11)** — reframed mid-session after Copilot round 2 found the "pivot from top-down" framing was wrong (repo is already iso) |
 | #12 | `docs/audit-2026-04-17` | Full-project audit report (170 lines) + 14 AUDIT-* tickets + 4 new workflow rules | Merged with `--admin` (docs-only, CI checks irrelevant) |
 
-### Three Workflow Rules Codified in `ai-workflow.md`
+### Four Workflow Rules Codified in `ai-workflow.md`
 
 User repeated each correction multiple times before I locked them in. Each was a real failure mode in this session:
 
