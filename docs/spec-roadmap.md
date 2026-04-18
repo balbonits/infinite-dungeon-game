@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase A complete — all three reconciliation specs locked: SPEC-RECONCILE-BRACKETS-01, SPEC-AFFIX-TIER-LADDER-01, SPEC-CRAFTING-QUALITY-LADDER-01).
+**Last updated:** 2026-04-18 (SPEC-INNATE-STACKING-01 locked — free stacking: Haste/Sense/Fortify can all run simultaneously with no hard cap. Mana drain sums (all three = 23.33 mana/s at level 1, burns Mage 200-mana pool in ~8.6s). Self-balancing via mana economy; rewards Attunement/INT investment. Closes Open Question 5. Phase B now complete).
 
-**Next up:** Phase B — Magic system foundation, starting with SPEC-MAGICULE-DENSITY-01 (the load-bearing magic number that every Phase B/C/D spec inherits).
+**Next up:** Phase C — SPEC-SKILL-POINTS-RATE-01 — skill points per level + mastery threshold rates (depends on Phase B numbers for mage mana-economy balance).
 
 ---
 
@@ -40,17 +40,18 @@ Zero new design; every downstream spec inherits cleaner numbers. Highest "value 
 
 `magic.md` has 5 open questions; they cascade through 4+ other docs.
 
-- [ ] **SPEC-MAGICULE-DENSITY-01**
-   Formula for magicule density vs floor (linear / exponential / curve). Define dangerous-floor threshold.
+- [x] **SPEC-MAGICULE-DENSITY-01** — locked 2026-04-18
+   Piecewise formula locked in [magic.md §Density Formula](systems/magic.md#density-formula-spec-magicule-density-01). Linear `density = F/100` for floors 1–100, then exponential `density = 1.0 · k^(F-100)` with `k = 1.032` above. Danger onset at floor 100 (density 1.0); effective ceiling at floors 180–200 (density ≈12–23); beyond stable reach at floor 250 (density ≈110). Doubles every ~22 floors past threshold.
    *Defines for next*: feeds mana drain, `magicule-attunement.md`, `dungeon-pacts.md`, `dungeon-intelligence.md`. **The load-bearing magic number — every Phase B/C/D spec inherits this.**
+   *Cross-refs added*: `world/dungeon.md` §Magicule Density Gradient now points at the canonical formula.
 
-- [ ] **SPEC-INNATE-MANA-COST-01**
-   Per-Innate (Sense / Fortify / Haste) mana drain at level 1 + scaling per skill level.
-   *Defines*: how often a mage can keep an Innate active at floor N. Depends on #4.
+- [x] **SPEC-INNATE-MANA-COST-01** — locked 2026-04-18
+   Per-Innate level-1 drain locked asymmetric by design role (all on Mage's 200-mana base pool, no regen, no density modifier): **Haste 13.33 mana/s ≈15s uptime** (burst tool), **Sense 6.67 mana/s ≈30s uptime** (exploration tool), **Fortify 3.33 mana/s ≈60s uptime** (held stance). Shared per-level curve: `drain(L) = max(base_drain * 0.96^L, base_drain * 0.25)`. 4% compounded reduction per level; floors at 25% of base at level ~35 (Innates become very cheap at high levels without going to zero). Drain is explicitly **NOT** modified by floor density — Innate cost is the brain's processing cost, not an environmental cost. Full spec + per-level drain/uptime tables in [magic.md §Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01)](systems/magic.md#drain-scaling-per-level-spec-innate-mana-cost-01). Removes Open Question 1 from magic.md.
+   *Defines for next*: base cost & scaling that SPEC-INNATE-STACKING-01 must reason over when deciding concurrency rules; also feeds SPEC-MAGIC-COMBAT-FORMULA-01 for mage mana-economy balance. Depends on #4.
 
-- [ ] **SPEC-INNATE-STACKING-01**
-   Can Fortify + Haste both run? One-active limit? Self-balancing via mana drain or hard cap?
-   *Defines*: mage build space. Depends on #5.
+- [x] **SPEC-INNATE-STACKING-01** — locked 2026-04-18
+   **Decision: Option A — Free stacking.** Haste, Sense, and Fortify may be activated in any combination with no hard concurrency cap. Combined mana drain is the sole governor: at level 1, all-three-active = **23.33 mana/sec** (13.33 + 6.67 + 3.33), which burns a Mage's 200-mana pool in ~8.6 seconds with no regen. Rewards combo plays (Fortify+Haste durable sprinter, Sense+Haste scout, Sense+Fortify cautious explorer) while making blanket-stacking self-punishing via uptime. Mid-game Mage (level-15 Innates, 400-mana pool, 12 mana/s regen) can hold all three near-indefinitely (~2.0 mana/s net drain), which is the build-identity payoff for Attunement/INT investment. Warriors (60 pool) and Rangers (100 pool) naturally pick one or two. Full rule + stacking-combinations table + worked example in [magic.md §Stacking Rule (SPEC-INNATE-STACKING-01)](systems/magic.md#stacking-rule-spec-innate-stacking-01). Removes Open Question 5 from magic.md. **Phase B complete.**
+   *Defines for next*: unblocks Phase C — SPEC-SKILL-POINTS-RATE-01 (mage progression rate must match the mana-economy shape now that stacking + drain costs are both locked). Depends on #5.
 
 ---
 

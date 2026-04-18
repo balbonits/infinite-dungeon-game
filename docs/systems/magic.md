@@ -263,6 +263,42 @@ The hard ceiling is not a wall you hit — it's a gradient. Each floor past the 
 
 **Why this matters for gameplay:** The magicule density curve is the answer to "what stops you?" It's not a door that says STOP. It's the dungeon itself becoming hostile. Players who push deeper earn bragging rights and better loot, but they're fighting the environment as much as the monsters.
 
+#### Density Formula (SPEC-MAGICULE-DENSITY-01)
+
+Magicule density at floor `F` is defined piecewise:
+
+```
+if F <= 100:
+    density(F) = F / 100                    # linear ramp, danger onset at F = 100
+else:
+    density(F) = 1.0 * k ^ (F - 100)        # exponential above threshold
+    where k = 1.032
+```
+
+- **Linear branch (floors 1–100):** density scales gently from 0.01 at floor 1 to 1.00 at floor 100. Players feel an ambient increase but skills behave normally and the environment does not actively harm them.
+- **Exponential branch (floors 101+):** each extra floor multiplies density by `k = 1.032` (compounded). That's roughly a **doubling every ~22 floors** past the threshold — a gentle slope at first, then steepening fast once the floors pile up.
+
+**Anchor table (k = 1.032):**
+
+| Floor | Density | Interpretation |
+|-------|---------|----------------|
+| 1 | 0.01 | Baseline surface ambient — near zero pressure |
+| 25 | 0.25 | Shallow — no ambient effects |
+| 50 | 0.50 | Mid-dungeon — faint shimmer visible |
+| 75 | 0.75 | Approaching threshold — noticeable warmth |
+| 100 | 1.00 | **Danger onset** — player starts to feel it |
+| 125 | 2.19 | Dangerous — environment begins to bite |
+| 150 | 4.77 | Highly dangerous — needs skill and gear |
+| 180 | 12.40 | Elite territory — only optimized builds survive here long |
+| 200 | 23.30 | **Effective ceiling for elite builds** — each push is expensive |
+| 250 | 109.63 | Beyond stable reach — nobody farms here |
+
+**Danger threshold (floor 100):** density = 1.00. Below this, the environment is mechanically quiet. At and above this, every additional floor compounds — the air itself is hostile.
+
+**Effective ceiling (floors 180–200):** density ≈ 12–23. Only elite, heavily-optimized characters can stably operate in this band. This is the "endgame push" zone where bragging rights live.
+
+**Why this curve:** density grows slowly while floor ≤ 100, so the first hundred floors are a welcoming slope for most players. Past 100, each extra floor multiplies density by `k` — difficulty ramps exponentially as players push past the threshold. The curve has no hard wall; it becomes a gradient of futility that asymptotically prices out every build, no matter how optimized. This is the load-bearing magic number every Phase B/C/D magic spec inherits.
+
 ---
 
 ### Movement
@@ -291,6 +327,8 @@ Every character starts with all Innate skills at level 0 and can level them infi
 
 - **Activation:** Hold to sprint. Drains mana per second while active.
 - **Effect:** Increased movement speed AND enhanced dodge chance (magicule-enhanced legs react faster to threats).
+- **Mana drain (level 1):** 13.33 mana/sec — a brand-new Mage with a 200-mana pool and no regen can sprint for about 15 seconds before running out. See §Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01) for the per-level curve.
+- **Why short uptime:** Haste is the burst tool of the Innate kit. It's meant to be flicked on for a chase, a reposition, or a dodge — not held as a default state. The 15-second level-1 budget trains the player to spend it decisively and turn it off.
 - **Leveling benefits:** Each level reduces mana drain rate and increases both the speed bonus and dodge chance bonus.
 - **Why it's Innate:** Every creature with legs can push magicules into them to move faster. It's the most basic physical magicule application — even animals do it instinctively (a fleeing deer, a pouncing predator).
 
@@ -300,6 +338,8 @@ Every character starts with all Innate skills at level 0 and can level them infi
 
 - **Activation:** Toggle on/off. Drains mana per second while active.
 - **Effect:** Detect nearby enemies and items through walls and obstacles. Displays as a subtle pulse or highlight effect on the minimap and in the game world. Range increases with level.
+- **Mana drain (level 1):** 6.67 mana/sec — a brand-new Mage with a 200-mana pool and no regen can keep Sense on for about 30 seconds before running out. See §Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01) for the per-level curve.
+- **Why medium uptime:** Sense is the exploration tool. The player flicks it on when entering a new room or approaching a corner, not while standing in a safe hallway. 30 seconds is long enough to sweep a room or two, short enough that wasteful always-on use will drain the pool.
 - **Leveling benefits:** Each level reduces mana drain rate, increases detection range, and reveals more detail (higher levels show enemy type, threat level, and item rarity).
 - **Why it's Innate:** Every living being has an instinctive awareness of nearby magicule signatures. Prey animals sense predators. Predators sense prey. Humans refine this into conscious perception — "I feel something watching me" is a low-level Sense activation.
 
@@ -309,6 +349,8 @@ Every character starts with all Innate skills at level 0 and can level them infi
 
 - **Activation:** Toggle on/off. Drains mana per second while active.
 - **Effect:** Temporary damage resistance. The character's body becomes tougher — magicules reinforce skin, bone, and muscle against incoming damage. A faint visual shimmer indicates the effect is active.
+- **Mana drain (level 1):** 3.33 mana/sec — a brand-new Mage with a 200-mana pool and no regen can hold Fortify for about 60 seconds before running out. See §Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01) for the per-level curve.
+- **Why long uptime:** Fortify is the held stance. A player might click it on before a room fight and keep it up through the whole engagement — it's the Innate that most resembles a defensive "mode." A full minute at level 1 is long enough to cover a typical room-clear without feeling like a cooldown.
 - **Leveling benefits:** Each level reduces mana drain rate and increases the damage resistance percentage.
 - **Why it's Innate:** The flinch response. When a creature braces for impact, magicules flood to the point of contact. Every living thing does this — it's why a startled person can take a hit that would otherwise break bone. Leveling Fortify turns an unconscious reflex into a deliberate defensive tool.
 
@@ -324,6 +366,46 @@ Every character starts with all Innate skills at level 0 and can level them infi
 
 ---
 
+#### Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01)
+
+Haste, Sense, and Fortify all share the same per-level drain-reduction curve. Armor is excluded — it has no drain to reduce.
+
+**Formula:**
+
+```
+drain(L) = max(base_drain * 0.96^L, base_drain * 0.25)
+```
+
+- `L` is the Innate's skill level (starts at 1; leveling is infinite per §Innate Skills).
+- `base_drain` is the level-1 drain rate for that Innate: Haste 13.33, Sense 6.67, Fortify 3.33 mana/sec.
+- Each level multiplies drain by 0.96 (a 4% reduction per level), compounded.
+- Drain floors at 25% of `base_drain` — it gets very cheap at high levels but never zero. The floor is reached at level 35 (0.96^35 ≈ 0.243, so the `max` clamp kicks in).
+- **Drain is NOT modified by floor density.** Innate cost is the brain's processing cost, not an environmental cost. Deep floors make monsters stronger and the air hostile; they do not make your Innates more expensive.
+
+**Plain-language:** Every level you invest makes your Innate a little cheaper. A level-10 Mage's Haste lasts about 50% longer than a level-1 Mage's Haste on the same mana pool. A level-20 Mage's Haste lasts about 2.3× as long. By level 35, drain has bottomed out at 25% of the starting cost — Innates are still metered resources at that point, but they feel almost free. This gives the player a long, legible improvement curve: the Innate you used for 15 seconds on day one eventually gives you nearly a full minute, without ever becoming a spammable toggle that trivializes resource management.
+
+**Drain table (mana/sec at select levels, floored at 25% of base):**
+
+| Level | Multiplier | Haste (base 13.33) | Sense (base 6.67) | Fortify (base 3.33) |
+|-------|------------|--------------------|-------------------|---------------------|
+| 1 | 0.960 | 12.80 | 6.40 | 3.20 |
+| 5 | 0.815 | 10.87 | 5.44 | 2.71 |
+| 10 | 0.664 | 8.85 | 4.43 | 2.21 |
+| 20 | 0.442 | 5.89 | 2.95 | 1.47 |
+| 30 | 0.294 | 3.92 | 1.96 | 0.98 |
+| 35+ | 0.250 (floor) | 3.33 | 1.67 | 0.83 |
+| 50 | 0.250 (floor) | 3.33 | 1.67 | 0.83 |
+
+*Note on level 1: the formula applies `0.96^1` at level 1, so even the "base rates" quoted earlier (13.33, 6.67, 3.33) are the pre-level-1 anchor — a freshly-unlocked Innate at level 1 drains slightly less than that anchor (12.80 / 6.40 / 3.20). The round numbers 15s / 30s / 60s uptime at a 200-mana pool are the **design targets** at unlock; actual in-play uptime at level 1 will be ~4% longer than the round number. This asymmetry is intentional — the player's first second with any Innate feels slightly better than the spec promised.*
+
+**Uptime at key levels (Mage, 200 mana pool, no regen, no other active Innates):**
+
+| Innate | Level 1 uptime | Level 10 uptime | Level 20 uptime | Level 35+ uptime |
+|--------|----------------|------------------|-----------------|-------------------|
+| Haste | ~15.6 s | ~22.6 s | ~34.0 s | ~60.0 s |
+| Sense | ~31.3 s | ~45.2 s | ~67.8 s | ~120.0 s |
+| Fortify | ~62.5 s | ~90.5 s | ~135.9 s | ~240.0 s |
+
 **Innate skill design principles:**
 - There are 4 Innate skills total: Haste, Sense, Fortify, and Armor
 - Haste, Sense, and Fortify drain mana per second (consistent cost model — encourages moment-to-moment resource decisions)
@@ -331,6 +413,51 @@ Every character starts with all Innate skills at level 0 and can level them infi
 - All four are useful for every class (Warriors benefit from Sense just as much as Mages benefit from Fortify)
 - None overlap with class skills (Haste is movement, not combat; Sense is detection, not combat awareness like the Ranger's Threat Sense; Fortify is flat resistance, not the Warrior's specialized Endure)
 - Leveling always reduces mana cost AND increases effect for toggle skills (double incentive to invest); for Armor, leveling purely increases effectiveness
+- The three toggle Innates share a single drain-scaling curve (see §Drain Scaling Per Level) with per-Innate `base_drain` values that set asymmetric level-1 uptime: Haste 15s (burst), Sense 30s (exploration), Fortify 60s (held stance)
+
+#### Stacking Rule (SPEC-INNATE-STACKING-01)
+
+**The rule.** Haste, Sense, and Fortify may be activated together in any combination. There is no hard limit on how many toggle-Innates can run simultaneously. Armor is always-on and does not participate in stacking (no toggle, no drain).
+
+**In play terms:** a player can sprint while Sense-scanning for threats while Fortify-braced for damage — all three at once. Nothing stops them. The game doesn't say "pick one." It says "pay for everything you keep running."
+
+**The governor — mana drain sums.** When multiple toggle-Innates are active, their per-second drains add together. At level 1, the combined drain is:
+
+| Combination | Drain (mana/sec) | Pool burn time (200-mana Mage, no regen) |
+|-------------|------------------|------------------------------------------|
+| Haste only | 13.33 | ~15.0 sec |
+| Sense only | 6.67 | ~30.0 sec |
+| Fortify only | 3.33 | ~60.0 sec |
+| Haste + Sense | 20.00 | ~10.0 sec |
+| Haste + Fortify | 16.67 | ~12.0 sec |
+| Sense + Fortify | 10.00 | ~20.0 sec |
+| **All three** | **23.33** | **~8.6 sec** |
+
+**In play terms:** running all three at once burns a fresh Mage's mana pool in under nine seconds. A Warrior (60 pool) or Ranger (100 pool) would drain even faster. That uptime is the entire balance lever — the game lets you stack freely because the mana economy makes blanket-stacking self-punishing. You *can* run everything; you won't get to keep running it for long.
+
+**Why no hard cap.** A one-active-at-a-time limit would be a UI constraint, not a design one. It would tell the player "the game has decided what you can do." Free stacking instead says "the game has decided what you can *afford*." That's the more interesting question, and it keeps combo plays alive:
+
+- **Fortify + Haste** = the durable sprinter. Charge into a pack, soak a hit, sprint out.
+- **Sense + Haste** = the scout. See the threats, outrun them.
+- **Sense + Fortify** = the cautious explorer. Spot trouble early, brace for it if it lands.
+
+None of these combos would exist with a hard cap. All of them are self-limiting because they cost real mana.
+
+**Worked example — mid-game Mage (level-15 Innate investment, ~400-mana pool, ~12 mana/sec regen from modest Attunement investment):**
+
+Assume each Innate's drain at level 15 has dropped to roughly 60% of its level-1 value (per the SPEC-INNATE-MANA-COST-01 per-level curve — exact numbers owned by that spec). Approximate drains at level 15: Haste ~8.0, Sense ~4.0, Fortify ~2.0 = **~14.0 mana/sec combined**.
+
+With ~12 mana/sec regen, running all three has a **net drain of only ~2.0 mana/sec**. A 400-mana pool lasts ~200 seconds of all-three uptime before exhaustion — effectively sustainable for most encounters. Dropping Haste (the biggest drain) puts net regen in the black, meaning Sense + Fortify can be held indefinitely while Haste is flicked on for bursts.
+
+**In play terms:** this is the payoff for Mages who invest in mana regen. At level 1 they can barely keep all three up for nine seconds. At level 15 with Attunement investment, they can hold the "scout-and-brace" combo forever and only spend mana when they actually sprint. That feels like mastery — not "the game lifted the cap," but "I earned the ability to pay the cost."
+
+**Build identity:**
+
+- **Mage** who wants to stack all three permanently: invest in Attunement (regen) and INT (pool size). This is the "Innate specialist" Mage build — trades some elemental damage throughput for permanent utility uptime.
+- **Warrior** (60-mana pool): will typically pick one Innate per situation — Fortify in melee, Haste for repositioning. Stacking two is a short-term burst, not a sustained state.
+- **Ranger** (100-mana pool): lives in the middle — can comfortably run one Innate passively, stack two briefly, and stack three only in emergencies.
+
+**In play terms:** every class can use every Innate, but the *way* they use them differs. Mages sustain. Warriors burst. Rangers manage. The stacking rule is the same for everyone; the class resources make the feel different.
 
 ## Acceptance Criteria
 
@@ -345,11 +472,13 @@ Every character starts with all Innate skills at level 0 and can level them infi
 - [ ] Repeated scroll use progresses toward permanent spell learning
 - [ ] INT stat affects mana pool, regen, processing efficiency, AND scroll learning speed
 - [ ] Skill leveling (use-based) is explained by magicule processing improvement
-- [ ] Magicule density increases with dungeon depth, creating a natural hard ceiling at extreme depth
+- [ ] Magicule density follows the piecewise formula in §Density Formula (SPEC-MAGICULE-DENSITY-01); danger onset at floor 100, effective ceiling ~floors 180–200
 - [ ] Movement is always a brisk jog — no walk/run toggle
-- [ ] Haste skill: hold to sprint, drains mana/sec, boosts movement speed and dodge chance
-- [ ] Sense skill: toggle, drains mana/sec, detects nearby enemies and items through obstacles
-- [ ] Fortify skill: toggle, drains mana/sec, provides damage resistance
+- [ ] Haste skill: hold to sprint, drains 13.33 mana/sec at level 1 (~15s uptime on a 200-mana Mage pool), boosts movement speed and dodge chance; drain scales per §Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01)
+- [ ] Sense skill: toggle, drains 6.67 mana/sec at level 1 (~30s uptime), detects nearby enemies and items through obstacles; drain scales per §Drain Scaling Per Level
+- [ ] Fortify skill: toggle, drains 3.33 mana/sec at level 1 (~60s uptime), provides damage resistance; drain scales per §Drain Scaling Per Level
+- [ ] Innate drain is not modified by floor density (magicule density affects enemy strength and lethal-floor gradient, not Innate mana cost)
+- [ ] Haste/Sense/Fortify can be active simultaneously with no hard concurrency cap; combined mana drain is the only limit (per §Stacking Rule, SPEC-INNATE-STACKING-01)
 - [ ] Armor skill: always active (no toggle, no mana drain), class-specific passive armor proficiency (Ironhide/Nimbleguard/Spellweave)
 - [ ] All four Innate skills are available to every class and level infinitely
 
@@ -367,10 +496,6 @@ Every character starts with all Innate skills at level 0 and can level them infi
 
 ## Open Questions
 
-- What is the exact mana drain rate per second for each Innate skill at level 1? (Needs balance testing — should feel costly early, manageable late)
-- How does magicule density scale with floor number? (Linear? Exponential? Need a formula for the hard ceiling gradient)
-- At what floor depth does magicule density start becoming dangerous? (Affects dungeon length and endgame pacing)
 - Should Sense reveal trap locations in addition to enemies and items?
-- Can Fortify and Haste be active simultaneously, or is there a one-active-Innate-at-a-time limit? (Stacking all three would drain mana very fast, which might be self-balancing)
 - How do material affinities for Ranger imbuing interact with the blacksmith/crafting system? (Needs crafting doc)
 - Should Innate skills have visual upgrades at milestone levels (e.g., Fortify shimmer changes color at level 25)?
