@@ -52,6 +52,18 @@ All four IP-clean per ART-SPEC-01 §11. Batch 3 queued: ART-SPEC-06 (equipment c
 
 ---
 
+## 2026-04-18 — Wave 2 Batch 3 lands
+
+**Three art-only specs locked:**
+
+- **ART-SPEC-06** ([docs/assets/equipment-catalog-pipeline.md](assets/equipment-catalog-pipeline.md)) — Equipment catalog UI icon pipeline for 259 items. Introduces `ITEM-ICON-64` block as sibling to ICON-UI-64 (detailed-illustration style vs. pictograph). 5-metal palette ladder (Iron/Steel/Mithril/Orichalcum/Dragonite) with per-tier sub-clamps. 7 prompt skeletons covering armor / weapons / offhands / quivers / neck / ring / consumables / materials. Class-voice armor palette (Warrior plate / Ranger leather / Mage cloth). Tier-banded generation plan bootstraps inventory UI with ~50 Tier-1 sprites. Asset layout keyed to ItemDatabase.cs item IDs.
+- **ART-SPEC-07** ([docs/assets/projectile-pipeline.md](assets/projectile-pipeline.md)) — Projectile pipeline for 9 existing sprites. 256×32 horizontal atlas. Agent caught a discrepancy between my brief (N-indexed frame order) and `Projectile.cs:47-50` (east-indexed, angle 0 = frame 0); correctly used engine as source of truth and flagged for review. Option C mixed strategy: 5 asymmetric projectiles get 8-direction PixelLab generation; 4 symmetric get 1-direction + programmatic rotation (44 total calls vs 72 naive). All 9 full copy-paste prompts in-spec.
+- **ART-SPEC-08** ([docs/assets/ability-icons-pipeline.md](assets/ability-icons-pipeline.md)) — Ability/skill/mastery icon pipeline (~130 icons: 27 mastery + 12 MVP ability + ~90 long-tail). Per-category accent color convention locked per class + mastery element. Genre-generic pictograph vocabulary. 27-mastery pictograph map complete. 12 MVP full prompts. ~90 long-tail authorable from skeleton + vocabulary without reopening spec. Per-class atlas compositing recipe.
+
+All three IP-clean per ART-SPEC-01 §11. Batch 4 queued: SPEC-BOSS-ART-01 + ART-SPEC-BOSS-01 (tag-team) + ART-SPEC-09 (portraits; resolves splash_background decision).
+
+---
+
 ## Session 22 — PR Ship Train (#8 → #12), Workflow Rule Codification, ISO Spec Reframe (2026-04-17)
 
 ### What Happened
