@@ -181,6 +181,20 @@ User direction (2026-04-17): *"can we just have one pass of copilot review for t
 
 **Why these exist:** PR #8 merged on 2026-04-17 with seven substantive Copilot bugs unaddressed (floor-100 boundary, thematic biases, Load-Game stranding, focus no-op, button-zone navigation, GameState.Reset save-slot clobber, silent-no-op test). The user had to flag both the silent merge AND the bad code. PR #9 was the triage. The rule is "brief always, fix in-scope substantives always" — not "wait for explicit user merge approval on every PR." The user's 2026-04-17 follow-up: *"i don't think y'all need to wait for my call to merge. last time, you merged when even copilot flagged it with issues. so, i reacted."*
 
+**10b-bis. SPEC-prefixed PRs are documentation only.**
+
+Tickets and PRs whose ID begins with `SPEC-` (e.g. `SPEC-LOOT-01`, `SPEC-PC-ART-01`, `SPEC-RECONCILE-BRACKETS-01`) are **work definition only**. They produce or modify documentation in `docs/` and **never modify code, scenes, csproj, or build config**. The downstream implementation ticket (named without the `SPEC-` prefix — e.g. `LOOT-01`, `COMBAT-01`, `ART-PC-REDRAW`) is where code lands.
+
+This means SPEC PRs follow the docs-only single-pass Copilot rule (10b-postscript) AND additionally:
+
+- Do NOT include code/scene/csproj changes in a SPEC PR. If implementation work surfaces during spec authoring, capture it in the spec's "Implementation Notes" section + the dev-tracker impl ticket; do not start coding inside the spec PR.
+- Do NOT expect Copilot to flag missing implementation, missing tests, or missing wiring — that's by design, not a gap.
+- Do expect Copilot to flag spec-vs-spec contradictions, ambiguous values an implementer would need to guess, broken cross-doc references, missing acceptance criteria, named-IP leakage in art-pipeline prompts.
+
+User direction (2026-04-18): *"inform/instruct copilot that 'SPEC' PRs are just documentation and work definition. we won't be coding with these tickets."*
+
+The two-step pattern (spec lands first → impl ticket later) protects against re-implementing while specs are still in flux. See companion config in `.github/copilot-instructions.md` "SPEC-prefixed PRs" section.
+
 **10c. Don't ask the user for manual GitHub-UI dispatch / approval.**
 
 When a workflow shows `action_required`, a stalled approval gate, or any "Approve and run" prompt, do not surface it as "you'll need to approve...". Either route around it (background poller via `gh api`, alternate trigger, scheduled wakeup) or fix the underlying config (workflow `permissions:` block, branch protection, fork-PR policy) — propose a PR for the fix, don't ask the user to flip the switch in the GitHub UI. The user's expectation is that automation actually automates.
