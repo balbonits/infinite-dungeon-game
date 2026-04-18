@@ -71,7 +71,9 @@ public partial class Enemy : CharacterBody2D, IDamageable
         _levelLabel = GetNode<Label>("LevelLabel");
         _hitArea = GetNode<Area2D>("HitArea");
         _hitCooldown = GetNode<Timer>("HitCooldownTimer");
-        _hitCooldown.WaitTime = Constants.EnemyStats.HitCooldown / intel.AggressionModifier;
+        // Note: HitCooldown.WaitTime is refreshed per-attack in DealDamageTo so
+        // pressure-driven AggressionModifier shifts apply on the next swing
+        // (modifier evolves over time via DungeonIntelligence.Update).
 
         // Apply per-species collision and sprite config
         var speciesConfig = SpeciesDatabase.Get(SpeciesIndex);
@@ -243,6 +245,8 @@ public partial class Enemy : CharacterBody2D, IDamageable
         GameState.Instance.Intelligence.RecordDamageTaken(_damage);
         player.DamageFlash();
         FloatingText.Damage(player.GetParent(), player.GlobalPosition, _damage);
+        // Refresh per-attack so the cooldown tracks the current Intelligence pressure.
+        _hitCooldown.WaitTime = Constants.EnemyStats.HitCooldown / GameState.Instance.Intelligence.AggressionModifier;
         _hitCooldown.Start();
     }
 }
