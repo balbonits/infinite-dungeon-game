@@ -273,9 +273,9 @@ public partial class DeathScreen : Control
                 // we never want to silently bypass the death-penalty save (Copilot
                 // R2 finding on PR #16).
                 bool ok = Autoloads.SaveManager.Instance?.Save() ?? false;
-                GetTree().Paused = false;
                 if (ok)
                 {
+                    GetTree().Paused = false;
                     GetTree().ReloadCurrentScene();
                     return;
                 }
@@ -283,10 +283,18 @@ public partial class DeathScreen : Control
                 // the player to read it. Toast is mounted under Main's scene tree, so
                 // calling ReloadCurrentScene immediately would tear it down before
                 // it ever rendered (Copilot R1 finding on PR #16).
+                // Keep the tree paused until the actual reload — the player is dead, the
+                // world must not resume during the 3s toast delay (Copilot R3 finding).
+                // Toast and SceneTreeTimer both run with ProcessMode=Always, so the timer
+                // and fade tween still tick while paused.
                 Toast.Instance?.Error("Save failed — death penalty may not persist");
                 var t = GetTree().CreateTimer(3.0);
                 t.Connect(SceneTreeTimer.SignalName.Timeout,
-                    Callable.From(() => GetTree().ReloadCurrentScene()));
+                    Callable.From(() =>
+                    {
+                        GetTree().Paused = false;
+                        GetTree().ReloadCurrentScene();
+                    }));
             }
             else
             {

@@ -904,6 +904,11 @@ public partial class PauseMenu : GameWindow
             // the player to read it. Toast is mounted under Main's scene tree, so
             // calling ReloadCurrentScene immediately would tear it down before
             // it ever rendered (Copilot R1 finding on PR #16).
+            // Re-pause the tree: Close() unpaused it, but the player chose to leave
+            // — gameplay must not resume during the 3s toast delay (Copilot R3 finding).
+            // Toast and SceneTreeTimer both run with ProcessMode=Always, so the timer
+            // and fade tween still tick while paused.
+            GetTree().Paused = true;
             Toast.Instance?.Error("Save failed — progress may be lost");
             var t = GetTree().CreateTimer(3.0);
             t.Connect(SceneTreeTimer.SignalName.Timeout,
