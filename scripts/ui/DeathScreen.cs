@@ -269,9 +269,32 @@ public partial class DeathScreen : Control
                 // Fate, then returns to main menu. Save so the penalty is preserved on next
                 // load, then reload to the splash screen. (PauseMenu's separate "Quit Game"
                 // button exits the application — that path is NOT used here.)
-                Autoloads.SaveManager.Instance?.Save();
-                GetTree().Paused = false;
-                GetTree().ReloadCurrentScene();
+                // ?? false — a missing SaveManager autoload also counts as failure;
+                // we never want to silently bypass the death-penalty save (Copilot
+                // R2 finding on PR #16).
+                bool ok = Autoloads.SaveManager.Instance?.Save() ?? false;
+                if (ok)
+                {
+                    GetTree().Paused = false;
+                    GetTree().ReloadCurrentScene();
+                    return;
+                }
+                // Save failed: surface the toast and defer the reload long enough for
+                // the player to read it. Toast is mounted under Main's scene tree, so
+                // calling ReloadCurrentScene immediately would tear it down before
+                // it ever rendered (Copilot R1 finding on PR #16).
+                // Keep the tree paused until the actual reload — the player is dead, the
+                // world must not resume during the 3s toast delay (Copilot R3 finding).
+                // Toast and SceneTreeTimer both run with ProcessMode=Always, so the timer
+                // and fade tween still tick while paused.
+                Toast.Instance?.Error("Save failed — death penalty may not persist");
+                var t = GetTree().CreateTimer(3.0);
+                t.Connect(SceneTreeTimer.SignalName.Timeout,
+                    Callable.From(() =>
+                    {
+                        GetTree().Paused = false;
+                        GetTree().ReloadCurrentScene();
+                    }));
             }
             else
             {

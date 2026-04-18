@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Session 22 — Audit Cleanup Arc — AUDIT-02 Save-Failure Propagation (2026-04-17)
+
+Branch: `fix/audit-02-save-propagation`. Surface save I/O failures end-to-end so the player gets a visible signal instead of a silent loss + a misleading "saved" log.
+
+#### Changed
+- `ISaveStorage.Write` now returns `bool` (was `void`). `FakeSaveStorage` returns `true`; `GodotFileSaveStorage` returns `false` when `FileAccess.Open` fails.
+- `SaveManager.SaveToSlot(int)` and `Save()` now return `bool`; success/failure logged distinctly via `GD.Print` / `GD.PrintErr`.
+
+#### Added
+- Toast.Error on save failure at: `PauseMenu` Back-to-Main button, `DeathScreen` Quit Game (post-penalty), `Main.DoLoadTown` and `Main.DoLoadDungeon` auto-saves.
+- `DebugConsole` Force Save command shows "Save FAILED" status on failure (was always "Saved").
+- Unit test `FakeStorage_Write_ReturnsTrueOnSuccess` to pin the new bool contract.
+
 ### Session 21 — Bank & Backpack Redesign: Spec + Implementation (2026-04-17)
 
 Branch: `feat/bank-backpack-redesign`. Milestones 1 (spec lock) + 2a–2g (implementation) landed in the same session. All 402 unit + 11 integration tests green. See the dev-journal Session 21 entry for the narrative; this changelog lists the concrete additions/changes by category.

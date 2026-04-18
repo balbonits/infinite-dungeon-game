@@ -18,15 +18,16 @@ public class GodotFileSaveStorage : ISaveStorage
         return file.GetAsText();
     }
 
-    public void Write(string key, string content)
+    public bool Write(string key, string content)
     {
         using var file = FileAccess.Open(key, FileAccess.ModeFlags.Write);
         if (file == null)
         {
             GD.PrintErr($"Failed to save to {key}: {FileAccess.GetOpenError()}");
-            return;
+            return false;
         }
         file.StoreString(content);
+        return true;
     }
 
     public void Delete(string key)

@@ -891,8 +891,28 @@ public partial class PauseMenu : GameWindow
         AddSystemButton("Back to Main Menu", () =>
         {
             Close();
-            SaveManager.Instance?.Save();
-            GetTree().ReloadCurrentScene();
+            // ?? false — a missing SaveManager autoload also counts as failure;
+            // we never want to silently bypass the toast and lose progress (Copilot
+            // R2 finding on PR #16).
+            bool ok = SaveManager.Instance?.Save() ?? false;
+            if (ok)
+            {
+                GetTree().ReloadCurrentScene();
+                return;
+            }
+            // Save failed: surface the toast and defer the reload long enough for
+            // the player to read it. Toast is mounted under Main's scene tree, so
+            // calling ReloadCurrentScene immediately would tear it down before
+            // it ever rendered (Copilot R1 finding on PR #16).
+            // Re-pause the tree: Close() unpaused it, but the player chose to leave
+            // — gameplay must not resume during the 3s toast delay (Copilot R3 finding).
+            // Toast and SceneTreeTimer both run with ProcessMode=Always, so the timer
+            // and fade tween still tick while paused.
+            GetTree().Paused = true;
+            Toast.Instance?.Error("Save failed — progress may be lost");
+            var t = GetTree().CreateTimer(3.0);
+            t.Connect(SceneTreeTimer.SignalName.Timeout,
+                Callable.From(() => GetTree().ReloadCurrentScene()));
         });
 
         var quitBtn = new Button();

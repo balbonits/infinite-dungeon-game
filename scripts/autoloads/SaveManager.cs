@@ -60,13 +60,17 @@ public partial class SaveManager : Node
         return true;
     }
 
-    /// <summary>Capture GameState and write to the given slot.</summary>
-    public void SaveToSlot(int slotIndex)
+    /// <summary>Capture GameState and write to the given slot. Returns false on I/O failure.</summary>
+    public bool SaveToSlot(int slotIndex)
     {
         var data = SaveSystem.CaptureState(GameState.Instance);
         string json = SaveSystem.Serialize(data);
-        Storage.Write(SlotPath(slotIndex), json);
-        GD.Print($"Game saved to slot {slotIndex}");
+        bool ok = Storage.Write(SlotPath(slotIndex), json);
+        if (ok)
+            GD.Print($"Game saved to slot {slotIndex}");
+        else
+            GD.PrintErr($"Game save FAILED for slot {slotIndex}");
+        return ok;
     }
 
     public void DeleteSlot(int slotIndex)
@@ -101,11 +105,11 @@ public partial class SaveManager : Node
 
     // ── Current-slot auto-save convenience ──────────────────────────────
 
-    /// <summary>Save to the current slot (or slot 0 if none is active).</summary>
-    public void Save()
+    /// <summary>Save to the current slot (or slot 0 if none is active). Returns false on I/O failure.</summary>
+    public bool Save()
     {
         int slot = GameState.Instance.CurrentSaveSlot ?? 0;
-        SaveToSlot(slot);
+        return SaveToSlot(slot);
     }
 
     /// <summary>Load the current slot (or slot 0 if none is active). True on success.</summary>

@@ -214,8 +214,8 @@ public partial class DebugConsole : Control
         AddSection("SAVE");
         AddCmd("Force Save", () =>
         {
-            SaveManager.Instance?.Save();
-            Status("Saved");
+            bool ok = SaveManager.Instance?.Save() ?? false;
+            Status(ok ? "Saved" : "Save FAILED");
         });
         AddCmd("Reset Save (DANGER)", () =>
         {

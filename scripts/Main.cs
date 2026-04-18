@@ -157,7 +157,11 @@ public partial class Main : Node
     {
         SwapWorld(TownScene);
         Ui.StairsCompass.Instance?.ClearTargets();
-        Autoloads.SaveManager.Instance?.Save();
+        // ?? false — missing SaveManager autoload also counts as failure (Copilot
+        // R2 finding on PR #16); we never want to silently bypass the toast.
+        bool ok = Autoloads.SaveManager.Instance?.Save() ?? false;
+        if (!ok)
+            Ui.Toast.Instance?.Error("Auto-save failed — progress may be lost");
     }
 
     public void LoadDungeon()
@@ -176,7 +180,11 @@ public partial class Main : Node
     private void DoLoadDungeon()
     {
         SwapWorld(DungeonScene);
-        Autoloads.SaveManager.Instance?.Save();
+        // ?? false — missing SaveManager autoload also counts as failure (Copilot
+        // R2 finding on PR #16); we never want to silently bypass the toast.
+        bool ok = Autoloads.SaveManager.Instance?.Save() ?? false;
+        if (!ok)
+            Ui.Toast.Instance?.Error("Auto-save failed — progress may be lost");
     }
 
     private void SwapWorld(PackedScene scene)
