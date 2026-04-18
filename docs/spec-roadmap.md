@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase E complete — all 7 species specs locked: Bat, Skeleton, Wolf, Spider, Dark Mage, Orc, Goblin. Each lives at `docs/world/species/<name>.md` and fills the 8-section template. Reaction/AI/scale/stats/drops/silhouette/color-coding/art-pairing all locked per species. 6 dispatched as parallel design-lead agents; Bat lifted inline from the template's worked example).
+**Last updated:** 2026-04-18 (Phase F complete — all 8 boss specs locked: Bone Overlord, Howling Pack-Father, Chitin Matriarch, Hollow Archon, Warlord of the Fifth, Screaming Flight, Iron-Gut Goblin King, Volcano Tyrant. Each lives at `docs/world/bosses/<name>.md` and follows the boss-adapted 8-section template. AI behavior trees, phase-shift triggers, FlashFx hooks, first-kill drop overrides all locked per boss).
 
-**Next up:** Phase F — per-boss instance specs, all gated on their Phase E species. Starting with SPEC-BOSS-BONE-OVERLORD-01 (zone 1, needs SPEC-SPECIES-SKELETON-01 — now locked).
+**Next up:** Phase G — NPC dialogue & service-menu specs (unblocks NPC-ROSTER-REWIRE-01 impl). Four sub-tickets: SPEC-NPC-DIALOGUE-VOICES-01, SPEC-VILLAGE-CHIEF-DIALOGUE-01, SPEC-BLACKSMITH-MERGED-MENU-01, SPEC-GUILD-MAID-MERGED-MENU-01.
 
 ---
 
@@ -106,14 +106,14 @@ Parallelizable within the phase, but ALL gated on Phase B (stat snapshots at flo
 
 Each fully expands what's currently a "skeleton fill" in `boss-art.md` §7-13. Each boss spec depends on its species spec from Phase E.
 
-- [ ] **SPEC-BOSS-BONE-OVERLORD-01** (zone 1) — needs SPEC-SPECIES-SKELETON-01.
-- [ ] **SPEC-BOSS-HOWLING-PACK-FATHER-01** (zone 2) — needs SPEC-SPECIES-WOLF-01.
-- [ ] **SPEC-BOSS-CHITIN-MATRIARCH-01** (zone 3) — needs SPEC-SPECIES-SPIDER-01.
-- [ ] **SPEC-BOSS-HOLLOW-ARCHON-01** (zone 4) — needs SPEC-SPECIES-DARKMAGE-01.
-- [ ] **SPEC-BOSS-WARLORD-FIFTH-01** (zone 5) — needs SPEC-SPECIES-ORC-01.
-- [ ] **SPEC-BOSS-SCREAMING-FLIGHT-01** (zone 6) — Bat swarm-fused variant; may need its own species sub-spec first.
-- [ ] **SPEC-BOSS-IRON-GUT-GOBLIN-KING-01** (zone 7) — needs SPEC-SPECIES-GOBLIN-01.
-- [ ] **SPEC-BOSS-VOLCANO-TYRANT-01** (zone 8) — deep-zone mix, orc-form base.
+- [x] **SPEC-BOSS-BONE-OVERLORD-01** (zone 1, floor 10) — locked 2026-04-18 in [docs/world/bosses/bone-overlord.md](world/bosses/bone-overlord.md). 2-phase burst-down-fast. Scale 1.8×, Phase-2 900ms ground-slam AOE at 50% HP. FORGE-01 Tier 1 unique. Save-flag `floor10_boss_skeleton`.
+- [x] **SPEC-BOSS-HOWLING-PACK-FATHER-01** (zone 2, floor 20) — locked 2026-04-18 in [docs/world/bosses/howling-pack-father.md](world/bosses/howling-pack-father.md). 2-phase burst-down-fast. Scale 1.8×, Phase-2 summons 2× 1-HP phantom wolves at 50% HP. FORGE-01 Tier 2 unique. Save-flag `floor20_boss_wolf`.
+- [x] **SPEC-BOSS-CHITIN-MATRIARCH-01** (zone 3, floor 30) — locked 2026-04-18 in [docs/world/bosses/chitin-matriarch.md](world/bosses/chitin-matriarch.md). 2-phase kite-from-range. Scale 1.8×, Phase-2 summons 3× spiderlings + ground-web 50% slow AOE at 50% HP. FORGE-01 Tier 3 unique. Save-flag `floor30_boss_spider`.
+- [x] **SPEC-BOSS-HOLLOW-ARCHON-01** (zone 4, floor 40) — locked 2026-04-18 in [docs/world/bosses/hollow-archon.md](world/bosses/hollow-archon.md). 2-phase caster kite-from-range, airborne (z-offset +24px). Phase-2 adds 1200ms ground-wave AOE at 50% HP. FORGE-01 Tier 4 unique. Save-flag `floor40_boss_darkmage`.
+- [x] **SPEC-BOSS-WARLORD-FIFTH-01** (zone 5, floor 50) — locked 2026-04-18 in [docs/world/bosses/warlord-fifth.md](world/bosses/warlord-fifth.md). 2-phase kite-from-range with thrown axes. Scale 2.0×, Phase-2 halves throw cooldown + adds 700ms charge at 50% HP. FORGE-01 Tier 5 unique. Save-flag `floor50_boss_orc`.
+- [x] **SPEC-BOSS-SCREAMING-FLIGHT-01** (zone 6, floor 60) — locked 2026-04-18 in [docs/world/bosses/screaming-flight.md](world/bosses/screaming-flight.md). **3-phase** close-the-gap — Phase 1 airborne `ranged-kite`-inverted (z+40), Phase 2 spawns 1-HP bat-fragment adds, Phase 3 ground-collapse (z→0) switches to `melee-chase`. Decision: no separate swarm-fused species sub-spec needed; fusion is boss-only using base Bat body plan. FORGE-01 Tier 5 unique. Save-flag `floor60_boss_bat`.
+- [x] **SPEC-BOSS-IRON-GUT-GOBLIN-KING-01** (zone 7, floor 70) — locked 2026-04-18 in [docs/world/bosses/iron-gut-goblin-king.md](world/bosses/iron-gut-goblin-king.md). **3-phase** close-the-gap. Phase-2 iron-slag DOT AOE at 50% HP, Phase-3 turret-mode (stationary projectile firer) at 25% HP. First-kill bundle uniquely includes Zone 1-3 species signature materials (the King has eaten all of them — fiction into mechanic). FORGE-01 Tier 5 unique. Save-flag `floor70_boss_goblin`.
+- [x] **SPEC-BOSS-VOLCANO-TYRANT-01** (zone 8, floor 80, deepest in starter roster) — locked 2026-04-18 in [docs/world/bosses/volcano-tyrant.md](world/bosses/volcano-tyrant.md). **3-phase** close-the-gap. Orc species base (shares body plan with zone-5 Warlord but fully differentiated silhouette/aura/mechanics). Scale 2.2× (largest boss), Phase-2 three telegraphed fissure-lines → lava tiles at 50% HP, Phase-3 passive heat-aura DOT within 2 tiles at 25% HP (signature endgame dance). FORGE-01 Tier 5 unique. Save-flag `floor80_boss_orc` (no collision with Warlord's `floor50_boss_orc`).
 
 Each defines: AI behavior tree, phase-shift trigger thresholds, FlashFx hooks, first-kill drop overrides.
 

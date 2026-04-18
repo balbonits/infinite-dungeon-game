@@ -111,6 +111,30 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — Phase F complete: all 8 boss specs locked
+
+All 8 zone-capstone bosses now have individual spec files at `docs/world/bosses/<boss-name>.md`, each following the boss-adapted 8-section template. Lifted from [boss-art.md §§218-430](world/boss-art.md) (which had ~90% of the content already) and expanded with acceptance criteria, impl notes (phase-shift flag patterns, FlashFx hook signatures, save-flag gating, AI-switch timing), and explicit open-questions sections (all "None — locked" since design was already settled in boss-art.md).
+
+**Roster:**
+- **Bone Overlord** (zone 1, floor 10) — 2-phase burst-down-fast; Phase 2 at 50% HP is a 900ms ground-slam AOE. Skeleton species base. Player's first "real boss" moment.
+- **Howling Pack-Father** (zone 2, floor 20) — 2-phase burst-down-fast; Phase 2 summons 2× 1-HP phantom wolves (pack fantasy without full pack-AI entanglement).
+- **Chitin Matriarch** (zone 3, floor 30) — 2-phase kite-from-range; Phase 2 adds 3× spiderlings + ground-web 50% slow AOE for 2s.
+- **Hollow Archon** (zone 4, floor 40) — 2-phase caster, airborne z+24; Phase 2 adds a 1200ms ground-wave AOE with visible floor-glyph.
+- **Warlord of the Fifth** (zone 5, floor 50) — 2-phase ranged-kite throwing axes; Phase 2 halves throw cooldown + adds 700ms charge attack.
+- **Screaming Flight** (zone 6, floor 60) — **first 3-phase boss**, close-the-gap. Phase 1 airborne `ranged-kite`-inverted, Phase 2 spawns 1-HP bat-fragment adds, Phase 3 ground-collapse (z+40 → 0 over 600ms) + switch to `melee-chase`. **Decision: no separate swarm-fused species sub-spec — fusion is boss-only using base Bat body plan.** The roadmap had flagged this as a possible sub-spec; on review, the fusion doesn't need a reusable species definition since it's a one-off encounter.
+- **Iron-Gut Goblin King** (zone 7, floor 70) — 3-phase close-the-gap. Phase 2 iron-slag DOT zone, Phase 3 turret-mode (stationary projectile firer). **First-kill bundle uniquely layered** with Zone 1-3 species signatures (Bone Dust, Wolf Pelt, Chitin Fragment) — fiction into mechanic: "the King has eaten all of them."
+- **Volcano Tyrant** (zone 8, floor 80, deepest) — 3-phase close-the-gap, Orc species base (shares body plan with zone-5 Warlord but fully differentiated silhouette/aura/mechanics). **Phase 3 signature mechanic: passive heat-aura DOT within 2 tiles** — player must balance attack uptime against burn damage. Largest boss at 2.2× scale, deepest shadow palette at 3 steps darker.
+
+**Unique-drop pairing** (already locked in boss-art.md §4): each boss's first-kill roll comes from a specific FORGE-01 tier pool — Tier 1 (3 uniques) at zone 1, scaling up to Tier 5 (10 uniques) at zones 5-8.
+
+**Phase-shift flag pattern:** 2-phase bosses use one `_phase2Entered` flag; 3-phase bosses (Screaming Flight, Goblin King, Volcano Tyrant) use two flags to prevent HP-bounce re-triggering. FlashFx.Flash(White, 120ms) fires on every threshold crossing per impl convention.
+
+**Arena-bound + leash regen** is universal: all 8 bosses regen 5%/s HP if the player leaves the arena tile-set. Individual arenas defined in the paired ART-SPEC-BOSS-01.
+
+Phase F total edit: 8 new spec files + shared-file updates. Roadmap Phase F boxes all checked; Next up Phase G — NPC dialogue & service-menu specs (unblocks NPC-ROSTER-REWIRE-01 impl).
+
+---
+
 ## 2026-04-18 — SPEC-SPECIES-BAT-01 locked (Phase E kickoff)
 
 First Phase E species spec locked. Lifted the worked example from `species-template.md` into a new file at `docs/world/species/bat.md`. Reaction `kite-from-range`; AI `melee-chase` with a swooping motion curve that sells the airborne feel without adding special AI logic. Scale Small (0.70×), hitbox 8px, z-offset +28px (airborne — the iso Y-sort needs flyers to render above grounded sprites). Silhouette constraint: spread wings + lifted pose, readable as airborne from 8 tiles away — this is the load-bearing visual test that ART-14 will pass or fail on. Stats at floors 3/28/75: HP 22/120/540, contact damage 4/14/38, speed 90/105/120, XP 12/48/180; target TTK is 2-3 hits every floor (frail by design, "swat them fast or eat the dive"). Drop-table hook matches `MonsterDropTable.cs:41` exactly — signature `material_sig_bat` 8% per kill, thematic Hide (60/20/20 split). Feeds zone 6 boss "Screaming Flight" as a swarm-fused variant; the boss encounter gets its own spec and won't expand this species file. Phase E tracker section created at dev-tracker line ~262 (above Phase D). Six parallel species agents dispatched for Skeleton / Wolf / Spider / DarkMage / Orc / Goblin — they'll append rows to this new Phase E tracker section as they land.
