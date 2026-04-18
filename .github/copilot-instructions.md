@@ -47,6 +47,36 @@ When a PR touches **only** prose/spec files — `docs/**`, repository `*.md` fil
 
 User direction (2026-04-17): *"can we just have one pass of copilot review for the specs/docs, then we ignore the rest. it doesn't make sense to spend hours on words that's not code."*
 
+### SPEC-prefixed PRs — documentation only, never code
+
+PRs and tickets whose ID starts with `SPEC-` (e.g. `SPEC-PC-ART-01`, `SPEC-SPECIES-01`, `SPEC-MAGICULE-DENSITY-01`, `SPEC-RECONCILE-BRACKETS-01`, etc.) are **work definition only**. They produce or modify documentation in `docs/` and **never modify code, scenes, csproj, or build config**. This is by design.
+
+**For Copilot reviewing a SPEC-* PR:**
+
+- Treat it identically to "Docs-only PRs" above (single review pass, substantive findings only).
+- **Do NOT flag** missing C# implementation, missing scene wiring, missing tests, missing Godot signals, or "this spec doesn't ship code." That's the entire point — implementation lives in a separate downstream ticket (e.g. SPEC-LOOT-01 → LOOT-01 impl ticket; SPEC-PC-ART-01 → ART-PC-REDRAW impl ticket).
+- **Do NOT suggest** that the PR also include the corresponding code changes. The two-step pattern (spec lands first → impl ticket lands later) is intentional and protects against re-implementing while specs are still in flux.
+- **DO flag** spec-vs-spec contradictions, missing acceptance criteria, ambiguous values an implementer would need to guess at, broken cross-references to other docs, and named-IP leakage in art-pipeline prompts (per `docs/assets/prompt-templates.md` §11 IP Protection).
+
+User direction (2026-04-18): *"inform/instruct copilot that 'SPEC' PRs are just documentation and work definition. we won't be coding with these tickets."*
+
+The downstream implementation ticket (named without the `SPEC-` prefix — e.g. `LOOT-01`, `COMBAT-01`, `ISO-01`, `ART-PC-REDRAW`) is where code review actually applies.
+
+### Tracking files — do NOT review
+
+Two files are tracking/bookkeeping only and should be skipped entirely during review:
+
+- **`docs/dev-tracker.md`** — the running ticket registry. Rows get added, statuses change, notes get rewritten as work lands. No content here is "load-bearing design" — it's a dashboard.
+- **`docs/dev-journal.md`** — chronological work log. Entries are retrospective narrative, not a spec. Deliberately long-form for future retrospectives, not a review target.
+
+**For Copilot reviewing a PR that touches these files:**
+
+- **Skip them.** Do not flag changes, typos, wordsmithing, formatting, internal inconsistencies, or "this row should link to X" concerns in either file. Treat them as scratchpads the humans maintain.
+- This includes common findings like: "this row is out of zone order," "the journal entry from Phase X contradicts the phrasing in Phase Y," "the status in tracker row N differs from the roadmap." These are non-issues — both files are eventually-consistent by design.
+- Still-in-scope for review: `docs/spec-roadmap.md` (the prioritized next-work list is load-bearing), every `docs/systems/**`, `docs/world/**`, `docs/flows/**`, `docs/inventory/**`, `docs/conventions/**`, etc.
+
+User direction (2026-04-18): *"let Copilot know not to review `dev-tracker` & `dev-journal`. it's not something to review."*
+
 ## If Something Doesn't Look Right
 
 We take your findings seriously — Claude verifies each one against the codebase and primary-source docs (Godot docs, NuGet READMEs) before acting, per the work-discipline convention. Rejected claims get threaded replies with the verification evidence so future reviews have that context.

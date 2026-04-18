@@ -145,7 +145,49 @@ Affixes are the core of item depth. They are **never** found on drops — all af
 | Utility | Energizing (+mana), Flowing (+mana regen) | of Swiftness (+move speed), of Learning (+XP bonus) |
 | Elemental | Fiery (+fire damage), Frozen (+frost damage), Shocking (+lightning) | of Flame Resist, of Frost Resist, of Storm Resist |
 
-*Affix definitions are implemented in `AffixDatabase.cs` (28 affixes across tiers 1-4). The categories above are representative — see code for the complete list.*
+*Affix definitions are implemented in `AffixDatabase.cs` (specced for tiers 1-6; currently registers tiers 1-4 pending AUDIT-10 impl). The categories above are representative — see code for the complete list. T5/T6 values locked in the T5+T6 ladder table below.*
+
+#### T5 + T6 Affix Ladder (SPEC-AFFIX-TIER-LADDER-01)
+
+T5 ("Elite", min item level 75) and T6 ("Legendary", min item level 100) extend the existing affix families at T4. No new affix families are introduced — T5/T6 are higher-power expressions of already-established mechanics. This keeps the endgame build-identity grounded in familiar levers rather than introducing last-minute novelties.
+
+**Roster (8 families at both T5 and T6):** keen, vicious, sturdy, warding, striking, ruin, bear, swiftness. These were chosen as the most build-defining affixes in the game — flat damage, % damage, flat defense, % damage resist, crit chance, crit damage, max HP, and move speed. Niche affixes (energizing, learning, flame_resist, frozen, shocking, swift, evasion, fiery, fortified) cap at their existing highest tier; this focuses Elite/Legendary progression on the pillars that define a character, not breadth.
+
+**Value progression curve.**
+- Flat values multiply by ≈1.5 per tier above T4 (T4 was ≈1.7× T3, tapering is intentional — diminishing marginal combat impact at high numbers). Damage: T4=22 → T5=35 → T6=50. Max HP: T4=60 → T5=90 → T6=130. Defense: T3=13 → T5=30 → T6=45 (T4 had no sturdy entry; the curve is rebuilt cleanly).
+- Percent values follow items.md power bands directly: T5 targets the upper edge of +26–40% (=35%), T6 targets the lower-mid edge of +41%+ (=50%). No percent affix exceeds 50% at T6 to preserve additive-stacking headroom across the 10-ring build space.
+
+**Gold cost curve.** T1≈50 → T2≈170 → T3≈440 → T4≈860 → T5≈2200 → T6≈4500. Scaling is ≈2.5× per tier above T4, compounding the "pay to access endgame power" tax. T6 costs are meaningful — a full 6-affix T6 craft totals ~27,000 gold, roughly one deep-floor run's income.
+
+**Material cost curve.** T4≈17 → T5≈30 → T6≈50. Materials scale linearly (+13, +20) rather than multiplicatively so the gate is gold-dominant, not material-dominant. Material sinks are expected to come from boss first-kills and deep-floor treasure rooms, not grinding.
+
+**Tier 5 registrations (min item level 75):**
+
+| id | name | type | category | stat | tier | minLevel | value | isPercent | gold | materials |
+|----|------|------|----------|------|------|----------|-------|-----------|------|-----------|
+| `keen_5` | Keen | Prefix | Offensive | damage | 5 | 75 | 35 | false | 2000 | 28 |
+| `vicious_5` | Vicious | Prefix | Offensive | damage_percent | 5 | 75 | 32 | true | 2400 | 32 |
+| `sturdy_5` | Sturdy | Prefix | Defensive | defense | 5 | 75 | 30 | false | 2000 | 28 |
+| `warding_5` | Warding | Prefix | Defensive | damage_resist | 5 | 75 | 28 | true | 2300 | 30 |
+| `striking_5` | of Striking | Suffix | Offensive | crit_chance | 5 | 75 | 18 | true | 2200 | 30 |
+| `ruin_5` | of Ruin | Suffix | Offensive | crit_damage | 5 | 75 | 35 | true | 2400 | 32 |
+| `bear_5` | of the Bear | Suffix | Defensive | max_hp | 5 | 75 | 90 | false | 1900 | 26 |
+| `swiftness_5` | of Swiftness | Suffix | Utility | move_speed | 5 | 75 | 14 | true | 1800 | 25 |
+
+**Tier 6 registrations (min item level 100):**
+
+| id | name | type | category | stat | tier | minLevel | value | isPercent | gold | materials |
+|----|------|------|----------|------|------|----------|-------|-----------|------|-----------|
+| `keen_6` | Keen | Prefix | Offensive | damage | 6 | 100 | 50 | false | 4200 | 45 |
+| `vicious_6` | Vicious | Prefix | Offensive | damage_percent | 6 | 100 | 48 | true | 5000 | 52 |
+| `sturdy_6` | Sturdy | Prefix | Defensive | defense | 6 | 100 | 45 | false | 4200 | 45 |
+| `warding_6` | Warding | Prefix | Defensive | damage_resist | 6 | 100 | 42 | true | 4800 | 50 |
+| `striking_6` | of Striking | Suffix | Offensive | crit_chance | 6 | 100 | 28 | true | 4600 | 48 |
+| `ruin_6` | of Ruin | Suffix | Offensive | crit_damage | 6 | 100 | 50 | true | 5000 | 52 |
+| `bear_6` | of the Bear | Suffix | Defensive | max_hp | 6 | 100 | 130 | false | 4000 | 42 |
+| `swiftness_6` | of Swiftness | Suffix | Utility | move_speed | 6 | 100 | 22 | true | 3800 | 40 |
+
+**Implementation note for AUDIT-10:** The impl ticket copies these rows directly into the `Register*` calls under two new comment headers (`// --- Tier 5 (Item Level 75+) ---` and `// --- Tier 6 (Item Level 100+) ---`) in `AffixDatabase.cs` following the existing T1–T4 formatting. No code logic changes — `GetMaxTier` already returns 5/6 at the correct item-level thresholds. After the impl ticket lands, update this doc's footnote from "currently registers tiers 1-4 pending AUDIT-10 impl" to "28 affixes across tiers 1-4 + 16 affixes across tiers 5-6 = 44 total."
 
 ### Crafting at the Blacksmith
 

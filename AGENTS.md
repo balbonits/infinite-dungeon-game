@@ -106,7 +106,7 @@ This project uses specialized AI team leads defined in `.claude/agents/`. Each t
 | Team | Agent | Handles | Tickets |
 |------|-------|---------|---------|
 | Design | `@design-lead` | Game specs, formulas, balance | SPEC-* |
-| Art | `@art-lead` | PixelLab sprites, tiles, animations (MCP setup: `.claude/agents/art-lead.md#pixellab-mcp-connection`) | ART-* |
+| Art | `@art-lead` | PixelLab sprites, tiles, animations + art-pipeline specs in `docs/assets/` (prompt templates, batch plans, style-consistency rules). MCP setup: `.claude/agents/art-lead.md#pixellab-mcp-connection` | ART-*, ART-SPEC-* |
 | QA | `@qa-lead` | Spec review, test planning | TEST-*, reviews |
 | DevOps | `@devops-lead` | CI, Makefile, project config | SETUP-*, INFRA-* |
 | Engine | `@engine-lead` | Godot scenes, physics, tiles | P1 scenes (Phase 2) |
@@ -117,6 +117,8 @@ This project uses specialized AI team leads defined in `.claude/agents/`. Each t
 **Routing:** Work is automatically routed to the right team. The user can also @mention a specific lead.
 
 **Ownership:** Each team only modifies files in its domain. Cross-domain needs create dependency tickets.
+
+**Design ↔ Art tag-team on visible-content specs:** SPEC-* tickets that produce new visible content (monsters, NPCs, bosses, tile biomes, weapon/armor families, environmental objects) are co-authored by `@design-lead` (game-facing half in `docs/systems/` or `docs/world/`) and `@art-lead` (generation-facing half in `docs/assets/`). Neither half ships without the other. See the "Tag-Team" section in each agent file for the handoff protocol. Pure-mechanics specs (combat formulas, save format, stats curves) and pure-pipeline specs (prompt libraries, manifests) skip this — authored solo.
 
 ---
 

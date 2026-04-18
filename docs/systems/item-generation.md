@@ -36,25 +36,22 @@ Equipment is split 50/50 between weapons and armor. All equipment drops without 
 
 #### Quality Distribution by Floor Range
 
-Floor brackets are unified across the project: **1–10 / 11–25 / 26–50 / 51–100 / 101+**. These are the same brackets used by [item-catalog.md](../inventory/item-catalog.md) (tier assignment) and [monster-drops.md](monster-drops.md) (material tier). A single shared bracketing so all three specs agree — floor 100 resolves to Tier 4, floor 101 is the first Tier 5 floor.
-
-| Floor Range | Tier | Normal | Superior | Elite |
-|-------------|------|--------|----------|-------|
-| 1–10 | 1 | 100% | 0% | 0% |
-| 11–25 | 2 | 80% | 20% | 0% |
-| 26–50 | 3 | 60% | 35% | 5% |
-| 51–100 | 4 | 30% | 50% | 20% |
-| 101+ | 5 | 15% | 50% | 35% |
+Quality distribution by floor depth is specified in [depth-gear-tiers.md](./depth-gear-tiers.md) §Drop Rates (the canonical 6-tier BaseQuality ladder Normal..Transcendent over 7 floor brackets). The 5-bracket system defined in §Floor Brackets = Tiers above governs catalog tier and material tier only — not quality rolls.
 
 #### Quality Stat Bonuses
+
+Full 6-tier BaseQuality ladder (canonical definition + unlock floors in [depth-gear-tiers.md §Tier Progression](./depth-gear-tiers.md#tier-progression)):
 
 | Quality | Stat Bonus Range |
 |---------|-----------------|
 | Normal | No bonus |
 | Superior | +10-20% |
 | Elite | +25-40% |
+| Masterwork | +45-60% |
+| Mythic | +65-85% |
+| Transcendent | +90-120% |
 
-The bonus is applied to the base damage (weapons) or base defense (armor) as a random multiplier within the range. The result is always at least `baseStat + 1` for non-Normal quality.
+The bonus is applied to the base damage (weapons) or base defense (armor) as a random multiplier within the range. The result is always at least `baseStat + 1` for non-Normal quality. `ItemGenerator` / `ApplyQualityBonus` must cover all six cases — a stale 3-quality switch-statement would drop the Masterwork/Mythic/Transcendent bonuses to zero (same-shape bug as the AUDIT-11 recycle ladder that SPEC-CRAFTING-QUALITY-LADDER-01 closed).
 
 ### Weapon Damage Scaling
 
@@ -101,18 +98,23 @@ Armor generation covers 5 body slots: Head, Body, Arms, Legs, Feet (selected ran
 
 ### Item Gold Value
 
+Full 6-tier multiplier ladder (geometric, doubles per tier — mirrors the recycle-bonus shape locked by SPEC-CRAFTING-QUALITY-LADDER-01):
+
 ```
 baseValue = 10 + itemLevel * 3
-qualityMultiplier = Normal: 1x, Superior: 2x, Elite: 4x
+qualityMultiplier = Normal: 1x, Superior: 2x, Elite: 4x,
+                    Masterwork: 8x, Mythic: 16x, Transcendent: 32x
 value = baseValue * qualityMultiplier
 ```
 
-| Item Level | Normal | Superior | Elite |
-|------------|--------|----------|-------|
-| 1 | 13 | 26 | 52 |
-| 25 | 85 | 170 | 340 |
-| 50 | 160 | 320 | 640 |
-| 100 | 310 | 620 | 1240 |
+| Item Level | Normal | Superior | Elite | Masterwork | Mythic | Transcendent |
+|------------|--------|----------|-------|------------|--------|--------------|
+| 1 | 13 | 26 | 52 | 104 | 208 | 416 |
+| 25 | 85 | 170 | 340 | 680 | 1360 | 2720 |
+| 50 | 160 | 320 | 640 | 1280 | 2560 | 5120 |
+| 100 | 310 | 620 | 1240 | 2480 | 4960 | 9920 |
+
+`CalculateValue` must cover all six tiers — the same shape-of-switch rule as Quality Stat Bonuses above. Transcendent items at item level 100 sell for nearly 10,000 gold apiece, matching the infinite-descent-infinite-incentive intent from depth-gear-tiers.md.
 
 ### Material Generation
 

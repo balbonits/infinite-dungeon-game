@@ -4,6 +4,398 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-18 — SPEC-SPECIES-GOBLIN-01 locked (Phase E, zones 2 + 7)
+
+Authored the Goblin species spec at [docs/world/species/goblin.md](world/species/goblin.md). This is the second species in the Phase E fan-out to claim the `pack-management` reaction (after Wolf), but the two specs attack the reaction from opposite sides: Wolf is a *Tier 2 Large-band* pack where the danger is coordinated flanking by big predators; Goblin is a *Tier 1 Small-band* pack where the danger is sheer volume and positional clutter. Goblins are the "laughable individually, problem collectively" slot — the one the template's worked example called out by name.
+
+Lockdowns:
+
+- **Reaction `pack-management`, AI `pack`.** Two directional beats: spread-to-flank when outnumbering the player, cluster-toward-sibling when outnumbered. The cluster beat is the one that makes the reaction feel fair — breaking off a lone goblin visibly sends it running back toward its group before re-engaging, so the player is rewarded for splitting the pack apart rather than being punished with hidden regeneration. The `melee-chase` alternative was available and simpler to implement, but it would have collapsed the encounter into "five identical chasers" — the positioning problem is what makes this species interesting, and positioning requires coordination.
+- **Stats anchored against Bat.** Both are Tier 1 / 1–2-hit TTK / per-unit fragile, so the Bat spec was the reference. Goblin HP/damage sits slightly below Bat (20/112/505 vs 22/120/540 HP; 3/11/32 vs 4/14/38 damage) and speed sits noticeably below (80/92/104 vs 90/105/120 px/s). The spec includes an explicit Bat-vs-Goblin comparison table in §2 so anyone reading the two specs side-by-side sees the intended differentiation: *same frailty, different threat model*. Bat asks "swat it before it dives"; Goblin asks "pick an attack arc so the pack doesn't wrap you."
+- **Drop-table `Ore` thematic.** The signature-material row (`material_sig_goblin`, 10%, Ore) was already locked in code at `MonsterDropTable.cs:43`; this spec documents the design rationale behind the Ore choice — goblins as scavenger-metallurgists who arm themselves with iron-banded clubs and scrap-metal blades. Their generic drops represent what the player harvests from the pile after the fight.
+- **Scale 0.80× (Small band).** Mid-band within Small — larger than Bat (0.70×) so a ground-pack still reads as threatening when it surrounds the player, but clearly smaller than humanoid PCs/NPCs (~1.00×) as fantasy convention demands. Leaves clear "bigger and badder" silhouette room for the Iron-Gut Goblin King boss at Boss band 1.7–2.5×.
+- **Color-coding: skin exempt.** Goblin-green is the species's single most identifying feature at thumbnail scale; a deep-floor goblin tinted full-red would lose its species identity. Skin + eye highlights stay unmodulated (sub-node at `Color.White`); scrap-metal weapons and clothing are NOT exempt — the level-relative tint still lands on the majority of the silhouette, so the "this monster is above your level" danger signal still fires from the gear. Same technique as Bat's eye-highlight exemption, applied to a larger surface.
+- **Silhouette constraint.** Per the template's worked example: "pack unit must be individually simple and collectively legible — cluster of 5 must not read as one blob." The spec concretizes this with a PR-gate-friendly test: five goblins at 8 tiles must read as five distinct bodies, not as a single wide shape. Keep silhouettes narrow and vertically compact, arms close to body. Two goblins shoulder-to-shoulder must still read as two.
+- **Zone 7 re-appearance.** Goblins spawn in zone 2 (primary) and zone 7 (boss-flavor) per `Constants.Zones`. Zone 7 spawn counts should lean toward the high end of the cluster range (4–5 per room) to lore-code "the Goblin King's warren has been colonized en masse." No stat change between zones — same base numbers, scaled by floor via the Phase B density curve.
+
+**Iron-Gut Goblin King base defined; boss behavior deferred.** The spec locks the Goblin's body plan, stat baseline, and `pack` AI baseline — which is what SPEC-BOSS-IRON-GUT-GOBLIN-KING-01 (Phase F) will inherit. HP/damage multipliers, phase-shift triggers, and unique boss mechanics are out of scope for this ticket per the task brief.
+
+**Art pairing.** No existing ART-* ticket covers a Goblin redraw. ART-GOBLIN is proposed as a placeholder name — the current in-game goblin sprite predates the pack-management silhouette constraint in §5 and should get a pass once the Wave 2 art pipeline has Bat/Spider/Wolf wrapped.
+
+Edits: new `docs/world/species/goblin.md` (8 sections + acceptance criteria + impl notes, no open questions). Spec-roadmap Phase E Goblin bullet flipped from unchecked to checked with full lock-stamp. Dev-tracker Phase E gained the Goblin row (placed after DarkMage, per the order other agents set). Phase E remains in progress — zone 6 Bat boss swarm is still its own variant sub-spec per roadmap.
+
+---
+
+## 2026-04-18 — SPEC-SPECIES-ORC-01 locked (Phase E, zone 5, Tier 3 brute; body plan for TWO bosses)
+
+Locked the Orc species spec — zone 5, Tier 3, the first "must-stop-and-commit" species in the encounter curve. Reaction `cautious-approach`, AI `melee-chase` with a **600 ms heavy-swing telegraph** that deals 1.5× contact damage on the tell. Tier 3 stat anchors at floors 3/28/75: HP 80/520/2,600 — highest per-floor HP of any species in the current roster — balanced by the slowest ground-mob speed (55/62/70 px/s). TTK 5–8 hits per `cautious-approach` template convention. Scale **Large (1.40×)**, hitbox 17 px. The design intent compresses to one sentence: *"he gets there, you're in trouble."*
+
+The key design call was splitting reaction between `cautious-approach` and `close-the-gap`. Orcs could credibly be played either way — a heavy brute who commits as soon as he sees you, or a heavy brute who plants himself and makes you work for the opening. I picked `cautious-approach` because zone 5 is the first zone where the player has already learned the kite-and-shoot vocabulary against Bat / Wolf / Spider / Dark Mage, and the Orc's job in the encounter curve is to *break* that vocabulary. A telegraphed heavy swing + high HP + slow speed forces the player to time attacks instead of trade hits, which is what the template calls `cautious-approach`. The 600 ms wind-up is load-bearing — too short and it's just a slow wolf, too long and ranged classes kite it trivially. 600 ms is wider than the standard 450 ms caster-tell so melee can back off one tile mid-trade.
+
+**The interesting constraint:** this species spec is the base body plan for **two** future bosses, which is rare. The Warlord of the Fifth (zone 5, floor 50) inherits the Orc silhouette + stat curve and upgrades the AI to `ranged-kite` by adding thrown axes + iron-regalia aura. The Volcano Tyrant (zone 8, floor 80, marked "deep-zone orc-form base" in the Phase F roadmap) inherits the same body plan and keeps `melee-chase` but layers magma body-cracks, phase shifts, and a phase-3 passive heat aura. The spec explicitly notes this dual-pairing in §8 and flags that any future rework of the Orc base cascades to both bosses — coordinate via Phase F co-locks.
+
+Drop-table row (`material_sig_orc` 10%, Ore thematic) already locked in `MonsterDropTable.cs:46`; spec just documents what's there. Exempt-pixel carve-outs: **tusk highlight** (bright-cream, 2 px per tusk) and **weapon glint** (cold-steel, 3 px along blade/haft edge). Rationale: at deep level-gaps the level-relative tint shifts toward desaturated grey and the "armed brute" identity would wash out into a generic humanoid shadow. The two carve-outs preserve the species read at every level gap. Weapon glint also foreshadows the Warlord's iron-regalia seam pattern — the boss extends the same visual thread into full layered armor, so art-lead can author ART-ORC with the Warlord's silhouette evolution already in mind.
+
+Paired art: **ART-ORC** (proposed placeholder — no existing ART-* ticket covered zone-5 Orc redraw, so ART-ORC is introduced in the tracker for future dispatch). One of six parallel species-spec agents running today.
+
+---
+
+## 2026-04-18 — SPEC-SPECIES-DARKMAGE-01 locked (Phase E, zone 4)
+
+Locked the zone-4 Dark Mage species spec at [docs/world/species/darkmage.md](world/species/darkmage.md). Dark Mage is **Tier 3** and two firsts in the zone progression: the first species whose threat is **range + damage** rather than mobility or contact, and the first whose combat is **read-react** (dodge the telegraph) rather than **position-trade** (win the melee spacing). Reaction `burst-down-fast` (primary) with `ranged-kite` secondary for a 1-tile retreat-step when the player closes to 2 tiles — a strictly-stationary caster would feel like a wall-huggable turret; the kite-step preserves the ranged fantasy while rewarding players who press.
+
+AI `caster` with a two-tier telegraph that does the species's teaching work: **450 ms basic-bolt wind-up** (staff-tip purple glow + particle flare → bolt along LOS) is the core read-react beat, tuned against the player's dodge-roll recovery frames so reading the tell and dodging is consistently achievable. **900 ms AoE slow-field wind-up** triggers at self-HP <40% OR 2+ targets in range and is deliberately longer as the teachable-moment telegraph — distracted players who missed the 450 ms bolt get a second chance to notice something worse is coming. Shortening either number would feel cheap; lengthening would feel trivial.
+
+Stats express "glass cannon" numerically, not just narratively: HP at floors 3/28/75 is **18/95/420** — lower than Tier-1 Bat at every floor, which is the specific spreadsheet fact that makes frailty legible. Contact-damage **9/32/95** is ~2× the Tier-1/2 contact-damage ceiling — the number that communicates "new threat class" to the player on first encounter in zone 4. Low move speed (55/65/75 px/s) is on purpose; casters should not chase. XP yield elevated (~1.75× Tier-2 comparable) rewards the skill-check of clean kills. TTK 1–2 hits every floor — kill them instantly if reached, interrupt the cast, or eat a half-HP spell.
+
+Drop-table fields already locked in `MonsterDropTable.cs:49` — signature `material_sig_darkmage` at **7%** (lower than Tier-1/2's 10%/8% because Tier-3 signature materials are more valuable per drop; signature-EV-per-minute balances across tiers, shape is "fewer, higher-value drops" not "more, lower-value") and **Bone** thematic (robed-skeletal — robe shreds, bones remain, Bone is what players intuit looting). No code change; spec documents what's already there.
+
+Silhouette constraint is load-bearing because `burst-down-fast` cannot land unless the player spots the caster in a mixed encounter within 3 seconds: "upright thin-tall stance, hooded/skullcap head extending above head-line, raised staff or casting-hand visible during wind-up, shoulders no wider than player sprite." If the player can't find the caster by silhouette alone, the read-react loop collapses into "take unexplained damage from somewhere." Three exempt pixel clusters preserve both species identity AND cast-telegraph legibility at any level-gap tint: purple eye glow (skeletal-caster identity), staff-tip glow (pulses brighter during the 450 ms wind-up), hand-magic aura (visible only during wind-up). The hand-aura sub-node visibility is driven by the existing AI cast-state flag so the visual pulse and the gameplay tell are locked together — tune one, tune both. This is the archetypal "species defined by a color" case the template flagged.
+
+Dark Mage defines the **Hollow Archon** (zone-4 boss) base — body plan + `caster` AI baseline + staff-tip glow family. Phase-shifts, unique mechanics, and first-kill drops are Phase F in SPEC-BOSS-HOLLOW-ARCHON-01 and deliberately do not leak into this species spec. Paired art ticket proposed as **ART-DARKMAGE** placeholder since no existing ART-* ticket covers zone-4 species redraw; formally opened after design-half lock.
+
+Edits: new `docs/world/species/darkmage.md`; Phase E roadmap box checked with one-line summary; Phase E row appended in dev-tracker (section already populated by parallel Bat/Skeleton/Wolf/Spider agents). No code changes.
+
+---
+
+## 2026-04-18 — SPEC-SPECIES-SPIDER-01 locked (Phase E, zone 3)
+
+Locked the zone-3 Spider species spec at [docs/world/species/spider.md](world/species/spider.md). The choice that drove everything else was picking `burst-down-fast` as the primary reaction and `ambush` as the AI pattern — a Spider that chases you in a straight line is a Bat-with-legs and wastes the species's whole identity. The right feel is "you walked into a webbed corner and now you have half a second." That yields a tight chain of follow-on decisions: 120 px proximity aggro (not `chase-always` — Spiders wake up when you get close), 200 ms body-rise telegraph (tight enough that an inattentive player eats the lunge, loose enough that a cautious one can react), ~800 ms burst-lunge state that decays into plain `melee-chase` if the Spider survives the reveal window (the ambush is a one-shot; after that it's just a fast bug).
+
+Stats are Tier 2 glass-cannon: HP 28/180/780 at floors 3/28/75 — above Bat T1, below Orc T3, hitting the template's `burst-down-fast` 1-2-hit TTK target at every floor. Move speed is split into idle vs lunge (70/85/100 px/s idle, 160/185/210 px/s lunge burst) so the AI spec is legible without introducing a new stat field — the impl team reads the two numbers and picks which is active per AI state.
+
+Scale is **Small (0.75×)**, chosen deliberately against the Standard (0.9-1.1×) alternative. A Standard-size Spider reads as a *boss* Spider at aggro range, and that's a silhouette the Chitin Matriarch (Phase F) needs. Keeping regular Spiders small reserves the "bigger and badder" silhouette headroom for the boss — spiders in zone 3 are small-and-many, the Matriarch is one-and-huge. The silhouette constraint is written as a binding test ART-14 will review against: 6-of-8 legs fanned, body <40% canvas height, wider-than-tall ground-hugging footprint, arachnid-readable at 8 tiles. The point is that recognition failure should feel like player error, not cheap spawn.
+
+Exempt pixels: 4-8-pixel eye cluster on the cephalothorax, distinct from Bat's two-point eyes. Makes the "corner has eyes" recognition cue available on repeat visits — players learn to read webbed corners as threats, which is how the secondary `cautious-approach` reaction gets written into the spec without any new AI work.
+
+Drop-table fields match `MonsterDropTable.cs:47` exactly (`material_sig_spider` 8%, MaterialType.Hide, MonsterTier.Two). Silk/carapace drops are named in the fiction but mechanically route through the Hide family — same pattern Bat uses. No code changes. Defines the Chitin Matriarch base for SPEC-BOSS-CHITIN-MATRIARCH-01 (Phase F): boss inherits body plan + Hide thematic + scale floor 0.75× upgraded to Boss band 1.8-2.2×. Phase F boss behavior is explicitly not expanded in this spec. Paired art: ART-14 (Bat/Spider/Wolf rework batch, in flight).
+
+Zone-3 role split: Spider is the "fast ambush" threat, Orc is the "slow heavy" threat. Player's zone-3 mental model becomes "sprint past Orcs if you can, slow down in corners because Spiders wait." Spec-roadmap Phase E Spider entry flipped to `[x]` with full resolution note; dev-tracker Phase E Spider row appended after the Wolf row. One of six parallel species-spec agents running today.
+
+---
+
+## 2026-04-18 — SPEC-SPECIES-WOLF-01 locked (Phase E, zone 2)
+
+Third species spec to land in the Phase E fan-out (after Bat and Skeleton). Wolf is zone 2, Tier 2, and the first species in the roster whose design hinges on **group behavior** rather than per-unit threat. Lockdowns:
+
+- **Reaction `pack-management`.** A pack of 3–5 Wolves is the threat; any single Wolf is a soft target. Secondary `kite-from-range` noted for the lone-survivor endgame, where the last Wolf drops pack behavior and commits to a straight rush. The alternative `close-the-gap` was a defensible fit for a fast melee chaser, but it would have treated Wolves as individuals — and the interesting game-feel question for a canid pack is how the *group* moves, not how one animal chases. Pack-management forces AI, silhouette, and TTK to all answer the group question.
+- **AI `pack`** with an explicit flank-split rule. On aggro, the nearest Wolf anchors head-on while 2–4 pack-mates peel wide and arrive on the player's flanks within ~1.5 s. Pack cohesion radius is 8 tiles; pack-aggro is shared (any member's aggro commits the whole visible pack). Lone-survivor falls back to plain `melee-chase` — no pointless solo flanking against an already-engaged player.
+- **Stats anchored against Bat's Tier 1 reference.** Floor 3: HP 40 / dmg 7 / speed 110 / XP 20 — per-unit ≈1.8× Bat, and the first species that outpaces the player's walk speed from first encounter. Designed so the player can't simply back away from a Wolf pack without cover. TTK is 1–2 hits per Wolf at all three sample floors, consistent with the template's pack-management TTK target — thin them fast or get eaten.
+- **Scale 1.25× (Large band).** Deliberately the bottom of the Large band — a Wolf must read visibly bigger than the 1.0× player so pack-mates don't disappear behind the player mid-flank, but noticeably smaller than an Orc (Tier 3, mid/upper Large band) so the Tier-2-vs-Tier-3 visual-instinct read stays clean. Sticking to 1.2× would have read as Standard-band in iso projection; 1.3×+ would have started competing with Orc's tank fantasy.
+- **Drop-table row already locked** in `MonsterDropTable.cs:44` (`material_sig_wolf`, 10%, Hide thematic). The 10% rate vs Bat's 8% is design-intentional: packs of 3–5 mean per-encounter signature yield matches a single Tier-1 Bat spawn, balancing per-kill and per-encounter rates to different axes. Players don't feel like they're getting "more loot per Wolf" — they feel like they're getting "loot per pack encounter that's in the same ballpark as loot per Bat encounter."
+- **Silhouette constraint** is the load-bearing art instruction: 3–5 Wolves at 8 tiles must read as a pack with visible spacing, not a blob. If the pack clumps visually, `pack-management` collapses into "charge the blob" (wrong reaction) or "panic-swing" (also wrong). The constraint also caps mid-charge pack footprint at ~60% of a tile row to force PixelLab to compose the pack with spacing rather than overlap. Exempt-pixel list is non-empty for the first time this phase: eye glow + fang highlights, both held above the body-tint layer on a separate sub-node modulated `Color.White` — same technique Bat already uses for eye highlights. At high level gaps, those exempt pixels keep Wolves recognizable as hunters rather than "generic grey quadrupeds."
+
+Wolf defines the Howling Pack-Father boss (zone 2, Phase F via SPEC-BOSS-HOWLING-PACK-FATHER-01). The boss inherits Wolf's body plan, `pack` AI, and Large-band scale (upgraded to Boss band 1.8–2.2× in the boss spec). I explicitly did NOT expand boss behavior here — phase-shift triggers, summon mechanics, and first-kill drop overrides all belong in Phase F.
+
+Edits: new file `docs/world/species/wolf.md` (8-section template, no Open Questions); Phase E roadmap box checked with resolution note; Phase E row appended in dev-tracker (section already existed from parallel Bat/Skeleton agents). Paired art ART-14 still in flight — pairing checkboxes remain unchecked until Bat/Spider/Wolf assets land.
+
+---
+
+## 2026-04-18 — SPEC-SPECIES-SKELETON-01 locked (Phase E, zone 1)
+
+Second Phase E species spec locked, following SPEC-SPECIES-BAT-01. Skeleton is now fully specified at [docs/world/species/skeleton.md](world/species/skeleton.md) as a zone-1 grounded melee body — the deliberate counterweight to Bat's airborne harasser. The two zone-1 species now define a clean role split: Bat is fast/frail/airborne (`kite-from-range`), Skeleton is slow/durable/grounded (`close-the-gap`). A player's first hour in the dungeon is a two-lane tutorial — "swat the swooper, charge the soldier" — and both specs can be read as each other's negative space.
+
+Key decisions and why they were picked over the defensible alternatives:
+- **Reaction `close-the-gap`, not `cautious-approach`.** Cautious-approach would have turned zone-1 skeletons into stall fights (5–8 hit TTK), which is the wrong pedagogy for the first enemy a player meets. Close-the-gap says "charge in and commit" — appropriate for a tutorial enemy that should reward forward momentum, not patience. Cautious-approach is reserved for later tanks that actually punish commitment.
+- **AI pattern `melee-chase` with NO shield-raise telegraph.** Adding a telegraph was tempting — visually it sells "sword-and-shield warrior" — but a telegraph pushes TTK up (the player waits for the opening), which contradicts close-the-gap (the player *makes* the opening). More importantly, reserving shield-raise for the Bone Overlord boss variant gives the boss a real escalation to earn instead of amplifying something the base species already does.
+- **Scale `1.00×` (Standard band), not `0.70×` (current placeholder).** The in-game sprite currently renders at `SpriteScale = 0.70f` in `SpeciesDatabase.cs:23`, but that was an ad-hoc pre-spec placeholder. Per template §6, Skeleton belongs in the Standard (player-parity) band: the "grounded, committed, sword-and-shield trade" fantasy only reads correctly when the enemy is your size. A smaller skeleton reads as "minion to squash," not "soldier to duel." The stale scale is flagged as art-debt for the ART-SKELETON ticket to fix.
+- **Stats ~55% above Bat on HP, ~30% below on speed.** Bat floor-3 HP is 22; Skeleton floor-3 HP is 34 — enough extra durability that trading hits feels meaningful, not so much that TTK balloons past the 3–5 hit target. Speed 62 vs Bat's 90 lets players kite skeletons (useful when low HP) without the skeleton feeling inert. XP yield slightly higher than Bat at every floor to reward the longer fight.
+
+Silhouette constraint: **sword-and-shield asymmetry readable at 8 tiles** — the two hands must visibly differ (weapon on one, shield on the other). This is the single test the future ART-SKELETON PR must pass. Rationale: zone-1 is where the player learns the dungeon's visual vocabulary for armed humanoids; if every zone-1 enemy reads as a generic lump, encounter-level tactics (who-to-hit-first, who's-armed, who-to-kite) can't start being taught.
+
+Color-coding: body carries the level-gap tint as usual, but three exempt-pixel clusters stay unmodulated — **bone-white highlights on sword edge / shield rim / forearms** (preserves the "polished bone" identity marker) and **pale-purple eye-socket glow** (matches the zone-1 signature tone the Bone Overlord amplifies). Same technique as Bat's eye-highlight carve-out.
+
+Drop-table row (`material_sig_skeleton` 10%, `Bone` thematic, 60/20/20 generic split) was already locked in `MonsterDropTable.cs:40`; the spec documents it, no code change proposed. Paired art ticket `ART-SKELETON` is stubbed as a placeholder — no art work is scheduled yet; when it is, the spec's §5 silhouette constraint is the deliverable gate.
+
+Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase E table gained a Skeleton row following the Bat row. This spec defines the Bone Overlord base for SPEC-BOSS-BONE-OVERLORD-01 (Phase F) — the boss takes this species's body plan and layers on phase shifts, the bone-club asymmetry, the bone-dust aura, and scale 1.8×, all authored separately in boss-art.md and the forthcoming Phase F boss spec. **Do not expand this species spec to cover boss behavior** — the separation is deliberate so the base species and boss variant can evolve independently.
+
+---
+
+## 2026-04-18 — Phase J closure: all future/optional specs locked as deferred
+
+Closed the roadmap. Phase J is the "future / deferrable" bucket, and the right Phase J completion is locking every item's deferral status with a gate — not force-speccing things that haven't earned author attention yet. Six items:
+
+- **SPEC-ART-FX-01** — Deferred. Gate: ISO-01 impl lands + iso-rendering pipeline stable. Per PO 2026-04-17 direction. Reopens when the iso era's FX pipeline shape is clear.
+- **SPEC-EXPORT-PLATFORMS-01** — Deferred. Gate: playable MVP + PO signals interest in a store page. Pre-MVP platform picks are wasted effort.
+- **SPEC-ANALYTICS-BACKEND-01** — Deferred. Gate: playable MVP + external playtesters. No telemetry patterns without a player base.
+- **SPEC-I18N-01** — Deferred. Gate: first-platform decision + non-English market priority. English-first today; PS2P covers Basic Latin only; fallback-font registration already in spec.
+- **SPEC-AUDIO-01** — Deferred. Gate: explicit PO go-ahead. PO directly skipped audio to manage spec-phase scope. No ETA.
+- **SPEC-MULTIPLAYER-01** — **Confirmed out of scope** (not deferred — design decision). Game is single-player by design.
+
+No new spec files were needed for Phase J — deferrals don't need their own docs; the deferral IS the decision. Roadmap + tracker capture the gates.
+
+**Roadmap milestone: all 10 phases (A-J) locked in a single session.** Phase breakdown:
+- **Phase A** (reconciliation): 3 specs — bracket drift, affix tier ladder, crafting quality ladder
+- **Phase B** (magic foundation): 3 specs — density curve, Innate mana drain, Innate stacking
+- **Phase C** (skills/abilities reconciliation): 3 specs — SP/AP rates, Innate synergies, affinity (all resolved by pointing at locked live specs)
+- **Phase D** (combat tuning): 1 spec locked (magic combat INT-only) + 1 blocked until impl (COMBAT-03)
+- **Phase E** (per-species): 7 specs — Bat, Skeleton, Wolf, Spider, Dark Mage, Orc, Goblin
+- **Phase F** (per-boss): 8 specs — zones 1-8 capstone bosses with phase-shift mechanics and first-kill drops
+- **Phase G** (NPC dialogue + menus): 4 specs — voices, Village Chief dialogue, Blacksmith 4-tab, Guild Maid 2-tab
+- **Phase H** (UI canonical): 5 specs — font, scaling, HUD, shake, hitstop
+- **Phase I** (movement + input): 3 specs — instant movement, gamepad, rebinding UI
+- **Phase J** (deferrable): 6 deferral decisions, no new spec files
+
+**Total spec work:** ~45 individual specs landed across ~20 commits in one session. Every spec has acceptance criteria, implementation notes (where applicable), and an Open Questions section (most "None — locked"). 21 stale git branches pruned mid-session; auto-delete-on-merge enabled on the repo.
+
+**What's unblocked going forward:** every implementation ticket in `dev-tracker.md` that was waiting on a spec input. Priority order from the tracker: NPC-ROSTER-REWIRE-01 (P1, Phase G unblocked it), LOOT-01 impl, COMBAT-01 impl, AUDIT-03 through AUDIT-17 triage, the ART-14 redraw batch. Design work may still come from playtesting and mid-impl discoveries, but the spec roadmap as originally authored is exhausted.
+
+Next session: consult the roadmap's "Out of scope" section to see what tracks elsewhere, then pick an impl ticket from dev-tracker.
+
+---
+
+## 2026-04-18 — Phase I complete: movement + gamepad + rebinding UI locked
+
+Three specs landed together. Movement is the lead — confirmed current instant-movement behavior as the spec rather than changing it; gamepad and rebinding inherit the movement contract.
+
+- **SPEC-MOVEMENT-ACCEL-01** → [docs/systems/movement.md §Acceleration](systems/movement.md). PO picked Option A from the MC (instant, keep current) over light-ease and full-ease alternatives. Rationale: Diablo 1 genre reference + precision-dodge requirements for boss telegraphs (especially the Bone Overlord's 900 ms ground-slam) + keyboard-first expectation. Haste multiplier + slow-zone multipliers both apply instantly with no ramp. Guardrail in the spec: if a future PR adds `Lerp` / `MoveToward` to the velocity assignment in `Player.HandleMovement()`, block it in review citing this spec.
+
+- **SPEC-GAMEPAD-INPUT-01** (FUT-01) → [docs/systems/gamepad-input.md](systems/gamepad-input.md). Twin-source movement (left stick + d-pad both bind to movement, deadzone 0.25) — players can use whichever they prefer per controller. D-pad up/left/right/down → skill slots 1-4 (more ergonomic than mapping skills to face buttons, which are already holding action_cross/circle/square/triangle). Bumpers do double duty: left bumper is stats-peek-hold in gameplay AND tab-cycle-left in service menus (contexts don't overlap thanks to WindowStack routing). Triggers handle Haste (right trigger hold) and Fortify (right bumper tap); left trigger taps Sense. Disconnect auto-pauses the game. Single-player only — second controller is ignored. Out of scope: rumble, DualSense adaptive triggers, right-stick bindings (reserved for a future cursor/camera spec if one surfaces). Accessibility: swap-confirm/cancel toggle for players who expect east=confirm / south=cancel.
+
+- **SPEC-INPUT-REBINDING-UI-01** (FUT-02) → [docs/ui/input-rebinding.md](ui/input-rebinding.md). Pause → Settings → Controls sub-panel with a row-per-action list. Each row shows current bindings as chips + Add-binding / Reset buttons. New-binding capture via a modal that listens to `_UnhandledInput`; conflict detection surfaces a reassign-or-cancel prompt on cross-action collision. Escape is reserved — cannot be bound to anything (always cancels). Persistence is a Godot `ConfigFile` at `user://input_bindings.cfg` that loads at game start to override `project.godot` defaults. Preview-rebind with Escape-discards-changes — only "Done" saves. Controller-type-appropriate button labels render via `InputEvent.AsText()`. Fully keyboard-navigable (no mouse required).
+
+**Impl scope snapshot:** SPEC-MOVEMENT-ACCEL-01 is zero-code (confirmation spec). SPEC-GAMEPAD-INPUT-01 is project.godot edits only (InputMap bindings + deadzone attributes) — the `Input.GetVector` / `Input.IsActionPressed` abstractions already in place make it code-free at the gameplay layer. SPEC-INPUT-REBINDING-UI-01 has real implementation scope — new autoload `InputBindings` + new modal `BindingCaptureDialog` + new sub-scene `controls_settings.tscn`. It's a P2 ticket; lands when the rest of Phase I is ready to ship.
+
+Next up: Phase J — deferrable/future. Everything there is optional and unblocked by nothing currently active. I'll present the options as an MC so you can pick which (if any) to spec now.
+
+---
+
+## 2026-04-18 — Phase H complete: UI canonical decisions locked (font, scaling, HUD, shake, hitstop)
+
+All five Phase H specs landed together — the UI-wide constants every downstream spec inherits.
+
+- **SPEC-UI-FONT-01** → [docs/ui/font.md](ui/font.md). **Press Start 2P** chosen as the canonical font over three alternatives (modern pixel font with lowercase, Alagard-style fantasy pixel, clean sans-serif). PO picked PS2P for the iconic retro-arcade match with the cartoonish pixel art, accepting the all-caps tradeoff. Known cost: the Village Chief's long sentences (wise-elder voice) need line-spacing ×1.5 + ~50-char line cap + paragraph breaks to stay readable in all-caps; mitigation rules specced. Size ladder re-authored to integer-multiples-of-8 (PS2P's native cell): Small=8, Body=Label=Button=16 (collapsed together — distinguishing by weight/color beats distinguishing by font size at pixel scale), Heading=24, Title=32, HeroTitle=48.
+
+- **SPEC-UI-HIGH-DPI-01** → [docs/ui/high-dpi.md](ui/high-dpi.md). Integer-only scaling strategy, design resolution 1280×720. Godot project settings: canvas_items + keep-aspect + integer + nearest-filter. Retina/4K gets 2×/3× cleanly; odd resolutions get letterboxed (preserves every authoring pixel, at the cost of unused black bars on the margins — honest tradeoff for pixel art). Fullscreen mode = borderless-windowed with largest-fitting integer scale. No fractional-scale options anywhere in the Options menu (would blur PS2P + pixel sprites).
+
+- **SPEC-HUD-LAYOUT-01** → [docs/ui/hud-layout.md](ui/hud-layout.md). Diablo-style orb layout (HP bottom-left, MP bottom-right, skill bar between) stays. Added: buff bar top-center (hidden when empty) for Innate toggles, Tab hold-to-peek Stats overlay (pauses game while held — faster for check-stats-during-combat than click-to-open-and-close). Full hotkey table locked. No user-toggleable HUD elements — core gameplay feedback (HP/MP/skill-bar/floor/compass) is always visible by design.
+
+- **SPEC-CAMERA-SHAKE-01** → [docs/ui/camera-shake.md](ui/camera-shake.md). Damage-proportional screen shake: `intensity = 4px * damage_ratio`, `duration = 300ms * damage_ratio`. Flat overrides for crit (100ms/1px), boss defeat (500ms/3px), phase-shift (200ms/2px — pairs with the existing `FlashFx.Flash`). Red-flash pairing for lethal-range hits (≥75% max HP). Linear decay (exponential feels too aggressive). Per-frame random jitter (smoothed = earthquake, wrong signal). Overlapping shakes take **max**, not sum. Accessibility toggle scales to 25%/50% (never zero — hit feedback is non-negotiable).
+
+- **SPEC-HITSTOP-01** → [docs/ui/hitstop.md](ui/hitstop.md). Frame counts at 60 FPS reference: regular hit 2f, crit 4f, damage taken 3f, phase-shift 6f, boss defeat 10f. Durations computed as `frames/60` seconds so 120/144 FPS displays preserve wall-clock feel. Scope of the pause: game-world physics + AI + projectile travel freeze; audio + particles + UI animations continue (audio cutting out reads as lag, not hitstop). Overlapping take max. Accessibility toggle zeroes all durations.
+
+**One design-decision MC this phase** (font); the other four were made inline with reasonable defaults since they have smaller blast radius than font. Phase H closure also enabled the remote's auto-delete-on-merge setting and pruned 21 stale branches (15 remote + 6 local, all from merged PRs) — bookkeeping cleanup the PO requested mid-phase.
+
+Next up: Phase I — movement & input completion. SPEC-MOVEMENT-ACCEL-01 first (instant vs eased player movement feel), then gamepad input, then rebinding UI.
+
+---
+
+## 2026-04-18 — Phase G complete: NPC dialogue voices + service-menu wireframes locked
+
+All 4 Phase G specs landed in one pass:
+
+- **SPEC-NPC-DIALOGUE-VOICES-01** → [docs/flows/npc-dialogue-voices.md](flows/npc-dialogue-voices.md). Three voice profiles — Blacksmith casual-warm pioneer-smith-learning; Guild Maid clean-clipped crisp-service; Village Chief warm-formal wise-elder. Five voice-distinction tests so any line is attributable to one NPC. Post-death + low-HP + high-value-transaction variants specced per NPC; cross-NPC routing lines in each NPC's voice. No engine enforcement — voice rules are prose-level for dialogue authors.
+
+- **SPEC-VILLAGE-CHIEF-DIALOGUE-01** → [docs/flows/village-chief-dialogue.md](flows/village-chief-dialogue.md). Six-state dialogue tree (first_meeting / idle / quest_offered / quest_in_progress / quest_complete / quest_declined) with full per-state Chief-voice text. Quest-body templating slots fed by the quest system so the shell is the same for every quest. **Design note:** branches are narrow — every player option resolves to "open menu" or "close panel." Voice is wrapping, not branching narrative.
+
+- **SPEC-BLACKSMITH-MERGED-MENU-01** → [docs/ui/blacksmith-menu.md](ui/blacksmith-menu.md). Four tabs, default Forge: Forge / Craft / Recycle / Shop. Q/E cycle + 1-4 jump. Shop tab is NEW here (absorbed from the prior Guild Store) and is caravan-stocked basics via `BlacksmithShopStock` item-database tag. Blacksmith voice silent on routine ops; fires on notable events (first-craft, unfamiliar material, oddity).
+
+- **SPEC-GUILD-MAID-MERGED-MENU-01** → [docs/ui/guild-maid-menu.md](ui/guild-maid-menu.md). Two tabs, default Bank: Bank / Teleport. No quest pickup — quest queries route to Chief. Partially supersedes [guild-window.md](ui/guild-window.md): Store moves OUT to Blacksmith; Teleport tab is NEW (absorbed from the removed Teleporter NPC's `TeleportDialog`); Transfer tab collapses INTO the Bank tab's two-column layout.
+
+**Collectively unblocks NPC-ROSTER-REWIRE-01** — the code ticket that consolidates services to the 3-NPC roster now has every design prerequisite locked. Impl can proceed without further design input. Two user course-corrections absorbed during Phase G: (1) the "is the Chief dialogue too in-depth?" check — confirmed it's voice wrapping around menu selections, not branching narrative, so kept as written; (2) the auto-mode speed directive — finished Phase G without waiting for per-spec approval.
+
+Next up: Phase H — UI canonical decisions. SPEC-UI-FONT-01 is the "do early or pay later" top of that phase (every text surface inherits the font choice).
+
+---
+
+## 2026-04-18 — Phase F complete: all 8 boss specs locked
+
+All 8 zone-capstone bosses now have individual spec files at `docs/world/bosses/<boss-name>.md`, each following the boss-adapted 8-section template. Lifted from [boss-art.md §§218-430](world/boss-art.md) (which had ~90% of the content already) and expanded with acceptance criteria, impl notes (phase-shift flag patterns, FlashFx hook signatures, save-flag gating, AI-switch timing), and explicit open-questions sections (all "None — locked" since design was already settled in boss-art.md).
+
+**Roster:**
+- **Bone Overlord** (zone 1, floor 10) — 2-phase burst-down-fast; Phase 2 at 50% HP is a 900ms ground-slam AOE. Skeleton species base. Player's first "real boss" moment.
+- **Howling Pack-Father** (zone 2, floor 20) — 2-phase burst-down-fast; Phase 2 summons 2× 1-HP phantom wolves (pack fantasy without full pack-AI entanglement).
+- **Chitin Matriarch** (zone 3, floor 30) — 2-phase kite-from-range; Phase 2 adds 3× spiderlings + ground-web 50% slow AOE for 2s.
+- **Hollow Archon** (zone 4, floor 40) — 2-phase caster, airborne z+24; Phase 2 adds a 1200ms ground-wave AOE with visible floor-glyph.
+- **Warlord of the Fifth** (zone 5, floor 50) — 2-phase ranged-kite throwing axes; Phase 2 halves throw cooldown + adds 700ms charge attack.
+- **Screaming Flight** (zone 6, floor 60) — **first 3-phase boss**, close-the-gap. Phase 1 airborne `ranged-kite`-inverted, Phase 2 spawns 1-HP bat-fragment adds, Phase 3 ground-collapse (z+40 → 0 over 600ms) + switch to `melee-chase`. **Decision: no separate swarm-fused species sub-spec — fusion is boss-only using base Bat body plan.** The roadmap had flagged this as a possible sub-spec; on review, the fusion doesn't need a reusable species definition since it's a one-off encounter.
+- **Iron-Gut Goblin King** (zone 7, floor 70) — 3-phase close-the-gap. Phase 2 iron-slag DOT zone, Phase 3 turret-mode (stationary projectile firer). **First-kill bundle uniquely layered** with Zone 1-3 species signatures (Bone Dust, Wolf Pelt, Chitin Fragment) — fiction into mechanic: "the King has eaten all of them."
+- **Volcano Tyrant** (zone 8, floor 80, deepest) — 3-phase close-the-gap, Orc species base (shares body plan with zone-5 Warlord but fully differentiated silhouette/aura/mechanics). **Phase 3 signature mechanic: passive heat-aura DOT within 2 tiles** — player must balance attack uptime against burn damage. Largest boss at 2.2× scale, deepest shadow palette at 3 steps darker.
+
+**Unique-drop pairing** (already locked in boss-art.md §4): each boss's first-kill roll comes from a specific FORGE-01 tier pool — Tier 1 (3 uniques) at zone 1, scaling up to Tier 5 (10 uniques) at zones 5-8.
+
+**Phase-shift flag pattern:** 2-phase bosses use one `_phase2Entered` flag; 3-phase bosses (Screaming Flight, Goblin King, Volcano Tyrant) use two flags to prevent HP-bounce re-triggering. FlashFx.Flash(White, 120ms) fires on every threshold crossing per impl convention.
+
+**Arena-bound + leash regen** is universal: all 8 bosses regen 5%/s HP if the player leaves the arena tile-set. Individual arenas defined in the paired ART-SPEC-BOSS-01.
+
+Phase F total edit: 8 new spec files + shared-file updates. Roadmap Phase F boxes all checked; Next up Phase G — NPC dialogue & service-menu specs (unblocks NPC-ROSTER-REWIRE-01 impl).
+
+---
+
+## 2026-04-18 — SPEC-SPECIES-BAT-01 locked (Phase E kickoff)
+
+First Phase E species spec locked. Lifted the worked example from `species-template.md` into a new file at `docs/world/species/bat.md`. Reaction `kite-from-range`; AI `melee-chase` with a swooping motion curve that sells the airborne feel without adding special AI logic. Scale Small (0.70×), hitbox 8px, z-offset +28px (airborne — the iso Y-sort needs flyers to render above grounded sprites). Silhouette constraint: spread wings + lifted pose, readable as airborne from 8 tiles away — this is the load-bearing visual test that ART-14 will pass or fail on. Stats at floors 3/28/75: HP 22/120/540, contact damage 4/14/38, speed 90/105/120, XP 12/48/180; target TTK is 2-3 hits every floor (frail by design, "swat them fast or eat the dive"). Drop-table hook matches `MonsterDropTable.cs:41` exactly — signature `material_sig_bat` 8% per kill, thematic Hide (60/20/20 split). Feeds zone 6 boss "Screaming Flight" as a swarm-fused variant; the boss encounter gets its own spec and won't expand this species file. Phase E tracker section created at dev-tracker line ~262 (above Phase D). Six parallel species agents dispatched for Skeleton / Wolf / Spider / DarkMage / Orc / Goblin — they'll append rows to this new Phase E tracker section as they land.
+
+---
+
+## 2026-04-18 — SPEC-MAGIC-COMBAT-FORMULA-01 locked (Phase D partial; COMBAT-03 gated)
+
+Locked Mage spell damage as **INT-only, no density coupling**. The existing `effective_int * 1.2%` formula in stats.md stays canonical; floor density (from SPEC-MAGICULE-DENSITY-01) is explicitly excluded from the spell-damage calculation. Option A chosen over three alternatives that added depth-scaled damage boosts — the concern was class balance: only Mages consciously channel environmental magicules, so a density multiplier on Mage damage would scale them past Warriors and Rangers at depth. Keeping damage INT-only preserves class symmetry at any floor.
+
+The bigger payoff of this spec is a **canonical "what density does and does not modify" table** added to magic.md §Density Formula. Now every Phase E/F/G spec (and any future work that references magicule density) has a single authoritative listing of what density touches: enemy scaling yes, regurgitation rates yes, environmental pressure yes; player combat math no, Innate drain no, spell mana cost no, ability cooldowns no. The guiding principle: *density manifests through the world, not through the player's inherent combat math.* This keeps the player's damage and costs legible at any depth — the world becomes hostile, the player's math doesn't.
+
+Edits: stats.md §INT spell-damage bullet gained an explicit "NOT modified by density" line with SPEC pointer; magic.md §Density Formula gained the canonical affects/doesn't-affect table + a closing paragraph stating the principle. Roadmap Phase D first box checked; dev-tracker gained a new Phase D section. **SPEC-COMBAT-03 stays Blocked** per roadmap — needs COMBAT-01 + COMBAT-02 impl to land first (real equipment to balance against). Next up: Phase E fan-out on per-species specs.
+
+---
+
+## 2026-04-18 — Phase C complete via reconciliation (SPEC-SKILL-POINTS-RATE-01, SPEC-INNATE-SYNERGIES-01, SPEC-MASTERY-THRESHOLD-FX-01)
+
+All three Phase C specs from `docs/spec-roadmap.md` closed in a single reconciliation pass — no new design decisions, no MC questions, no agent dispatches. The roadmap's Phase C entries flagged TBDs in the ARCHIVED `docs/systems/SKILLS_AND_ABILITIES_SYSTEMS.md`, but each of those TBDs was already fully resolved in a LOCKED live spec:
+
+- **SPEC-SKILL-POINTS-RATE-01** → [point-economy.md](systems/point-economy.md) already defines SP (2/level + 1 at milestones), AP (3/level + 5 at milestones plus combat-milestone + use-based sources), XP-per-point formula, and the 60/25/15 AP-source split. The archive's "needs adjustment for separate pools" line was stale — the separate-pools architecture in point-economy.md *was* the adjustment.
+- **SPEC-INNATE-SYNERGIES-01** → [synergy-bonuses.md §Innate Synergies](systems/synergy-bonuses.md#innate-synergies-affect-all-abilities) already defines the Lv. 5/10/25/50/100 ladder for all four Innates (Haste/Sense/Fortify/Armor) and spells out that Innate synergies affect ALL Abilities, not just children — the exact thing the archive said was TBD.
+- **SPEC-MASTERY-THRESHOLD-FX-01** → [ability-affinity.md](systems/ability-affinity.md) already defines the four use-based affinity tiers (Familiar 100 / Practiced 500 / Expert 1,000 / Mastered 5,000 uses) with cumulative cosmetic effects, passive/toggle tracking rules, and Armor exclusion. The "MASTERY-THRESHOLD-FX" spec name is a misnomer — it's actually the use-based affinity system, not a mastery-level FX system.
+
+Edits: replaced four stale TBD blocks in the archive with one-line pointers at the live specs ([§Synergy Bonuses](systems/SKILLS_AND_ABILITIES_SYSTEMS.md), §Ability Affinity, §Point Systems, and line 158's "Innate synergies ... (details TBD)"). Checked the three completed items in the archive's TODO list. Updated spec-roadmap Phase C boxes with resolution notes; dev-tracker gained a new Phase C section with full reconciliation provenance for each spec.
+
+**This is the same pattern as Phase A's AUDIT-09/10/11:** the archive had drifted out of sync with the live specs, and the reconciliation ticket just realigned the pointers. Zero new design, zero code, zero impl ticket surface. Phase C total edit size: 5 files, ~50 lines net. Next up: Phase D (mage combat formula, feeds off the Phase B density curve).
+
+---
+
+## 2026-04-18 — SPEC-INNATE-STACKING-01 locked (Phase B complete)
+
+Locked the concurrency rule for toggle Innates. Design decision: **Option A — Free stacking, no hard concurrency cap.** Haste, Sense, and Fortify can all be activated in any combination simultaneously; Armor is always-on and does not participate. The mana economy is the sole governor — combined drain sums additively. At level 1, running all three costs **23.33 mana/sec** (13.33 + 6.67 + 3.33), which burns a Mage's 200-mana base pool in **~8.6 seconds** with no regen. Pair combinations give intermediate uptime (Haste+Sense ~10s, Haste+Fortify ~12s, Sense+Fortify ~20s) and enable three named combo plays: Fortify+Haste durable sprinter, Sense+Haste scout, Sense+Fortify cautious explorer.
+
+**Why no hard cap.** A one-active limit would be a UI constraint that says "the game decided what you can do." Free stacking instead says "the game decided what you can afford." The latter is the more interesting question and keeps every combo-play open without forcing an arbitrary choice at the UI layer. Mid-game payoff example: level-15 Innates (~60% of base drain per SPEC-INNATE-MANA-COST-01's `0.96^L` curve) on a 400-mana pool with ~12 mana/s regen from Attunement gives a net drain of only ~2.0 mana/s for all three — sustainable indefinitely. That's the build-identity payoff for Mages who invest in Attunement/INT. Warriors (60 pool) naturally burst one at a time; Rangers (100 pool) manage in the middle.
+
+Edits: added new subsection [§Stacking Rule (SPEC-INNATE-STACKING-01)](systems/magic.md#stacking-rule-spec-innate-stacking-01) under §Innate Skills with the rule, the full 7-row stacking-combinations drain table, three named combo-play writeups (Fortify+Haste / Sense+Haste / Sense+Fortify), a mid-game worked example, and per-class build-identity guidance. Added acceptance-criteria bullet: "Haste/Sense/Fortify can be active simultaneously with no hard concurrency cap; combined mana drain is the only limit." Removed Open Question 5 from §Open Questions. Phase B of `docs/spec-roadmap.md` now complete — all three Phase B specs (SPEC-MAGICULE-DENSITY-01, SPEC-INNATE-MANA-COST-01, SPEC-INNATE-STACKING-01) locked on the same day. Next up: Phase C opens with SPEC-SKILL-POINTS-RATE-01.
+
+**Impl notes carried to dev-tracker:** drain aggregation is a per-frame sum over active toggle-Innates (`totalDrain = sum(drain(L_i) for i in active)`); no concurrency guard in toggle-activation code; mana-exhaustion forces all active toggle-Innates off simultaneously (do not pick one to preserve); HUD mana-drain indicator should show summed drain as a small numeric badge when multiple Innates are active, not per-Innate breakdown.
+
+---
+
+## 2026-04-18 — SPEC-INNATE-MANA-COST-01 locked (Phase B, second spec)
+
+Locked per-Innate level-1 mana drain rates + the shared per-level scaling curve for the three toggle Innates (Armor is excluded — it has no drain). Design decision: **asymmetric level-1 uptime by role**, anchored on the Mage's 200-mana base pool with no regen and no density coupling. Haste is the **burst tool** — 13.33 mana/s → ~15s uptime. Sense is the **exploration tool** — 6.67 mana/s → ~30s uptime. Fortify is the **held stance** — 3.33 mana/s → ~60s uptime. The asymmetry trains the player to spend Haste decisively, flick Sense on at corners, and commit Fortify through a full room-clear; a flat-rate drain would have blurred those intents.
+
+**Shared scaling curve:** `drain(L) = max(base_drain * 0.96^L, base_drain * 0.25)`. 4% compounded reduction per level, floored at 25% of base at level 35. Chosen for legibility: ~50% drain at level 17, ~34% at level 30, floor at 35. Innates become visibly cheaper every level you invest without ever going to zero — the Innate you used for 15s at unlock gives you nearly a full minute by level 35.
+
+**Explicit non-coupling:** drain is NOT modified by floor density. Innate cost is the brain's processing cost, not an environmental cost. Deep floors make monsters stronger and the air hostile (SPEC-MAGICULE-DENSITY-01), but they don't tax your Innates. Keeps the Innate tick independent of `DungeonIntelligence` / floor state and keeps the drain math legible to players.
+
+Edits: added `Mana drain (level 1)` + `Why short/medium/long uptime` lines to each of Haste / Sense / Fortify in [magic.md §Innate Skills](systems/magic.md#innate-skills-universal); added new subsection [§Drain Scaling Per Level (SPEC-INNATE-MANA-COST-01)](systems/magic.md#drain-scaling-per-level-spec-innate-mana-cost-01) with formula, drain table (L1/5/10/20/30/35+/50), and Mage uptime table at key levels; tightened acceptance criteria bullets for Haste/Sense/Fortify to cite concrete drain rates and the scaling section; added "Innate drain not modified by floor density" bullet. Removed Open Question 1 from §Open Questions. Updated §Innate skill design principles to reference the shared drain curve and asymmetric level-1 uptime.
+
+Co-ran with two other design-lead agents on the same doc: SPEC-MAGICULE-DENSITY-01 (landed first, closed Q2/Q3, edited §Magicule Density) and SPEC-INNATE-STACKING-01 (edited §Innate Skills for concurrency rule, closed Q5). Scoped my edits to the per-Innate drain lines, the new §Drain Scaling subsection, the Haste/Sense/Fortify acceptance bullets, and Q1 — zero collision with the other two agents' anchors.
+
+---
+
+## 2026-04-18 — SPEC-MAGICULE-DENSITY-01 locked (Phase B kickoff)
+
+Locked the piecewise formula for magicule density vs floor in [magic.md §Density Formula (SPEC-MAGICULE-DENSITY-01)](systems/magic.md#density-formula-spec-magicule-density-01). Option A (piecewise): linear `density = F/100` for floors 1–100, exponential `density = 1.0 · k^(F-100)` with `k = 1.032` for floors 101+. Chosen `k` rationale: 1.032 means each floor past the threshold multiplies density by 3.2%, compounding to a doubling every ~22 floors — hits all PO anchor targets cleanly. Floor 180 lands at density ≈12.4 (inside the "elite territory 10–20" band), floor 200 at ≈23.3 (still elite-only reach), floor 250 at ≈110 (well into "nobody farms here"). Below the threshold, the linear ramp keeps the first 100 floors mechanically quiet — the environment is a whisper, not a shove. Above it, the exponential makes each additional floor a real commitment. No hard wall anywhere; the ceiling is a gradient of futility.
+
+Closed `magic.md` Open Questions Q2 (scaling formula) and Q3 (danger threshold) — deleted clean rather than leaving resolved-pointer lines, matching the Phase A RECONCILE pattern. Acceptance criterion for the density gradient updated to cite the formula and its thresholds instead of the old vague "natural hard ceiling at extreme depth" line. Cross-ref added in `docs/world/dungeon.md` §Magicule Density Gradient pointing at magic.md as canonical — the narrative gradient there now has a numerical backbone.
+
+No code changes. This spec is the **load-bearing magic number** every downstream Phase B/C/D spec inherits. Now unblocked to proceed: SPEC-INNATE-MANA-COST-01 (per-Innate mana drain can now scale against a known density curve), SPEC-INNATE-STACKING-01, SPEC-MAGIC-COMBAT-FORMULA-01, and any future content spec that needs to price "how dangerous is floor N?" (dungeon-pacts, dungeon-intelligence, future boss tuning). Phase B spec 1 of 3 locked; spec-roadmap `Next up` advanced to SPEC-INNATE-MANA-COST-01. dev-tracker gained a new "Spec Roadmap Tickets — Phase B" section to track the roadmap's Phase B entries as they land.
+
+Three other design-lead agents were running in parallel on SPEC-INNATE-MANA-COST-01 and SPEC-INNATE-STACKING-01 (both touch §Innate Skills and §Open Questions); scoped my edits to §Magicule Density + the two specific Open Questions I own (Q2/Q3) to avoid collision — Q1/Q5 stay open for their specs to close.
+
+---
+
+## 2026-04-18 — SPEC-AFFIX-TIER-LADDER-01 locked (AUDIT-10 spec'd)
+
+Locked T5 (min item level 75) and T6 (min item level 100) affix ladders in [items.md §T5 + T6 Affix Ladder](inventory/items.md#t5--t6-affix-ladder-spec-affix-tier-ladder-01). Option B — extended 8 build-defining families (keen, vicious, sturdy, warding, striking, ruin, bear, swiftness) to T5/T6; niche families (energizing, learning, flame_resist, frozen, shocking, swift, evasion, fiery, fortified) stay capped at T3/T4 to keep Elite/Legendary tiers focused on pillars rather than breadth. Flat values scale ≈1.5× per tier above T4 (damage 22→35→50; max_hp 60→90→130); percent values target the center of each power band (35% at T5, 50% at T6) and cap at 50% to preserve additive-stacking headroom across the 10-ring build space. Gold ≈2.5× per tier (T4 ~860 → T5 ~2200 → T6 ~4500); materials linear (+13, +20) so the gate is gold-dominant. 16 new registrations total, raising AffixDatabase from 28 → 44. Impl ticket AUDIT-10 can copy rows directly into two new `// --- Tier 5 ---` / `// --- Tier 6 ---` blocks — no code logic changes (`GetMaxTier` already returns 5/6 at correct thresholds). Phase A of `docs/spec-roadmap.md` now complete — all three reconciliation specs locked on the same day, unblocking Phase B.
+
+---
+
+## 2026-04-18 — SPEC-CRAFTING-QUALITY-LADDER-01 landed (AUDIT-11 spec'd)
+
+Locked the recycle quality-bonus ladder for the three deep-floor tiers. Option B (geometric, doubles per tier): Normal 0, Superior ×0.25, Elite ×0.5, Masterwork ×1.0, Mythic ×2.0, Transcendent ×4.0 applied to `baseGold = 5 + item.ItemLevel * 2`. Rationale: matches the geometric shape of the existing craft-cost multiplier (1.0/1.2/1.5/2.0/3.0/5.0) and the "infinite descent, infinite incentive" design intent — deep items cost more to build and return more when broken down. Canonical formula table now lives in `docs/systems/depth-gear-tiers.md` §Interaction with Other Systems → Recycling (previously just a vague "proportionally more materials" line). `docs/flows/blacksmith.md` Recycle Flow preview also updated to match, with a pointer back to depth-gear-tiers.md as canonical. Impl ticket can copy the three new switch arms directly into `Crafting.RecycleItem` without further design. Out-of-scope follow-up flagged: current recycle returns gold only, not materials — if that's ever wanted, it needs its own spec. Phase A Reconciliation now 2 of 3 specs locked (SPEC-AFFIX-TIER-LADDER-01 still open).
+
+---
+
+## 2026-04-18 — SPEC-RECONCILE-BRACKETS-01 landed (AUDIT-09 resolved)
+
+`item-generation.md` §Quality Distribution superseded by `depth-gear-tiers.md` §Drop Rates. Stale 5-bracket / 3-quality table deleted, replaced with a single-line pointer. The 5-bracket floor-tier system stays canonical for catalog tier + material tier; the 7-bracket system is canonical for BaseQuality rolls. Code already matched the 7-bracket canon — docs-only edit. First Phase A reconciliation spec in `docs/spec-roadmap.md` checked off.
+
+---
+
+## 2026-04-17 — ART-SPEC-01 rewritten for true-iso / Diablo 1 reference
+
+Rewrote [docs/assets/prompt-templates.md](assets/prompt-templates.md) from scratch. **v1 (commit `375f42e`) superseded** — it was authored under the mistaken assumption that the engine renders in "low top-down" and that PixelLab's `view: low top-down` was a close-enough match. The live engine is true 2:1 isometric per SPEC-ISO-01, and v1's framing is the root cause of the empirical `+Vector2(0,40)` spawn offset in `Dungeon.cs` that ISO-01d removes.
+
+v2 pivots the entire pipeline to Diablo 1 / Hellfire as the visual north star (inspiration only — no licensed-asset replication). Reference images loaded: D1/Hellfire Warrior / Rogue / Sorcerer 8-dir sheets, D1 Catacombs tile atlas (floors + N/S/E/W wall faces + corners + T-junctions + cross-junctions + stairs + doors), D1 Arrow 8-dir projectile, D1 Spell Icons.
+
+**Seven named blocks** replace v1's five: `CHAR-HUM-ISO`, `CHAR-MON-ISO` (four sub-variants), `TILE-ISO-ATLAS`, `OBJ-ISO`, `PROJ-ISO-8DIR`, `ICON-UI-64`, `PORTRAIT-NPC`, `PORTRAIT-CLASS`. Two portrait blocks are new (NPC bust + class hero), earned under the ≥3-asset extension rule.
+
+**New in v2:** perspective + canvas contract section that locks the bottom-center anchor rule with a derived offset formula (`Sprite2D.offset.y = -(H/2) - 16`), the iso 8-direction rotation naming convention mapped to screen space, per-family canvas sizes, and an iso-alignment bullet added to the PR drift-prevention checklist. Redraw policy: every shipped character / monster / tile / object is slated for re-gen; exempt assets are the game logo, game icon, HP orb, MP orb.
+
+**Wave 2 asset family specs (ART-SPEC-02 through ART-SPEC-09) unblocked.** Each wave-2 spec consumes this doc as its foundation and extends exactly one block with family-specific authoring details.
+
+---
+
+## 2026-04-17 — SPEC-SPECIES-01 locked (design half of tag-team with ART-SPEC-02)
+
+Locked [docs/world/species-template.md](world/species-template.md) — meta-spec for every future monster-species ticket. Eight required sections (Identity / Stats / AI Pattern / Drop-Table Hook / Silhouette Readability / Size-Scale / Color-Coding / Art-Spec Pairing), with locked vocabularies for emotional reaction (5 values) and AI pattern (5 values), three sample-floor stat snapshots (3 / 28 / 75), and an Acceptance Matrix. Worked Bat example included (SPEC-SPECIES-BAT-01). Paired with ART-SPEC-02 — neither half locks without the other.
+
+---
+
+## 2026-04-17 — ART-SPEC-01 IP-clean sweep + Wave 2 Batch 1 lands
+
+**ART-SPEC-01 IP sweep** (commit `5e9e70f`) — scrubbed all direct brand/IP references from the prompt template library after PO flagged licensing/copyright concerns with the Diablo-heavy phrasing in the initial v2 rewrite. New universal preamble leads with "cartoonish pixel art with bold compact silhouettes and slightly exaggerated proportions" as the primary style differentiator. All "rendered in Diablo 1 / Hellfire style" clauses replaced with "rendered in cartoonish isometric pixel-art style"; palette phrasing switched from "Diablo 1 catacombs palette" to "classic dungeon-crawler palette". New §11 IP Protection locks six hard rules including no named-IP in prompts, cartoonish qualifier load-bearing, and PR-review audit trigger. Memory `feedback_art_pipeline.md` updated to cite ART-SPEC-01 §11 as binding on every art-lead dispatch.
+
+**Wave 2 Batch 1 (4 specs landed):**
+
+- **ART-SPEC-02** ([docs/assets/species-pipeline.md](assets/species-pipeline.md)) — generation-side half of SPEC-SPECIES-01 tag-team; sub-variant trigger table, slot table, 8-dir carve-out, palette-clamp/exempt-pixel resolution rule, scale+z-offset mapping, handoff checklist, Bat worked example with full copy-paste prompt (IP-clean per ART-SPEC-01 §11).
+- **SPEC-PC-ART-01** ([docs/world/player-classes-art.md](world/player-classes-art.md)) — game-facing visual identity for Warrior/Ranger/Mage. Single default sprite per class; equipment surfaces via paperdoll UI, never on world sprite. Silhouette differentiation on three orthogonal axes (width/height/compactness). Paired with ART-SPEC-PC-01 (art-lead) for co-lock.
+- **ART-SPEC-PC-01** ([docs/assets/player-class-pipeline.md](assets/player-class-pipeline.md)) — three copy-paste PixelLab prompts (Warrior plate+sword+shield, Ranger leather+shortbow+hood, Mage robes+staff+hat), animation recipe (walking + fight-stance-idle-8-frames + per-class attack: cross-punch/lead-jab/fireball), download layout, 64×64 silhouette PR gate, Bucket-A delete-before-regen hook. Co-locks with SPEC-PC-ART-01.
+- **ART-SPEC-03** ([docs/assets/tile-pipeline.md](assets/tile-pipeline.md)) — full 30-slot Dungeon biome tile prompt library + per-biome palette/motif substitution table for the other 7 biomes; extends TILE-ISO-ATLAS from ART-SPEC-01 v2; blocks ART-12 tile-atlas redraw; delete-before-regen hook cites asset-inventory.md Bucket D.
+
+Batch 2 queued: ART-SPEC-NPC-01 pair + ART-SPEC-04 (map objects) + ART-SPEC-05 (containers).
+
+---
+
+## 2026-04-18 — Wave 2 Batch 2 lands (overnight autonomous run)
+
+**Four specs locked while PO stepped away:**
+
+- **SPEC-NPC-ART-01** ([docs/world/npc-art.md](world/npc-art.md)) — Three NPCs locked: Blacksmith (forge+craft+shop), Guild Maid (bank+teleport), Village Chief (quests, fresh design — sage-green robes, silver chain-of-office, gnarled staff). Scale 0.95×, 4-direction + idle only (NPCs static), PCs exempt from player-blue accent to maintain NPC-vs-PC silhouette distinction. 5 hard constraints on differentiation.
+- **ART-SPEC-NPC-01** ([docs/assets/npc-pipeline.md](assets/npc-pipeline.md)) — Art half of the NPC tag-team. Three copy-paste prompts, 128×128 @ 0.95× render, `breathing-idle` animation only, 12-frame town budget. Bucket C sweep deletes 4 obsolete NPC dirs (banker/shopkeeper/guild_master/teleporter) in same PR. Gated on `NPC-ROSTER-REWIRE-01` code landing first.
+- **ART-SPEC-04** ([docs/assets/object-pipeline.md](assets/object-pipeline.md)) — Map objects. 5 families (Light/Structural/Sacred/Hazard/Decor), 16 Dungeon slots with full prompts, 7-biome palette+motif substitution table with 4 worked examples. Family-first directory layout. Hazard family re-categorizes 6 existing `assets/effects/*.png` files as bottom-center iso props; 12 remain as FX for future ART-SPEC-FX-01. Town sacred slots reframed (altar→fountain, shrine→sign-post, gargoyle→weathervane).
+- **ART-SPEC-05** ([docs/assets/container-pipeline.md](assets/container-pipeline.md)) — Container pipeline for SPEC-LOOT-01. 3 types × 2 states × 2 variants = 12 sprites. Chest-open taller canvas (64×96) with documented `Sprite2D.Offset` adjustment from `(0, -32)` → `(0, -48)` at state swap; bottom-center anchor stable across swap. Per-biome variation via runtime `Modulate` only, no per-biome sprite variants.
+
+All four IP-clean per ART-SPEC-01 §11. Batch 3 queued: ART-SPEC-06 (equipment catalog) + ART-SPEC-07 (projectiles) + ART-SPEC-08 (ability/skill icons).
+
+---
+
+## 2026-04-18 — Wave 2 Batch 3 lands
+
+**Three art-only specs locked:**
+
+- **ART-SPEC-06** ([docs/assets/equipment-catalog-pipeline.md](assets/equipment-catalog-pipeline.md)) — Equipment catalog UI icon pipeline for 259 items. Introduces `ITEM-ICON-64` block as sibling to ICON-UI-64 (detailed-illustration style vs. pictograph). 5-metal palette ladder (Iron/Steel/Mithril/Orichalcum/Dragonite) with per-tier sub-clamps. 7 prompt skeletons covering armor / weapons / offhands / quivers / neck / ring / consumables / materials. Class-voice armor palette (Warrior plate / Ranger leather / Mage cloth). Tier-banded generation plan bootstraps inventory UI with ~50 Tier-1 sprites. Asset layout keyed to ItemDatabase.cs item IDs.
+- **ART-SPEC-07** ([docs/assets/projectile-pipeline.md](assets/projectile-pipeline.md)) — Projectile pipeline for 9 existing sprites. 256×32 horizontal atlas. Agent caught a discrepancy between my brief (N-indexed frame order) and `Projectile.cs:47-50` (east-indexed, angle 0 = frame 0); correctly used engine as source of truth and flagged for review. Option C mixed strategy: 5 asymmetric projectiles get 8-direction PixelLab generation; 4 symmetric get 1-direction + programmatic rotation (44 total calls vs 72 naive). All 9 full copy-paste prompts in-spec.
+- **ART-SPEC-08** ([docs/assets/ability-icons-pipeline.md](assets/ability-icons-pipeline.md)) — Ability/skill/mastery icon pipeline (~130 icons: 27 mastery + 12 MVP ability + ~90 long-tail). Per-category accent color convention locked per class + mastery element. Genre-generic pictograph vocabulary. 27-mastery pictograph map complete. 12 MVP full prompts. ~90 long-tail authorable from skeleton + vocabulary without reopening spec. Per-class atlas compositing recipe.
+
+All three IP-clean per ART-SPEC-01 §11. Batch 4 queued: SPEC-BOSS-ART-01 + ART-SPEC-BOSS-01 (tag-team) + ART-SPEC-09 (portraits; resolves splash_background decision).
+
+---
+
+## 2026-04-18 — Wave 2 Batch 4 lands + Wave 2 complete
+
+**Three specs + one sync pass:**
+
+- **SPEC-BOSS-ART-01** ([docs/world/boss-art.md](world/boss-art.md)) — Boss design half. Boss concept: deepest denizen of each zone, ordinary species warped by years of magicule accumulation. Template adapts SPEC-SPECIES-01 with boss multipliers (HP ×5–8, dmg ×2–3, speed ×0.8, XP ×10) and phase-shift convention at 50% / 25% HP. 8-boss starter roster tied to zones 1-8 (Bone Overlord / Howling Pack-Father / Chitin Matriarch / Hollow Archon / Warlord of the Fifth / The Screaming Flight / Iron-Gut Goblin King / Volcano Tyrant), zone-1 fully worked, zones 2-8 skeleton-filled. Zone→FORGE-01 unique-pool tier mapping locked.
+- **ART-SPEC-BOSS-01** ([docs/assets/boss-pipeline.md](assets/boss-pipeline.md)) — Boss art half. Extends CHAR-MON-ISO with boss-tier overrides (canvas 160×160, offset -96, scale 1.7–2.5×, 8-dir mandatory, falling-back-death required). Authored before SPEC-BOSS-ART-01 landed; initial roster was art-lead-derived. Synced 2026-04-18 to canonical 8 bosses. Full copy-paste prompts for each.
+- **ART-SPEC-09** ([docs/assets/portrait-pipeline.md](assets/portrait-pipeline.md)) — Portrait pipeline (class + NPC). 2D UI only (non-iso override). 3 class portraits (256×384, three-quarter hero pose) + 6 NPC portraits (256×256, bust, 3 NPCs × neutral + conversational). Identity-parity rule for expression variants. **splash_background.png decision: Option 3 — Remove**; class portraits carry visual weight, separate bg risks style drift. New impl ticket `SPLASH-BG-REMOVE-01` stubbed.
+- **Boss pipeline sync** — reconciled ART-SPEC-BOSS-01 with SPEC-BOSS-ART-01 canonical roster. Art-lead re-authored §5 with 8 new prompts matching design-lead's boss names + base species + reaction + scale. Prior art-lead-derived roster (Bonelord / Goblin King / Frostwolf / etc.) superseded.
+
+**Wave 2 is complete.** All 12 specs locked across 4 batches. Every asset family now has a generation-facing pipeline spec; every visible-content spec has its design-side counterpart; all ship IP-clean per ART-SPEC-01 §11. Asset redraw work can begin on any bucket with its ticket row cited.
+
+Specs locked this session (Waves 1 + 2):
+- ART-SPEC-01 (foundation, v1→v2→IP-clean sweep)
+- ASSET-INV-01 + NPC-ROSTER-REWIRE-01 + SPLASH-BG-REMOVE-01 (meta + code tickets)
+- SPEC-SPECIES-01 / ART-SPEC-02 (species)
+- SPEC-PC-ART-01 / ART-SPEC-PC-01 (player classes)
+- SPEC-NPC-ART-01 / ART-SPEC-NPC-01 (town NPCs, 3-NPC roster)
+- SPEC-BOSS-ART-01 / ART-SPEC-BOSS-01 (bosses, 8-boss starter roster)
+- ART-SPEC-03 (tiles, Dungeon-deep + 7-biome substitution)
+- ART-SPEC-04 (map objects)
+- ART-SPEC-05 (containers)
+- ART-SPEC-06 (equipment catalog, 259 icons)
+- ART-SPEC-07 (projectiles)
+- ART-SPEC-08 (ability/skill/mastery icons)
+- ART-SPEC-09 (portraits)
+
+---
+
 ## Session 22 — PR Ship Train (#8 → #12), Workflow Rule Codification, ISO Spec Reframe (2026-04-17)
 
 ### What Happened
@@ -74,6 +466,10 @@ The bugs:
 - **R3 — pause-state-across-delays miss.** Adding a 3-second timer between failure and reload meant the world resumed during the delay because `Close()` unpauses (PauseMenu) and `Paused = false` was pre-branch (DeathScreen).
 
 Each was a real bug, not a Copilot nit. Codified the four pre-push checks into `ai-workflow.md` §10a-pre-push (scene lifetime / null-default semantics / pause state across delays / symmetric callsites). Logging the saga here so it survives across sessions, not just in unreliable auto-memory.
+
+### ART-SPEC-01 locked (2026-04-17)
+
+Art-lead authored [`docs/assets/prompt-templates.md`](assets/prompt-templates.md) — five named prompt blocks (`CHAR-HUM-STD`, `CHAR-MON-VAR`, `TILE-ISO-FLOOR-WALL`, `OBJ-MAP`, `ICON-UI-64`) plus locked style vocabulary (preamble + palette clause + universal negative prompts), PR-review drift-prevention checklist, and ≥3-asset extension rule. Retroactive fits confirmed for shipped Warrior / Skeleton / dungeon floor / dungeon wall. Open Questions empty. Unblocks ART-03 (75 armor), ART-07a (ability icons), ART-12 (~240 iso tiles), ART-13 (biome objects), ART-14 (beast rework).
 
 ---
 

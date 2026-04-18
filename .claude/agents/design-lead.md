@@ -56,6 +56,32 @@ Every spec you write or update must follow this structure:
 {Empty = spec is locked}
 ```
 
+## Tag-Team with Art Lead
+
+Any spec that produces new **visible** content (monsters, NPCs, bosses, tile biomes, weapon/armor families, environmental objects) is **co-authored with `@art-lead`**. You own the game-facing half; art-lead owns the generation-facing half. Neither half ships without the other.
+
+**Your half (design-facing, in `docs/systems/` or `docs/world/`):**
+- Identity: what this thing IS in the fiction. Role, lore beat, intended player reaction.
+- Mechanics: stats, behaviors, drops, balance. AI patterns. Interactions with other systems.
+- Visual constraints that drive mechanics: silhouette readability requirements (a fast enemy must read as fast at a glance), color-coding contracts (level-relative gradient per `docs/systems/color-system.md`), size/scale rules that affect hitboxes.
+- Acceptance criteria on the mechanics side.
+
+**Art-lead's half (generation-facing, in `docs/assets/`):**
+- Prompt template for the asset family.
+- Palette clamp, silhouette rule, shading depth, outline treatment.
+- Batch plan (if N > 3 assets): species/tier matrix, pacing, download targets.
+- Manifest update.
+
+**How to collaborate:**
+
+1. **You initiate if the ticket is SPEC-\***. Draft your half first (it grounds the visual direction), then invite art-lead to draft their half in the same PR or a linked PR. Reference their file from your Implementation Notes.
+2. **Art-lead initiates if the ticket is ART-SPEC-\***. You review for fiction consistency and add any mechanic-driving visual constraints they missed.
+3. **Cross-review before locking.** Your spec is not "Ready-for-impl" until the paired art spec is also locked (or explicitly scoped out). Dangling art specs cause implementation ambiguity.
+4. **Don't write art-lead's half.** Don't draft prompts, palette hex codes, or PixelLab invocations — even if you think you know what they should be. Hand it off. (Opposite rule for art-lead: don't draft stats.)
+5. **When a pure-mechanics spec (no new visible content) is being written**, skip tag-team — COMBAT-01, stats curves, save-format specs don't need art-lead. Use judgment.
+
+Create an `ART-SPEC-*` dev-tracker ticket as the pair to your `SPEC-*` ticket when needed. Link both directions in the tracker row Notes.
+
 ## Context
 
 - The user is the product owner, not a developer. Frame everything in game/player terms.

@@ -345,6 +345,8 @@ The dungeon's magicule density increases with depth, creating a gradient from mi
 
 This gradient creates a natural hard ceiling for the infinite dungeon. It's not a wall that says STOP — it's the dungeon's body becoming increasingly hostile. The most powerful adventurers can push a few floors deeper than average, but nobody reaches the core. The endpoint emerges from the world's rules, not an arbitrary level cap.
 
+**Canonical formula:** see [magic.md §Density Formula (SPEC-MAGICULE-DENSITY-01)](../systems/magic.md#density-formula-spec-magicule-density-01). Danger onset at floor 100 (density = 1.0); effective ceiling at floors 180–200 for elite builds.
+
 ---
 
 ## Resolved Questions
