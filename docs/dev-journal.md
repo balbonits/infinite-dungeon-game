@@ -111,6 +111,26 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — Phase H complete: UI canonical decisions locked (font, scaling, HUD, shake, hitstop)
+
+All five Phase H specs landed together — the UI-wide constants every downstream spec inherits.
+
+- **SPEC-UI-FONT-01** → [docs/ui/font.md](ui/font.md). **Press Start 2P** chosen as the canonical font over three alternatives (modern pixel font with lowercase, Alagard-style fantasy pixel, clean sans-serif). PO picked PS2P for the iconic retro-arcade match with the cartoonish pixel art, accepting the all-caps tradeoff. Known cost: the Village Chief's long sentences (wise-elder voice) need line-spacing ×1.5 + ~50-char line cap + paragraph breaks to stay readable in all-caps; mitigation rules specced. Size ladder re-authored to integer-multiples-of-8 (PS2P's native cell): Small=8, Body=Label=Button=16 (collapsed together — distinguishing by weight/color beats distinguishing by font size at pixel scale), Heading=24, Title=32, HeroTitle=48.
+
+- **SPEC-UI-HIGH-DPI-01** → [docs/ui/high-dpi.md](ui/high-dpi.md). Integer-only scaling strategy, design resolution 1280×720. Godot project settings: canvas_items + keep-aspect + integer + nearest-filter. Retina/4K gets 2×/3× cleanly; odd resolutions get letterboxed (preserves every authoring pixel, at the cost of unused black bars on the margins — honest tradeoff for pixel art). Fullscreen mode = borderless-windowed with largest-fitting integer scale. No fractional-scale options anywhere in the Options menu (would blur PS2P + pixel sprites).
+
+- **SPEC-HUD-LAYOUT-01** → [docs/ui/hud-layout.md](ui/hud-layout.md). Diablo-style orb layout (HP bottom-left, MP bottom-right, skill bar between) stays. Added: buff bar top-center (hidden when empty) for Innate toggles, Tab hold-to-peek Stats overlay (pauses game while held — faster for check-stats-during-combat than click-to-open-and-close). Full hotkey table locked. No user-toggleable HUD elements — core gameplay feedback (HP/MP/skill-bar/floor/compass) is always visible by design.
+
+- **SPEC-CAMERA-SHAKE-01** → [docs/ui/camera-shake.md](ui/camera-shake.md). Damage-proportional screen shake: `intensity = 4px * damage_ratio`, `duration = 300ms * damage_ratio`. Flat overrides for crit (100ms/1px), boss defeat (500ms/3px), phase-shift (200ms/2px — pairs with the existing `FlashFx.Flash`). Red-flash pairing for lethal-range hits (≥75% max HP). Linear decay (exponential feels too aggressive). Per-frame random jitter (smoothed = earthquake, wrong signal). Overlapping shakes take **max**, not sum. Accessibility toggle scales to 25%/50% (never zero — hit feedback is non-negotiable).
+
+- **SPEC-HITSTOP-01** → [docs/ui/hitstop.md](ui/hitstop.md). Frame counts at 60 FPS reference: regular hit 2f, crit 4f, damage taken 3f, phase-shift 6f, boss defeat 10f. Durations computed as `frames/60` seconds so 120/144 FPS displays preserve wall-clock feel. Scope of the pause: game-world physics + AI + projectile travel freeze; audio + particles + UI animations continue (audio cutting out reads as lag, not hitstop). Overlapping take max. Accessibility toggle zeroes all durations.
+
+**One design-decision MC this phase** (font); the other four were made inline with reasonable defaults since they have smaller blast radius than font. Phase H closure also enabled the remote's auto-delete-on-merge setting and pruned 21 stale branches (15 remote + 6 local, all from merged PRs) — bookkeeping cleanup the PO requested mid-phase.
+
+Next up: Phase I — movement & input completion. SPEC-MOVEMENT-ACCEL-01 first (instant vs eased player movement feel), then gamepad input, then rebinding UI.
+
+---
+
 ## 2026-04-18 — Phase G complete: NPC dialogue voices + service-menu wireframes locked
 
 All 4 Phase G specs landed in one pass:

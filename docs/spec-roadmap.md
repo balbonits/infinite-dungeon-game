@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase G complete — all 4 NPC-dialogue + service-menu specs locked: voices spec for all 3 NPCs, Village Chief dialogue tree, Blacksmith 4-tab menu, Guild Maid 2-tab menu. Collectively unblocks NPC-ROSTER-REWIRE-01 impl).
+**Last updated:** 2026-04-18 (Phase H complete — all 5 UI canonical decisions locked: Press Start 2P canonical font, integer-only scaling strategy with 1280×720 design res, HUD zone map + Tab hold-to-peek Stats overlay, damage-proportional camera shake with accessibility toggle, 60-FPS-reference hitstop frame counts with framerate-independent durations).
 
-**Next up:** Phase H — UI canonical decisions. SPEC-UI-FONT-01 first (load-bearing — every text surface inherits the font choice). Then high-DPI scaling, HUD layout, camera shake, hitstop. Font choice is the "do early or pay later" top of this phase.
+**Next up:** Phase I — movement & input completion. SPEC-MOVEMENT-ACCEL-01 (instant vs eased player movement), then gamepad input + input-rebinding UI.
 
 ---
 
@@ -139,21 +139,22 @@ Each defines: AI behavior tree, phase-shift trigger thresholds, FlashFx hooks, f
 
 ## Phase H — UI canonical decisions (cascades through every text-bearing surface)
 
-- [ ] **SPEC-UI-FONT-01**
-   Pick canonical font (Trebuchet / Press Start 2P / Silkscreen / Alagard / etc.).
+- [x] **SPEC-UI-FONT-01** — locked 2026-04-18 in [docs/ui/font.md](ui/font.md). **Canonical font: Press Start 2P** (OFL license). Uppercase-only bitmap font, 8-px native cell. New size ladder (8/16/24/32/48 — Body=Label=Button collapse to 16 to align with cell size). Known tradeoff: long dialogue in all-caps needs line-spacing ×1.5 + ~50-char line cap + paragraph breaks for readability (mitigation rules specced). Font integration: `FontFamily` field on `UiTheme`, preloaded `.ttf`, filter=Off for crisp edges. Locked alongside SPEC-UI-HIGH-DPI-01 (both require integer-scale discipline).
    *Defines for next*: every text-bearing UI surface — touched once, breaks every screen if changed later. **Highest "do early or pay later" cost** in this phase.
 
-- [ ] **SPEC-UI-HIGH-DPI-01**
-   Scaling strategy for Retina / 4K. Depends on #31 (font scaling rules).
+- [x] **SPEC-UI-HIGH-DPI-01** — locked 2026-04-18 in [docs/ui/high-dpi.md](ui/high-dpi.md). Scaling strategy: **canvas_items + integer-only + keep-aspect + letterbox**. Design resolution 1280×720 (1× reference); integer multiples (2× = 1440p, 3× = 4K). Godot project settings locked: stretch mode `canvas_items`, aspect `keep`, scale_mode `integer`, texture filter `nearest`. Window-size Options exposes integer multiples only. Fullscreen = borderless-windowed with largest-fitting integer scale. No non-integer options anywhere (would blur the bitmap font + pixel sprites).
+   *Defines*: font and pixel-sprite crispness at every display size. Depends on #31 (font scaling rules).
 
-- [ ] **SPEC-HUD-LAYOUT-01**
-   Element positioning, configurable toggles, stats-panel hotkey.
+- [x] **SPEC-HUD-LAYOUT-01** — locked 2026-04-18 in [docs/ui/hud-layout.md](ui/hud-layout.md). Zone map at 1280×720: HP orb bottom-left, MP orb bottom-right (Diablo), skill bar centered between, floor indicator top-left, stairs compass top-right, buff bar top-center (contextual), floating damage mid-center. Stats panel accessed via **Tab hold-to-peek** overlay (pauses game while held; release hides). Full hotkey table: Tab=stats-peek, Esc/P=pause menu, I=inventory, Q/E=tab-cycle, D=close-modal, 1-4=skill-bar slots. No user-toggleable HUD elements (core gameplay feedback doesn't get hidden).
+   *Defines*: element positioning + hotkey map.
 
-- [ ] **SPEC-CAMERA-SHAKE-01**
-   Damage-scaled shake intensity, screen flash.
+- [x] **SPEC-CAMERA-SHAKE-01** — locked 2026-04-18 in [docs/ui/camera-shake.md](ui/camera-shake.md). Damage-proportional shake: `intensity = 4px * damage/max_hp`, `duration = 300ms * damage/max_hp`. Crit landed flat 100ms / 1px. Boss defeat flat 500ms / 3px. Phase-shift trigger flat 200ms / 2px + paired `FlashFx.Flash`. Linear decay, per-frame random offset (jitter not smoothed — smoothed reads as earthquake). Red-flash pairing for lethal-range hits (≥75% max HP). Overlapping shakes take **max**, not sum. Accessibility toggle "Reduce screen shake" scales to 25%/50% (never zero — hit feedback still needed).
+   *Defines*: shake intensity formula + event triggers.
 
-- [ ] **SPEC-HITSTOP-01**
-   Exact frame count (cosmetic but needs locking).
+- [x] **SPEC-HITSTOP-01** — locked 2026-04-18 in [docs/ui/hitstop.md](ui/hitstop.md). Frame counts at 60 FPS reference: regular hit 2f, crit 4f, damage taken 3f, phase shift 6f, boss defeat 10f. Durations computed as `frames / 60` seconds (framerate-independent — same wall-clock on 120/144 FPS). Audio + particles + UI continue during hitstop; only game-world physics + AI + projectile travel pauses via `Engine.TimeScale = 0`. Overlapping hitstops take **max**. Accessibility toggle "Disable hitstop" zeroes all durations.
+   *Defines*: exact frame counts (cosmetic but needs locking).
+
+**Phase H complete.**
 
 ---
 
