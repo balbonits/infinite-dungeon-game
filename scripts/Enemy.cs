@@ -45,14 +45,17 @@ public partial class Enemy : CharacterBody2D, IDamageable
         int zone = Constants.Zones.GetZone(floor);
         float zoneMult = Constants.Zones.GetDifficultyMultiplier(floor);
 
-        // Endgame multiplier chain: floor * pact * saturation * intelligence
+        // Endgame stat-multiplier chain: floor * pact * saturation. Intelligence's
+        // SpawnRateModifier and AggressionModifier are NOT stat multipliers per
+        // their docstrings (DungeonIntelligence.cs:140, :151) — they drive
+        // cadence: SpawnRateModifier in Dungeon.OnSpawnTimerTimeout and
+        // AggressionModifier in DealDamageTo (read at use, not cached here, so
+        // each cycle picks up the latest pressure value).
         var pacts = GameState.Instance.Pacts;
         var sat = GameState.Instance.Saturation;
-        var intel = GameState.Instance.Intelligence;
-
-        float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone) * intel.SpawnRateModifier;
+        float hpMult = zoneMult * pacts.EnemyHpMultiplier * sat.GetHpMultiplier(zone);
         float dmgMult = zoneMult * pacts.EnemyDamageMultiplier * sat.GetDamageMultiplier(zone);
-        float spdMult = zoneMult * pacts.EnemySpeedMultiplier * sat.GetSpeedMultiplier(zone) * intel.AggressionModifier;
+        float spdMult = zoneMult * pacts.EnemySpeedMultiplier * sat.GetSpeedMultiplier(zone);
 
         _hp = (int)(Constants.EnemyStats.GetHp(Level) * hpMult);
         _moveSpeed = Constants.EnemyStats.GetSpeed(Level) * spdMult;
@@ -66,6 +69,9 @@ public partial class Enemy : CharacterBody2D, IDamageable
         _levelLabel = GetNode<Label>("LevelLabel");
         _hitArea = GetNode<Area2D>("HitArea");
         _hitCooldown = GetNode<Timer>("HitCooldownTimer");
+        // Note: HitCooldown.WaitTime is refreshed per-attack in DealDamageTo so
+        // pressure-driven AggressionModifier shifts apply on the next swing
+        // (modifier evolves over time via DungeonIntelligence.Update).
 
         // Apply per-species collision and sprite config
         var speciesConfig = SpeciesDatabase.Get(SpeciesIndex);
@@ -237,6 +243,8 @@ public partial class Enemy : CharacterBody2D, IDamageable
         GameState.Instance.Intelligence.RecordDamageTaken(_damage);
         player.DamageFlash();
         FloatingText.Damage(player.GetParent(), player.GlobalPosition, _damage);
+        // Refresh per-attack so the cooldown tracks the current Intelligence pressure.
+        _hitCooldown.WaitTime = Constants.EnemyStats.HitCooldown / GameState.Instance.Intelligence.AggressionModifier;
         _hitCooldown.Start();
     }
 }

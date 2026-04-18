@@ -30,6 +30,9 @@ public partial class Dungeon : Node2D
         _tileMap = GetNode<TileMapLayer>("TileMapLayer");
         _entities = GetNode<Node2D>("Entities");
         _spawnTimer = GetNode<Timer>("SpawnTimer");
+        // Note: SpawnTimer.WaitTime is refreshed per-tick in OnSpawnTimerTimeout
+        // so pressure-driven SpawnRateModifier shifts apply on the next cycle
+        // (modifier evolves over time via DungeonIntelligence.Update).
 
         SetupTileset();
         GenerateFloor();
@@ -481,6 +484,9 @@ public partial class Dungeon : Node2D
 
     private void OnSpawnTimerTimeout()
     {
+        // Refresh the next cycle's wait time against current Intelligence pressure.
+        _spawnTimer.WaitTime = Constants.Spawning.SpawnInterval / GameState.Instance.Intelligence.SpawnRateModifier;
+
         if (_floorWiped)
             return; // No spawning after floor wipe until player chooses
 
