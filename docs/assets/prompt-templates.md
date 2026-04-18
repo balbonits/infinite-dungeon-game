@@ -1,389 +1,902 @@
-# PixelLab Prompt Template Library (ART-SPEC-01)
+# PixelLab Prompt Template Library (ART-SPEC-01) — True-Iso / Diablo 1 Rewrite
 
 ## Summary
 
-A copy-paste-able library of PixelLab prompt blocks that every ART-* and ART-SPEC-* ticket cites. One locked style vocabulary, five named blocks (Character / Monster / Tile / Map Object / UI Icon), one extension rule. Every block specifies mandatory PixelLab params, a palette clamp, negative-prompt tokens, and a fill-in-the-blank skeleton with a worked example that maps back to an existing shipped asset. This is the foundation that lets ART-03 (75 armor sprites), ART-12 (~240 iso tiles), ART-14 (beast/insect rework), and every future batch author consistently without re-negotiating style per ticket.
+A copy-paste-able library of PixelLab prompt blocks that every ART-* and ART-SPEC-* ticket cites. One locked style vocabulary grounded in **Diablo 1 / Hellfire** (inspiration only — no licensed-asset replication), one universal palette clause, and **seven named blocks** (`CHAR-HUM-ISO`, `CHAR-MON-ISO`, `TILE-ISO-ATLAS`, `OBJ-ISO`, `PROJ-ISO-8DIR`, `ICON-UI-64`, `PORTRAIT-NPC`, `PORTRAIT-CLASS`) covering every in-world and UI asset family. Every block specifies mandatory PixelLab params, a canvas and anchor contract that agrees with [docs/systems/iso-rendering.md](../systems/iso-rendering.md), a palette clamp, negative-prompt tokens, and a fill-in-the-blank skeleton with at least one worked retrofit. This is the foundation every downstream ART-SPEC-0{2..9} ticket builds on.
 
 ## Current State
 
-Five shipped character families (Warrior, Mage, Ranger, Skeleton, Guild Maid) and two tile families (floor, wall) were authored ad-hoc. Their PixelLab parameters are preserved in `metadata.json` files alongside the sprites and agree with the agent-file guidance in `.claude/agents/art-lead.md` and the theme constants in `docs/assets/ui-theme.md` — but no single doc captures the *reusable prompt skeleton* behind them. New batches (armor, weapons, quivers, accessories, ability icons, biome tile-variants, environmental objects, boss sprites, NPC portraits, beast/insect rework) are all blocked on this library. The ad-hoc era ends here; every asset from this point forward must cite a block ID.
+**v1 invalidated — superseded by this rewrite (was committed at `375f42e`, preserved in git history only).** v1 was authored under the mistaken assumption that the engine renders in "low top-down" and that PixelLab's `view: "low top-down"` option was a close-enough match. It is not. The live engine is true 2:1 isometric (`TileShape = Isometric`, `TileSize = (64, 32)`, see [docs/systems/iso-rendering.md](../systems/iso-rendering.md) SPEC-ISO-01), and the shipped character sprites (warrior / ranger / mage / skeleton / guild maid) were authored with the wrong perspective — their feet anchor to the diamond center rather than the diamond top vertex, which is the root cause of the empirical `+ Vector2(0, 40)` spawn offset in `Dungeon.cs:39`/`:127` that ISO-01d removes.
+
+This rewrite pivots the entire pipeline to **Diablo 1 / Hellfire** as its visual north star. Reference assets loaded during authoring: D1/Hellfire Warrior sheet (8-dir × many animations × equipment permutations), D1/Hellfire Rogue sheet (ranger silhouette), D1/Hellfire Sorcerer sheet (mage silhouette), D1 Catacombs tile atlas (floor diamonds + N/S/E/W wall faces + corners + T-junctions + cross-junctions + stairs + doors), D1 Arrow 8-dir projectile, D1 Spell Icons (stone-tile framed white pictographs with red accents for dark spells). **Inspiration, not port:** dimensions, perspective, silhouette proportions, and palette feel are lifted; no sprite is copied pixel-for-pixel, and no signature D1 character (Cain, Griswold, etc.) is replicated. Our IP, our world.
+
+Every character / monster / tile / object / projectile currently in the repo is slated for **redraw** under the new blocks. Exempt: the game logo, the game icon, and the HP/MP orbs in `OrbDisplay.cs` (UI-only, 2D, do not participate in iso — see §8 Retrofit vs. Redraw Policy). Wave 2 asset-family specs (ART-SPEC-02 through ART-SPEC-09) consume this doc as their foundation.
 
 ## Design
 
 ### 1. Locked Style Vocabulary
 
-**The style preamble.** Every prompt — character, monster, tile, object, icon — opens with the following line, verbatim, before any asset-specific description:
+**The universal preamble.** Every prompt — character, monster, tile, object, projectile, icon — opens with the following line, verbatim, before any asset-specific description:
 
-> *"Low top-down isometric pixel art, dark fantasy dungeon aesthetic, nearest-neighbor rendering (no anti-aliasing, no smoothing), palette rooted in deep blues and grays with warm gold/amber accents."*
+> *"True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, single-color black outline on characters, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading)."*
+
+Tile-family and icon-family blocks override the `single-color black outline on characters` clause with their own outline rule (selective outline for tiles; thin gold-trim border for icons). No other part of the preamble is ever overridden.
 
 **Why the preamble is fixed.** PixelLab's text guidance is strongest on the opening tokens of a prompt. Locking the opener protects the art direction from drifting prompt-by-prompt. The asset-specific description always follows the preamble, not the other way around.
 
-**Style parameter defaults** (apply to every block unless overridden in that block's table):
+**Universal negative-prompt tokens.** Append the following phrase to every description, immediately after the palette clause (§1c):
+
+> *"No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing."*
+
+The "no text" clause is defensive against an observed failure mode: PixelLab occasionally renders letterforms on armor/shields/runes. Enumerating the three wrong perspectives explicitly (top-down, side, three-quarter) is the negative-prompt complement to "true isometric 2:1 dimetric" — PixelLab's training data is heavily top-down and side-view, and the universal style parameter set (§2) is not sufficient on its own to guarantee iso output.
+
+### 1a. Perspective + Canvas Contract (Engine-Binding)
+
+This section is the load-bearing contract between PixelLab output and the live iso renderer. Every block below inherits these rules.
+
+**Iso view selector for PixelLab.** PixelLab's `create_character` / `create_isometric_tile` / `create_map_object` tools accept `view` values of `"low top-down"`, `"high top-down"`, and `"side"`. **None of these is true 2:1 dimetric.** The closest usable match is `"low top-down"` combined with prompt-engineered iso cues in the description (the preamble's *"True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions"* clause does the heavy lifting). PixelLab's `create_isometric_tile` tool is **not** 2:1 dimetric by default — it produces 3D-block-style isometric tiles closer to Habbo Hotel than Diablo, so the tile block (`TILE-ISO-ATLAS`) uses `create_map_object` with a hand-authored canvas + mask instead, per §3 `TILE-ISO-ATLAS` block.
+
+| PixelLab tool | `view` value | Notes |
+|---|---|---|
+| `create_character` | `"low top-down"` | Preamble + negative prompts carry the iso intent. Canvas 128×128. |
+| `create_map_object` (tiles) | `"high top-down"` (per tile orientation — see `TILE-ISO-ATLAS`) | Canvas 64×64 floor / 64×variable wall; exact mask. |
+| `create_map_object` (props) | `"high top-down"` | Canvas 64w × variable height. |
+| `create_map_object` (icons) | `"high top-down"` | Canvas 64×64, opaque background (no transparent corners). |
+| `create_map_object` (projectiles) | `"low top-down"` | Canvas 32×32. |
+| `create_map_object` (portraits) | `"side"` or `"high top-down"` (per block) | Canvas 256×256 (NPC) / 256×384 (class). **Not iso — UI only.** |
+
+**Canvas sizes per family.** Diablo 1 characters occupy ~96×96px per frame at the game's native 32×16 tile. Our engine runs at 2× tile resolution (`TileSize = (64, 32)`), so character canvases scale proportionally to **128×128**. Floor diamonds match the engine's `TextureRegionSize = (64, 64)` exactly. Walls use 64-wide footprints with variable height extending upward. Every canvas size is locked in the block it belongs to — this table is the summary.
+
+| Family | Canvas (w × h) | Anchor (pixel) | Engine region |
+|---|---|---|---|
+| Humanoid character / monster (8-dir) | 128 × 128 | bottom-center (x=64, y=128) | N/A — scene sprite |
+| Large/boss character | 160 × 160 | bottom-center (x=80, y=160) | N/A — scene sprite |
+| Floor tile (iso diamond) | 64 × 64 | diamond reference point (x=32, y=32) | `TextureRegionSize = (64, 64)`, diamond in lower 32px |
+| Short wall (one face) | 64 × 64 | diamond reference point (x=32, y=32) | `TextureRegionSize = (64, 64)`, face in upper ~48px |
+| Tall wall / gate / arch | 64 × 96 or 64 × 128 | diamond reference point (x=32, y=height−16) | Taller region; bottom 32px overlaps cell, top rises |
+| Map object (short — torch, barrel) | 64 × 64 | bottom-center (x=32, y=64) | N/A — `Node2D` sprite |
+| Map object (tall — pillar, statue) | 64 × 128 | bottom-center (x=32, y=128) | N/A — `Node2D` sprite |
+| Map object (multi-tile — altar) | 128 × 96 | bottom-center of **southernmost** cell (x=64, y=96) | N/A |
+| Projectile (8-dir) | 32 × 32 | center (x=16, y=16) | N/A |
+| UI icon | 64 × 64 | full-canvas fill | N/A — UI only |
+| NPC portrait | 256 × 256 | full-canvas fill | N/A — UI only |
+| Class portrait | 256 × 384 | full-canvas fill | N/A — UI only |
+
+**Bottom-center anchor rule (THE critical iso contract).** Per SPEC-ISO-01 §Tile Geometry: an entity's sprite is placed so the **bottom-center of the canvas aligns with the top vertex of the diamond of the cell the entity stands on**. This is not the diamond's center — it is the diamond's upper apex (the "top" point of the 2:1 diamond, at `(MapToLocal(cell).x, MapToLocal(cell).y - 16)` relative to the cell's reference point, which is the diamond's center).
+
+```
+Canvas (128×128, feet at bottom-center):
++----------------+
+|                |   ← 128px
+|     (head)     |
+|                |
+|                |
+|    (torso)     |
+|                |
+|                |
+|    (hips)      |
+|                |
+|    (legs)      |
+|   (feet here   |
+|    at bottom-  |
+|    center)     |
++-------*--------+
+        ↑
+   x=64, y=128
+   Canvas bottom-center
+```
+
+That bottom-center pixel lands at the **top vertex of the tile diamond** in screen space, not the diamond's center:
+
+```
+Tile diamond (64×32 in the bottom half of a 64×64 region):
+          top vertex           ← character's feet land HERE
+            /\                    (this is the entity anchor point
+           /  \                    for iso rendering, per SPEC-ISO-01)
+          /    \
+ (west)  /      \  (east)
+   -----<        >-----
+          \    /
+           \  /
+            \/
+          bottom vertex
+
+The diamond's center is 16px BELOW the top vertex, offset from where the entity stands.
+```
+
+**How this manifests in prompts.** The description for every character/monster/prop block includes the phrase *"character occupies the lower ~90% of the canvas, feet at canvas bottom-center, head near canvas top, transparent background above the shoulders where possible"*. PixelLab cannot literally "anchor" a sprite — but filling the canvas bottom-up produces output where the feet land at bottom-center, which is what the Godot import offset needs. The scene-side `Sprite2D.offset = Vector2(0, -64)` (for a 128×128 sprite, positioning its bottom-center at the `Node2D`'s origin, then lifting by `TileSize.y / 2 = 16` so the feet sit at the diamond top vertex) is authored per-sprite in its `.tscn`, not per-frame in gameplay code.
+
+**Derived offset formula for implementers** (this is what an engine-side author writes into `player.tscn` or `enemy.tscn`):
+
+```
+For a sprite with canvas height H and anchor "bottom-center":
+  Sprite2D.offset.x = 0
+  Sprite2D.offset.y = -(H / 2) - (TileSize.y / 2)
+                    = -(H / 2) - 16
+
+For H=128 (standard character): Sprite2D.offset = (0, -80)
+For H=160 (boss):               Sprite2D.offset = (0, -96)
+For H=64  (short prop):         Sprite2D.offset = (0, -48)
+For H=128 (tall prop):          Sprite2D.offset = (0, -80)
+```
+
+The `- 16` term is what lifts the feet from the diamond center (Godot's default `MapToLocal` reference point) to the diamond top vertex (where feet belong for correct iso depth). This formula is derivable from the spec alone per Acceptance Criteria §13.
+
+**8-direction rotation naming convention.** PixelLab produces 8 rotations per character under the names `"south"`, `"south-east"`, `"east"`, `"north-east"`, `"north"`, `"north-west"`, `"west"`, `"south-west"`. These are **visual (screen-space) directions, not world-axis directions.** On the iso grid:
+
+| PixelLab rotation | Visual direction (screen) | World-axis equivalent (informational) |
+|---|---|---|
+| `north` | straight up the screen | world NW diagonal (`(-1, -1)`) |
+| `north-east` | up-right | world N (`(0, -1)`) — iso "natural" diagonal |
+| `east` | straight right | world NE diagonal (`(+1, -1)`) |
+| `south-east` | down-right | world E (`(+1, 0)`) — iso "natural" diagonal |
+| `south` | straight down | world SE diagonal (`(+1, +1)`) |
+| `south-west` | down-left | world S (`(0, +1)`) — iso "natural" diagonal |
+| `west` | straight left | world SW diagonal (`(-1, +1)`) |
+| `north-west` | up-left | world W (`(-1, 0)`) — iso "natural" diagonal |
+
+The `DirectionalSprite.cs` picker in-engine uses **visual velocity** (screen-space `Velocity` vector) to pick a rotation — so a player moving with `W+D` (up-right visually) selects `north-east`. This matches how D1 draws its 8-dir warrior sheet: the sheet rows are visual directions, not world-grid directions.
+
+### 1b. Style parameter defaults
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| `view` | `low top-down` | Matches live iso renderer; Diablo-style oblique angle |
-| `outline` | `single color black outline` (characters/monsters/objects) · `selective outline` (tiles) | Characters need silhouette pop against tiles; tiles need edges that read but don't out-contrast their neighbors |
-| `shading` | `medium shading` (default) · `detailed shading` (hero/boss/portrait) | Medium reads cleanly at 92×92; detailed reserved for hero surfaces |
-| `detail` | `medium detail` (default) · `high detail` (hero/boss/portrait) | Mirrors shading tier |
-| `ai_freedom` | `750` (default) · `500` (batch-consistency runs) | Lower freedom for batches of 5+ related items (ring tiers, armor ladder) |
+| `view` | See table in §1a | Family-dependent; single project-wide default is a footgun. |
+| `outline` | `single color black outline` (characters/monsters/props) · `selective outline` (tiles) · custom (icons — thin gold-trim per `ICON-UI-64`) | Characters need silhouette pop; tiles need edges that read but don't out-contrast neighbors; icons need UI-grid legibility at thumbnail size. |
+| `shading` | `medium shading` (default) · `detailed shading` (hero/boss/portrait) | Medium reads cleanly at 128×128; detailed reserved for hero surfaces. |
+| `detail` | `medium detail` (default) · `high detail` (hero/boss/portrait) | Mirrors shading tier. |
+| `ai_freedom` | `750` (default) · `500` (batch-consistency runs — armor ladder, biome tile sets, ability icon families) | Lower freedom for batches of 5+ related items so the set stays cohesive. |
+| `size` (characters) | `64` in PixelLab parameter terms | PixelLab expands `size=64` to a canvas ~96×96 in `standard` mode; we override to target 128×128 via the "character occupies lower ~90% of canvas" prompt clause + post-generation canvas crop/extend in the art-lead download script if needed. (Documented as a known friction in Open Questions → resolved below.) |
+| `n_directions` | `8` (characters/monsters/projectiles) · `1` (tiles/props/icons/portraits) | 8-dir for anything that moves; single for everything else. |
 
-**Palette constraint (applies to every block).** Every description ends with the following clause before any negative-prompt tokens:
+### 1c. Palette clause (universal)
 
-> *"Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) or amber accents only. Player blue accent (#8ed6ff) reserved for player class assets. Red (#ff6f6f) reserved for danger/high-threat assets."*
+Every description ends with the following clause before the negative-prompt tokens:
 
-Hex codes are from `docs/assets/ui-theme.md`. The level-relative gradient colors (grey/blue/cyan/green/yellow/gold/orange/red) are **runtime tints via Godot `Modulate`** and are NEVER baked into sprite pixels — sprites stay palette-neutral so the tint system works across all levels. Exception: player class accent tints (`#8ed6ff` warrior/ranger/mage blue) and NPC signature colors (Guild Maid dark-blue dress, etc.) *can* be baked because those assets don't participate in the level-relative gradient.
+> *"Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX."*
 
-**Universal negative-prompt tokens.** Append the following phrase to every description, immediately after the palette clause:
+Hex codes are from [docs/assets/ui-theme.md](ui-theme.md). The level-relative gradient colors (grey / blue / cyan / green / yellow / gold / orange / red) are **runtime tints via Godot `Modulate`** and are NEVER baked into sprite pixels — sprites stay palette-neutral so the tint system works across all levels.
 
-> *"No text, no letters, no logos, no watermarks, no modern elements, no firearms, no photorealism, no anime chibi face, no off-perspective angles."*
+**Exempt-pixel list** (per SPEC-SPECIES-01's exempt-pixel concept): sprites may include identity-bearing pixels outside the clamp when a block's fill-in-the-blank explicitly names them. Examples that the universal clamp does NOT forbid:
 
-The "no text" clause is defensive against an observed failure mode: PixelLab occasionally renders letterforms on armor/shields/runes, and that shipping artifact (see ART-01 journal note — a rune-glyph sprite came back with a literal "T" letterform and had to be discarded) is exactly what this library exists to prevent.
+- Player class accent baked on class-specific assets (warrior/ranger/mage blue `#8ed6ff`).
+- NPC signature colors baked on NPC assets (Guild Maid dark-blue dress, Blacksmith's apron).
+- Species-identity pixels on monsters per SPEC-SPECIES-01 (e.g., Fallen-One's red hood).
+- Per-biome sub-clamp overrides on tiles (cathedral pale stone, volcano molten orange, water aquamarine).
+
+Acceptance: a sprite's pixel palette must be a subset of the clamp **plus** the exempt pixels the block called out. A rogue magenta, neon green, or photoreal skin tone is a re-gen.
 
 ---
 
 ### 2. Named Prompt Blocks
 
-Each block below is cited by its **Block ID** (e.g., `CHAR-HUM-STD`) in every PR that uses it. The ID is the durable handle — block text can be refined over time, ID stays stable.
+Each block below is cited by its **Block ID** (e.g., `CHAR-HUM-ISO`) in every PR that uses it. The ID is the durable handle — block text can be refined over time, ID stays stable.
 
 ---
 
-#### Block `CHAR-HUM-STD` — Humanoid Character (Player Class, NPC)
+#### Block `CHAR-HUM-ISO` — Humanoid Character (Player Class + Humanoid NPC + Bipedal Monster)
 
-**Purpose.** Player classes (warrior/ranger/mage + future subclasses), humanoid NPCs (guild master, blacksmith, guild maid, teleporter, village chief, shopkeeper, banker), and any humanoid-silhouette enemy that walks on two legs (skeleton, goblin, orc, dark mage).
+**Purpose.** Player classes (warrior/ranger/mage + future subclasses), humanoid NPCs (Guild Master, Blacksmith, Guild Maid, Teleporter, Village Chief, Shopkeeper, Banker), and any humanoid-silhouette enemy that walks on two legs (skeleton, goblin, fallen-one, orc, dark-mage enemy). Diablo 1 / Hellfire Warrior / Rogue / Sorcerer are the perspective + proportion + silhouette references.
 
 **Mandatory PixelLab params:**
 
 | Param | Value |
 |-------|-------|
+| Tool | `create_character` |
 | `body_type` | `humanoid` |
 | `template` | `mannequin` |
-| `size` | `64` (yields ~92×92 canvas with padding — matches every shipped character) |
+| `size` | `64` (PixelLab internal — canvas comes out ~96×96; manual canvas-extend to 128×128 during download if the sprite does not fill naturally) |
 | `n_directions` | `8` (never 4 for this block — iso needs full rotation coverage) |
 | `view` | `low top-down` |
 | `outline` | `single color black outline` |
-| `shading` | `medium shading` (NPC) · `detailed shading` (player class hero) |
-| `detail` | `medium detail` (NPC) · `high detail` (player class hero) |
-| `proportions` | `{"type": "preset", "name": "default"}` (heroic-class overrides allowed: warrior = `heroic`, mage = `stylized`, ranger = `default`) |
+| `shading` | `medium shading` (NPC, standard enemy) · `detailed shading` (player class hero, boss) |
+| `detail` | `medium detail` (NPC, standard enemy) · `high detail` (player class hero, boss) |
+| `proportions` | `{"type": "preset", "name": "default"}` (overrides: warrior = `heroic`, mage = `stylized`, ranger = `default`) |
+
+**Canvas + anchor contract** (per §1a):
+- Canvas: **128×128** target. Feet at bottom-center (pixel `(64, 128)`).
+- Sprite import offset: `Sprite2D.offset = Vector2(0, -80)`.
+- 8 rotations named per the §1a rotation table.
 
 **Fill-in-the-blank skeleton:**
 
 ```
-[STYLE PREAMBLE (verbatim, §1)]
+[PREAMBLE (verbatim, §1)]
 
-A [BUILD adjective — stocky / lean / wiry / broad-shouldered / slight] [ROLE noun — warrior / ranger / mage / blacksmith / maid / elder] in [OUTFIT — describe silhouette, primary garment, armor pieces]. [HELD-ITEM(S) — right hand holds X, left hand holds Y; use "always" to lock hand assignments across rotations]. [DEFINING-FEATURE — one readable silhouette cue: horned helmet / pointed hood / wide-brim hat / glowing eyes / braided beard]. [COLOR-ACCENT — one signature color beat, drawn from the palette clamp]. [STANCE — combat-ready / neutral / service-stance / intimidating].
+A [BUILD — stocky / lean / wiry / broad-shouldered / slight] [ROLE — warrior / ranger / sorcerer / blacksmith / maid / elder] rendered in Diablo 1 / Hellfire style. [OUTFIT — describe silhouette, primary garment, armor pieces, cloak/hood status]. [HELD-ITEM(S) — right hand always holds X, left hand always holds Y]. [DEFINING-FEATURE — one readable silhouette cue: horned helmet / pointed hood / wide-brim hat / glowing eyes / braided beard / tattered robes]. [COLOR-ACCENT — one signature color beat, drawn from the palette clamp + exempt-pixel allowance]. [STANCE — combat-ready / neutral / service-stance / intimidating]. Character occupies the lower ~90% of the canvas, feet at canvas bottom-center, head near canvas top, transparent background around and above the silhouette.
 
-[PALETTE CLAUSE (verbatim, §1)]
+[PALETTE CLAUSE (verbatim, §1c)]
 
 [NEGATIVE-PROMPT CLAUSE (verbatim, §1)]
 ```
 
-**Worked example — retroactive fit for Warrior (shipped):**
+**Worked example — redraw target for Warrior (current sprite slated for re-gen per §8):**
 
 ```
-Low top-down isometric pixel art, dark fantasy dungeon aesthetic, nearest-neighbor rendering (no anti-aliasing, no smoothing), palette rooted in deep blues and grays with warm gold/amber accents.
+True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, single-color black outline on characters, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading).
 
-A stocky, heavily armored warrior in dark steel plate armor with silver trim. Right hand always holds a large shiny steel sword, left hand always holds a round metal shield. Steel pauldrons, greaves, and a horned helmet that covers the face. Broad-shouldered, powerful combat-ready stance.
+A stocky, broad-shouldered warrior rendered in Diablo 1 / Hellfire style. Dark steel plate armor over mail, steel pauldrons, greaves, a horned helmet that covers the face. Right hand always holds a large shiny steel longsword, left hand always holds a round metal shield with iron rim. Silver trim on the armor edges, faint player-blue (#8ed6ff) cloth on the surcoat beneath the plate. Broad-shouldered, powerful combat-ready stance, slight forward lean as if mid-stride. Character occupies the lower ~90% of the canvas, feet at canvas bottom-center, head near canvas top, transparent background around and above the silhouette.
 
-Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) or amber accents only. Player blue accent (#8ed6ff) reserved for player class assets. Red (#ff6f6f) reserved for danger/high-threat assets.
+Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX.
 
-No text, no letters, no logos, no watermarks, no modern elements, no firearms, no photorealism, no anime chibi face, no off-perspective angles.
+No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing.
 ```
 
-This matches the shipped prompt in `assets/characters/player/warrior/metadata.json` word-for-word on the character-specific sentence. The preamble and palette/negative clauses are additions that all future warrior-family re-gens will include.
+The sentence *"rendered in Diablo 1 / Hellfire style"* is the single load-bearing perspective cue that v1 was missing. Combined with the preamble's "True isometric 2:1 dimetric" clause and the negative prompt's three wrong-perspective exclusions, it redirects PixelLab away from the low-top-down default even though the `view` parameter still reads `"low top-down"`.
 
 ---
 
-#### Block `CHAR-MON-VAR` — Monster / Creature (non-humanoid variants)
+#### Block `CHAR-MON-ISO` — Monster / Creature (non-humanoid body plans)
 
-**Purpose.** Bats, spiders, wolves, future quadrupeds (bears, hellhounds, slimes), winged creatures (gargoyles, dragons-small), arachnids (spiders, scorpions), and any enemy whose silhouette is NOT bipedal. Separate block because body plan drives template choice, animation set, and silhouette rules.
+**Purpose.** Bats, spiders, wolves, future quadrupeds (bears, hellhounds, slimes), winged creatures (gargoyles, small dragons), arachnids (spiders, scorpions), and any enemy whose silhouette is NOT bipedal. D1/Hellfire beast reference: Fallen Ones, Scavengers, Winged Demons, Horned Demons (inspiration only — our creature roster per `docs/world/species-template.md` and ART-14).
 
 **Sub-variants.** One block, four body-plan slots:
 
-| Slot | `body_type` | `template` | n_directions | Notes |
-|------|-------------|------------|--------------|-------|
-| `CHAR-MON-VAR.quad` (quadruped) | `quadruped` | `wolf`/`bear`/`cat`/`dog`/`horse`/`lion` | `8` | Four-legged mammals; use closest PixelLab template |
-| `CHAR-MON-VAR.wing` (winged airborne) | `humanoid` | `mannequin` | `4` or `8` | Bats, gargoyles — hover pose, wings spread; 4-dir acceptable for small fliers |
-| `CHAR-MON-VAR.arach` (arachnid) | `quadruped` | `cat` (closest low-slung template) | `8` | Spiders, scorpions — override prompt to describe 8 legs explicitly; template is a scaffold only |
-| `CHAR-MON-VAR.biped-mon` (bipedal monster — goblin/orc/skeleton/dark-mage-enemy) | `humanoid` | `mannequin` | `8` | Same params as `CHAR-HUM-STD` but with monster silhouette prompt; listed here so species rework (ART-14) has one canonical place to author non-player enemies |
+| Slot | `body_type` | `template` | `n_directions` | Notes |
+|------|-------------|------------|----------------|-------|
+| `CHAR-MON-ISO.quad` (quadruped) | `quadruped` | `wolf` / `bear` / `cat` / `dog` / `horse` / `lion` | `8` | Four-legged mammals; use closest PixelLab template. |
+| `CHAR-MON-ISO.wing` (winged airborne) | `humanoid` | `mannequin` | `4` or `8` | Bats, gargoyles, small winged demons — hover pose, wings spread; 4-dir acceptable for small fliers. |
+| `CHAR-MON-ISO.arach` (arachnid) | `quadruped` | `cat` (closest low-slung template) | `8` | Spiders, scorpions — override prompt to describe 8 legs explicitly; template is a scaffold only. |
+| `CHAR-MON-ISO.biped-mon` (bipedal monster — goblin / orc / skeleton / fallen-one / dark-mage enemy) | `humanoid` | `mannequin` | `8` | Same params as `CHAR-HUM-ISO` but monster silhouette prompt. Listed here so ART-14 and the monster-species batch have one canonical place to author non-player enemies. |
 
-**Mandatory PixelLab params** (per sub-variant — defaults match slot table above):
+**Mandatory PixelLab params** (per sub-variant — defaults match slot table):
 
 | Param | Value |
 |-------|-------|
-| `size` | `64` (same canvas as players — scale adjustment happens at render-time per agent-file Scale Rules: standard enemy 0.7, boss 1.0–1.2) |
+| `size` | `64` (same target canvas 128×128 as players — scale adjustment happens at render-time per agent-file Scale Rules: standard enemy 0.7, boss 1.0–1.2) |
 | `view` | `low top-down` |
 | `outline` | `single color black outline` |
 | `shading` | `medium shading` (standard) · `detailed shading` (boss) |
 | `detail` | `medium detail` (standard) · `high detail` (boss) |
 
-**Silhouette readability rule** (mechanic-driving, mandatory). Per `.claude/agents/design-lead.md` tag-team guidance: a fast enemy must read as fast at a glance. Every monster prompt must include ONE readability cue in the description:
+**Canvas + anchor contract** (per §1a):
+- Canvas: **128×128** standard, **160×160** boss. Feet/body-center at bottom-center.
+- Sprite import offset: `Sprite2D.offset = Vector2(0, -80)` standard; `Vector2(0, -96)` boss.
+- For `CHAR-MON-ISO.wing`, the "feet" are the wing-pivot point; set `Sprite2D.offset.y` to land the creature's shadow position at the diamond top vertex.
 
-- Fast enemy → "low slung crouch" / "forward-leaning" / "lean body" / "compact silhouette"
-- Heavy enemy → "hulking" / "massive shoulders" / "thick armored hide"
-- Ranged caster → "staff held high" / "robe trailing" / "hands raised casting"
-- Stealth → "shadowed" / "half-hidden" / "wisps of darkness"
+**Silhouette readability rule** (mechanic-driving, mandatory; carries over from SPEC-SPECIES-01 §5). Every monster prompt includes ONE readability cue in the description:
+
+- Fast enemy → *"low slung crouch"* / *"forward-leaning"* / *"lean body"* / *"compact silhouette"*
+- Heavy enemy → *"hulking"* / *"massive shoulders"* / *"thick armored hide"*
+- Ranged caster → *"staff held high"* / *"robe trailing"* / *"hands raised casting"*
+- Stealth → *"shadowed"* / *"half-hidden"* / *"wisps of darkness"*
+- Airborne → *"wings spread wide"* / *"hovering mid-flight"* / *"dropping from above"*
 
 **Fill-in-the-blank skeleton:**
 
 ```
-[STYLE PREAMBLE (verbatim, §1)]
+[PREAMBLE (verbatim, §1)]
 
-A [SIZE adjective — small / mid-size / large / massive] [CREATURE noun — bat / wolf / spider / gargoyle / hellhound] with [BODY-PLAN — 4 legs / 8 legs / leathery wings / serpentine tail]. [READABILITY CUE — see rule above, pick one]. [DEFINING-FEATURE — one silhouette cue: glowing eyes / dripping fangs / tattered wings / bone-white hide]. [COLOR-BEAT — one signature color within the palette clamp; default to creature-natural if not specified (bat = brown-black, spider = charcoal, wolf = gray)]. [POSE — aggressive stalking / hover mid-flight / coiled to strike].
+A [SIZE — small / mid-size / large / massive] [CREATURE — bat / wolf / spider / gargoyle / hellhound / fallen-one] rendered in Diablo 1 / Hellfire style, with [BODY-PLAN — 4 legs / 8 legs / leathery wings / serpentine tail / bipedal]. [READABILITY CUE — see rule above, pick one]. [DEFINING-FEATURE — glowing eyes / dripping fangs / tattered wings / bone-white hide / cracked carapace]. [COLOR-BEAT — one signature color, palette-clamp or species-exempt]. [POSE — aggressive stalking / hover mid-flight / coiled to strike]. Creature occupies the lower ~90% of the canvas, footprint at canvas bottom-center, transparent background above and around the silhouette.
 
-[PALETTE CLAUSE (verbatim, §1)]
+[PALETTE CLAUSE (verbatim, §1c)]
 
 [NEGATIVE-PROMPT CLAUSE (verbatim, §1)]
 ```
 
-**Worked example — retroactive fit for Skeleton Enemy (shipped — uses the `.biped-mon` slot):**
+**Worked example — redraw target for Skeleton Enemy (current sprite slated for re-gen per §8; uses `.biped-mon` slot):**
 
 ```
-Low top-down isometric pixel art, dark fantasy dungeon aesthetic, nearest-neighbor rendering (no anti-aliasing, no smoothing), palette rooted in deep blues and grays with warm gold/amber accents.
+True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, single-color black outline on characters, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading).
 
-A menacing undead skeleton warrior with glowing eyes, wearing tattered dark armor fragments. Bony frame with visible ribs. Carries a rusted sword. Dark dungeon creature aesthetic. Pale bone white and dark gray tones.
+A mid-size undead skeleton warrior rendered in Diablo 1 / Hellfire style, with a bipedal lean body plan and forward-leaning predatory stance. Tattered dark armor fragments hanging from a bare bony frame, visible ribs and joints. Right hand holds a rusted notched sword, left hand empty or hanging at the side. Glowing pale-amber eye sockets. Bone-white hide with charcoal armor fragments, cold shadow cast beneath. Creature occupies the lower ~90% of the canvas, footprint at canvas bottom-center, transparent background above and around the silhouette.
 
-Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) or amber accents only. Player blue accent (#8ed6ff) reserved for player class assets. Red (#ff6f6f) reserved for danger/high-threat assets.
+Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX.
 
-No text, no letters, no logos, no watermarks, no modern elements, no firearms, no photorealism, no anime chibi face, no off-perspective angles.
+No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing.
 ```
-
-Matches `assets/characters/enemies/skeleton/metadata.json` on the character-specific sentence; the preamble and clamp/negative are the library additions.
 
 ---
 
-#### Block `TILE-ISO-FLOOR-WALL` — Isometric Tile (Floor / Wall)
+#### Block `TILE-ISO-ATLAS` — Isometric Tile Atlas (Floor + Wall Pieces)
 
-**Purpose.** Per-biome floor diamonds, wall blocks, and structural variants for ART-12 (~240 tiles across 8 biomes: dungeon / dungeon_dark / cathedral / nether / sky_temple / volcano / water / town). Also covers one-off decorative tiles (stairs, door-openings, T-junctions, corners).
+**Purpose.** Per-biome floor diamonds, wall pieces (N/S/E/W wall faces, outer corners, inner corners, T-junctions, cross-junctions), stairs (up/down, 4 iso orientations), doors (4 wall-face orientations). ART-SPEC-07 / ART-12 / ART-13 batches. Reference: Diablo 1 / Hellfire Catacombs atlas (see `assets/reference/d1-catacombs.png` if archived, or the loaded reference during authoring).
 
-**Mandatory PixelLab params:**
-
-| Param | Value |
-|-------|-------|
-| Tool | `create_isometric_tile` |
-| `size` | `64` (character/agent file spec — yields 64×32 floor diamonds via `thin tile`, 64×64 wall blocks via `block`) |
-| `tile_shape` | `thin tile` (floors — ~10% canvas height, matches 64×32 floor grid) · `block` (walls — ~50% canvas height, matches 64×64 wall grid) |
-| `outline` | `selective outline` (tiles need less contrast than characters; hard outlines make tile seams scream) |
-| `shading` | `medium shading` (default) · `detailed shading` (hero biomes: cathedral, sky_temple, volcano) |
-| `detail` | `medium detail` (default) · `highly detailed` (hero biomes) |
-| `text_guidance_scale` | `8.0` (default) — lower (6.0) if biome comes back over-literal; higher (10+) if it drifts |
-| `seed` | **Lock to one seed per biome** (pick at first tile of a biome, reuse across all tiles in that biome — this is the single most important consistency lever for multi-tile batches) |
-
-**Palette constraint (per-biome override).** The universal palette clamp still applies, but each biome gets a narrower sub-clamp listed in its description:
-
-| Biome | Sub-clamp override (append after universal palette clause) |
-|-------|-----------------------------------------------------------|
-| dungeon | *"Dungeon biome: stone blue-gray (#24314a / #3c4664), moss green accents, torch-amber highlights."* |
-| dungeon_dark | *"Dungeon dark biome: deeper shadow tones, near-black (#0f1117) base, cold blue highlights only."* |
-| cathedral | *"Cathedral biome: pale stone (#c8c0b0) base, stained-glass blue and gold accents, candle-amber."* |
-| nether | *"Nether biome: charcoal black base, blood red (#ff6f6f) accents, sulfurous orange glow."* |
-| sky_temple | *"Sky temple biome: pale cloud white, sky blue (#8ed6ff), gold (#f5c86b) trim, marble base."* |
-| volcano | *"Volcano biome: obsidian black base, molten orange/red cracks, ash gray."* |
-| water | *"Water biome: deep aquamarine, pale cyan foam, algae green."* |
-| town | *"Town biome: warm wood browns, stone gray, green grass patches, brass-gold trim."* |
-
-**Fill-in-the-blank skeleton:**
-
-```
-[STYLE PREAMBLE (verbatim, §1)]
-
-An isometric [FLOOR or WALL] tile: [SURFACE — cobblestone / cracked stone slab / moss-covered flagstone / obsidian plate / pale marble / wooden plank / sand]. [EDGE-DETAIL — clean seam / weathered edge / moss at the corners / lava cracks / metal rim]. [MINOR-FEATURE (optional) — small skull fragment / stray pebble / single leaf / rune etched faintly]. Seamless tile edges for grid tiling.
-
-[PALETTE CLAUSE (verbatim, §1)]
-[BIOME SUB-CLAMP (table above)]
-
-[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No visible text or runes that form letterforms. No grass on dungeon/nether/volcano/water biomes.
-```
-
-**Worked example — retroactive fit for current dungeon floor tile (shipped, `assets/tiles/dungeon/floor.png`):**
-
-```
-Low top-down isometric pixel art, dark fantasy dungeon aesthetic, nearest-neighbor rendering (no anti-aliasing, no smoothing), palette rooted in deep blues and grays with warm gold/amber accents.
-
-An isometric FLOOR tile: dark blue-gray cobblestone, weathered stone slabs fit together. Clean tile seam at the diamond edges, faint moss at one corner. Seamless tile edges for grid tiling.
-
-Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) or amber accents only. Player blue accent (#8ed6ff) reserved for player class assets. Red (#ff6f6f) reserved for danger/high-threat assets.
-Dungeon biome: stone blue-gray (#24314a / #3c4664), moss green accents, torch-amber highlights.
-
-No text, no letters, no logos, no watermarks, no modern elements, no firearms, no photorealism, no anime chibi face, no off-perspective angles. No visible text or runes that form letterforms. No grass on dungeon/nether/volcano/water biomes.
-```
-
-Produces a 64×64 canvas with the isometric diamond centered. The `#24314a` fill in the current placeholder `floor.png` (see `docs/assets/tile-specs.md`) is exactly the palette anchor this block targets.
-
----
-
-#### Block `OBJ-MAP` — Map Object (Chest / Furniture / Stairs / Prop)
-
-**Purpose.** Chests (ART-15 closed/open jar/crate/chest), furniture (tables, chairs, barrels, crates), stairs, doors, torches, altars, pillars, statues, rubble piles, hanging cages, chains. Most are single-direction (player interacts from any side, sprite doesn't rotate). Stairs and doors are 4-direction (orientation matters for the iso grid).
+**Tool choice.** Uses `create_map_object` with hand-specified canvas dimensions — **not** `create_isometric_tile`. `create_isometric_tile` produces 3D-block-style iso tiles closer to Habbo/SimCity than D1's flat-faced dimetric stone. `create_map_object` with a locked canvas + explicit mask (oval 0.8 or rectangular full-canvas) gives us direct control over the diamond footprint.
 
 **Mandatory PixelLab params:**
 
 | Param | Value |
 |-------|-------|
 | Tool | `create_map_object` |
-| `width` × `height` | Per-object size table below (object fits the iso grid, does not exceed one cell unless "multi-tile" is called out) |
-| `view` | `high top-down` (matches object sprites in shipped ART-13 decorations — more legible at small size than `low top-down`) |
-| `outline` | `single color outline` |
-| `shading` | `medium shading` (standard) · `detailed shading` (hero props: boss-floor altar, unique chest, sacrificial idol) |
-| `detail` | `medium detail` (standard) · `high detail` (hero props) |
-| `n_directions` equivalent | Single-direction default; 4-direction for stairs / doors / wall-mounted torches / anything the iso grid rotates around |
+| `width` × `height` | Floor: **64 × 64** (diamond in lower 32px, upper 32px transparent — matches `TextureRegionSize = (64, 64)`). Short wall face: **64 × 64**. Tall wall (gate / arch / shoji-tall): **64 × 96** or **64 × 128** per slot. |
+| `view` | `high top-down` (the description text carries the "true iso" cue; `high top-down` gives a more top-facing orientation that works best for diamond floor generation) |
+| `outline` | `selective outline` (tiles need less contrast than characters — hard outlines make tile seams scream) |
+| `shading` | `medium shading` (default) · `detailed shading` (hero biomes: cathedral, sky_temple, volcano) |
+| `detail` | `medium detail` (default) · `high detail` (hero biomes) |
+| `seed` | **Lock to one seed per biome** — pick at first tile, reuse across all tiles in that biome. Single most important consistency lever for multi-tile batches. |
+| `ai_freedom` | `500` (always — tile atlases are batch-consistency runs by definition) |
 
-**Size reference table** (use these as defaults; override when called out in the ticket):
+**Canvas + anchor contract** (per §1a):
+- Floor: canvas 64×64, diamond rendered in lower 32px, upper 32px transparent. Anchor = diamond reference point (x=32, y=32), which is the diamond's center. Placed via `TileMapLayer.SetCell`; the engine handles placement.
+- Short wall: canvas 64×64, wall face fills the full canvas with the bottom 16px overlapping the diamond footprint of the cell. Anchor = diamond reference point.
+- Tall wall: canvas 64×(96 or 128), bottom 32px overlaps the cell's diamond, remaining height rises above.
+- All tiles: `TileShape = Isometric`, `TileSize = (64, 32)`, `TextureRegionSize = (64, 64)` for short wall/floor. Taller walls use taller texture regions but still 64-wide.
 
-| Object | Canvas (w × h) | Directions | Notes |
-|--------|----------------|------------|-------|
-| Jar (closed / broken) | 64 × 64 | 1 | ART-15 |
-| Crate (closed / splintered) | 64 × 64 | 1 | ART-15 |
-| Chest (closed / open) | 96 × 64 | 1 | ART-15; wider than tall — sits on a diamond cell |
-| Torch (wall-mounted) | 32 × 64 | 4 | Per wall orientation |
-| Torch (floor-standing) | 32 × 64 | 1 | |
-| Altar | 128 × 96 | 1 | 2×1 multi-tile; per ART-13 biome variants |
-| Pillar | 64 × 128 | 1 | Tall prop, extends above one tile cell |
-| Rubble pile | 64 × 48 | 1 | Low, sits on floor |
-| Stairs (up / down) | 96 × 96 | 4 | One per cardinal iso direction (NE/SE/SW/NW) |
-| Door | 64 × 96 | 4 | Per wall-face orientation |
-| Banner / sign | 64 × 128 | 1 | |
-| Statue | 96 × 128 | 1 | Hero prop; use detailed shading |
+**Slot table** (authoring unit — per biome, fill each slot):
+
+| Slot | Canvas | Count per biome | Notes |
+|------|--------|-----------------|-------|
+| Floor diamond (std) | 64×64 | 4–6 variants | Base cobble/stone, cracked, mossy, drain, bloodstain — per biome flavor |
+| Floor diamond (hero) | 64×64 | 1–2 variants | Boss-room floor, altar-room floor — `detailed shading` override |
+| Wall NW-face | 64×64 | 1 | Wall piece whose face points northwest on the iso grid |
+| Wall NE-face | 64×64 | 1 | Face points northeast |
+| Wall SW-face | 64×64 | 1 | Face points southwest |
+| Wall SE-face | 64×64 | 1 | Face points southeast |
+| Wall outer-corner (4 orientations) | 64×64 each | 4 | Corner pieces for wall turns |
+| Wall inner-corner (4 orientations) | 64×64 each | 4 | Inside corners (room convex corners) |
+| Wall T-junction (4 orientations) | 64×64 each | 4 | Walls meeting perpendicular |
+| Wall cross-junction | 64×64 | 1 | Four-way wall intersection |
+| Stairs up (4 iso orientations) | 64×96 each | 4 | Tall asset — rises above cell |
+| Stairs down (4 iso orientations) | 64×64 each | 4 | Recessed — descends into cell |
+| Door / archway (4 wall-face orientations) | 64×96 each | 4 | Tall wall variant with opening |
+
+**≈30 slots per biome × 8 biomes = ~240 tiles.** Matches ART-12 scope exactly.
+
+**Palette sub-clamp per biome** (append after universal palette clause):
+
+| Biome | Sub-clamp |
+|-------|-----------|
+| dungeon | *"Dungeon biome: stone blue-gray (#24314a / #3c4664), moss green accents, torch-amber highlights in cracks."* |
+| dungeon_dark | *"Dungeon dark biome: deeper shadow tones, near-black (#0f1117) base, cold blue highlights only, no warm accents."* |
+| cathedral | *"Cathedral biome: pale stone (#c8c0b0) base, stained-glass blue and gold accents, candle-amber in sconces."* |
+| nether | *"Nether biome: charcoal black base, blood red (#ff6f6f) accents, sulfurous orange glow in fissures."* |
+| sky_temple | *"Sky temple biome: pale cloud white, sky blue (#8ed6ff), gold (#f5c86b) trim, marble base."* |
+| volcano | *"Volcano biome: obsidian black base, molten orange/red cracks, ash gray ridges."* |
+| water | *"Water biome: deep aquamarine, pale cyan foam, algae green, wet stone."* |
+| town | *"Town biome: warm wood browns, stone gray, green grass patches, brass-gold trim."* |
 
 **Fill-in-the-blank skeleton:**
 
 ```
-[STYLE PREAMBLE (verbatim, §1)]
+[PREAMBLE (verbatim, §1)]
 
-A [BIOME adjective, optional — dungeon / cathedral / nether / volcano] [OBJECT noun — chest / crate / torch / altar]. [STATE — closed and intact / open with contents spilling / splintered / lit / unlit]. [MATERIAL — dark wood with iron bands / pitted stone / obsidian slab / pale marble]. [DEFINING-FEATURE — one silhouette cue: iron lock / carved runes (shape-only, non-letter) / flame plume / ornate trim]. Object sits on a transparent background, no ground shadow.
+A [SLOT — isometric floor diamond tile / isometric wall face tile / isometric corner piece / isometric stairs-up tile / isometric door arch] rendered in Diablo 1 / Hellfire Catacombs style. [SURFACE — cobblestone / cracked stone slab / moss-covered flagstone / obsidian plate / pale marble / wooden plank / sand]. [EDGE-DETAIL — clean seam / weathered edge / moss at the corners / lava cracks / metal rim]. [MINOR-FEATURE (optional) — small skull fragment / stray pebble / single leaf / rune etched faintly (shape-only, non-letter)]. [ORIENTATION (for directional tiles) — wall face points northwest / northeast / southwest / southeast]. Seamless tile edges for grid tiling, transparent background where the diamond does not cover.
 
-[PALETTE CLAUSE (verbatim, §1)]
+[PALETTE CLAUSE (verbatim, §1c)]
+[BIOME SUB-CLAMP (table above)]
 
-[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No background terrain, no ground, no floor tile — transparent PNG only.
+[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No visible text or runes that form letterforms. No grass on dungeon/nether/volcano/water biomes.
 ```
 
-**Worked example (representative — no shipped chest yet, this is the prompt ART-15 will use for the chest variant):**
+**Worked example — redraw target for dungeon floor tile (current `assets/tiles/dungeon/floor.png` slated for re-gen per §8):**
 
 ```
-Low top-down isometric pixel art, dark fantasy dungeon aesthetic, nearest-neighbor rendering (no anti-aliasing, no smoothing), palette rooted in deep blues and grays with warm gold/amber accents.
+True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, single-color black outline on characters, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading).
 
-A dungeon treasure chest, closed and intact. Dark stained wood with iron bands and rivets. Heavy iron lock plate on the front, warm gold trim at the corners. Object sits on a transparent background, no ground shadow.
+An isometric floor diamond tile rendered in Diablo 1 / Hellfire Catacombs style. Dark blue-gray cobblestone, weathered stone slabs fit together in the diamond shape. Clean tile seam at the diamond edges, faint moss at one corner, a single hairline crack. Seamless tile edges for grid tiling, transparent background where the diamond does not cover (upper 32px of the 64×64 canvas transparent).
 
-Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) or amber accents only. Player blue accent (#8ed6ff) reserved for player class assets. Red (#ff6f6f) reserved for danger/high-threat assets.
+Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX.
+Dungeon biome: stone blue-gray (#24314a / #3c4664), moss green accents, torch-amber highlights in cracks.
 
-No text, no letters, no logos, no watermarks, no modern elements, no firearms, no photorealism, no anime chibi face, no off-perspective angles. No background terrain, no ground, no floor tile — transparent PNG only.
+No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing. No visible text or runes that form letterforms. No grass on dungeon/nether/volcano/water biomes.
 ```
-
-For the "open" state variant, replace *"closed and intact"* with *"lid raised, gold coins and gem glint visible inside"* — all other clauses stay identical. This minimal-diff pattern (one sentence changes between closed/open) is the batch-authoring pattern every ART-15-style pair uses.
 
 ---
 
-#### Block `ICON-UI-64` — UI Icon (Ability / Skill / Item Slot)
+#### Block `OBJ-ISO` — Isometric Map Object (Furniture / Chest / Torch / Altar / Pillar / Prop)
 
-**Purpose.** Ability icons (ART-07a MVP hotbar set + ART-07b long-tail), skill-tree icons, item-slot icons for accessories (ART-06 neck/rings — the "small icon, no rotation" subset). Shared template: square stone-tile background + centered white/grey pictograph; Diablo / Hellfire **aesthetic inspiration only** (no 1:1 port — see art-pipeline memory note).
+**Purpose.** Chests (ART-15 closed/open jar/crate/chest), furniture (tables, chairs, barrels, crates), torches (wall-mounted + floor-standing), altars, pillars, statues, rubble piles, hanging cages, chains, stairs-as-props (where not part of `TILE-ISO-ATLAS`). Bottom-center anchored `Node2D` sprites that live under the `Entities` container in-scene, not as TileMapLayer cells.
 
 **Mandatory PixelLab params:**
 
 | Param | Value |
 |-------|-------|
-| Tool | `create_map_object` (single-frame transparent PNG — same tool as OBJ-MAP, different template) |
-| `width` × `height` | `64 × 64` |
-| `view` | `high top-down` (flat presentation, no perspective) |
+| Tool | `create_map_object` |
+| `width` × `height` | Per-object size table below |
+| `view` | `high top-down` (description carries "true iso" cue; `high top-down` produces the slight top-facing angle that sits cleanly on a floor diamond) |
 | `outline` | `single color outline` |
-| `shading` | `medium shading` (standard) · `detailed shading` (signature abilities: ultimate/mastery headers) |
-| `detail` | `medium detail` |
+| `shading` | `medium shading` (standard) · `detailed shading` (hero props: boss-floor altar, unique chest, sacrificial idol) |
+| `detail` | `medium detail` (standard) · `high detail` (hero props) |
 
-**Icon background contract (shared across all icons, so the UI grid reads as a set):**
+**Canvas + anchor contract** (per §1a):
+- Standard short prop (torch, chest, barrel, crate): **64×64**. Sprite import offset `Sprite2D.offset = Vector2(0, -48)`.
+- Tall prop (pillar, statue): **64×128**. Sprite import offset `Sprite2D.offset = Vector2(0, -80)`.
+- Multi-tile object (altar 2×1): **128×96**. Sprite import offset `Sprite2D.offset = Vector2(0, -64)`, positioned at the southernmost floor cell the object covers (per SPEC-ISO-01 §Z-Ordering multi-tile object rule).
+- Background: **transparent**. No ground shadow baked in — the `Entities` Y-sort handles visual grounding.
 
-- Square 64×64 canvas, **no transparent corners** (icons sit in UI slots; they fill their slot).
-- Base layer: dark stone-tile texture, palette `#24314a` → `#3c4664` gradient, subtle diamond beveling at the edges (~2–3 px) so the icon reads as carved/set.
-- Foreground: single pictograph, centered, rendered in near-white (`#ecf0ff`) with mid-gray shading (`#b6bfdb`). No hue in the pictograph except the reserved accent colors per the palette clamp (gold for ultimate/passive, red for damage/curse, blue for cold/frost, green for nature/heal).
+**Size reference table:**
 
-**Pictograph rule.** One recognizable symbol per icon, not a scene. E.g.:
-
-- "Fireball" → flame swirl, not a wizard casting a fireball
-- "Heavy Strike" → downward sword, not a warrior mid-swing
-- "Dodge" → forward-leaning footprint arrow, not a character dodging
-
-This keeps the icon grid readable at thumbnail size. If a concept can't be reduced to one pictograph, split it into two abilities or pick a different symbol.
+| Object | Canvas (w × h) | Directions | Notes |
+|--------|----------------|------------|-------|
+| Jar (closed / broken) | 64 × 64 | 1 | ART-15 |
+| Crate (closed / splintered) | 64 × 64 | 1 | ART-15 |
+| Chest (closed / open) | 64 × 64 | 1 | ART-15 — footprint matches one floor diamond |
+| Torch (wall-mounted) | 64 × 64 | 4 | Per wall orientation — N/S/E/W face |
+| Torch (floor-standing) | 64 × 64 | 1 | |
+| Barrel | 64 × 64 | 1 | |
+| Altar (2×1 multi-tile) | 128 × 96 | 1 | Per ART-13 biome variants |
+| Pillar | 64 × 128 | 1 | Tall prop, extends above one tile cell |
+| Rubble pile | 64 × 64 | 1 | Low, sits on floor |
+| Statue | 64 × 128 | 1 | Hero prop — `detailed shading` override |
+| Hanging cage | 64 × 128 | 1 | Tall prop |
+| Chains (wall-mounted) | 64 × 128 | 4 | Per wall orientation |
 
 **Fill-in-the-blank skeleton:**
 
 ```
-[STYLE PREAMBLE (verbatim, §1)]
+[PREAMBLE (verbatim, §1)]
 
-A 64×64 square UI icon with a carved stone-tile background, dark blue-gray (#24314a to #3c4664) gradient with a subtle beveled inner border. Centered pictograph: [ONE SYMBOL — flame swirl / downward sword / forward footprint arrow / upward arrow + sparks / closed fist / eye with radiating lines]. Pictograph rendered in near-white (#ecf0ff) with mid-gray shading, [ACCENT COLOR — gold / red / blue / green / none] highlight on the [FOCAL PART — tip / core / outline]. No text, no letters, no numbers.
+A [BIOME adjective, optional — dungeon / cathedral / nether / volcano] [OBJECT — chest / crate / torch / altar / pillar] rendered in Diablo 1 / Hellfire style. [STATE — closed and intact / open with contents spilling / splintered / lit / unlit]. [MATERIAL — dark wood with iron bands / pitted stone / obsidian slab / pale marble]. [DEFINING-FEATURE — iron lock / carved runes (shape-only, non-letter) / flame plume / ornate trim]. Object sits at canvas bottom-center, occupies the lower ~90% of the canvas, transparent background, no ground shadow baked in.
 
-[PALETTE CLAUSE (verbatim, §1)]
+[PALETTE CLAUSE (verbatim, §1c)]
 
-[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No transparent corners — icon fills the full 64×64 square.
+[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No background terrain, no ground, no floor tile — transparent PNG only.
 ```
 
-**Worked example — target for ART-07a "Fireball" ability icon:**
+**Worked example (ART-15 chest, closed variant):**
 
 ```
-Low top-down isometric pixel art, dark fantasy dungeon aesthetic, nearest-neighbor rendering (no anti-aliasing, no smoothing), palette rooted in deep blues and grays with warm gold/amber accents.
+True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, single-color black outline on characters, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading).
 
-A 64×64 square UI icon with a carved stone-tile background, dark blue-gray (#24314a to #3c4664) gradient with a subtle beveled inner border. Centered pictograph: a flame swirl with three upward-curling tongues. Pictograph rendered in near-white (#ecf0ff) with mid-gray shading, red (#ff6f6f) highlight on the tip of each flame tongue. No text, no letters, no numbers.
+A dungeon treasure chest rendered in Diablo 1 / Hellfire style, closed and intact. Dark stained wood with iron bands and rivets. Heavy iron lock plate on the front, warm gold (#f5c86b) trim at the corners. Object sits at canvas bottom-center, occupies the lower ~90% of the canvas, transparent background, no ground shadow baked in.
 
-Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) or amber accents only. Player blue accent (#8ed6ff) reserved for player class assets. Red (#ff6f6f) reserved for danger/high-threat assets.
+Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX.
 
-No text, no letters, no logos, no watermarks, no modern elements, no firearms, no photorealism, no anime chibi face, no off-perspective angles. No transparent corners — icon fills the full 64×64 square.
+No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing. No background terrain, no ground, no floor tile — transparent PNG only.
 ```
 
-No icon is shipped yet — this example is the target template for ART-07a's first icon. Once ART-07a ships its first icon, this doc updates to point at the shipped PNG as the retroactive fit.
+For the "open" variant, replace *"closed and intact"* with *"lid raised, gold coins and gem glint visible inside"* — all other clauses identical. Minimal-diff batch pattern.
 
 ---
 
-### 3. Drift Prevention (PR Review Checklist)
+#### Block `PROJ-ISO-8DIR` — Isometric Projectile (8-Direction)
+
+**Purpose.** Arrow (ranger), magic bolt (mage), fireball, ice shard, throwing knife, any projectile that moves through iso scene space and needs per-direction visual alignment. D1 Arrow 8-dir sheet is the reference.
+
+**Mandatory PixelLab params:**
+
+| Param | Value |
+|-------|-------|
+| Tool | `create_map_object` (one generation per direction — 8 total per projectile; or `create_character` with `n_directions=8` if PixelLab's rotation consistency is adequate) |
+| `width` × `height` | **32 × 32** |
+| `view` | `low top-down` |
+| `outline` | `single color black outline` |
+| `shading` | `flat shading` or `basic shading` (projectiles are fast-moving — complex shading reads as mud at 32px) |
+| `detail` | `low detail` or `medium detail` |
+| `n_directions` (if using `create_character`) | `8` |
+
+**Canvas + anchor contract** (per §1a):
+- Canvas: **32×32**. Anchor = canvas center (x=16, y=16). Projectiles rotate around their center, not their base, so the anchor differs from characters/props.
+- Sprite import offset: `Sprite2D.offset = Vector2(0, 0)` (centered).
+- 8 rotations align to iso screen-space directions per the §1a rotation table.
+
+**Simplicity rule.** Projectiles are single-frame or 2-frame (for shimmer/trail). Do not author projectile animations in `animate_character` — the velocity vector in-engine provides visual motion.
+
+**Fill-in-the-blank skeleton:**
+
+```
+[PREAMBLE (verbatim, §1)]
+
+A [PROJECTILE — arrow / magic bolt / fireball / ice shard / throwing knife] rendered in Diablo 1 / Hellfire style, shown in flight. [MATERIAL/EFFECT — wooden shaft with steel tip and fletching / glowing blue magical energy / crackling flame / jagged blue ice / tumbling steel blade]. [LENGTH/SHAPE — long and straight / compact and round / elongated teardrop]. [COLOR-BEAT — palette-clamp or reserved-accent]. Projectile fills most of the 32×32 canvas, oriented for the [DIRECTION — south / south-east / east / ...] iso rotation, transparent background.
+
+[PALETTE CLAUSE (verbatim, §1c)]
+
+[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No background, no hand gripping the projectile, no ground shadow.
+```
+
+**Worked example (ranger arrow, south rotation):**
+
+```
+True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, single-color black outline on characters, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading).
+
+An arrow rendered in Diablo 1 / Hellfire style, shown in flight. Wooden shaft with steel tip and brown-gray fletching. Long and straight, roughly 28 pixels tip-to-nock. Shaft stained dark brown, steel tip picks up a subtle warm gold (#f5c86b) highlight. Projectile fills most of the 32×32 canvas, oriented for the south iso rotation (tip pointing down-and-slightly-left to match screen-space south movement), transparent background.
+
+Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX.
+
+No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing. No background, no hand gripping the projectile, no ground shadow.
+```
+
+---
+
+#### Block `ICON-UI-64` — UI Icon (Ability / Skill / Item Slot)
+
+**Purpose.** Ability icons (ART-07a MVP hotbar + ART-07b long-tail), skill-tree icons, item-slot icons for accessories (ART-06 neck/rings). **D1 Spell Icons** are the reference: stone-tile framed background, white/gray pictograph, red accent for dark spells, thin gold-trim border, blue-green accent for nature/cold. The game logo and the HP/MP orbs are **exempt** from this block (they use their own hand-authored art; see §8).
+
+**Mandatory PixelLab params:**
+
+| Param | Value |
+|-------|-------|
+| Tool | `create_map_object` |
+| `width` × `height` | **64 × 64** (2× D1's native 28×28 for UI clarity at modern resolutions) |
+| `view` | `high top-down` (flat presentation, no perspective) |
+| `outline` | Custom — described in the prompt as "thin gold-trim border" (not `single color black outline`) |
+| `shading` | `medium shading` (standard) · `detailed shading` (signature abilities: ultimate / mastery headers) |
+| `detail` | `medium detail` |
+
+**Canvas + anchor contract:** Not iso. 64×64 opaque canvas, **no transparent corners** (icons fill their UI slot completely). UI layer only — no Godot sprite offset.
+
+**Icon background contract** (shared across all icons so the UI grid reads as a set):
+
+- Square 64×64 canvas, opaque.
+- Base layer: dark stone-tile texture, palette `#24314a` → `#3c4664` gradient (D1 uses warm-olive stone; we substitute our dungeon-blue to keep UI consistent with the game palette).
+- Border: thin gold (`#f5c86b`) trim, 1–2 pixels wide, clean inner bevel (~2–3 px) so the icon reads as a carved stone plaque.
+- Foreground: single pictograph, centered, rendered in near-white (`#ecf0ff`) with mid-gray shading (`#b6bfdb`). No hue in the pictograph except the reserved accent color per the ability school:
+  - **Red (`#ff6f6f`)** — dark magic, curses, damage, blood-cost abilities (D1's red-tinted spell icons)
+  - **Gold (`#f5c86b`)** — passive, ultimate, mastery, holy
+  - **Blue (`#8ed6ff`)** — cold, frost, water, ice
+  - **Green (`#6bff89`)** — nature, heal, poison (muted green for poison, bright for heal)
+  - **None** — physical, martial, utility (pure white pictograph)
+
+**Pictograph rule.** One recognizable symbol per icon, not a scene. E.g.:
+- "Fireball" → flame swirl, not a wizard casting a fireball
+- "Heavy Strike" → downward sword, not a warrior mid-swing
+- "Dodge" → forward-leaning footprint arrow, not a character dodging
+
+Single-symbol icons keep the grid legible at thumbnail size. If a concept can't reduce to one pictograph, split it into two abilities or pick a different symbol.
+
+**Fill-in-the-blank skeleton:**
+
+```
+[PREAMBLE (verbatim, §1) — but replace the "single-color black outline on characters" clause with "thin gold-trim border on the UI plaque"]
+
+A 64×64 square UI icon in Diablo 1 / Hellfire spell-icon style. Carved stone-tile background, dark blue-gray (#24314a to #3c4664) gradient with a subtle beveled inner border and a thin gold (#f5c86b) trim frame around the outer edge. Centered pictograph: [ONE SYMBOL — flame swirl / downward sword / forward footprint arrow / upward arrow with sparks / closed fist / eye with radiating lines / skull / chalice]. Pictograph rendered in near-white (#ecf0ff) with mid-gray (#b6bfdb) shading, [ACCENT COLOR — red / gold / blue / green / none] highlight on the [FOCAL PART — tip / core / outline / pupil]. No transparent corners — icon fills the full 64×64 square.
+
+[PALETTE CLAUSE (verbatim, §1c)]
+
+[NEGATIVE-PROMPT CLAUSE (verbatim, §1)]
+```
+
+**Worked example (ART-07a "Fireball"):**
+
+```
+True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions and weight, compact silhouette with readable equipment, gritty dark fantasy palette, thin gold-trim border on the UI plaque, pixel-perfect pixel art (no anti-aliasing, no smoothing, no sub-pixel shading).
+
+A 64×64 square UI icon in Diablo 1 / Hellfire spell-icon style. Carved stone-tile background, dark blue-gray (#24314a to #3c4664) gradient with a subtle beveled inner border and a thin gold (#f5c86b) trim frame around the outer edge. Centered pictograph: a flame swirl with three upward-curling tongues, stylized and compact. Pictograph rendered in near-white (#ecf0ff) with mid-gray (#b6bfdb) shading, red (#ff6f6f) highlight on the tip of each flame tongue. No transparent corners — icon fills the full 64×64 square.
+
+Palette clamp: deep blue-gray stone tones (#24314a, #3c4664), cool shadows, warm gold (#f5c86b) and torch-amber accents only. Gritty, muted, desaturated feel — candle/torch warmth against cold stone, Diablo 1 catacombs palette. Player blue accent (#8ed6ff) reserved for player class assets. Danger red (#ff6f6f) reserved for high-threat elements and dark-magic FX.
+
+No top-down view, no side-view, no three-quarter front-on view, no chibi, no modern stylization, no anime facial features, no text, no letters, no numbers, no logos, no watermarks, no photorealism, no off-perspective angles, no firearms, no modern clothing.
+```
+
+---
+
+#### Block `PORTRAIT-NPC` — NPC Dialogue Portrait (2D Bust)
+
+**Purpose.** Per-NPC portrait images for the `DialogueBox` portrait slot. ART-09 scope: 5 NPCs (Guild Master, Blacksmith, Guild Maid, Teleporter, Village Chief) × 2 expressions (neutral + conversational) = ~10 portraits. **Trigger for a dedicated block** (≥3-asset rule, §9): 10 portraits clear the bar; framing (bust not full-body), canvas (256×256 not 128×128), and perspective (2D bust not iso) all differ fundamentally from `CHAR-HUM-ISO`.
+
+**Not isometric.** Portraits are UI-only. Head-on or three-quarter view; the same Diablo 1 Warrior/Rogue/Sorcerer inspiration for face proportions and mood, but no iso perspective.
+
+**Mandatory PixelLab params:**
+
+| Param | Value |
+|-------|-------|
+| Tool | `create_map_object` |
+| `width` × `height` | **256 × 256** |
+| `view` | `side` (closest to a front-facing bust) |
+| `outline` | `single color black outline` |
+| `shading` | `detailed shading` |
+| `detail` | `high detail` |
+
+**Canvas + anchor contract:** 256×256 opaque canvas (or transparent background if the DialogueBox paints its own frame — defer to ART-09 implementation). Bust framing: head + shoulders + upper chest, no lower body. UI layer only — no Godot sprite offset.
+
+**Fill-in-the-blank skeleton:**
+
+```
+[PREAMBLE (verbatim, §1)]
+
+A [NPC ROLE — guild master / blacksmith / guild maid / teleporter / village chief] portrait bust, head and shoulders, in the style of a Diablo 1 / Hellfire NPC talk portrait. [FACIAL-FEATURE — weathered face with braided beard / scarred face with soot smudges / young face with kind eyes / hooded face obscured in shadow / elderly face with deep wrinkles]. [EXPRESSION — neutral / conversational / stern / welcoming]. [ATTIRE — visible collar / pauldron / apron / hood / robes of office]. [DEFINING-FEATURE — one recognizable cue: the helmet horns / the hammer over the shoulder / the prayer beads / the teleporter's glowing amulet / the chief's silver chain]. Centered bust, filling the canvas from chin at ~70% height down to mid-chest at the bottom edge.
+
+[PALETTE CLAUSE (verbatim, §1c)]
+
+[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No full-body shot, no full environment background, no action pose — portrait bust only.
+```
+
+---
+
+#### Block `PORTRAIT-CLASS` — Class Portrait (2D Hero Art)
+
+**Purpose.** Splash screen, Class Select cards, Character Card on Load Game. ART-08 scope: 3 class portraits (Warrior, Ranger, Mage). **Trigger for a dedicated block** (≥3-asset rule, §9): 3 portraits meet the threshold; canvas (256×384 portrait aspect), framing (full hero shot, ~70% height), and detail tier (highest — splash-screen quality) all differ from `PORTRAIT-NPC` and from `CHAR-HUM-ISO`.
+
+**Not isometric.** Full hero portrait, three-quarter view, dramatic pose. D1 Warrior/Rogue/Sorcerer character-select art is the direct reference — these are **the three images** this block exists for.
+
+**Mandatory PixelLab params:**
+
+| Param | Value |
+|-------|-------|
+| Tool | `create_map_object` |
+| `width` × `height` | **256 × 384** |
+| `view` | `side` (closest to three-quarter hero pose) |
+| `outline` | `single color black outline` |
+| `shading` | `detailed shading` |
+| `detail` | `high detail` |
+| `ai_freedom` | `500` (3-portrait batch — consistency across the set is critical for Class Select) |
+
+**Canvas + anchor contract:** 256×384 opaque or transparent canvas (DialogueBox / ClassSelect paints its own frame). Hero occupies ~85% of canvas height, head near top, feet/base at bottom. UI layer only — no Godot sprite offset.
+
+**Fill-in-the-blank skeleton:**
+
+```
+[PREAMBLE (verbatim, §1)]
+
+A [CLASS — warrior / ranger / mage] full hero portrait, in the style of a Diablo 1 / Hellfire class-select splash. [BUILD — stocky and armored / lean and poised / wiry and robed]. [POSE — three-quarter facing, weapon raised / drawing a bow at half-draw / staff held across the body, hand gesturing toward the viewer]. [ATTIRE-DETAIL — every armor/cloth layer visible: pauldrons + chestplate + tassets + greaves + surcoat / leather jerkin + quiver + bracers + hood / robes + mantle + belt pouches + hood]. [DEFINING-FEATURE — the class's signature silhouette: horned helmet and shield / pulled-back hood and bow / pointed hat and staff glow]. [COLOR-ACCENT — player blue (#8ed6ff) on class-signature cloth]. Hero occupies ~85% of canvas height, head near top, feet at bottom.
+
+[PALETTE CLAUSE (verbatim, §1c)]
+
+[NEGATIVE-PROMPT CLAUSE (verbatim, §1)] No iso perspective, no three-quarter top-down angle — direct hero portrait, front-facing three-quarter view.
+```
+
+---
+
+### 3. Anchor Alignment Rules (ASCII Diagrams)
+
+**Rule:** bottom-center of the sprite canvas lands at the **top vertex** of the diamond of the cell the entity stands on. The sprite import offset `Sprite2D.offset.y = -(canvas_height / 2) - 16` is what encodes this in the scene file.
+
+**Character (128×128 canvas, standing on one floor diamond):**
+
+```
+           ┌───── canvas top (y=0)
+           │
+   ╔═══════╪═══════╗
+   ║       │       ║
+   ║    (head)     ║
+   ║       │       ║
+   ║   (torso)     ║    ← sprite canvas 128×128
+   ║       │       ║
+   ║   (legs)      ║
+   ║       │       ║
+   ║   (feet) ─────╫─── canvas bottom-center (x=64, y=128)
+   ╚═══════╪═══════╝           │
+           │                   │ THIS pixel lands on the diamond top vertex
+           │                   ▼
+           │            ▲ ─ top vertex (y_screen)
+           │           / \
+           │          /   \
+           │         /     \    ← floor diamond (64×32, rendered in lower 32px
+           │        / (cell) \       of a 64×64 tile region)
+           │        \       /
+           │         \     /
+           │          \   /
+           │           \ /
+           │            ▼ ─ bottom vertex (y_screen + 32)
+           │
+     Sprite2D.offset.y = -(128/2) - 16 = -80
+     Node2D.position.y = MapToLocal(cell).y   (diamond center)
+     Canvas bottom lands at: position.y + 80 + 128 = position.y + 208 - 128 = ...
+                           = position.y - 16 (diamond top vertex) ✓
+```
+
+**Short prop (64×64 canvas, barrel / torch / chest):**
+
+```
+   ╔═══════╤═══════╗ ── canvas top (y=0)
+   ║   (lid)       ║
+   ║       │       ║    ← 64×64 canvas
+   ║ (body)│       ║
+   ║       │       ║
+   ║ (base)│ ──────╫─── canvas bottom-center (x=32, y=64)
+   ╚═══════╪═══════╝
+           │
+           ▼
+         ▲ ─ top vertex of floor diamond
+        / \
+       /   \
+       \   /
+        \ /
+         ▼
+     Sprite2D.offset.y = -(64/2) - 16 = -48
+```
+
+**Tall prop (64×128 canvas, pillar / statue):**
+
+```
+   ╔═══════╤═══════╗ ── canvas top (y=0)
+   ║   (cap)       ║
+   ║       │       ║
+   ║       │       ║    ← 64×128 canvas
+   ║ (shaft)       ║        (extends upward from the diamond top)
+   ║       │       ║
+   ║       │       ║
+   ║       │       ║
+   ║ (base)│ ──────╫─── canvas bottom-center (x=32, y=128)
+   ╚═══════╪═══════╝
+           │
+           ▼
+         ▲ ─ top vertex of floor diamond (pillar base sits here)
+        / \
+       /   \
+       \   /
+        \ /
+         ▼
+     Sprite2D.offset.y = -(128/2) - 16 = -80
+```
+
+**Floor tile (64×64 region, diamond in lower 32px):**
+
+```
+   ╔═══════════════╗ ── canvas top (y=0)
+   ║               ║
+   ║  (transparent ║    ← upper 32px transparent
+   ║    upper      ║
+   ║    32px)      ║
+   ║               ║
+   ║     ───▲───   ║ ── y=32, diamond top vertex (this pixel is the cell's
+   ║       ╱ ╲     ║              top reference when entities stand here)
+   ║      ╱   ╲    ║
+   ║     ╱     ╲   ║
+   ║    ◁       ▷  ║ ── y=48, diamond east/west points
+   ║     ╲     ╱   ║
+   ║      ╲   ╱    ║
+   ║       ╲ ╱     ║
+   ║        ▼      ║ ── y=64, diamond bottom vertex
+   ╚═══════════════╝
+
+     Placed by TileMapLayer.SetCell — engine handles anchor internally.
+     Godot's MapToLocal(cell) returns the point at y=48 (diamond center),
+     NOT the top vertex. Entity anchor adds -16 in offset to compensate.
+```
+
+**Multi-tile object (128×96 canvas, 2×1 altar covering cells (5,5)+(6,5)):**
+
+```
+   ╔═══════════════════════════════╗ ── canvas top (y=0)
+   ║              (altar top)       ║
+   ║     ╔═════════════════════╗    ║
+   ║     ║   (altar body)      ║    ║    ← 128×96 canvas covering 2 cells
+   ║     ╠═════════════════════╣    ║
+   ║     ║  (altar base)       ║    ║
+   ║     ╚═════════════════════╝    ║
+   ║               │                ║
+   ║        (base) │ ───────────────╫─── canvas bottom-center (x=64, y=96)
+   ╚═══════════════╪════════════════╝
+                   │
+                   ▼
+   Positioned at SOUTHERNMOST floor cell the object covers.
+   Sprite2D.offset.y = -(96/2) - 16 = -64
+   Node2D.position = MapToLocal(southernmost_cell)
+```
+
+---
+
+### 4. Locked Style Vocabulary (changes from v1)
+
+v1's preamble began *"Low top-down isometric pixel art"* — that was the framing error. v2 begins *"True isometric 2:1 dimetric perspective, Diablo 1 / Hellfire proportions"*. v2's negative prompts add **three explicit wrong-perspective exclusions** (no top-down, no side-view, no three-quarter front-on view) that v1 did not have. v2's palette clause adds *"Diablo 1 catacombs palette"* as a visual-reference anchor, and tightens the "gritty, muted, desaturated" tone descriptors. All hex anchors from [docs/assets/ui-theme.md](ui-theme.md) are preserved unchanged.
+
+---
+
+### 5. Palette Clause (grounded in ui-theme.md)
+
+Primary clamp anchors (from `docs/assets/ui-theme.md`):
+
+| Hex | Name | Usage |
+|-----|------|-------|
+| `#0f1117` | bg-0 | Darkest tones, `dungeon_dark` biome base |
+| `#1b2130` | bg-1 | Secondary dark surfaces |
+| `#24314a` | (derived from floor rgb 36/49/74) | Floor/wall base stone |
+| `#3c4664` | (derived from wall rgb 60/70/100) | Lighter stone highlights |
+| `#8ed6ff` | player | Player class accent (exempt-pixel) |
+| `#f5c86b` | accent | Gold/amber — torches, trim, hero/ultimate icons |
+| `#ff6f6f` | danger | Red — high-threat, dark magic, blood |
+| `#6bff89` | safe | Green — nature/heal pictograph accent |
+| `#ecf0ff` | ink | Near-white for icon pictographs |
+| `#b6bfdb` | muted | Mid-gray for icon pictograph shading |
+
+D1-feel adjectives layered on top: **gritty, muted, desaturated, warm candle/torch accents against cold stone**. Hex anchors are not replaced — the adjectives guide PixelLab's color mixing within the clamp.
+
+Acceptance (per §1c): sprite pixel palette must be a subset of the clamp plus explicitly-named exempt pixels (player accent on class assets, NPC signatures, species-identity pixels per SPEC-SPECIES-01, biome sub-clamp overrides on tiles). Rogue pixels outside these lists → re-gen.
+
+---
+
+### 6. Drift Prevention (PR Review Checklist)
 
 Every ART-* and ART-SPEC-* PR must satisfy all of the following before merge:
 
-1. **Block ID citation.** The PR description names the block ID used (e.g., "Uses `CHAR-HUM-STD` for the blacksmith NPC"). If multiple blocks are used, list each.
-2. **Prompt transcript.** The full prompt sent to PixelLab is attached (paste into the PR description or a committed `docs/assets/generation-log/<ticket>.md`). Reviewers can diff this against the block's skeleton.
-3. **Deviation justification.** If the prompt deviates from the block's fill-in-the-blank structure (omits a clause, adds a new clause, overrides a param), the PR description explains *why* in one sentence. Examples of legitimate deviations: "Used `detailed shading` instead of `medium` because this is the zone-4 boss and is held to hero-prop standard" or "Omitted the palette sub-clamp because this is the cathedral biome and the universal clamp already covers the pale-stone tones."
-4. **Palette audit.** The shipped PNG is opened in an image viewer and visually compared to the `docs/assets/ui-theme.md` palette. Any pixel outside the clamp (e.g., a rogue magenta, neon green, photoreal skin tone) is either (a) the runtime-tint reserved accent, (b) a conscious per-biome override documented in the PR, or (c) a re-gen is required.
-5. **Silhouette readability** (characters/monsters only). The sprite's south-facing rotation is pasted at thumbnail size (32×32) in the PR. If the silhouette does not read as the intended role/threat at that size, re-gen with a stronger readability cue per `CHAR-MON-VAR`'s silhouette rule.
+1. **Block ID citation.** PR description names the block ID used (e.g., "Uses `CHAR-HUM-ISO` for the blacksmith NPC"). Multiple blocks → list each.
+2. **Prompt transcript.** The full prompt sent to PixelLab is attached (paste into the PR description or a committed `docs/assets/generation-log/<ticket>.md`). Reviewers diff this against the block's skeleton.
+3. **Deviation justification.** If the prompt deviates from the skeleton (omits a clause, adds a new clause, overrides a param), the PR description explains *why* in one sentence.
+4. **Palette audit.** Shipped PNG is opened in an image viewer and compared to the ui-theme.md palette. Pixels outside the clamp must match (a) a runtime-tint reserved accent, (b) a documented per-biome or per-species exempt, or (c) a re-gen is required.
+5. **Silhouette readability** (characters/monsters only). The south-facing rotation is pasted at thumbnail size (32×32) in the PR. Silhouette must read as the intended role/threat at that size.
+6. **Iso-alignment verified (NEW — v2 addition).** For any asset that renders in-world (characters, monsters, props, projectiles, tiles), the PR includes a screenshot of the sprite composited in-engine on the target cell. Acceptance: the sprite's bottom-center lands at the top vertex of the diamond (for entities/props), or the diamond fits the 64×64 region with upper 32px transparent (for floor tiles), or the wall face overlaps the cell's bottom 16px and rises above (for walls). If the composited screenshot shows a floating sprite, a sunken sprite, or a horizontal misalignment, the fix is in `Sprite2D.offset` — **not** in gameplay code, and **not** by re-generating the sprite.
 
-**Tooling note.** No automation yet. This is convention-only — reviewer (art-lead or PR author self-review) walks the checklist manually. When the batch volume crosses 30+ assets/month, evaluate whether a lint script (grep the committed prompt transcript for the preamble and palette clauses) is worth writing. Not blocking on it now.
+**Tooling note.** Manual only. When batch volume crosses 30+ assets/month, evaluate a lint script (grep the committed prompt transcript for the preamble / palette / negative clauses).
 
 ---
 
-### 4. Extension Protocol (Adding a New Block)
+### 7. Extension Protocol (Adding a New Block)
 
 A new block is added **only when all three hold**:
 
-1. **≥3 upcoming assets** fit the new family and cannot be cleanly authored with an existing block. One-off assets reuse the closest existing block with a per-ticket deviation note (§3.3).
-2. **Body-plan or format difference** from every existing block. Example: "ability portraits" (large-format hero shots for ability tooltips) differ from `ICON-UI-64` in size (256×256), from `CHAR-HUM-STD` in framing (bust not full-body), and from `OBJ-MAP` in subject. That's a new block. Counter-example: "skeleton archer" fits `CHAR-MON-VAR.biped-mon` — no new block, just a fill-in the skeleton.
-3. **A worked example ready at block-lock time.** No speculative blocks. The block ships with at least one concrete asset description filled in, even if that asset hasn't been generated yet. Prevents blocks from rotting into abstract guidance no one uses.
+1. **≥3 upcoming assets** fit the new family and cannot be cleanly authored with an existing block. One-off assets reuse the closest existing block with a per-ticket deviation note (§6.3).
+2. **Body-plan, format, perspective, or canvas difference** from every existing block. `PORTRAIT-NPC` and `PORTRAIT-CLASS` clear this (2D not iso, bust/hero framing, larger canvas). `CHAR-MON-ISO.biped-mon` does *not* — it reuses the `CHAR-HUM-ISO` params.
+3. **A worked example ready at block-lock time.** No speculative blocks. The block ships with at least one concrete asset description filled in, even if that asset hasn't been generated yet.
 
-**Proposed-but-not-yet-needed blocks** (listed here so the library has an extension backlog; author when the ≥3 rule fires):
+**Proposed-but-not-yet-needed blocks:**
 
 | Candidate Block ID | Trigger | Notes |
-|--------------------|---------|-------|
-| `PORT-NPC-BUST` | ART-09 (NPC dialogue portraits — 5 NPCs × 2 expressions = 10 portraits) | Bust framing, higher detail, larger canvas (~256×256) |
-| `PORT-CLASS-HERO` | ART-08 (3 class portraits for splash / class-select / character-card) | Even larger canvas (~256×384), most detailed tier |
-| `CHAR-BOSS` | ART-10 (zone bosses, ~5–10 sprites) | Still humanoid or quadruped underneath — extends `CHAR-HUM-STD` / `CHAR-MON-VAR` with detailed-shading + scale-1.0-to-1.2 rule; may not need its own block if the detail-shading override covers it |
-| `FX-PARTICLE` | When particle/VFX assets move from procedural to baked sprites | Not imminent; POL-04 still favors shaders |
+|---|---|---|
+| `CHAR-BOSS-ISO` | ART-10 (zone bosses, ~5–10 sprites) | May fold into `CHAR-HUM-ISO` / `CHAR-MON-ISO` with 160×160 canvas + `detailed shading` override; reassess when ART-10 starts. |
+| `FX-VFX-PARTICLE` | When particle/VFX assets move from procedural to baked sprites | Not imminent; POL-04 favors shaders. |
+| `MAP-TILESET-TRANSITION` | If biome-to-biome visual transitions become their own asset class | Not planned; biomes are per-zone with no in-map blending. |
 
 Edit this table when a new block is added or a candidate is promoted.
 
 ---
 
+### 8. Retrofit vs. Redraw Policy
+
+**Every character, monster, tile, object, and projectile asset currently in the repo will be regenerated from this spec.** The shipped ad-hoc-era assets authored under v1's low-top-down assumption do not align correctly in the true-iso engine; rather than patch anchors per-sprite with engine offsets, we redraw them so the bottom-center rule works without per-asset hacks.
+
+**Exempt assets (DO NOT redraw):**
+
+| Asset | Why exempt |
+|-------|------------|
+| Game logo | UI-only, 2D, does not participate in iso rendering. Kept as-is. |
+| Game icon | UI-only, 2D. Kept as-is. |
+| HP orb (`OrbDisplay.cs`) | UI-only, hand-authored 2D sphere art tinted via `Modulate`. Kept as-is. |
+| MP orb (`OrbDisplay.cs`) | Same as HP orb. Kept as-is. |
+
+**Redraw batches (authored under wave 2 — ART-SPEC-02 through ART-SPEC-09):**
+
+| Redraw batch | Current asset | Target block |
+|---|---|---|
+| Warrior (class hero) | `assets/characters/player/warrior/` | `CHAR-HUM-ISO` (proportions: `heroic`, shading: `detailed`) |
+| Ranger (class hero) | `assets/characters/player/ranger/` | `CHAR-HUM-ISO` (proportions: `default`, shading: `detailed`) |
+| Mage (class hero) | `assets/characters/player/mage/` | `CHAR-HUM-ISO` (proportions: `stylized`, shading: `detailed`) |
+| Skeleton (enemy) | `assets/characters/enemies/skeleton/` | `CHAR-MON-ISO.biped-mon` |
+| Bat (enemy — species rework) | `assets/characters/enemies/bat/` | `CHAR-MON-ISO.wing` |
+| Spider (enemy — species rework) | `assets/characters/enemies/spider/` | `CHAR-MON-ISO.arach` |
+| Wolf (enemy — species rework) | `assets/characters/enemies/wolf/` | `CHAR-MON-ISO.quad` (template: `wolf`) |
+| Goblin (enemy) | existing sprite | `CHAR-MON-ISO.biped-mon` |
+| Orc (enemy) | existing sprite | `CHAR-MON-ISO.biped-mon` |
+| Dark Mage (enemy) | existing sprite | `CHAR-MON-ISO.biped-mon` |
+| Guild Master (NPC) | existing sprite | `CHAR-HUM-ISO` |
+| Blacksmith (NPC) | existing sprite | `CHAR-HUM-ISO` |
+| Guild Maid (NPC) | `assets/characters/npcs/guild_maid/` | `CHAR-HUM-ISO` |
+| Teleporter (NPC) | existing sprite | `CHAR-HUM-ISO` |
+| Village Chief (NPC) | existing sprite | `CHAR-HUM-ISO` |
+| Floor tile (dungeon) | `assets/tiles/dungeon/floor.png` | `TILE-ISO-ATLAS` (floor slot, dungeon sub-clamp) |
+| Wall tile (dungeon) | `assets/tiles/dungeon/wall.png` | `TILE-ISO-ATLAS` (short wall-face slot, dungeon sub-clamp) |
+| (All other biomes' tiles) | ART-12 scope | `TILE-ISO-ATLAS` (per biome sub-clamp) |
+| Environmental objects (all biomes) | ART-13 scope | `OBJ-ISO` |
+| Ability icons (any shipped) | ART-07a scope | `ICON-UI-64` |
+
+Wave 2 ticket chain (reference dev-tracker `ART-SPEC-02` through `ART-SPEC-09`): ART-SPEC-02 (species sprite pipeline — paired with SPEC-SPECIES-01), ART-SPEC-03 (NPC sprite pipeline), ART-SPEC-04 (tile atlas pipeline), ART-SPEC-05 (map object pipeline), ART-SPEC-06 (projectile pipeline), ART-SPEC-07 (icon pipeline), ART-SPEC-08 (NPC portrait pipeline), ART-SPEC-09 (class portrait pipeline). Each wave-2 spec inherits this doc and extends the relevant block with family-specific details.
+
+---
+
+### 9. Worked Examples for Retroactive Fit
+
+| Asset | Block | Canvas | Notes |
+|-------|-------|--------|-------|
+| Game logo | **Exempt** | n/a | UI-only, 2D. Not regenerated. |
+| Game icon | **Exempt** | n/a | UI-only. |
+| HP orb | **Exempt** | n/a | UI-only, hand-authored sphere. |
+| MP orb | **Exempt** | n/a | UI-only. |
+| Warrior (redraw target) | `CHAR-HUM-ISO` | 128×128 | 8-dir, heroic proportions, detailed shading. D1 Warrior reference. |
+| Floor tile (redraw target, dungeon) | `TILE-ISO-ATLAS` (floor slot) | 64×64 | Diamond in lower 32px, upper transparent. Dungeon biome sub-clamp. |
+| Wall tile (redraw target, dungeon) | `TILE-ISO-ATLAS` (short wall-face slot) | 64×64 | Face fills canvas, bottom 16px overlaps cell. Dungeon sub-clamp. |
+
+---
+
 ## Acceptance Criteria
 
-- [x] **Style vocabulary is locked.** One preamble, one palette clause, one negative-prompt clause — all quoted verbatim. Any edit to these three strings is a versioned change to this spec and requires re-authoring any in-flight prompts.
-- [x] **Five named blocks are defined** — `CHAR-HUM-STD`, `CHAR-MON-VAR` (with four sub-variants), `TILE-ISO-FLOOR-WALL`, `OBJ-MAP`, `ICON-UI-64` — each with mandatory params, fill-in-the-blank skeleton, negative prompts, and a worked example.
-- [x] **Retroactive-fit check.** The warrior sprite (`assets/characters/player/warrior/metadata.json`), skeleton sprite (`assets/characters/enemies/skeleton/metadata.json`), dungeon floor tile, and dungeon wall tile all map back to a block (`CHAR-HUM-STD`, `CHAR-MON-VAR.biped-mon`, `TILE-ISO-FLOOR-WALL`, `TILE-ISO-FLOOR-WALL` respectively) with no style gaps — the only additions are the preamble and palette/negative clauses, which are cumulative not contradictory.
-- [x] **ART-03 authorability.** A reviewer can produce any of the 75 upcoming armor sprites using only `CHAR-HUM-STD` + a fill-in the description slot for the armor piece (slot + tier + class). The batch-consistency override (`ai_freedom: 500`) is called out for the ladder runs.
-- [x] **Drift prevention defined.** PR checklist is explicit, actionable, and manual (no tooling dependency).
-- [x] **Extension protocol defined.** ≥3-asset rule + body-plan/format gate + worked-example requirement.
-- [x] **Two different authors converge.** Given the same ticket (e.g., "skeleton archer in zone 2, CHAR-MON-VAR.biped-mon"), two reviewers independently filling in the skeleton would produce prompts that differ only in the adjective slots — not in params, palette, or structure.
+- [x] **v1 superseded cleanly.** Current State §2 explicitly calls out the v1 invalidation with commit `375f42e` preserved in git history.
+- [x] **Every D1 reference image loaded for this brief has a named block that produces analogous output.**
+  - D1 Warrior / Rogue / Sorcerer sheets → `CHAR-HUM-ISO` (player classes + bipedal NPCs).
+  - D1 Catacombs tile atlas → `TILE-ISO-ATLAS`.
+  - D1 Arrow 8-dir → `PROJ-ISO-8DIR`.
+  - D1 Spell Icons → `ICON-UI-64`.
+  - D1 monster roster → `CHAR-MON-ISO` (four sub-variants).
+  - D1 class-select splash art → `PORTRAIT-CLASS`.
+  - (D1 has no direct NPC-bust analogue; `PORTRAIT-NPC` is justified by our 5-NPC roster.)
+- [x] **Bottom-center anchor rule is unambiguous enough that an implementer writing `Sprite2D.offset` can derive the value from the spec alone.** §1a formula `offset.y = -(H/2) - 16` is stated and worked for H = 128, 160, 64.
+- [x] **Every current in-repo asset slated for redraw has a clear block assignment.** §8 redraw table covers warrior, ranger, mage, 7 monster species (skeleton / bat / spider / wolf / goblin / orc / dark mage), 5 NPCs (Guild Master / Blacksmith / Guild Maid / Teleporter / Village Chief), floor tile, wall tile. Exempt assets (logo, icon, HP/MP orbs) are enumerated.
+- [x] **Perspective + canvas contract is locked.** §1a states iso view selector per family, canvas sizes per family, bottom-center anchor rule with a derived-offset formula, 8-direction rotation naming convention mapped to iso screen space.
+- [x] **Palette clause grounded in ui-theme.md.** §5 lists the hex anchors from ui-theme.md verbatim; D1-feel adjectives are additive, not replacement.
+- [x] **Drift prevention checklist includes an iso-alignment bullet.** §6 item 6 is the new v2 addition.
+- [x] **Extension protocol is concrete** (≥3 assets + body-plan/format/perspective/canvas differentiation + worked-example-at-lock-time). `PORTRAIT-NPC` and `PORTRAIT-CLASS` are the two blocks that earned their slots under the rule; justification is called out in each block.
+- [x] **Retrofit vs. redraw policy is explicit.** §8 redraw table + exempt-asset list. Logo / icon / HP / MP orbs named as the only exempt assets.
+- [x] **Open Questions: empty.**
 
 ## Implementation Notes
 
 - This spec is prompt-pipeline only. It does not author any sprites, does not touch `assets/`, does not change Godot code.
-- Every ART-* and ART-SPEC-* ticket going forward cites a block ID in its `Notes` column or PR description. Retroactive citation of shipped assets is optional (tracker rows for done tickets are already written) but recommended for any re-gen.
-- The five block IDs are the durable API. Block *text* can be refined over time (tighter phrasing, new negative tokens, a fresh worked example). Block *IDs* are stable — if a block is ever fundamentally split or deprecated, a new ID is introduced and the old one is marked deprecated with a pointer.
-- When the ISO-01 content contract (per-biome directory structure) lands, `TILE-ISO-FLOOR-WALL` gets a structural addition (per-biome subdirectory table) but the prompt skeleton itself does not change. Tracked as a follow-up edit, not a new block.
-- The `docs/assets/pixellab.md` "Existing Account Assets" table is authoritative for past character UUIDs and params. When re-generating a shipped character, cite that UUID + this spec's block ID together.
-- No per-ticket reauthentication with PixelLab is required — the MCP connection persists within a session per the art-lead agent file.
+- Every ART-* and ART-SPEC-* ticket going forward cites a block ID.
+- Block IDs are the durable API. Block *text* can be refined; block *IDs* are stable. If a block is fundamentally split or deprecated, a new ID is introduced and the old one is marked deprecated with a pointer.
+- The seven block IDs match the seven asset families in the engine: humanoid character, non-humanoid monster, tile, map object, projectile, UI icon, portrait (split NPC vs class). No asset the game ships should fall outside one of these seven.
+- Wave 2 asset-family specs (ART-SPEC-02 through ART-SPEC-09) consume this doc as their foundation. Each extends exactly one block with family-specific details.
+- SPEC-ISO-01 is the engine-side complement — anchor convention, Y-sort wiring, diamond collision polygon. This spec is the art-side complement. The two must ship their PRs in coordinated sequence: SPEC-ISO-01 defines the anchor contract; this spec specifies how sprites are generated to agree with that contract.
 
 ## Open Questions
 
-None. All five blocks retroactively fit shipped assets; extension protocol is concrete (≥3 assets + worked example); drift prevention is manual-reviewable without tooling dependency. If a real blocker emerges during ART-03 authoring (the first post-lock batch), re-open this section and document the gap.
+None.

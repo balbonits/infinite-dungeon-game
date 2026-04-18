@@ -4,6 +4,20 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-17 — ART-SPEC-01 rewritten for true-iso / Diablo 1 reference
+
+Rewrote [docs/assets/prompt-templates.md](assets/prompt-templates.md) from scratch. **v1 (commit `375f42e`) superseded** — it was authored under the mistaken assumption that the engine renders in "low top-down" and that PixelLab's `view: low top-down` was a close-enough match. The live engine is true 2:1 isometric per SPEC-ISO-01, and v1's framing is the root cause of the empirical `+Vector2(0,40)` spawn offset in `Dungeon.cs` that ISO-01d removes.
+
+v2 pivots the entire pipeline to Diablo 1 / Hellfire as the visual north star (inspiration only — no licensed-asset replication). Reference images loaded: D1/Hellfire Warrior / Rogue / Sorcerer 8-dir sheets, D1 Catacombs tile atlas (floors + N/S/E/W wall faces + corners + T-junctions + cross-junctions + stairs + doors), D1 Arrow 8-dir projectile, D1 Spell Icons.
+
+**Seven named blocks** replace v1's five: `CHAR-HUM-ISO`, `CHAR-MON-ISO` (four sub-variants), `TILE-ISO-ATLAS`, `OBJ-ISO`, `PROJ-ISO-8DIR`, `ICON-UI-64`, `PORTRAIT-NPC`, `PORTRAIT-CLASS`. Two portrait blocks are new (NPC bust + class hero), earned under the ≥3-asset extension rule.
+
+**New in v2:** perspective + canvas contract section that locks the bottom-center anchor rule with a derived offset formula (`Sprite2D.offset.y = -(H/2) - 16`), the iso 8-direction rotation naming convention mapped to screen space, per-family canvas sizes, and an iso-alignment bullet added to the PR drift-prevention checklist. Redraw policy: every shipped character / monster / tile / object is slated for re-gen; exempt assets are the game logo, game icon, HP orb, MP orb.
+
+**Wave 2 asset family specs (ART-SPEC-02 through ART-SPEC-09) unblocked.** Each wave-2 spec consumes this doc as its foundation and extends exactly one block with family-specific authoring details.
+
+---
+
 ## 2026-04-17 — SPEC-SPECIES-01 locked (design half of tag-team with ART-SPEC-02)
 
 Locked [docs/world/species-template.md](world/species-template.md) — meta-spec for every future monster-species ticket. Eight required sections (Identity / Stats / AI Pattern / Drop-Table Hook / Silhouette Readability / Size-Scale / Color-Coding / Art-Spec Pairing), with locked vocabularies for emotional reaction (5 values) and AI pattern (5 values), three sample-floor stat snapshots (3 / 28 / 75), and an Acceptance Matrix. Worked Bat example included (SPEC-SPECIES-BAT-01). Paired with ART-SPEC-02 — neither half locks without the other.
