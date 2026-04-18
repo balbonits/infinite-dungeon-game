@@ -115,13 +115,28 @@ Solo dev (you, the AI) gets zero parallelism benefit from multiple in-flight bra
 
 User feedback (2026-04-17): "don't work on multiple PR's, go at it one by one"; "work on parallel files, not parallel branches"; "complete a branch/PR with 100% focus & intent. you'll be losing context on the next run."
 
-**10a-postscript. After a PR or branch is done, run `/compact` or `/clear` to free up context space.**
+**10a-postscript. Do not auto-`/compact` or `/clear` between PRs. The user owns that decision.**
 
-Once a branch is merged and there is no active follow-up to it, immediately invoke `/compact` (preserve summary, drop intermediate detail) or `/clear` (start fresh) before moving to the next branch. Don't carry the previous PR's debugging detours, Copilot back-and-forth, and intermediate tool output into the next ticket — context is finite and gets noisier with every additional history.
+Never invoke `/compact` or `/clear` on your own initiative, and do not prompt the user with "free moment for `/compact`?" between PRs. The user will run them when they want to. If the user has already explicitly provided the next ticket in the same session, continue on the same context without suggesting a context reset; otherwise, follow §11 and wait for user direction.
 
-Use `/compact` when the next branch will benefit from a concise memory of what just shipped (e.g., a triage follow-up, a dependent feature). Use `/clear` when the next branch is independent (different system, no shared code).
+Original guidance (2026-04-17, now superseded) treated post-PR compact/clear as a non-negotiable step. That added friction without clear benefit — the user reverted it the same day: "scrap the `/compact`/`/clear` process/order. we'll clear/compact only when we want to."
 
-User feedback (2026-04-17): "after a PR or branch is done, either run `/compact` or `/clear`, to free up context space."
+**10a-pre-push. 30-second self-review before every push to cut Copilot rounds.**
+
+Each avoidable Copilot round costs ~5–15 minutes of wall time (review wait + fix + push + re-request + re-poll). On AUDIT-02 (PR #16), 4 rounds shipped because R1–R3 each caught a real bug a 30-second self-review would have caught:
+
+- **R1** — Toast lived under `Main`'s scene tree; calling `ReloadCurrentScene()` immediately after `Toast.Show` tore it down before render. (Scene-lifetime miss.)
+- **R2** — `?? true` defaulted "missing SaveManager autoload" to "successful save," silently bypassing the failure toast. (Null-default semantics miss.)
+- **R3** — adding a 3-second timer between failure and reload meant the world resumed during the delay because `Close()` unpauses and `Paused = false` was pre-branch. (Pause-state-across-delays miss.)
+
+Before every push, walk each modified file with these four checks:
+
+1. **Scene lifetime** — for any `ReloadCurrentScene` / `QueueFree` / `ChangeScene` call, does any node you just touched survive it? If not, defer or move it to a persistent layer.
+2. **Null-default semantics** — for every `?? value` and `?.method()` chain, ask: when the LHS is null, is `value` (or the no-op) the *correct* outcome the user expects, or just the first thing that compiles?
+3. **Pause state across delays** — for any `await`, `SceneTreeTimer`, or callback-after-delay, ask: what's the tree's pause state during the delay? Is that intended?
+4. **Symmetric callsites** — if you fix a pattern at one callsite, grep for the same pattern; fix all matches in the same PR (don't ship a half-fix Copilot will flag as inconsistency).
+
+User feedback (2026-04-17): *"we have to make the process faster, more efficient. an audit ticket shouldn't take 2-3 hours due to code reviews. make sure to learn & improve by every commit & push. record and reference, keep learning & cutting excess, be more efficient."*
 
 **10a. Pair every PR push with a Copilot review request and a polling cron — atomic step.**
 
