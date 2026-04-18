@@ -23,15 +23,27 @@
 
 ## Service Buttons Per NPC
 
+Post-NPC-ROSTER-REWIRE-01: **3 NPCs** in the town, each with one or more service buttons. Guild Maid is the first NPC with multiple services — her panel shows two buttons in addition to Cancel.
+
 | NPC Name | Button Text | Opens |
 |----------|------------|-------|
-| Shopkeeper | "Open Shop" | `ShopWindow.Instance.Open(itemList)` |
+| Guild Maid | "Open Guild" (first / default-focused) | `GuildWindow.Instance.Open()` |
+| Guild Maid | "Teleport" | `TeleportDialog.Instance.Show()` |
 | Blacksmith | "Open Forge" | `BlacksmithWindow.Instance.Open()` |
+| Village Chief | "View Quests" | `QuestPanel.Instance.Open()` |
+
+A "Cancel" button is always added after the last service button. The first service button is default-focused (keyboard nav).
+
+**Retired NPCs** (not in the town scene; still dispatchable via direct code for test compat only):
+
+| NPC Name | Button Text | Opens |
+|----------|------------|-------|
+| Shopkeeper | "Browse Wares" | `ShopWindow.Instance.Open(itemList)` |
 | Guild Master | "View Quests" | `QuestPanel.Instance.Open()` |
 | Teleporter | "Teleport" | `TeleportDialog.Instance.Show()` |
-| Banker | "Open Bank" | `BankWindow.Instance.Open()` |
+| Banker | "Open Vault" | `BankWindow.Instance.Open()` |
 
-A "Cancel" button is always added below the service button.
+These legacy paths keep existing tests passing and protect against direct-code invocation, but the town scene never spawns these NPCs.
 
 ## Panel Input
 

@@ -9,15 +9,16 @@ public partial class Town : Node2D
     private static readonly PackedScene PlayerScene = GD.Load<PackedScene>(Constants.Assets.PlayerScene);
 
     // NPC data: name, sprite path, tile position, greeting
-    // Post-redesign roster (docs/world/town.md): Guild Maid merges Shopkeeper+Banker.
-    // Village Chief replaces the Guild Master NPC (same role: quest-giver).
-    // Village Chief uses the former Guild Master sprite.
+    // 3-NPC roster per NPC-ROSTER-REWIRE-01: Guild Maid (bank + teleport),
+    // Blacksmith (forge), Village Chief (quests). Teleporter retired —
+    // teleport service moved to Guild Maid's service menu.
+    // Village Chief uses the former Guild Master sprite as placeholder
+    // until ART-VILLAGECHIEF lands (Phase E spec placeholder).
     private static readonly (string name, string spritePath, Vector2I position, string greeting)[] NpcData =
     {
         (Strings.Npcs.GuildMaid, "res://assets/characters/npcs/guild_maid/rotations/south.png", new Vector2I(12, 10), Strings.NpcGreetings.GuildMaid),
         (Strings.Npcs.Blacksmith, "res://assets/characters/npcs/blacksmith/rotations/south.png", new Vector2I(5, 7), Strings.NpcGreetings.Blacksmith),
         (Strings.Npcs.VillageChief, "res://assets/characters/npcs/guild_master/rotations/south.png", new Vector2I(18, 7), Strings.NpcGreetings.VillageChief),
-        (Strings.Npcs.Teleporter, "res://assets/characters/npcs/teleporter/rotations/south.png", new Vector2I(18, 14), Strings.NpcGreetings.Teleporter),
     };
 
     private TileMapLayer _tileMap = null!;

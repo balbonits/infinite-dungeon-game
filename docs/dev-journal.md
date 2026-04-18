@@ -111,6 +111,28 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — NPC-ROSTER-REWIRE-01 landed (P1 impl, first post-roadmap ticket)
+
+First impl ticket off the Phase-G-unblocked shelf. Minimal rewire approach: changed WHICH NPCs are in the town + extended NpcPanel to support multiple service buttons per NPC. No menu-restructure work yet — Blacksmith stays single-service (Forge only), Guild Maid keeps its existing 3-tab GuildWindow. The full Phase G tabbed windows (4-tab Blacksmith per SPEC-BLACKSMITH-MERGED-MENU-01, 2-tab Guild Maid per SPEC-GUILD-MAID-MERGED-MENU-01) are follow-up impl tickets; they're bigger than "rewire NPC spawns" and didn't belong in this one.
+
+**Changes:**
+- `Town.cs`: removed Teleporter from the NPC spawn list. Town now spawns exactly 3 NPCs: Guild Maid, Blacksmith, Village Chief.
+- `NpcPanel.cs`: refactored Show() to iterate a per-NPC `(label, handler)` list instead of calling `GetServiceLabel` + `OnServicePressed` with a giant switch. Each entry becomes a button; first entry is default-focused. Legacy NPCs (Shopkeeper, Banker, GuildMaster, Teleporter) kept in the lookup for direct-code/test-compat even though they never spawn in the town scene.
+- `docs/flows/npc-interaction.md`: service-button table updated to reflect the new roster + retired-NPC section.
+
+**Net impact:** Guild Maid now has two service buttons ("Open Guild" + "Teleport") alongside "Cancel". This is the first NPC with multi-button services; the pattern extends naturally when BLACKSMITH-MENU-IMPL-01 lands. Test compat preserved — `Npc_ServiceButtonIsFocusedByDefault` asserts the focused button is "Open Guild", which is still the first button in Guild Maid's new entries.
+
+**Still-to-do follow-up:**
+- BLACKSMITH-MENU-IMPL-01 — restructure BlacksmithWindow to a 4-tab window (Forge + Craft + Recycle + Shop) per SPEC-BLACKSMITH-MERGED-MENU-01.
+- GUILD-MAID-MENU-IMPL-01 — restructure GuildWindow to 2 tabs (Bank + Teleport), move Store tab to Blacksmith, collapse Transfer tab into Bank's two-column layout, per SPEC-GUILD-MAID-MERGED-MENU-01.
+- Voice-rewrite of existing NPC greetings per SPEC-NPC-DIALOGUE-VOICES-01 (Guild Maid crisp-service, Village Chief wise-elder, Blacksmith pioneer-smith-learning) — doc says these are the voices, current strings don't match.
+
+**Art unblocked:** Bucket C redraw (ART-SPEC-NPC-01) can now proceed since the NPC roster is stable. Per the memory rule, the first Bucket C image (one NPC) goes to PO for theme review before the rest are generated.
+
+471 unit + 11 integration tests green. UI tests queued; this journal entry lands once they confirm pass.
+
+---
+
 ## 2026-04-18 — Phase J closure: all future/optional specs locked as deferred
 
 Closed the roadmap. Phase J is the "future / deferrable" bucket, and the right Phase J completion is locking every item's deferral status with a gate — not force-speccing things that haven't earned author attention yet. Six items:
