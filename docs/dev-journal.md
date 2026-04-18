@@ -64,6 +64,34 @@ All three IP-clean per ART-SPEC-01 §11. Batch 4 queued: SPEC-BOSS-ART-01 + ART-
 
 ---
 
+## 2026-04-18 — Wave 2 Batch 4 lands + Wave 2 complete
+
+**Three specs + one sync pass:**
+
+- **SPEC-BOSS-ART-01** ([docs/world/boss-art.md](world/boss-art.md)) — Boss design half. Boss concept: deepest denizen of each zone, ordinary species warped by years of magicule accumulation. Template adapts SPEC-SPECIES-01 with boss multipliers (HP ×5–8, dmg ×2–3, speed ×0.8, XP ×10) and phase-shift convention at 50% / 25% HP. 8-boss starter roster tied to zones 1-8 (Bone Overlord / Howling Pack-Father / Chitin Matriarch / Hollow Archon / Warlord of the Fifth / The Screaming Flight / Iron-Gut Goblin King / Volcano Tyrant), zone-1 fully worked, zones 2-8 skeleton-filled. Zone→FORGE-01 unique-pool tier mapping locked.
+- **ART-SPEC-BOSS-01** ([docs/assets/boss-pipeline.md](assets/boss-pipeline.md)) — Boss art half. Extends CHAR-MON-ISO with boss-tier overrides (canvas 160×160, offset -96, scale 1.7–2.5×, 8-dir mandatory, falling-back-death required). Authored before SPEC-BOSS-ART-01 landed; initial roster was art-lead-derived. Synced 2026-04-18 to canonical 8 bosses. Full copy-paste prompts for each.
+- **ART-SPEC-09** ([docs/assets/portrait-pipeline.md](assets/portrait-pipeline.md)) — Portrait pipeline (class + NPC). 2D UI only (non-iso override). 3 class portraits (256×384, three-quarter hero pose) + 6 NPC portraits (256×256, bust, 3 NPCs × neutral + conversational). Identity-parity rule for expression variants. **splash_background.png decision: Option 3 — Remove**; class portraits carry visual weight, separate bg risks style drift. New impl ticket `SPLASH-BG-REMOVE-01` stubbed.
+- **Boss pipeline sync** — reconciled ART-SPEC-BOSS-01 with SPEC-BOSS-ART-01 canonical roster. Art-lead re-authored §5 with 8 new prompts matching design-lead's boss names + base species + reaction + scale. Prior art-lead-derived roster (Bonelord / Goblin King / Frostwolf / etc.) superseded.
+
+**Wave 2 is complete.** All 12 specs locked across 4 batches. Every asset family now has a generation-facing pipeline spec; every visible-content spec has its design-side counterpart; all ship IP-clean per ART-SPEC-01 §11. Asset redraw work can begin on any bucket with its ticket row cited.
+
+Specs locked this session (Waves 1 + 2):
+- ART-SPEC-01 (foundation, v1→v2→IP-clean sweep)
+- ASSET-INV-01 + NPC-ROSTER-REWIRE-01 + SPLASH-BG-REMOVE-01 (meta + code tickets)
+- SPEC-SPECIES-01 / ART-SPEC-02 (species)
+- SPEC-PC-ART-01 / ART-SPEC-PC-01 (player classes)
+- SPEC-NPC-ART-01 / ART-SPEC-NPC-01 (town NPCs, 3-NPC roster)
+- SPEC-BOSS-ART-01 / ART-SPEC-BOSS-01 (bosses, 8-boss starter roster)
+- ART-SPEC-03 (tiles, Dungeon-deep + 7-biome substitution)
+- ART-SPEC-04 (map objects)
+- ART-SPEC-05 (containers)
+- ART-SPEC-06 (equipment catalog, 259 icons)
+- ART-SPEC-07 (projectiles)
+- ART-SPEC-08 (ability/skill/mastery icons)
+- ART-SPEC-09 (portraits)
+
+---
+
 ## Session 22 — PR Ship Train (#8 → #12), Workflow Rule Codification, ISO Spec Reframe (2026-04-17)
 
 ### What Happened
