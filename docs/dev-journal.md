@@ -24,6 +24,21 @@ Locked [docs/world/species-template.md](world/species-template.md) — meta-spec
 
 ---
 
+## 2026-04-17 — ART-SPEC-01 IP-clean sweep + Wave 2 Batch 1 lands
+
+**ART-SPEC-01 IP sweep** (commit `5e9e70f`) — scrubbed all direct brand/IP references from the prompt template library after PO flagged licensing/copyright concerns with the Diablo-heavy phrasing in the initial v2 rewrite. New universal preamble leads with "cartoonish pixel art with bold compact silhouettes and slightly exaggerated proportions" as the primary style differentiator. All "rendered in Diablo 1 / Hellfire style" clauses replaced with "rendered in cartoonish isometric pixel-art style"; palette phrasing switched from "Diablo 1 catacombs palette" to "classic dungeon-crawler palette". New §11 IP Protection locks six hard rules including no named-IP in prompts, cartoonish qualifier load-bearing, and PR-review audit trigger. Memory `feedback_art_pipeline.md` updated to cite ART-SPEC-01 §11 as binding on every art-lead dispatch.
+
+**Wave 2 Batch 1 (4 specs landed):**
+
+- **ART-SPEC-02** ([docs/assets/species-pipeline.md](assets/species-pipeline.md)) — generation-side half of SPEC-SPECIES-01 tag-team; sub-variant trigger table, slot table, 8-dir carve-out, palette-clamp/exempt-pixel resolution rule, scale+z-offset mapping, handoff checklist, Bat worked example with full copy-paste prompt (IP-clean per ART-SPEC-01 §11).
+- **SPEC-PC-ART-01** ([docs/world/player-classes-art.md](world/player-classes-art.md)) — game-facing visual identity for Warrior/Ranger/Mage. Single default sprite per class; equipment surfaces via paperdoll UI, never on world sprite. Silhouette differentiation on three orthogonal axes (width/height/compactness). Paired with ART-SPEC-PC-01 (art-lead) for co-lock.
+- **ART-SPEC-PC-01** ([docs/assets/player-class-pipeline.md](assets/player-class-pipeline.md)) — three copy-paste PixelLab prompts (Warrior plate+sword+shield, Ranger leather+shortbow+hood, Mage robes+staff+hat), animation recipe (walking + fight-stance-idle-8-frames + per-class attack: cross-punch/lead-jab/fireball), download layout, 64×64 silhouette PR gate, Bucket-A delete-before-regen hook. Co-locks with SPEC-PC-ART-01.
+- **ART-SPEC-03** ([docs/assets/tile-pipeline.md](assets/tile-pipeline.md)) — full 30-slot Dungeon biome tile prompt library + per-biome palette/motif substitution table for the other 7 biomes; extends TILE-ISO-ATLAS from ART-SPEC-01 v2; blocks ART-12 tile-atlas redraw; delete-before-regen hook cites asset-inventory.md Bucket D.
+
+Batch 2 queued: ART-SPEC-NPC-01 pair + ART-SPEC-04 (map objects) + ART-SPEC-05 (containers).
+
+---
+
 ## Session 22 — PR Ship Train (#8 → #12), Workflow Rule Codification, ISO Spec Reframe (2026-04-17)
 
 ### What Happened
