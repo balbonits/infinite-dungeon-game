@@ -127,7 +127,11 @@ jobs:
         run: |
           SUMMARY=$(cat ./coverage/report/Summary.txt)
           echo "$SUMMARY"
-          LINE_COVERAGE=$(echo "$SUMMARY" | grep "Line coverage" | grep -oE '[0-9]+\.[0-9]+')
+          LINE_COVERAGE=$(echo "$SUMMARY" | grep "Line coverage" | grep -oE '[0-9]+([.][0-9]+)?')
+          if [ -z "$LINE_COVERAGE" ]; then
+            echo "❌ Failed to parse line coverage from ReportGenerator summary"
+            exit 1
+          fi
           echo "Line coverage: $LINE_COVERAGE%"
           if (( $(echo "$LINE_COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
             echo "❌ Coverage $LINE_COVERAGE% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
