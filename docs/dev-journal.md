@@ -61,6 +61,19 @@ After PR #12 landed the audit, the same-day continuation worked the P1 backlog:
 
 - **Pre-existing failures masked by gate weakness** — AUDIT-15 had been red on every CI run since PR #10 but the gate failure was lost in noise; the failure mode (empty XML, not low coverage) made the threshold ratchet idea irrelevant until the root cause was found. Lesson: a green gate that measures nothing is worse than a red gate.
 - **Out-of-scope findings get tickets, not fixes** — PR #13 R3 found a real bug (AUDIT-16) that wasn't introduced by AUDIT-01. The §10b refinement (after the user's correction) made this explicit: "out-of-scope findings can be ticketed not fixed."
+- **AUDIT-17: UI Tests CI red on every run, including main** — discovered while waiting on PR #16 CI. `MissingMethodException` for `FileAccess.GetAsText` and `CanvasItem.DrawString` — Godot/GodotSharp binding mismatch (likely `setup-godot@v2 v4.3.0` vs the GodotSharp NuGet pinned by the project). Symmetric with main, so PR #16 merged through it. Filed for follow-up; same root cause AUDIT-15 demonstrated: a check that's been broken for many PRs without anyone noticing means the gate isn't load-bearing.
+
+### AUDIT-02 Lesson: 4 Copilot rounds × ~5–15 min each = a self-review tax
+
+PR #16 (AUDIT-02) shipped after 4 Copilot rounds. R4 was clean; R1–R3 each caught a real bug a 30-second pre-push self-review would have caught. User direction (verbatim): *"we have to make the process faster, more efficient. an audit ticket shouldn't take 2-3 hours due to code reviews. make sure to learn & improve by every commit & push. record and reference, keep learning & cutting excess, be more efficient."* + *"dev process should be catching these issues. you're not remembering things you made a mistake on, that's why you should be logging them in the dev-journal."*
+
+The bugs:
+
+- **R1 — scene lifetime miss.** Toast lived under `Main`'s scene tree; `ReloadCurrentScene()` immediately after `Toast.Show` tore it down before render. Net effect: the entire AUDIT-02 fix was invisible to the player at exactly the two callsites that mattered.
+- **R2 — null-default semantics miss.** `?? true` defaulted "missing SaveManager autoload" to "successful save," silently bypassing the failure toast — violating the AUDIT-02 contract ("never silently lose progress") in the very PR meant to enforce it.
+- **R3 — pause-state-across-delays miss.** Adding a 3-second timer between failure and reload meant the world resumed during the delay because `Close()` unpauses (PauseMenu) and `Paused = false` was pre-branch (DeathScreen).
+
+Each was a real bug, not a Copilot nit. Codified the four pre-push checks into `ai-workflow.md` §10a-pre-push (scene lifetime / null-default semantics / pause state across delays / symmetric callsites). Logging the saga here so it survives across sessions, not just in unreliable auto-memory.
 
 ---
 
