@@ -8,6 +8,34 @@ This document defines how AI assistants must work on this project. It codifies l
 
 This protocol is active. All AI-generated code in this project must follow this workflow.
 
+## User Role — Hands-Off on Implementation, Active on Discussions & Specs
+
+**Per the user's 2026-04-17 directive:** *"i want to be hands-off on any implementation, i'm only active for discussions & specs."*
+
+**AI handles autonomously (no approval gate, just brief or update):**
+
+- All implementation: code changes, refactors, bug fixes, test writing, build/lint/CI fixes, dependency updates, infrastructure work.
+- All routine PR mechanics: branch creation, commits, pushes, Copilot review cycles, in-scope finding fixes, merges (after the §10b brief).
+- All housekeeping: dev-tracker / dev-journal / changelog updates, docs sync, file moves, ticket creation/closure.
+- Out-of-scope findings: file as a new ticket, name it in the brief, keep moving.
+
+**Bring the user in (active participation required):**
+
+- **Spec design** — any new spec doc, or an existing spec needing a design decision (e.g., ITEM-02b quiver channel, FORGE-01 gating). Use the multiple-choice format the user prefers (lettered options with `[rec]` annotations). Don't ship spec writes without their call on the open questions.
+- **Cross-system trade-offs** — anything that changes contracts the user explicitly approved earlier (combat formulas, save format, NPC roster, class identity).
+- **Scope decisions** — when a finding could be its own ticket vs bundled into the current PR, default to "its own ticket" but surface the trade if non-obvious.
+- **Substantive in-scope review findings** — never wave these off; either fix or surface a clear reason not to.
+
+**Don't bring the user in for:**
+
+- "Ok to merge?" after the §10b brief — the brief satisfies the consent requirement (see §10b).
+- "Should I run the tests?" — yes, always, before commit.
+- "Which test framework?" — pick per `docs/conventions/` (xUnit for pure-logic units, GoDotTest for in-game keyboard nav, GdUnit4 for scene/asset tests).
+- "What name for this branch?" — follow the existing convention (`fix/audit-NN-short-tag`, `feat/system-name`, `docs/topic`).
+- Any choice the existing docs already specify.
+
+The mental model: the user is the **product owner and chief designer**, not a code reviewer. Their attention is for discussions and specs; their absence is the default state during implementation.
+
 ## Design
 
 ### Dev Ticket Cycle
@@ -107,18 +135,26 @@ Every `git push` to a PR branch is incomplete until all of these happened in the
 
 The mental shortcut is "you didn't push if you didn't poll." This is one reflex, not three steps performed at different prompts.
 
-**10b. Pre-merge briefing is mandatory — no silent merges.**
+**10b. Pre-merge briefing is mandatory — but the brief is the heads-up, not a request for permission.**
 
-Before running `gh pr merge` on any PR — even under auto mode, even on a "ship it" instruction — post a brief and wait for explicit go-ahead. The brief must include:
+Before running `gh pr merge` on any PR — even under auto mode, even on a "ship it" instruction — post a brief. The brief must include:
 
 1. **What's shipping** — one-sentence summary per major ticket/system (not the raw commit list).
-2. **Open review findings** — every substantive Copilot/human comment, classified (bug vs nitpick) with a one-line explanation. **If anything is substantive, fix it before merging.** A follow-up ticket is not a substitute.
-3. **CI state** — explicit note if CI is red, and the reason (known-broken workflow vs real test failure). Do not paper over red CI silently.
+2. **Open review findings** — every substantive Copilot/human comment, classified (bug vs nitpick vs out-of-scope) with a one-line explanation. **If anything is substantive AND in scope, fix it before merging.** A follow-up ticket IS a valid resolution for out-of-scope findings (pre-existing behavior, unrelated subsystem, etc.) — file the ticket, name it in the brief, then merge.
+3. **CI state** — explicit note if CI is red, and the reason (known-broken workflow vs real test failure). Do not paper over red CI silently. Known-broken infrastructure (e.g., AUDIT-15 Coverage Gate) with a tracking ticket is OK to ship over.
 4. **Deferred follow-ups** — anything being punted, stated by ticket ID.
 
-"Ship it" authorizes the merge AFTER the brief has been shown. It does not authorize a silent merge. Auto mode disables routine "shall I proceed?" checkpoints — it does NOT disable informed consent on merges or override "do not ship known-bad code."
+**Then merge.** Don't ask "ok to merge?" after the brief — the brief itself satisfies the informed-consent requirement; if everything in it is clean (substantive findings actioned, real test failures absent, deferrals ticketed), proceed. The user reads the brief and reacts only if something is off. This is the same model as a stand-up status update, not an approval gate.
 
-**Why these exist:** PR #8 merged on 2026-04-17 with three substantive Copilot bugs (floor-100 boundary, thematic biases, Load-Game stranding) plus four more from earlier review passes (focus no-op, button-zone navigation, GameState.Reset clobbering save slot, silent-no-op test). The user had to flag both the silent merge AND the bad code as process breaks. PR #9 was the triage. These rules exist so the same week doesn't repeat.
+**Block on explicit user OK only when:**
+- A substantive in-scope finding was waved off without fix
+- CI red is from a real test failure (not pre-existing infra)
+- The PR introduces shared-state risk the brief surfaced as a concern
+- The user has previously expressed reservation about this specific change
+
+Auto mode does NOT override "do not ship known-bad code." But it DOES mean: brief, then merge. Don't sit on a merge waiting for an OK that the rules don't actually require.
+
+**Why these exist:** PR #8 merged on 2026-04-17 with seven substantive Copilot bugs unaddressed (floor-100 boundary, thematic biases, Load-Game stranding, focus no-op, button-zone navigation, GameState.Reset save-slot clobber, silent-no-op test). The user had to flag both the silent merge AND the bad code. PR #9 was the triage. The rule is "brief always, fix in-scope substantives always" — not "wait for explicit user merge approval on every PR." The user's 2026-04-17 follow-up: *"i don't think y'all need to wait for my call to merge. last time, you merged when even copilot flagged it with issues. so, i reacted."*
 
 **10c. Don't ask the user for manual GitHub-UI dispatch / approval.**
 
