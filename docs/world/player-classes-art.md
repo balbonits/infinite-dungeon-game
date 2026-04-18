@@ -86,11 +86,13 @@ The portrait/sprite coupling is what makes the locked single-sprite decision wor
 
 ### 5. Color-Coding Contract (shared rules, per-class accents below)
 
+> **SUPERSESSION NOTICE (2026-04-18):** the "single player-blue accent for all three classes" rule below is **superseded by [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md)**. Each class now has its own accent color: **Warrior brick red `#b53238`, Ranger forest green `#3a7a4d`, Mage royal violet `#5b47a0`**. The accent-location guidance in §6–8 below still applies — only the hex value per class changes. The exempt-pixel mechanism + "baked into sprite pixels" rule are unchanged. Art redraw (Bucket A) must use the per-class hex values.
+
 How player class sprites interact with [color-system.md](../systems/color-system.md):
 
 - **PC sprites are NEVER modulated by the level-relative tint system.** That system exists to color-code monsters by player-vs-monster level gap (grey/blue/cyan/green/yellow/gold/orange/red). It does not apply to the player. The player's `Modulate` stays `Color.White` always.
 - **Base tint surface**: full sprite, no exempt-pixel mechanism needed (since no tint is ever applied).
-- **Player-blue accent contract**: each class carries a small amount of player-blue (`#8ed6ff` per `docs/assets/ui-theme.md`) as the visual signature that this is "the player." Per-class location of the accent is specified below in §6–8. The accent is **baked into the sprite pixels** (not a runtime modulate), so it survives forever.
+- **Per-class accent contract (supersession noted above)**: each class carries a small amount of its **class color** (Warrior `#b53238`, Ranger `#3a7a4d`, Mage `#5b47a0`) as the visual signature that this is "the player." Per-class location of the accent is specified below in §6–8 (locations unchanged; only the hex values shift from the prior `#8ed6ff` player-blue). The accent is **baked into the sprite pixels** (not a runtime modulate), so it survives forever.
 - **Class-identity colors** (warrior steel + silver, ranger forest leather, mage robe color) are also baked into pixels and are part of the locked spec — no class-color customization at v1.
 
 ---
