@@ -123,9 +123,9 @@ During `Dungeon` floor generation, after room carve + wall placement:
 
 ## Acceptance Criteria
 
-1. No monster ever drops equipment — `MonsterDropTable` returns only materials/gold/XP.
+1. No monster ever drops equipment — `MonsterDropTable` returns only materials. Gold + XP remain on the existing kill-reward path (`Enemy.OnDefeated` + `LootTable.GetGoldDrop`), not in the drop table.
 2. Every floor has ≥1 container at gen time; counts within the size + floor table above.
-3. Container types are visually + behaviorally distinct (jars/crates breakable via attack, chests via interact).
+3. Container types are visually + behaviorally distinct, but **all are interact-only** (`[S]` Interact). Jars / Crates / Chests share the interact path; visual distinction comes from the closed and open sprite states (broken jar / splintered crate / lid-up chest).
 4. Equipment from containers routes through `ItemGenerator` with the same floor item-level / affix curves the old monster equipment drops used.
 5. **Slot-type uniqueness:** no container ever drops two items of the same slot type (no 2 rings, no 2 chestpieces from one chest).
 6. Jar equipment pool is **strictly** {Ring, Neck, Consumable}. Crate + Chest draw from the full equipment pool.

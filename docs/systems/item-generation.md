@@ -170,7 +170,9 @@ Equipment and material checks are sequential. If the equipment drop succeeds, it
 
 ### Crate / Container Loot
 
-Crates and containers generate 1-3 items with the following distribution per item:
+> **Superseded 2026-04-17 by [loot-containers.md](loot-containers.md) (SPEC-LOOT-01).** Container loot now uses a 3-tier size system (Jar / Crate / Chest) with size-specific tables, not the flat 85/15 single-distribution model below. The `GenerateCrateLoot` helper noted in Implementation Notes is replaced by `ContainerLootTable.RollFor(size, floor, rng)` per the new spec.
+
+The historical 85/15 single-table behavior is left here for migration reference only:
 
 | Item Type | Chance |
 |-----------|--------|

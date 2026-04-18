@@ -1,6 +1,6 @@
 # Monster Drop Tables
 
-> **2026-04-17 supersession notice — equipment channel removed.** Per [SPEC-LOOT-01 (Loot Containers)](loot-containers.md), monsters no longer drop equipment under any circumstance. Equipment is exclusively a container drop (Jars / Crates / Chests). The sections below have been pruned to material + gold + XP channels only. Previously the equipment channel and Preferred-Slot weighting were defined here; both are now obsolete and not reinstated.
+> **2026-04-17 supersession notice — equipment channel removed.** Per [SPEC-LOOT-01 (Loot Containers)](loot-containers.md), monsters no longer drop equipment under any circumstance. Equipment is exclusively a container drop (Jars / Crates / Chests). The sections below now define the material drop-table channels only. Gold + XP remain monster kill rewards but are emitted by the existing kill-reward path (`Enemy.OnDefeated` + `LootTable.GetGoldDrop`), not represented as channels in the per-species `DropTable`. Previously the equipment channel and Preferred-Slot weighting were defined here; both are now obsolete and not reinstated.
 
 ## Summary
 
@@ -37,9 +37,9 @@ Every species owns one `DropTable`. A table has two independent channels that ro
 
 Channels are independent: a single kill can drop generic mat + signature mat in the same frame. Gold + XP are emitted by the existing kill-reward path; they are not part of this drop table.
 
-### Species → Material & Archetype Map
+### Species → Signature Material Map
 
-Locked per [item-catalog.md](../inventory/item-catalog.md) — this table is the binding between species and their loot silhouette. Each species has a **signature material** and a **preferred slot pool** that tilts which base items drop most often from that species.
+Locked per [item-catalog.md](../inventory/item-catalog.md). Each species has one **signature material**; the separate generic-material channel above provides the thematic tiered material drop for that kill. There is no slot, archetype, or equipment-drop component in this map (those moved to [loot-containers.md](loot-containers.md)).
 
 | Species | Zone (primary) | Signature Material | Signature Rate |
 |---|---|---|---|
