@@ -2,9 +2,9 @@
 
 **Purpose:** durable across compact/clear sessions. Records the prioritized list of specs to author, with dependency reasoning. Update the checkboxes as each spec lands.
 
-**Last updated:** 2026-04-18 (Phase F complete — all 8 boss specs locked: Bone Overlord, Howling Pack-Father, Chitin Matriarch, Hollow Archon, Warlord of the Fifth, Screaming Flight, Iron-Gut Goblin King, Volcano Tyrant. Each lives at `docs/world/bosses/<name>.md` and follows the boss-adapted 8-section template. AI behavior trees, phase-shift triggers, FlashFx hooks, first-kill drop overrides all locked per boss).
+**Last updated:** 2026-04-18 (Phase G complete — all 4 NPC-dialogue + service-menu specs locked: voices spec for all 3 NPCs, Village Chief dialogue tree, Blacksmith 4-tab menu, Guild Maid 2-tab menu. Collectively unblocks NPC-ROSTER-REWIRE-01 impl).
 
-**Next up:** Phase G — NPC dialogue & service-menu specs (unblocks NPC-ROSTER-REWIRE-01 impl). Four sub-tickets: SPEC-NPC-DIALOGUE-VOICES-01, SPEC-VILLAGE-CHIEF-DIALOGUE-01, SPEC-BLACKSMITH-MERGED-MENU-01, SPEC-GUILD-MAID-MERGED-MENU-01.
+**Next up:** Phase H — UI canonical decisions. SPEC-UI-FONT-01 first (load-bearing — every text surface inherits the font choice). Then high-DPI scaling, HUD layout, camera shake, hitstop. Font choice is the "do early or pay later" top of this phase.
 
 ---
 
@@ -121,23 +121,19 @@ Each defines: AI behavior tree, phase-shift trigger thresholds, FlashFx hooks, f
 
 ## Phase G — NPC dialogue & service-menu (blocks NPC-ROSTER-REWIRE-01 impl)
 
-- [ ] **SPEC-NPC-DIALOGUE-VOICES-01**
-   Voice conventions: Blacksmith ("pioneer smith learning"), Guild Maid ("crisp service"), Village Chief ("wise elder").
+- [x] **SPEC-NPC-DIALOGUE-VOICES-01** — locked 2026-04-18 in [docs/flows/npc-dialogue-voices.md](flows/npc-dialogue-voices.md). Voice profiles for all 3 town NPCs: **Blacksmith** (casual-warm, pioneer-smith-learning, short sentences, craft-terminology), **Guild Maid** (crisp-service, clean-clipped, always uses full `{Class} Guildmaster` address, neutral-polite), **Village Chief** (wise-elder, warm-formal, longer sentences with rhetorical pauses, references village stakes). Five voice-distinction tests (line length, formality, vocabulary, address style, emotional register) so a blind line is attributable to exactly one NPC. Post-death/low-HP/high-value-transaction variants specced per NPC. Cross-NPC routing lines (e.g., Maid→Chief for quests, Chief→Maid for banking) in each NPC's in-voice phrasing. Load-bearing for the other three Phase G specs.
    *Defines*: per-NPC dialogue tone. Required before writing actual trees.
 
-- [ ] **SPEC-VILLAGE-CHIEF-DIALOGUE-01**
-   Village Chief is fresh AND is the quest giver — his lines drive quest acceptance flow.
+- [x] **SPEC-VILLAGE-CHIEF-DIALOGUE-01** — locked 2026-04-18 in [docs/flows/village-chief-dialogue.md](flows/village-chief-dialogue.md). Six-state dialogue state machine: `first_meeting` / `idle` / `quest_offered` / `quest_in_progress` / `quest_complete` / `quest_declined`. Transitions gated on quest queue + completion flags. Full dialogue text per state using Chief voice from voices spec. Templated slots (`{quest_brief}`, `{quest_objective_summary}`, `{quest_reward_summary}`) pull from the quests system per-quest — the dialogue shell is the same for every quest; the variables change. Cross-NPC routing for non-Chief services. Post-death return line fires once per run. Dialogue branches are narrow (all options collapse to "open menu" or "close panel") — this spec is voice wrapping, not branching narrative.
    *Defines*: quest-flow language + first-impression voice.
 
-- [ ] **SPEC-BLACKSMITH-MERGED-MENU-01**
-   Blacksmith now has Forge + Craft + Recycle + Shop tabs (4 tabs from 3 prior NPCs' worth of services).
+- [x] **SPEC-BLACKSMITH-MERGED-MENU-01** — locked 2026-04-18 in [docs/ui/blacksmith-menu.md](ui/blacksmith-menu.md). Four-tab wireframe: **Forge** (apply affixes) / **Craft** (recipes from materials) / **Recycle** (break down gear, uses locked SPEC-CRAFTING-QUALITY-LADDER-01 formula) / **Shop** (caravan-stocked basics — absorbs the prior Guild Store). Default tab Forge. Persistent gold display bottom-left. Keyboard-first (Q/E cycle, 1-4 jump). Blacksmith voice triggers on notable events only (first-craft, unfamiliar material, recycle-of-notable-item), silent on routine ops. Shop-tab content source is an `ItemDatabase` subset tagged `BlacksmithShopStock`.
    *Defines*: service-menu UX wireframe before NPC-ROSTER-REWIRE-01 impl.
 
-- [ ] **SPEC-GUILD-MAID-MERGED-MENU-01**
-   Guild Maid: Bank + Teleport + (no quest pickup; routes to Village Chief).
+- [x] **SPEC-GUILD-MAID-MERGED-MENU-01** — locked 2026-04-18 in [docs/ui/guild-maid-menu.md](ui/guild-maid-menu.md). Two-tab wireframe: **Bank** (storage + transfers in a two-column layout that absorbs the prior Transfer tab) / **Teleport** (absorbs the prior Teleporter NPC's `TeleportDialog`). Default tab Bank. No quest pickup — quest-related queries route to Village Chief in Maid's crisp-service voice. Persistent gold + bank balance display. Partially supersedes [guild-window.md](ui/guild-window.md): Store tab moves OUT to Blacksmith; Teleport tab is NEW; Bank+Transfer behavior from guild-window.md still applies inside the new Bank tab.
    *Defines*: same as above for Guild Maid.
 
-These four collectively unblock NPC-ROSTER-REWIRE-01 implementation.
+**Phase G complete.** These four collectively unblock NPC-ROSTER-REWIRE-01 implementation. Next up: Phase H — UI canonical decisions (font, high-DPI scaling, HUD layout, camera shake, hitstop).
 
 ---
 

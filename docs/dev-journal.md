@@ -111,6 +111,24 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — Phase G complete: NPC dialogue voices + service-menu wireframes locked
+
+All 4 Phase G specs landed in one pass:
+
+- **SPEC-NPC-DIALOGUE-VOICES-01** → [docs/flows/npc-dialogue-voices.md](flows/npc-dialogue-voices.md). Three voice profiles — Blacksmith casual-warm pioneer-smith-learning; Guild Maid clean-clipped crisp-service; Village Chief warm-formal wise-elder. Five voice-distinction tests so any line is attributable to one NPC. Post-death + low-HP + high-value-transaction variants specced per NPC; cross-NPC routing lines in each NPC's voice. No engine enforcement — voice rules are prose-level for dialogue authors.
+
+- **SPEC-VILLAGE-CHIEF-DIALOGUE-01** → [docs/flows/village-chief-dialogue.md](flows/village-chief-dialogue.md). Six-state dialogue tree (first_meeting / idle / quest_offered / quest_in_progress / quest_complete / quest_declined) with full per-state Chief-voice text. Quest-body templating slots fed by the quest system so the shell is the same for every quest. **Design note:** branches are narrow — every player option resolves to "open menu" or "close panel." Voice is wrapping, not branching narrative.
+
+- **SPEC-BLACKSMITH-MERGED-MENU-01** → [docs/ui/blacksmith-menu.md](ui/blacksmith-menu.md). Four tabs, default Forge: Forge / Craft / Recycle / Shop. Q/E cycle + 1-4 jump. Shop tab is NEW here (absorbed from the prior Guild Store) and is caravan-stocked basics via `BlacksmithShopStock` item-database tag. Blacksmith voice silent on routine ops; fires on notable events (first-craft, unfamiliar material, oddity).
+
+- **SPEC-GUILD-MAID-MERGED-MENU-01** → [docs/ui/guild-maid-menu.md](ui/guild-maid-menu.md). Two tabs, default Bank: Bank / Teleport. No quest pickup — quest queries route to Chief. Partially supersedes [guild-window.md](ui/guild-window.md): Store moves OUT to Blacksmith; Teleport tab is NEW (absorbed from the removed Teleporter NPC's `TeleportDialog`); Transfer tab collapses INTO the Bank tab's two-column layout.
+
+**Collectively unblocks NPC-ROSTER-REWIRE-01** — the code ticket that consolidates services to the 3-NPC roster now has every design prerequisite locked. Impl can proceed without further design input. Two user course-corrections absorbed during Phase G: (1) the "is the Chief dialogue too in-depth?" check — confirmed it's voice wrapping around menu selections, not branching narrative, so kept as written; (2) the auto-mode speed directive — finished Phase G without waiting for per-spec approval.
+
+Next up: Phase H — UI canonical decisions. SPEC-UI-FONT-01 is the "do early or pay later" top of that phase (every text surface inherits the font choice).
+
+---
+
 ## 2026-04-18 — Phase F complete: all 8 boss specs locked
 
 All 8 zone-capstone bosses now have individual spec files at `docs/world/bosses/<boss-name>.md`, each following the boss-adapted 8-section template. Lifted from [boss-art.md §§218-430](world/boss-art.md) (which had ~90% of the content already) and expanded with acceptance criteria, impl notes (phase-shift flag patterns, FlashFx hook signatures, save-flag gating, AI-switch timing), and explicit open-questions sections (all "None — locked" since design was already settled in boss-art.md).
