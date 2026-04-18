@@ -171,7 +171,7 @@ Auto mode does NOT override "do not ship known-bad code." But it DOES mean: brie
 
 **10b-postscript. Docs-only PRs: one Copilot pass, then ship.**
 
-For PRs that touch **only** `docs/`, `*.md`, `.github/`, or other non-code files (no `.cs` / `.tscn` / `.csproj` / `Makefile` / workflow `.yml` changes), take **one** Copilot review pass. Address its substantive findings (factual errors, internal contradictions, broken cross-doc references) in a single fix commit if needed, then merge. Do NOT request a second Copilot round; do NOT iterate prose multiple times.
+For PRs that touch **only** prose/spec files — `docs/**`, repository `*.md` files, or `.github/copilot-instructions.md` — and do **not** modify code or automation/config files such as `.cs`, `.tscn`, `.csproj`, `Makefile`, workflow `.yml`, `.github/rulesets/**`, or any other behavior-affecting config under `.github/`, take **one** Copilot review pass. Address its substantive findings (factual errors, internal contradictions, broken cross-doc references) in a single fix commit if needed, then merge. Do NOT request a second Copilot round; do NOT iterate prose multiple times.
 
 Code PRs keep the multi-round protocol above — each round can catch a real bug. Docs PRs don't have the same payoff; a second round on a spec usually surfaces nits, not safety issues.
 

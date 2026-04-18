@@ -38,7 +38,7 @@ If a PR is still in draft, it's intentionally work-in-progress. Note incomplete-
 
 ### Docs-only PRs — one review pass, then done
 
-When a PR touches **only** `docs/`, `*.md`, `.github/`, or other non-code files (no `.cs` / `.tscn` / `.csproj` / `Makefile` / workflow `.yml` changes):
+When a PR touches **only** prose/spec files — `docs/**`, repository `*.md` files, or `.github/copilot-instructions.md` — and does **not** modify code or automation/config files such as `.cs`, `.tscn`, `.csproj`, `Makefile`, workflow `.yml`, `.github/rulesets/**`, or any other behavior-affecting config under `.github/`:
 
 - **Single review pass total.** Don't request follow-up reviews on prose iteration. Claude's workflow (`docs/conventions/ai-workflow.md` §10b-postscript) treats a docs PR's first review as the final review.
 - **Flag only substantive findings:** factual errors, internal contradictions, broken cross-doc references, ambiguity that would block downstream implementation. Skip prose nits, wording preferences, and reorganization suggestions.
