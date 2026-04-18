@@ -111,6 +111,32 @@ Spec-roadmap Phase E entry updated with full resolution note; dev-tracker Phase 
 
 ---
 
+## 2026-04-18 — BLACKSMITH-MENU-IMPL-01 + GUILD-MAID-MENU-IMPL-01 landed (atomic menu restructure)
+
+Second post-roadmap impl pass — the two menu-restructure tickets that NPC-ROSTER-REWIRE-01 deferred. Shipped atomically in one PR because Store moves OUT of Guild INTO Blacksmith, and an intermediate state (Store in both / Store in neither) would create a UX gap.
+
+**`BlacksmithWindow.cs` — 4 tabs via GameTabPanel:**
+- **Forge** (default tab). Renamed from the prior "Craft" tab — applies affixes to equipment. Current behavior is still a stub (detail-label preview only); the actual affix-application dialog is a follow-up content ticket.
+- **Craft**. NEW, placeholder. Material-to-item recipe crafting will live here once the recipe system lands. Currently shows "Recipe-based crafting — coming soon."
+- **Recycle**. Break down equipment for gold. Same logic as the prior tab; just re-homed under GameTabPanel.
+- **Shop**. NEW. Caravan-stocked consumables. Ported from the prior GuildWindow Store tab verbatim (same `ItemDatabase` consumable filter, same Buy/Buy-10/Target-toggle action-menu, same Send-to-Bank/Backpack logic).
+
+**`GuildWindow.cs` — 2 tabs via GameTabPanel:**
+- **Bank** (default tab). Merges the prior separate Bank + Transfer tabs into one view: gold controls (Withdraw/Deposit All) on top, two-column Bank↔Backpack slot layout in the middle, upgrade button at the bottom. Slot-click fires an action-menu with Transfer/Sell/Lock options, respecting Bank-vs-Backpack side.
+- **Teleport**. NEW. Ports `TeleportDialog`'s floor-list-and-teleport flow into a tab. Descending floor list from deepest visited; click teleports via the same ScreenTransition chain as the old dialog.
+
+**`NpcPanel.cs` — Guild Maid back to single-service button.** After NPC-ROSTER-REWIRE-01 I gave Guild Maid two buttons ("Open Guild" + "Teleport") as a bridge. Now Teleport is a tab inside the Guild window, so the second button goes away. Each active NPC has exactly one service button again; tabbed windows handle multi-service routing internally. Legacy NPCs keep their single-entry switch arms for test compat.
+
+**Specs cross-checked.** Updated `docs/flows/npc-interaction.md` service-button table. Marked `docs/ui/guild-window.md` as partially superseded with a banner pointing at the new `guild-maid-menu.md` + `blacksmith-menu.md` specs (and noting Store moved to Blacksmith). Both new behaviors match the Phase G specs written earlier this session.
+
+**Test coverage.** 471 unit + 11 integration tests green. NpcTests still pass — they assert "Open Guild" focused + present, which is still true (it's now the only service button). UI tests not re-run; pre-existing AUDIT-17 is already known to fail them.
+
+**Dead code left in place.** `TeleportDialog.cs` kept — the Teleporter NPC's legacy dispatch in NpcPanel still calls it for direct-code/test invocation. Cleanup is a separate ticket.
+
+**Follow-ups opened (not blocking):** affix-apply dialog for the Forge tab; `BlacksmithShopStock` content tag for Shop stock; recipe system for Craft tab.
+
+---
+
 ## 2026-04-18 — NPC-ROSTER-REWIRE-01 landed (P1 impl, first post-roadmap ticket)
 
 First impl ticket off the Phase-G-unblocked shelf. Minimal rewire approach: changed WHICH NPCs are in the town + extended NpcPanel to support multiple service buttons per NPC. No menu-restructure work yet — Blacksmith stays single-service (Forge only), Guild Maid keeps its existing 3-tab GuildWindow. The full Phase G tabbed windows (4-tab Blacksmith per SPEC-BLACKSMITH-MERGED-MENU-01, 2-tab Guild Maid per SPEC-GUILD-MAID-MERGED-MENU-01) are follow-up impl tickets; they're bigger than "rewire NPC spawns" and didn't belong in this one.

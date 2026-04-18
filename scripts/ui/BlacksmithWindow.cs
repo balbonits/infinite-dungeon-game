@@ -1,20 +1,30 @@
 using Godot;
-using System.Linq;
+using System;
+using System.Collections.Generic;
 using DungeonGame.Autoloads;
 
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Blacksmith crafting UI. Apply affixes to equipment, recycle gear.
-/// Two tabs: Craft (apply affixes) and Recycle (break down gear).
+/// Blacksmith crafting UI. Four tabs per SPEC-BLACKSMITH-MERGED-MENU-01:
+/// Forge (apply affixes), Craft (recipe-based, coming soon), Recycle
+/// (break down gear), Shop (caravan-stocked materials + consumables).
 /// </summary>
 public partial class BlacksmithWindow : GameWindow
 {
     public static BlacksmithWindow Instance { get; private set; } = null!;
 
-    private Label _goldLabel = null!;
-    private Label _detailLabel = null!;
-    private bool _isCraftMode = true;
+    private const int ForgeTabIndex = 0;
+    private const int CraftTabIndex = 1;
+    private const int RecycleTabIndex = 2;
+    private const int ShopTabIndex = 3;
+
+    private GameTabPanel _tabs = null!;
+    private Label _goldFooter = null!;
+    // Default to Bank — matches the prior Guild Store's default and the
+    // button text. (Copilot R1 on PR #22: field wasn't initialized, so the
+    // C# default `false` silently changed behavior from the port.)
+    private bool _buySendToBank = true;
 
     public override void _Ready()
     {
@@ -31,101 +41,59 @@ public partial class BlacksmithWindow : GameWindow
         title.HorizontalAlignment = HorizontalAlignment.Center;
         content.AddChild(title);
 
-        _goldLabel = new Label();
-        UiTheme.StyleLabel(_goldLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Body);
-        _goldLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        content.AddChild(_goldLabel);
+        _tabs = new GameTabPanel();
+        _tabs.AddTab(Strings.Blacksmith.ForgeTab, BuildForgeTab);
+        _tabs.AddTab(Strings.Blacksmith.CraftTab, BuildCraftTab);
+        _tabs.AddTab(Strings.Blacksmith.RecycleTab, BuildRecycleTab);
+        _tabs.AddTab(Strings.Blacksmith.ShopTab, BuildShopTab);
+        content.AddChild(_tabs);
 
-        // Tab buttons
-        var tabRow = new HBoxContainer();
-        tabRow.AddThemeConstantOverride("separation", 8);
-        tabRow.Alignment = BoxContainer.AlignmentMode.Center;
-        content.AddChild(tabRow);
-
-        var craftTab = new Button();
-        craftTab.Text = Strings.Blacksmith.CraftTab;
-        craftTab.CustomMinimumSize = new Vector2(120, 34);
-        UiTheme.StyleButton(craftTab, UiTheme.FontSizes.Body);
-        craftTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => { _isCraftMode = true; Refresh(); }));
-        tabRow.AddChild(craftTab);
-
-        var recycleTab = new Button();
-        recycleTab.Text = Strings.Blacksmith.RecycleTab;
-        recycleTab.CustomMinimumSize = new Vector2(120, 34);
-        UiTheme.StyleSecondaryButton(recycleTab, UiTheme.FontSizes.Body);
-        recycleTab.Connect(BaseButton.SignalName.Pressed, Callable.From(() => { _isCraftMode = false; Refresh(); }));
-        tabRow.AddChild(recycleTab);
-
-        content.AddChild(new HSeparator());
-
-        _detailLabel = new Label();
-        UiTheme.StyleLabel(_detailLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        _detailLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _detailLabel.CustomMinimumSize = new Vector2(0, 30);
-        content.AddChild(_detailLabel);
-
-        content.AddChild(Scroll);
-
-        var closeBtn = new Button();
-        closeBtn.Text = Strings.Ui.Cancel;
-        closeBtn.CustomMinimumSize = new Vector2(200, 38);
-        closeBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Body);
-        closeBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() => Close()));
-        content.AddChild(closeBtn);
+        _goldFooter = new Label();
+        UiTheme.StyleLabel(_goldFooter, UiTheme.Colors.Accent, UiTheme.FontSizes.Small);
+        _goldFooter.HorizontalAlignment = HorizontalAlignment.Center;
+        content.AddChild(_goldFooter);
     }
 
     public void Open()
     {
-        _isCraftMode = true;
         Show();
     }
 
     protected override void OnShow()
     {
-        Refresh();
+        _tabs.SelectTab(ForgeTabIndex); // default to Forge per spec
+        UpdateGoldFooter();
     }
 
-    protected override bool HandleTabInput(InputEvent @event)
+    protected override bool HandleTabInput(InputEvent @event) => _tabs.HandleInput(@event);
+
+    private void UpdateGoldFooter()
     {
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderLeft))
-        {
-            _isCraftMode = true;
-            Refresh();
-            return true;
-        }
-        if (@event.IsActionPressed(Constants.InputActions.ShoulderRight))
-        {
-            _isCraftMode = false;
-            Refresh();
-            return true;
-        }
-        return false;
+        // Show both pools because Shop-tab purchases spend backpack-first
+        // then bank (see DoBuy). Displaying only backpack would hide bank
+        // spends and make a successful buy look like nothing happened.
+        // (Copilot R1 on PR #22: footer showed only backpack gold despite
+        // combined spending.)
+        var gs = GameState.Instance;
+        _goldFooter.Text = $"Bank: {NumberFormat.Abbrev(gs.PlayerBank.Gold)}g     " +
+                           $"Backpack: {NumberFormat.Abbrev(gs.PlayerInventory.Gold)}g";
     }
 
-    private void Refresh()
+    // ──────────────────────── FORGE TAB ────────────────────────
+
+    private void BuildForgeTab()
     {
-        foreach (Node child in ScrollContent.GetChildren())
-            child.QueueFree();
+        var scroll = _tabs.ScrollContent;
+
+        var hint = new Label();
+        hint.Text = Strings.Blacksmith.ForgeHint;
+        UiTheme.StyleLabel(hint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        scroll.AddChild(hint);
 
         var inv = GameState.Instance.PlayerInventory;
-        _goldLabel.Text = Strings.Shop.GoldDisplay(inv.Gold);
-        _detailLabel.Text = _isCraftMode
-            ? Strings.Blacksmith.CraftHint
-            : Strings.Blacksmith.RecycleHint;
-
-        if (_isCraftMode)
-            ShowCraftableItems(inv);
-        else
-            ShowRecyclableItems(inv);
-
-        // Prefer focusing an item in the list, but fall back to the Close button
-        // (in ContentBox) if the list is empty — so keyboard users can always exit.
-        UiTheme.FocusFirstButtonOrFallback(ScrollContent, ContentBox);
-    }
-
-    private void ShowCraftableItems(Inventory inv)
-    {
+        bool any = false;
         for (int i = 0; i < inv.SlotCount; i++)
         {
             var stack = inv.GetSlot(i);
@@ -137,20 +105,56 @@ public partial class BlacksmithWindow : GameWindow
 
             int maxTier = AffixDatabase.GetMaxTier(stack.Item.LevelRequirement);
             string label = $"{stack.Item.Name} (Lv.{stack.Item.LevelRequirement})  T{maxTier}";
-
-            var btn = CreateItemButton(label, () =>
-            {
-                _detailLabel.Text = $"{stack.Item.Name}\n{stack.Item.Description}\nMax affix tier: {maxTier}";
-            });
-            ScrollContent.AddChild(btn);
+            // Forge buttons are disabled until the affix-apply dialog ships
+            // — visible so the player can see what's upcoming, but no-op
+            // clicks would give confusing feedback. (Copilot R1 on PR #22.)
+            var btn = CreateItemButton(label, () => { });
+            btn.Disabled = true;
+            btn.TooltipText = "Affix forging coming soon.";
+            scroll.AddChild(btn);
+            any = true;
         }
 
-        if (ScrollContent.GetChildCount() == 0)
-            ScrollContent.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoCraftable));
+        if (!any)
+            scroll.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoForgeable));
     }
 
-    private void ShowRecyclableItems(Inventory inv)
+    // ──────────────────────── CRAFT TAB (placeholder) ────────────────────────
+
+    private void BuildCraftTab()
     {
+        var scroll = _tabs.ScrollContent;
+
+        var hint = new Label();
+        hint.Text = Strings.Blacksmith.CraftHint;
+        UiTheme.StyleLabel(hint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        scroll.AddChild(hint);
+
+        var placeholder = new Label();
+        placeholder.Text = "Material-to-item recipes will appear here once the crafting system lands.";
+        UiTheme.StyleLabel(placeholder, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        placeholder.HorizontalAlignment = HorizontalAlignment.Center;
+        placeholder.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        scroll.AddChild(placeholder);
+    }
+
+    // ──────────────────────── RECYCLE TAB ────────────────────────
+
+    private void BuildRecycleTab()
+    {
+        var scroll = _tabs.ScrollContent;
+
+        var hint = new Label();
+        hint.Text = Strings.Blacksmith.RecycleHint;
+        UiTheme.StyleLabel(hint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        scroll.AddChild(hint);
+
+        var inv = GameState.Instance.PlayerInventory;
+        bool any = false;
         for (int i = 0; i < inv.SlotCount; i++)
         {
             var stack = inv.GetSlot(i);
@@ -164,21 +168,105 @@ public partial class BlacksmithWindow : GameWindow
             int recycleGold = 5 + stack.Item.LevelRequirement * 2;
             string label = $"{stack.Item.Name}    +{recycleGold}g";
 
-            var btn = CreateItemButton(label, () =>
+            scroll.AddChild(CreateItemButton(label, () =>
             {
                 inv.RemoveAt(slotIndex);
                 inv.Gold += recycleGold;
                 Toast.Instance?.Success($"Recycled for {recycleGold}g");
-                Refresh();
-            });
-            ScrollContent.AddChild(btn);
+                _tabs.SelectTab(RecycleTabIndex); // rebuild list
+                UpdateGoldFooter();
+            }));
+            any = true;
         }
 
-        if (ScrollContent.GetChildCount() == 0)
-            ScrollContent.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoRecyclable));
+        if (!any)
+            scroll.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoRecyclable));
     }
 
-    private static Button CreateItemButton(string text, System.Action onPress)
+    // ──────────────────────── SHOP TAB ────────────────────────
+
+    private void BuildShopTab()
+    {
+        var scroll = _tabs.ScrollContent;
+
+        var hint = new Label();
+        hint.Text = Strings.Blacksmith.ShopHint;
+        UiTheme.StyleLabel(hint, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        scroll.AddChild(hint);
+
+        // Caravan stock: everything in ItemDatabase with BuyPrice > 0 and Consumable
+        // category. Full `BlacksmithShopStock` tag is a content ticket — for now we
+        // surface consumables, matching the previous Guild Store MVP.
+        bool any = false;
+        foreach (var item in ItemDatabase.All)
+        {
+            if (item.Category != ItemCategory.Consumable || item.BuyPrice <= 0) continue;
+
+            var btn = new Button();
+            btn.Text = $"{item.Name}  —  {item.BuyPrice}g";
+            btn.CustomMinimumSize = new Vector2(0, 32);
+            btn.FocusMode = FocusModeEnum.All;
+            UiTheme.StyleListItemButton(btn);
+            var captured = item;
+            btn.Connect(BaseButton.SignalName.Pressed,
+                Callable.From(() => ShowBuyDialog(captured)));
+            scroll.AddChild(btn);
+            any = true;
+        }
+
+        if (!any)
+            scroll.AddChild(CreateEmptyLabel(Strings.Blacksmith.NoShopStock));
+    }
+
+    private void ShowBuyDialog(ItemDef item)
+    {
+        var actions = new List<(string, Action)>
+        {
+            ($"Buy 1 ({item.BuyPrice}g) → {(_buySendToBank ? "Bank" : "Backpack")}",
+                () => DoBuy(item, 1)),
+            ($"Buy 10 ({item.BuyPrice * 10}g) → {(_buySendToBank ? "Bank" : "Backpack")}",
+                () => DoBuy(item, 10)),
+            ($"Toggle target: now {(_buySendToBank ? "Bank (→switch to Backpack)" : "Backpack (→switch to Bank)")}",
+                () => { _buySendToBank = !_buySendToBank; ShowBuyDialog(item); }),
+        };
+
+        var pos = GetViewport().GetMousePosition();
+        ActionMenu.Instance?.Show(pos, actions.ToArray());
+    }
+
+    private void DoBuy(ItemDef item, long amount)
+    {
+        var gs = GameState.Instance;
+        long totalCost = item.BuyPrice * amount;
+        long available = gs.PlayerInventory.Gold + gs.PlayerBank.Gold;
+        if (available < totalCost)
+        {
+            Toast.Instance?.Error("Not enough gold (combined bank + backpack)");
+            return;
+        }
+
+        var target = _buySendToBank ? gs.PlayerBank.Storage : gs.PlayerInventory;
+        if (!target.TryAdd(item, amount))
+        {
+            Toast.Instance?.Warning($"{(_buySendToBank ? "Bank" : "Backpack")} is full");
+            return;
+        }
+
+        long fromBackpack = Math.Min(gs.PlayerInventory.Gold, totalCost);
+        gs.PlayerInventory.Gold -= fromBackpack;
+        long remaining = totalCost - fromBackpack;
+        if (remaining > 0) gs.PlayerBank.Gold -= remaining;
+
+        Toast.Instance?.Success(
+            $"Bought {amount}x {item.Name} → {(_buySendToBank ? "Bank" : "Backpack")}");
+        UpdateGoldFooter();
+    }
+
+    // ──────────────────────── HELPERS ────────────────────────
+
+    private static Button CreateItemButton(string text, Action onPress)
     {
         var btn = new Button();
         btn.Text = $"  {text}";
@@ -193,6 +281,7 @@ public partial class BlacksmithWindow : GameWindow
         var label = new Label();
         label.Text = text;
         UiTheme.StyleLabel(label, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
         return label;
     }
 }

@@ -23,16 +23,15 @@
 
 ## Service Buttons Per NPC
 
-Post-NPC-ROSTER-REWIRE-01: **3 NPCs** in the town, each with one or more service buttons. Guild Maid is the first NPC with multiple services — her panel shows two buttons in addition to Cancel.
+Post-BLACKSMITH-MENU-IMPL-01 + GUILD-MAID-MENU-IMPL-01: **3 NPCs** in the town, each with exactly **one** service button — the service windows themselves are tabbed and handle multi-service routing internally.
 
-| NPC Name | Button Text | Opens |
-|----------|------------|-------|
-| Guild Maid | "Open Guild" (first / default-focused) | `GuildWindow.Instance.Open()` |
-| Guild Maid | "Teleport" | `TeleportDialog.Instance.Show()` |
-| Blacksmith | "Open Forge" | `BlacksmithWindow.Instance.Open()` |
-| Village Chief | "View Quests" | `QuestPanel.Instance.Open()` |
+| NPC Name | Button Text | Opens | Window structure |
+|----------|------------|-------|------------------|
+| Guild Maid | "Open Guild" | `GuildWindow.Instance.Open()` | 2 tabs: **Bank** (storage + Bank↔Backpack transfer + gold controls) / **Teleport** (floor fast-travel) |
+| Blacksmith | "Open Forge" | `BlacksmithWindow.Instance.Open()` | 4 tabs: **Forge** (affix application) / **Craft** (recipes — placeholder) / **Recycle** (break down gear) / **Shop** (caravan-stocked consumables) |
+| Village Chief | "View Quests" | `QuestPanel.Instance.Open()` | Single-service panel (quest queue) |
 
-A "Cancel" button is always added after the last service button. The first service button is default-focused (keyboard nav).
+A "Cancel" button is always added after the service button. The service button is default-focused (keyboard nav). Tab-cycling within windows uses Q/E — see [hud-layout.md §Hotkeys](../ui/hud-layout.md).
 
 **Retired NPCs** (not in the town scene; still dispatchable via direct code for test compat only):
 
@@ -43,7 +42,7 @@ A "Cancel" button is always added after the last service button. The first servi
 | Teleporter | "Teleport" | `TeleportDialog.Instance.Show()` |
 | Banker | "Open Vault" | `BankWindow.Instance.Open()` |
 
-These legacy paths keep existing tests passing and protect against direct-code invocation, but the town scene never spawns these NPCs.
+These legacy paths keep existing tests passing and protect against direct-code invocation, but the town scene never spawns these NPCs. `TeleportDialog` is kept for the Teleporter-NPC legacy path even though the Guild Maid's Teleport tab is now the canonical entry point.
 
 ## Panel Input
 
