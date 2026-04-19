@@ -691,6 +691,8 @@ docs/
 
 **Current mode:** Visual-first rebuild. One tile, one sprite, one scene at a time. Verify each step visually before proceeding. Follow the dev ticket cycle in [docs/conventions/ai-workflow.md](docs/conventions/ai-workflow.md).
 
+**Dev-priority rule (code phases):** **FE-first** — front-end (visible UI, visuals, assets, flow polish) ships before back-end (save systems, AI internals, test coverage, audit fixes). See [docs/conventions/fe-first-development.md](docs/conventions/fe-first-development.md) for the full rule + scope limits (does NOT apply in spec-writing phases — the spec roadmap drives priority there).
+
 ## Priorities
 
 1. **Visual foundation** — Render tiles, place sprites, movement, camera (VIS-01 through VIS-06)
