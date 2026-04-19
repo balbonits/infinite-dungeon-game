@@ -13,13 +13,13 @@ During active **code phases**, front-end (visible) work comes before back-end (i
 
 **Spec-writing / doc-authoring phases** are not governed by FE-first. During the spec roadmap (Phases A-J on `docs/spec-roadmap.md`), priority is driven by the roadmap's dependency chain, not by FE/BE. A BE-systems spec (e.g. SPEC-MAGICULE-DENSITY-01, SPEC-CRAFTING-QUALITY-LADDER-01) ranks above an FE-visual spec if the roadmap puts it there.
 
-The trigger for "FE-first applies" is **the PR contains `scripts/`, `scenes/`, or `assets/` edits** — not just `docs/`.
+The trigger for "FE-first applies" is **the PR contains any non-doc, behavior-affecting change** — not just `docs/`. `scripts/`, `scenes/`, and `assets/` are the common cases, but this also includes code-adjacent project files like `shaders/`, `addons/`, `tests/`, `project.godot`, `.csproj`, workflow/build config, and similar. The list is non-exhaustive; if the change could alter what ships to the player, treat it as a code phase.
 
 ## Why
 
 Visible progress drives motivation and playtester feedback. A polished vertical slice of the player experience — art, UI, flow — is worth shipping ahead of audit-grade back-end work at this phase of the project. The game needs to look and feel right before the invisible systems are rounded out.
 
-> *PO, 2026-04-18: "we're doing front-to-back development (FE-first) ... IF we're coding. if not, are we're still writing specs."*
+> *PO, 2026-04-18: "we're doing front-to-back development (FE-first) ... IF we're coding. if not, are we're still writing specs [sic]."*
 
 ## How to apply
 
