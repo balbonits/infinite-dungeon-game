@@ -16,18 +16,18 @@ PO direction 2026-04-18: class identity should read immediately at a glance — 
 
 ### The collision with existing semantic colors
 
-The raw R/G/B triad collides with UiTheme's semantic slots. Values below are the canonical slot colors as defined in [`scripts/ui/UiTheme.cs`](../../scripts/ui/UiTheme.cs) (the compiled source of truth for UI colors):
+The raw R/G/B triad collides with UiTheme's semantic slots. Values below are from the canonical spec [`docs/assets/ui-theme.md`](../assets/ui-theme.md) — specs are the source of truth per [development-paradigm.md](../development-paradigm.md); code is reconciled to match specs, not the other way around.
 
 | Semantic slot | Hex | Role |
 |---------------|-----|------|
 | `Danger` | `#ff6f6f` | Damage numbers, warning states, high-threat enemies |
-| `Safe` | `#6bff89` | Heals, success toasts, low-threat enemies |
+| `Safe` | `#76f79f` | Heals, success toasts, low-threat enemies |
 | `Action` | `#518ef4` | Buttons, interactive UI, action emphasis |
 | `Player` | `#8ed6ff` | Current player accent (before this spec) |
 
-(The HP orb and MP orb use their own fills — `#CC2222` / `#2244CC` respectively per the locked [HUD layout](hud-layout.md) — not the `Danger` / `Action` semantic slots.)
+(The HP orb and MP orb use their own fills — `#CC2222` / `#2244CC` respectively per the locked [HUD layout](hud-layout.md) — not the `Danger` / `Action` semantic slots. The HP orb's low-HP pulse is `#FF4444`, not `Danger`.)
 
-**Known doc drift:** [`docs/assets/ui-theme.md`](../assets/ui-theme.md) currently lists the `safe` slot as `#76f79f`, which is stale against `UiTheme.cs`'s `Colors.Safe = #6bff89` (the running code). This spec uses the code value. `ui-theme.md` should be reconciled in a separate follow-up.
+**Known code drift (reconcile in a separate follow-up):** [`scripts/ui/UiTheme.cs`](../../scripts/ui/UiTheme.cs) currently defines `Colors.Safe = #6bff89`, which is stale against the spec's `#76f79f`. `Colors.Action` exists in code (`#518ef4`) but is not yet listed in `ui-theme.md`'s semantic-slot table. Both drifts are outside this PR's scope.
 
 A literal Warrior-`Danger`-red would make a red "Warrior Guildmaster" label look like a warning. A literal Ranger-`Safe`-green would blur into heal toasts. Pure RGB is out.
 
@@ -38,7 +38,7 @@ Each class color is a darker, less-saturated cousin of the pure hue — the tria
 | Class | Hex | Name | HSL | Intent |
 |-------|-----|------|-----|--------|
 | Warrior | `#b53238` | **Brick Red** | H=357, S=57%, L=45% | Martial, weighty, blood-and-iron — distinct from `#ff6f6f` Danger (damage numbers, warning states) and from the separate `#CC2222` HP orb fill. |
-| Ranger | `#3a7a4d` | **Forest Green** | H=140, S=35%, L=35% | Woodland, wilderness, earthy — distinct from `#6bff89` heal (brighter, mint-forward). |
+| Ranger | `#3a7a4d` | **Forest Green** | H=140, S=35%, L=35% | Woodland, wilderness, earthy — distinct from `#76f79f` Safe (brighter, mint-forward). |
 | Mage | `#5b47a0` | **Royal Violet** | H=255, S=39%, L=45% | Arcane, deep-magic, purple-blue — distinct from `#518ef4` Action button blue (brighter, pure blue). |
 
 Players should perceive these as "red / green / blue class" in under half a second. The darker/saturated shift is invisible at a glance but load-bearing for avoiding semantic overlap.
@@ -60,7 +60,7 @@ Players should perceive these as "red / green / blue class" in under half a seco
 3. **Damage numbers** — Danger red regardless of attacker class.
 4. **Heal text / buff toasts** — Safe green regardless of caster class.
 5. **Crit indicator** — Accent gold (`#f5c86b`), not class.
-6. **Danger / low-HP pulse** — stays on Danger red.
+6. **Damage / warning-state coloring** — `Danger` red (`#ff6f6f`), regardless of class. (The HP orb's low-HP pulse `#FF4444` is separate from this slot and covered in bullet 1.)
 
 The split reads as "gameplay feedback colors are shared; identity colors are per-class." Never let one bleed into the other.
 
