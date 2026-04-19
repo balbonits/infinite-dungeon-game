@@ -213,7 +213,9 @@ No top-down view, no side-view, no three-quarter front-on view, no chibi, no mod
 
 ### 3. Direction Coverage
 
-**Locked: 4 directions per NPC — `south`, `east`, `north`, `west`.**
+> **SUPERSEDED 2026-04-18:** the 4-direction contract in this section is overridden by [SPEC-NPC-ART-01 §3](../world/npc-art.md), which locks NPCs to **south-facing only (1 frame per NPC)**. The 4-direction content below is historical; shipped NPCs are 1 south frame each. See also the supersession banner at the top of this file.
+
+**Locked (historical): 4 directions per NPC — `south`, `east`, `north`, `west`.**
 
 NPCs are stationary service actors; the Town scene places each one at a
 fixed spot facing a fixed direction (Blacksmith at the forge, Guild

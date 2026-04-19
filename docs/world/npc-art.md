@@ -69,12 +69,12 @@ The full town-services catalog maps onto the three NPCs as follows. This is the 
 
 **Locked decision: ONE south-facing idle frame per NPC. No rotations. No walk cycle.**
 
-PO direction 2026-04-18 (paraphrased): **NPCs do not move, so skip generating the rest of the angles/directions.** (The original PO note cited PixelLab credit savings as motivation; that framing is superseded by ADR-007's art-pipeline pivot — PixelLab is no longer the pipeline. The *behavioral* justification below is what stands.)
+PO direction 2026-04-18 (paraphrased): **NPCs do not move, so skip generating the rest of the angles/directions.**
 
 Rationale:
 - NPCs are stationary in town — they occupy a fixed station tile and never path. No walk cycle, no turn-to-face-player.
 - The player approaches the NPC from the front; south-facing is the canonical camera angle, and other rotations are never seen.
-- Only the south frame is extracted, committed to the repo, and referenced from the scene. Non-south frames (if the underlying art source produces them as a spritesheet) are discarded at import, not stored. Saves repo storage and scene-wiring complexity — this is the actual savings, independent of which generator produced the sprite.
+- Only the south frame is extracted, committed to the repo, and referenced from the scene. Non-south frames (if the underlying art source produces them as a spritesheet) are discarded at import, not stored. The savings this realizes are repo storage and scene-wiring complexity — not generator cost.
 - "Turn to face the player" UX feedback is replaced by the existing NpcPanel interaction (panel fades in centered on screen) — no sprite turn needed.
 
 **Frame budget per NPC:** 1 idle frame (south). No rotations, no walk, no attack, no death. **Total: 1 frame × 3 NPCs = 3 NPC frames** for the entire town roster.
@@ -211,7 +211,7 @@ All three NPC sprites shipped on 2026-04-18 at `assets/characters/npcs/{blacksmi
 - **Service mapping is the contract for dialogue / quest wiring.** Engineer-side, the dialogue-menu builder and the quest-system entrypoint must read against the §2 table — Blacksmith owns forge/craft/shop, Guild Maid owns bank/teleport, Village Chief owns quests. Any code that wires a service to the wrong NPC is a bug against this spec, not a design choice. (The historical "Guild Master = quest giver" wiring was such a bug; `NPC-ROSTER-REWIRE-01` corrects it.)
 - **Scale = 0.95× is deliberate.** NPCs are slightly smaller than the PC reference (1.00) so the town reads as "the player is the protagonist; these are townsfolk." A 1.00 NPC scale would make the player feel like one-of-many; a 0.85× would make NPCs read as children. 0.95× is the goldilocks point.
 - **No player-blue on NPCs is the hardest rule to remember.** Art-lead's instinct on the Guild Maid's teleport pendant will be to make it cyan/blue (because "teleport = magic = blue" is the genre cliché). It must not be. Sage green or deep red is the locked alternative. This is what protects PC identity in town: the player's own sprite is the only blue-accented humanoid on screen.
-- **Direction coverage is south-only, not 4-dir, not 8-dir.** PixelLab's standard mode requires `n_directions=4` minimum, so the generation cost is 4 frames even though only south is saved; the other three are simply not downloaded. This saves commit + storage cost but not PixelLab generation cost. Do not let the template default trick the pipeline into saving all 4 — extract south.png only.
+- **Direction coverage is south-only, not 4-dir, not 8-dir.** Regardless of which art pipeline generates the source (historical PixelLab runs required `n_directions=4` minimum; current LPC generator emits a full 8-direction spritesheet), only the south frame is extracted, committed, and referenced from the scene. The savings are repo storage + scene-wiring complexity, not generator cost. Do not let pipeline defaults trick the extraction step into saving non-south frames — `south.png` is the only committed output per NPC.
 - **Village Chief's staff is plain wood, NOT the Mage staff.** This is the easiest visual confusion to introduce by accident — both are "robed figure with vertical staff." The differentiators (white beard + hair, sage-green robe, plain wooden staff, no hat, head-height staff not above-head) must hold. Cutting them risks a Mage-confusion bug at thumbnail scale.
 - **Voice / dialogue is referenced, not authored here.** The voice-compatibility line in §§6–8 is a sanity check that the silhouette and the dialogue voice agree. The actual dialogue text lives in `docs/flows/npc-interaction.md` and the per-NPC dialogue strings file when one is authored.
 
