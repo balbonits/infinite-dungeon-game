@@ -76,8 +76,8 @@ Art-spec side ([ART-SPEC-PC-01](../assets/player-class-pipeline.md)) needs a cor
 
 ### Accessibility
 
-- **Red-green color blindness** (deuteranopia / protanopia — affects ~8% of males): brick red and forest green have similar luminance (L=45 / L=35) which may be hard to distinguish in grayscale. Mitigation: **color is never the only cue.** Every class-coded surface also has the class NAME in text, the class icon (future: Warrior = shield, Ranger = bow, Mage = staff), or the class sprite silhouette alongside the color. The color reinforces identity; it doesn't carry it alone.
-- **Blue-yellow color blindness** (tritanopia): rare, but the Mage violet-blue could blur into Warrior brick-red in grayscale. Same mitigation — text + silhouette redundancy.
+- **Red-green color blindness** (deuteranopia / protanopia — affects ~8% of males): brick red and forest green have similar HSL lightness (`L=45` / `L=35`), which may make them harder to distinguish at a glance when red-green color perception is reduced. (HSL lightness is not the same metric as WCAG relative luminance, but similar HSL lightness is a useful first-pass signal for this concern.) Mitigation: **color is never the only cue.** Every class-coded surface also has the class NAME in text, the class icon (future: Warrior = shield, Ranger = bow, Mage = staff), or the class sprite silhouette alongside the color. The color reinforces identity; it doesn't carry it alone.
+- **Blue-yellow color blindness** (tritanopia): rare, but the Mage violet-blue and Warrior brick-red may also be harder to differentiate for affected players. Same mitigation — text + silhouette redundancy.
 - **Future option**: an Options-menu "Class color accessibility mode" could swap one of the classes to a distinctly-different hue (e.g., Ranger = teal instead of green) for affected players. Not in scope for this spec; open a future ticket if playtesting surfaces the need.
 
 ### Naming convention
