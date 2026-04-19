@@ -136,10 +136,13 @@ public class SplashTests : GameTestBase
     /// <summary>
     /// Regression for the "New Game doesn't work after deleting a save slot"
     /// bug reported 2026-04-19: user flow was splash → Continue → LoadGameScreen →
-    /// delete slot → Back → New Game → silently did nothing. Mirrors the existing
-    /// AfterContinueBack test but adds a slot-delete step before going back, since
-    /// RebuildSlots() (post-delete) frees + re-initializes all LoadGameScreen
-    /// children which can leave the splash's focus path in an unrecoverable state.
+    /// delete slot → Back → New Game → silently did nothing. The original
+    /// in-place RebuildSlots path had a timer lambda holding `this` across a
+    /// possible user Back press, which could free the screen mid-transition and
+    /// leave splash focus orphaned. The fix: deleting a slot now emits
+    /// SlotDeleted, and Main recreates a fresh LoadGameScreen. This test
+    /// asserts the recreate-on-delete lifecycle does NOT break splash's
+    /// post-Back focus/input state.
     /// </summary>
     [Test]
     public async Task Splash_AfterDeleteSlotBack_NewGameStillWorks()
@@ -191,8 +194,14 @@ public class SplashTests : GameTestBase
         confirmBtn.EmitSignal(BaseButton.SignalName.Pressed);
         await Input.WaitFrames(5);
 
-        // Wait for RebuildSlots to complete (0.05 + 0.15 = 0.2s + frame buffer).
-        await Input.WaitSeconds(0.5f);
+        // Wait for the SlotDeleted flow to tear down and recreate LoadGameScreen.
+        // Main.CallDeferred(ShowLoadGameScreen) fires on the next idle frame;
+        // wait on the observable condition (fresh screen mounted + _ready set)
+        // instead of a fixed sleep so the test doesn't rely on wall-clock timing.
+        await WaitUntil(
+            () => Ui.HasNodeOfType<LoadGameScreen>() &&
+                  Ui.FindButton("Load") is not null,
+            timeout: 2f, what: "fresh LoadGameScreen mounted after delete");
 
         // Press Escape to go back to splash.
         await Input.PressKey(Key.Escape);
