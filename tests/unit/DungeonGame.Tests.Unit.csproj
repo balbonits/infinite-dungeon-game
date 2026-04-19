@@ -38,6 +38,6 @@
 
   <!-- Exclude Godot SDK from logic files -->
   <ItemGroup>
-    <PackageReference Include="GodotSharp" Version="4.3.0" />
+    <PackageReference Include="GodotSharp" Version="4.6.2" />
   </ItemGroup>
 </Project>

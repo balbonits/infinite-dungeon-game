@@ -32,7 +32,7 @@ Each class fills the same nine-field template below. The template structure is i
 | **Role in party fantasy** | Which classic ARPG axis (tanky melee / agile ranged DPS / squishy caster). |
 | **Silhouette readability constraint** | What MUST read at a glance from 8 tiles away. The single hardest field to get right; this is the gameplay-visual hook. |
 | **Starter equipment (world sprite)** | Exact items rendered on the canonical 128×128 sprite. This is what PixelLab generates. |
-| **Color-coding contract** | Which surfaces carry the player-blue accent (`#8ed6ff` per `docs/assets/ui-theme.md`); which pixels (if any) are exempt from any future tint. |
+| **Color-coding contract** | Which surfaces carry the per-class accent (Warrior `#b53238`, Ranger `#3a7a4d`, Mage `#5b47a0` per [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md), superseding the prior single player-blue `#8ed6ff`); which pixels (if any) are exempt from any future tint. |
 | **Scale + anchor** | Scale multiplier (player = 1.00 canonical reference), Z-offset, canvas size. |
 | **Locked animation set** | Which animations ship with the sprite at v1: walking + fight-stance idle + class-appropriate attack. |
 | **Build / age / gender beat** | Per-class skew on the shared rules in §4. |
@@ -86,11 +86,15 @@ The portrait/sprite coupling is what makes the locked single-sprite decision wor
 
 ### 5. Color-Coding Contract (shared rules, per-class accents below)
 
+> **SUPERSESSION NOTICE (2026-04-18):** the "single player-blue accent for all three classes" rule below is **superseded by [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md)**. Each class now has its own accent color: **Warrior brick red `#b53238`, Ranger forest green `#3a7a4d`, Mage royal violet `#5b47a0`**.
+>
+> **The §6–8 worked examples below use the new per-class hex values.** Any mentions of the prior `#8ed6ff` player-blue in this file appear in transitional / historical context only; the per-class hex values above govern. The accent-zone locations on each sprite are unchanged; the exempt-pixel mechanism and "baked into sprite pixels" rule are unchanged. Art redraw (Bucket A) must use the per-class hex values.
+
 How player class sprites interact with [color-system.md](../systems/color-system.md):
 
-- **PC sprites are NEVER modulated by the level-relative tint system.** That system exists to color-code monsters by player-vs-monster level gap (grey/blue/cyan/green/yellow/gold/orange/red). It does not apply to the player. The player's `Modulate` stays `Color.White` always.
+- **PC sprites are NEVER modulated by the level-relative tint system.** That system exists to color-code monsters by player-vs-monster level gap (grey/blue/cyan/green/yellow/gold/orange/red). It does not apply to the player. As far as the level-tint system is concerned, the player's `Modulate` stays `Colors.White` — but the sprite may still be temporarily modulated by unrelated FX (e.g., the grace-period flicker and damage-flash effects in [`scripts/Player.cs`](../../scripts/Player.cs)), which are orthogonal to the level-tint system and do not apply a tint gradient.
 - **Base tint surface**: full sprite, no exempt-pixel mechanism needed (since no tint is ever applied).
-- **Player-blue accent contract**: each class carries a small amount of player-blue (`#8ed6ff` per `docs/assets/ui-theme.md`) as the visual signature that this is "the player." Per-class location of the accent is specified below in §6–8. The accent is **baked into the sprite pixels** (not a runtime modulate), so it survives forever.
+- **Per-class accent contract (supersession noted above)**: each class carries a small amount of its **class color** (Warrior `#b53238`, Ranger `#3a7a4d`, Mage `#5b47a0`) as the visual signature that this is "the player." Per-class location of the accent is specified below in §6–8 (locations unchanged; only the hex values shift from the prior `#8ed6ff` player-blue). The accent is **baked into the sprite pixels** (not a runtime modulate), so it survives forever.
 - **Class-identity colors** (warrior steel + silver, ranger forest leather, mage robe color) are also baked into pixels and are part of the locked spec — no class-color customization at v1.
 
 ---
@@ -202,9 +206,9 @@ Neither half ships without the other. If a class's design fields change (e.g. a 
 - **Equipment-on-paperdoll, not on sprite.** The locked PO decision (2026-04-17) means the inventory UI is now the sole surface where equipment changes are visible to the player. Spec-side, this means [docs/inventory/](../inventory/) and any UI spec for the paperdoll panel must show equipped items at full fidelity; no upgrade path exists for sprite-side equipment until and unless this spec is reopened.
 - **Scale = 1.00 is the canonical reference.** Monsters are scaled in `species-template.md` §6 relative to this 1.00. If a future ticket changes the player canvas size, every monster scale multiplier revalidates against it. (Currently safe: 128×128 player canvas is locked in `prompt-templates.md` `CHAR-HUM-ISO`.)
 - **Animation set v1 is intentionally minimal.** Walk + combat-idle + attack are the three animations the live combat loop actually consumes. Hit-react, death, victory pose, town-idle (parade-rest) are deferred to a later animation-pass ticket — they are nice-to-have, not blockers. Authoring all of them now would burn PixelLab credits on frames the engine doesn't yet read.
-- **Player-blue accent placement is the one easy win for class identity.** Each class's accent is in a different anatomical zone (Warrior surcoat / Ranger hood-lining / Mage staff-head) so even at thumbnail scale the eye picks up "the player blue is here = this is my class." Art-lead should treat the accent location as a hard pixel placement, not a soft suggestion.
+- **Class-accent placement is the one easy win for class identity.** Each class's accent (Warrior brick-red / Ranger forest-green / Mage royal-violet per [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md), superseding the prior single player-blue `#8ed6ff`) is in a different anatomical zone (Warrior surcoat / Ranger hood-lining / Mage staff-head) so even at thumbnail scale the eye picks up "the class accent is here = this is my class." Art-lead should treat the accent location as a hard pixel placement, not a soft suggestion.
 - **Mage hat-tip clearance.** The pointed hat is the silhouette differentiator and also the canvas-edge risk. Leave 4–6 px clearance from the canvas top per §8. If PixelLab consistently clips the hat, the art spec may move to a 128×144 canvas for the Mage only — but this requires a sprite-anchor audit because the standard offset assumes 128×128.
-- **No glow / particle FX baked into the sprite** except the small player-blue charge cue on the Mage attack frames per §8. Runtime FX (hit sparks, projectile trails, ability VFX) belong to the engine FX layer, not the sprite atlas. This keeps the sprite re-usable across animation states.
+- **No glow / particle FX baked into the sprite** except the small royal-violet charge cue on the Mage attack frames per §8 (per-class accent, not player-blue — see [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md)). Runtime FX (hit sparks, projectile trails, ability VFX) belong to the engine FX layer, not the sprite atlas. This keeps the sprite re-usable across animation states.
 
 ## Open Questions
 

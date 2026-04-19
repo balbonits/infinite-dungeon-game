@@ -163,7 +163,7 @@ jobs:
       - name: Setup Godot (mono/.NET)
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.3.0
+          version: 4.6.2
           use-dotnet: true
 
       - name: Restore + Build
@@ -208,7 +208,7 @@ jobs:
       - name: Setup Godot (mono/.NET)
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.3.0
+          version: 4.6.2
           use-dotnet: true
 
       - name: Restore dependencies
@@ -249,7 +249,7 @@ jobs:
       - name: Setup Godot (mono/.NET)
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.3.0
+          version: 4.6.2
           use-dotnet: true
 
       - name: Build

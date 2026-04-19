@@ -1,5 +1,7 @@
 # Town NPC Sprite Pipeline (ART-SPEC-NPC-01)
 
+> **⚠ SUPERSEDED BY ADR-007 (2026-04-18) — retained as historical reference.** This file describes the PixelLab-based NPC art pipeline. PixelLab is retired for MVP under the top-down / OGA-LPC pivot (ADR-007 lands on main separately); replacement pipeline is the LPC Universal Sprite Character Generator recipes. In particular, the 4-direction contract (§3, §4, `n_directions: 4`, per-NPC direction lock table) is **overridden** by the south-only rule in [SPEC-NPC-ART-01 §3](../world/npc-art.md) — shipped NPCs are 1 south frame each, not 4 rotations. Do not follow this file as the source of truth for new NPC work. A follow-up ticket will rewrite this pipeline doc against LPC.
+
 ## Summary
 
 The generation-facing half of the Town NPC roster. Locks the PixelLab
@@ -211,7 +213,9 @@ No top-down view, no side-view, no three-quarter front-on view, no chibi, no mod
 
 ### 3. Direction Coverage
 
-**Locked: 4 directions per NPC — `south`, `east`, `north`, `west`.**
+> **SUPERSEDED 2026-04-18:** the 4-direction contract in this section is overridden by [SPEC-NPC-ART-01 §3](../world/npc-art.md), which locks NPCs to **south-facing only (1 frame per NPC)**. The 4-direction content below is historical; shipped NPCs are 1 south frame each. See also the supersession banner at the top of this file.
+
+**Locked (historical): 4 directions per NPC — `south`, `east`, `north`, `west`.**
 
 NPCs are stationary service actors; the Town scene places each one at a
 fixed spot facing a fixed direction (Blacksmith at the forge, Guild
