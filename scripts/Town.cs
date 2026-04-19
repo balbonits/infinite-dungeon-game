@@ -42,7 +42,7 @@ public partial class Town : Node2D
     private void SetupTileset()
     {
         var tileSet = new TileSet();
-        tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileShape = TileSet.TileShapeEnum.Square;
         tileSet.TileSize = Constants.Tiles.TileSize;
         tileSet.AddPhysicsLayer();
 
