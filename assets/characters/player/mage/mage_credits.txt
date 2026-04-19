@@ -1,34 +1,32 @@
-body/bodies/female/walk.png
-	- Note: see details at https://opengameart.org/content/lpc-character-bases
+body/bodies/male/walk.png
+	- Note: see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)
 	- Licenses:
 		- OGA-BY 3.0
 		- CC-BY-SA 3.0
 		- GPL 3.0
 	- Authors:
-		- Benjamin K. Smith (BenCreating)
 		- bluecarrot16
-		- TheraHedwig
+		- JaidynReiman
+		- Benjamin K. Smith (BenCreating)
 		- Evert
+		- Eliza Wyatt (ElizaWy)
+		- TheraHedwig
 		- MuffinElZangano
 		- Durrani
-		- Pierre Vigier (pvigier)
-		- ElizaWy
-		- Matthew Krohn (makrohn)
 		- Johannes Sjölund (wulax)
 		- Stephen Challener (Redshrike)
 	- Links:
 		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
 		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
-		- https://opengameart.org/content/lpc-ladies
-		- https://opengameart.org/content/lpc-7-womens-shirts
-		- https://opengameart.org/content/lpc-jump-expanded
-		- https://opengameart.org/content/lpc-be-seated
-		- https://opengameart.org/content/lpc-revised-character-basics
-		- https://gitlab.com/vagabondgame/lpc-characters
 		- https://opengameart.org/content/lpc-male-jumping-animation-by-durrani
 		- https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle
+		- https://opengameart.org/content/lpc-revised-character-basics
+		- https://opengameart.org/content/lpc-be-seated
+		- https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads
+		- https://opengameart.org/content/lpc-jump-expanded
+		- https://opengameart.org/content/lpc-character-bases
 
-head/heads/human/female/walk.png
+head/heads/human/male/walk.png
 	- Note: original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16
 	- Licenses:
 		- OGA-BY 3.0
@@ -39,37 +37,42 @@ head/heads/human/female/walk.png
 		- Benjamin K. Smith (BenCreating)
 		- Stephen Challener (Redshrike)
 	- Links:
-		- https://opengameart.org/content/
+		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
 		- https://opengameart.org/content/lpc-character-bases
 
-hair/natural/adult/walk.png
-	- Note: Original by bluecarrot16, animations by ElizaWy.
-	- Licenses:
-		- CC0
-	- Authors:
-		- ElizaWy
-		- bluecarrot16
-	- Links:
-		- https://opengameart.org/content/lpc-hair
-		- https://github.com/ElizaWy/LPC/blob/main/Characters/Hair
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
-
-torso/clothes/robe/female/walk/blue.png
+hair/bedhead/adult/walk.png
 	- Licenses:
 		- CC-BY-SA 3.0
 		- GPL 3.0
 	- Authors:
-		- Luke Mehl
+		- JaidynReiman
+		- Manuel Riecke (MrBeast)
 	- Links:
-		- https://opengameart.org/content/female-mage-clothing-set
+		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+		- https://opengameart.org/content/lpc-expanded-hair
 
-legs/pants2/thin/walk.png
-	- Note: Original bases by Redshrike, thrust/shoot bases by Wulax, original pants by ElizaWy, climb/jump/run/sit/emotes/revised combat by JaidynReiman
+torso/jacket/tabard/male/walk/blue.png
+	- Note: original by wulax, edited to v3 base by bluecarrot16
 	- Licenses:
 		- OGA-BY 3.0
+		- CC-BY-SA 3.0
+		- GPL 3.0
 	- Authors:
-		- ElizaWy
+		- bluecarrot16
+		- Johannes Sjölund (wulax)
+	- Links:
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+		- http://opengameart.org/content/lpc-clothing-updates
+
+legs/pants2/male/walk.png
+	- Note: original overalls by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, pants by JaidynReiman
+	- Licenses:
+		- OGA-BY 3.0
+		- GPL 3.0
+	- Authors:
 		- JaidynReiman
+		- ElizaWy
+		- Bluecarrot16
 		- Johannes Sjölund (wulax)
 		- Stephen Challener (Redshrike)
 	- Links:
@@ -77,16 +80,19 @@ legs/pants2/thin/walk.png
 		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 		- https://opengameart.org/content/lpc-expanded-pants
 
-feet/shoes/revised/thin/walk/bluegray.png
-	- Note: original by ElizaWy, remaining frames by JaidynReiman
+feet/shoes/revised/male/walk/bluegray.png
+	- Note: original overalls and shoes by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, shoes by JaidynReiman
 	- Licenses:
 		- OGA-BY 3.0
+		- GPL 3.0
 	- Authors:
-		- ElizaWy
 		- JaidynReiman
+		- ElizaWy
+		- Bluecarrot16
+		- Stephen Challener (Redshrike)
+		- Johannes Sjölund (wulax)
 	- Links:
 		- https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 		- https://opengameart.org/content/lpc-expanded-socks-shoes
 
 weapon/magic/gnarled/universal/foreground/walk/iron.png

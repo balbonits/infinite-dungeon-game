@@ -42,17 +42,13 @@ head/heads/human/female/walk.png
 		- https://opengameart.org/content/
 		- https://opengameart.org/content/lpc-character-bases
 
-hair/natural/adult/walk.png
-	- Note: Original by bluecarrot16, animations by ElizaWy.
+hair/lob/adult/walk.png
 	- Licenses:
 		- CC0
 	- Authors:
-		- ElizaWy
 		- bluecarrot16
 	- Links:
 		- https://opengameart.org/content/lpc-hair
-		- https://github.com/ElizaWy/LPC/blob/main/Characters/Hair
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 
 torso/clothes/tunic/female/walk/green.png
 	- Note: "pirate shirt" by MadMarcel, edited to all poses by makrohn, edited from tube-top/tanktop to sleeveless then to tunic by JaidynReiman, edits for v3 bases and further cleanup by bluecarrot16
@@ -70,6 +66,34 @@ torso/clothes/tunic/female/walk/green.png
 	- Links:
 		- https://opengameart.org/content/lpc-female-orcogregoblintroll-base-walkcycle
 		- https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more
+		- http://opengameart.org/content/lpc-clothing-updates
+
+hat/cloth/hood/adult/walk/green.png
+	- Note: Brown hood by Wulax, mapped to idle/run/jump/revised combat by JaidynReiman, with additional recolors by JaidynReiman.
+	- Licenses:
+		- OGA-BY 3.0
+		- CC-BY-SA 3.0
+		- GPL 3.0
+	- Authors:
+		- Johannes Sjölund (wulax)
+		- JaidynReiman
+	- Links:
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+		- https://opengameart.org/content/lpc-expanded-hats-facial-helmets
+
+arms/gloves/female/walk/leather.png
+	- Note: metal gloves by wulax, extended to female base by makrohn, recolors by bigbeargames, adapted to v3 bases by bluecarrot16, added to expanded animations by JaidynReiman
+	- Licenses:
+		- OGA-BY 3.0
+		- CC-BY-SA 3.0
+		- GPL 3.0
+	- Authors:
+		- Michael Whitlock (bigbeargames)
+		- Matthew Krohn (makrohn)
+		- Johannes Sjölund (wulax)
+		- bluecarrot16
+	- Links:
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 		- http://opengameart.org/content/lpc-clothing-updates
 
 legs/pants2/thin/walk.png

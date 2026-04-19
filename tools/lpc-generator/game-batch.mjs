@@ -38,83 +38,89 @@ const RECIPES = {
   // validation confirms the pipeline works. These are initial guesses
   // built from item-metadata.js categories; the validation run above
   // confirms the hash format is correct.
-  // Warrior: male, amber skin, CHESTNUT theme (hair palette) with warm
-  // bronze plate + leather pants for color harmony. Chestnut itself is a
-  // hair palette key only, so gear uses metal-palette colors chosen to sit
-  // in the same warm-brown family.
+  // Warrior: male, amber skin, CHESTNUT theme. Loose messy mop hair for a
+  // rugged martial silhouette (Mop — PO pick, visually distinct from
+  // Village Chief's Natural long hair).
   warrior: {
     hash: {
       sex: "male",
       body: "Body_Color_amber",
       head: "Human_Male_amber",
-      hair: "Natural_chestnut",          // hair palette = chestnut (warm brown)
+      hair: "Mop_chestnut",              // mop — loose messy warrior cut (PO pick)
       beard: "Basic_Beard_chestnut",     // match hair
       armour: "Plate_bronze",            // metal palette = bronze (warm metallic)
       legs: "Long_Pants_leather",        // file variant — "leather" reads as warm brown
       shoes_toe: "Thick_Plated_Toe_bronze",
       weapon: "Longsword_longsword",
+      shield: "Round_Shield_silver",     // round shield, silver (full Name is "Round Shield" per sheet def)
     },
     output: "assets/characters/player/warrior/warrior_full_sheet.png",
   },
-  // Ranger: female, light skin, GREEN theme. Switched from Robe (which only
-  // offers muted forest_green) to Tunic_green (bright green file variant,
-  // female-only) + leather pants for classic ranger silhouette + bow. The
-  // tunic carries the loud green; pants stay brown so nothing muddies the
-  // green read. Hair green to match theme (loud — like Mage's blue hair).
+  // Ranger: female, light skin, GREEN theme with HOOD. Tunic + hood (hat
+  // category) for the archer scout silhouette. Hair visible inside the
+  // hood — use a bob or shoulder-length style (Lob) so the shape fills
+  // the hood naturally instead of clipping.
   ranger: {
     hash: {
       sex: "female",
       body: "Body_Color_light",
       head: "Human_Female_light",
-      hair: "Natural_green",            // green hair to match green theme
+      hair: "Lob_green",                // shoulder-length bob, green to match theme
       clothes: "Tunic_green",           // bright green tunic (file variant, female-only)
+      hat: "Hood_green",                // hood accessory, green (PO direction)
+      gloves: "Gloves_leather",         // leather gloves (PO direction)
       legs: "Long_Pants_leather",       // warm brown pants for contrast
       shoes: "Revised_Shoes_brown",
       weapon: "Normal_iron",            // bow, name="Normal", variant=iron
     },
     output: "assets/characters/player/ranger/ranger_full_sheet.png",
   },
-  // Mage: female (robe requires female), BLUE theme. Blue hair + blue robe
-  // + blue pants + iron staff. Strong blue silhouette end-to-end.
+  // Mage: male, BROWN-skin (Black character per PO direction 2026-04-19).
+  // Robe is female-only in LPC, and Iverness only has a black variant —
+  // switched to Tabard (male-supported, blue variant exists) for the
+  // scholar-mage silhouette. Bedhead hair = neutral "distracted scholar"
+  // style, intentionally not picking ethnically-coded styles (afro /
+  // twists / dreadlocks / cornrows) just because the character is Black.
   mage: {
     hash: {
-      sex: "female",
-      body: "Body_Color_light",
-      head: "Human_Female_light",
-      hair: "Natural_blue",             // hair palette = blue
-      clothes: "Robe_blue",             // blue file variant (robe)
-      legs: "Long_Pants_blue",          // blue file variant (pants2)
+      sex: "male",
+      body: "Body_Color_brown",
+      head: "Human_Male_brown",
+      hair: "Bedhead_black",             // neutral bookish/scholar style
+      jacket: "Tabard_blue",             // blue tabard (male-supported)
+      legs: "Long_Pants_blue",
       shoes: "Revised_Shoes_bluegray",
       weapon: "Gnarled_staff_iron",
     },
     output: "assets/characters/player/mage/mage_full_sheet.png",
   },
-  // Blacksmith: male, BLACK theme. Black cloak + black beard + black pants.
+  // Blacksmith: MUSCULAR body + SHIRTLESS (PO direction 2026-04-19).
+  // Bald (Balding hair style) + full beard for the classic shirtless
+  // smith-at-the-forge silhouette. No jacket/torso layer — bare torso
+  // shows the muscular body definition. Pants + shoes kept.
   blacksmith: {
     hash: {
-      sex: "male",
+      sex: "muscular",                  // muscular body type (not male)
       body: "Body_Color_amber",
       head: "Human_Male_amber",
-      hair: "Natural_black",
+      hair: "Balding_black",            // bald / heavy receded hairline
       beard: "Basic_Beard_black",       // type=beard, name="Basic Beard", palette=hair
-      jacket: "Iverness_cloak_black",   // file variant black
-      legs: "Long_Pants_black",
+      legs: "Pants_black",              // pants (not Long_Pants/pants2 — pants2 has no muscular variant; pants does)
       shoes: "Revised_Shoes_black",
       weapon: "Mace_mace",              // name="Mace", variant=mace (only one)
     },
     output: "assets/characters/npcs/blacksmith/blacksmith_full_sheet.png",
   },
-  // Guild Maid: female, GOLD theme. Previous white-robe + yellow-pants read
-  // as low-contrast (light-on-light). Now: loud yellow blouse torso +
-  // contrasting white apron_half overlay (service uniform read) + yellow
-  // pants. Gold hair (more saturated than blonde). High-chroma gold with
-  // white apron as classic service silhouette.
+  // Guild Maid: female, GOLD theme with PONYTAIL (PO direction — classic
+  // service-uniform bun/ponytail silhouette replaces the original flat
+  // Natural style). Loud yellow blouse + white apron overlay + yellow
+  // pants. Gold hair in a ponytail reads as "on-duty professional."
   guild_maid: {
     hash: {
       sex: "female",
       body: "Body_Color_light",
       head: "Human_Female_light",
-      hair: "Natural_gold",             // gold (palette) — more saturated than blonde
+      hair: "Ponytail_gold",            // ponytail, gold palette
       clothes: "Blouse_yellow",         // yellow blouse (file variant, female-only)
       apron: "Apron_half_white",        // white half-apron overlay (female-only)
       legs: "Long_Pants_yellow",        // yellow pants (file variant)
