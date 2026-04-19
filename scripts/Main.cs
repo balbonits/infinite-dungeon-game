@@ -110,6 +110,10 @@ public partial class Main : Node
         {
             screen.QueueFree();
             splash.Visible = true;
+            // Keyboard focus was on a LoadGameScreen control that's now
+            // queue-freed; without this, Enter/S on splash fires nothing and
+            // New Game appears broken.
+            splash.FocusFirstButton();
         }));
 
         screen.Connect(Ui.LoadGameScreen.SignalName.LoadSelected, Callable.From((int slotIndex) =>

@@ -16,9 +16,9 @@ public partial class Town : Node2D
     // until ART-VILLAGECHIEF lands (Phase E spec placeholder).
     private static readonly (string name, string spritePath, Vector2I position, string greeting)[] NpcData =
     {
-        (Strings.Npcs.GuildMaid, "res://assets/characters/npcs/guild_maid/rotations/south.png", new Vector2I(12, 10), Strings.NpcGreetings.GuildMaid),
-        (Strings.Npcs.Blacksmith, "res://assets/characters/npcs/blacksmith/rotations/south.png", new Vector2I(5, 7), Strings.NpcGreetings.Blacksmith),
-        (Strings.Npcs.VillageChief, "res://assets/characters/npcs/guild_master/rotations/south.png", new Vector2I(18, 7), Strings.NpcGreetings.VillageChief),
+        (Strings.Npcs.GuildMaid, "res://assets/characters/npcs/guild_maid/guild_maid_full_sheet.png", new Vector2I(12, 10), Strings.NpcGreetings.GuildMaid),
+        (Strings.Npcs.Blacksmith, "res://assets/characters/npcs/blacksmith/blacksmith_full_sheet.png", new Vector2I(5, 7), Strings.NpcGreetings.Blacksmith),
+        (Strings.Npcs.VillageChief, "res://assets/characters/npcs/village_chief/village_chief_full_sheet.png", new Vector2I(18, 7), Strings.NpcGreetings.VillageChief),
     };
 
     private TileMapLayer _tileMap = null!;
@@ -88,32 +88,14 @@ public partial class Town : Node2D
         _entities.AddChild(_player);
     }
 
-    // Building sprites placed behind each NPC (offset up-left from NPC position)
-    private static readonly (string npcName, string buildingTexture, Vector2I offset)[] NpcBuildings =
-    {
-        (Strings.Npcs.GuildMaid, "res://assets/tiles/town/building_shop.png", new Vector2I(0, -1)), // reuse shop building for now
-        (Strings.Npcs.Blacksmith, "res://assets/tiles/town/building_forge.png", new Vector2I(0, -1)),
-        (Strings.Npcs.VillageChief, "res://assets/tiles/town/building_guild.png", new Vector2I(0, -1)),
-    };
+    // Iso building placeholders (PixelLab art, pre-ADR-007) retired with the
+    // top-down pivot. NPCs now stand directly on grass; proper top-down
+    // building sprites are a post-tech-demo art task.
 
     private void SpawnNpcs()
     {
         foreach (var (name, spritePath, position, greeting) in NpcData)
         {
-            // Place building behind NPC if one exists
-            foreach (var (bName, bTexture, bOffset) in NpcBuildings)
-            {
-                if (bName == name && ResourceLoader.Exists(bTexture))
-                {
-                    var building = new Sprite2D();
-                    building.Texture = GD.Load<Texture2D>(bTexture);
-                    building.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-                    building.GlobalPosition = _tileMap.MapToLocal(position + bOffset);
-                    building.Offset = new Vector2(0, -20);
-                    _entities.AddChild(building);
-                }
-            }
-
             var npc = new Npc();
             npc.NpcName = name;
             npc.SpritePath = spritePath;

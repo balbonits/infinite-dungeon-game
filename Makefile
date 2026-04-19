@@ -4,6 +4,11 @@
 GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 
+# Roll forward to whatever .NET runtime is installed locally (project
+# targets net8.0; devs may have net10+). Without this, `dotnet test`
+# aborts with "framework not found" instead of running the adapter.
+export DOTNET_ROLL_FORWARD := LatestMajor
+
 .PHONY: help build run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit test-ui test-ui-suite sandbox sandbox-headless sandbox-headless-all pr-copilot-request pr-copilot-wait pr-copilot-status kill clean clean-all status verify doctor branch squash done export-all export-mac export-win export-linux
 
 # ─── Core ────────────────────────────────────────────────────────────────────

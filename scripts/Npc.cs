@@ -21,15 +21,19 @@ public partial class Npc : StaticBody2D
     {
         CollisionLayer = Constants.Layers.Walls;
 
-        // Sprite
+        // Sprite — NPCs use LPC full sheets; crop south-facing walk frame 0.
         if (!string.IsNullOrEmpty(SpritePath) && ResourceLoader.Exists(SpritePath))
         {
-            var sprite = new Sprite2D();
-            sprite.Texture = GD.Load<Texture2D>(SpritePath);
-            sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-            sprite.Offset = new Vector2(0, Constants.Sprite.PlayerSpriteOffsetY);
-            sprite.Scale = new Vector2(Constants.Sprite.NpcScale, Constants.Sprite.NpcScale);
-            AddChild(sprite);
+            var textures = DirectionalSprite.LoadFromAtlas(SpritePath, DirectionalSprite.LpcCharacterWalk);
+            if (textures.TryGetValue("south", out var southTex))
+            {
+                var sprite = new Sprite2D();
+                sprite.Texture = southTex;
+                sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+                sprite.Offset = new Vector2(0, Constants.Sprite.PlayerSpriteOffsetY);
+                sprite.Scale = new Vector2(Constants.Sprite.NpcScale, Constants.Sprite.NpcScale);
+                AddChild(sprite);
+            }
         }
 
         // Collision shape

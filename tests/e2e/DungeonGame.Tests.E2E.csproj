@@ -17,4 +17,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
+  <!--
+    Test project needs access to live game types (DirectionalSprite,
+    SpeciesDatabase, Inventory, etc.). Without this, the tests silently
+    fail to compile and CI/green-runs report nothing — that's how the
+    iso→top-down pivot regressions went undetected.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\DungeonGame.csproj" />
+  </ItemGroup>
 </Project>

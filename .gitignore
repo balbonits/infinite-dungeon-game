@@ -33,6 +33,9 @@ tests/bin/
 tests/obj/
 tests/TestResults/
 
+# gdUnit4 auto-generated runner scene (regenerated on every build)
+tests/e2e/gdunit4_testadapter_v5/
+
 # Code coverage
 coverage/
 *.coverage

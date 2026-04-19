@@ -15,6 +15,7 @@ namespace DungeonGame.Tests.E2E.Systems;
 public class FloorGenSandboxTests
 {
     [TestCase]
+    [RequireGodotRuntime]
     public void FloorGen_TenSeeds_AllProduceValidLayouts()
     {
         for (int seed = 0; seed < 10; seed++)
@@ -32,6 +33,7 @@ public class FloorGenSandboxTests
     }
 
     [TestCase]
+    [RequireGodotRuntime]
     public void FloorGen_SameSeed_ProducesSameLayout()
     {
         var a = new FloorGenerator(42); a.Generate(5);
@@ -127,16 +129,19 @@ public class LootTableSandboxTests
 public class BankSandboxTests
 {
     [TestCase]
-    public void Bank_ExpansionCost_FollowsNSquaredFormula()
+    public void Bank_ExpansionCost_FollowsLinearFormula()
     {
+        // Bank.GetNextExpansionCost returns 50 * (n+1) — see Bank.cs:39.
+        // (Previously an N² formula; simplified to linear per the 2025 economy
+        // rebalance. Keep this test aligned with the real code.)
         var bank = new Bank();
         var inv = new Inventory { Gold = 1_000_000 };
 
-        AssertThat(bank.GetNextExpansionCost()).IsEqual(500);
+        AssertThat(bank.GetNextExpansionCost()).IsEqual(50L);
         bank.PurchaseExpansion(inv);
-        AssertThat(bank.GetNextExpansionCost()).IsEqual(2000);
+        AssertThat(bank.GetNextExpansionCost()).IsEqual(100L);
         bank.PurchaseExpansion(inv);
-        AssertThat(bank.GetNextExpansionCost()).IsEqual(4500);
+        AssertThat(bank.GetNextExpansionCost()).IsEqual(150L);
     }
 
     [TestCase]

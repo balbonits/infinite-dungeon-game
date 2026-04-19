@@ -31,7 +31,7 @@ public class SmokeTests
         foreach (var item in ItemDatabase.All)
         {
             AssertThat(ids.Contains(item.Id))
-                .IsFalse($"Duplicate item ID found: {item.Id}");
+                .OverrideFailureMessage($"Duplicate item ID found: {item.Id}").IsFalse();
             ids.Add(item.Id);
         }
     }
@@ -41,7 +41,7 @@ public class SmokeTests
     {
         var sb = new StatBlock();
         AssertThat(sb.Str).IsEqual(0);
-        AssertThat(sb.GetEffective(0)).IsEqual(0f);
+        AssertThat(StatBlock.GetEffective(0)).IsEqual(0f);
     }
 
     [TestCase]
