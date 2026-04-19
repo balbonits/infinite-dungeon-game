@@ -56,6 +56,13 @@ TestResults/
 # Unsorted raw asset downloads
 assets/to-be-sorted/
 
+# OGA pack zip archives — redundant with the extracted sibling folders
+assets/downloaded/*.zip
+
+# Pre-pivot Kenney isometric pack — retained offline but not tracked (ADR-007)
+assets/downloaded/kenney_isometric-miniature-dungeon/
+assets/downloaded/kenney_isometric-miniature-dungeon.zip
+
 # Isometric asset source files (Blender, GIMP, PSD)
 assets/isometric/source/
 
