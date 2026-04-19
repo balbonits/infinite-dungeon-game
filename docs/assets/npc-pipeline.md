@@ -1,5 +1,7 @@
 # Town NPC Sprite Pipeline (ART-SPEC-NPC-01)
 
+> **⚠ SUPERSEDED BY [ADR-007](../decisions/007-top-down-oga-pivot.md) (2026-04-18) — retained as historical reference.** This file describes the PixelLab-based NPC art pipeline. PixelLab is retired for MVP; replacement pipeline lives at `assets/md/lpc-sprite-recipes.md`. In particular, the 4-direction contract (§3, §4, `n_directions: 4`, per-NPC direction lock table) is **overridden** by the south-only rule in [SPEC-NPC-ART-01 §3](../world/npc-art.md) — shipped NPCs are 1 south frame each, not 4 rotations. Do not follow this file as the source of truth for new NPC work; consult the LPC recipes instead. A follow-up ticket will rewrite this pipeline doc against LPC.
+
 ## Summary
 
 The generation-facing half of the Town NPC roster. Locks the PixelLab
