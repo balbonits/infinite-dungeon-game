@@ -33,6 +33,9 @@ tests/bin/
 tests/obj/
 tests/TestResults/
 
+# gdUnit4 auto-generated runner scene (regenerated on every build)
+tests/e2e/gdunit4_testadapter_v5/
+
 # Code coverage
 coverage/
 *.coverage
@@ -56,6 +59,13 @@ TestResults/
 # Unsorted raw asset downloads
 assets/to-be-sorted/
 
+# OGA pack zip archives — redundant with the extracted sibling folders
+assets/downloaded/*.zip
+
+# Pre-pivot Kenney isometric pack — retained offline but not tracked (ADR-007)
+assets/downloaded/kenney_isometric-miniature-dungeon/
+assets/downloaded/kenney_isometric-miniature-dungeon.zip
+
 # Isometric asset source files (Blender, GIMP, PSD)
 assets/isometric/source/
 
@@ -67,6 +77,11 @@ docs/evidence/**/frame_*.png
 # Logs
 *.log
 crash_reports/
+
+# Local-only vendored tooling (LPC generator ~855 MB of layer PNGs + HTML app).
+# Our custom batch runner (game-batch.mjs) lives inside but must be tracked.
+tools/lpc-generator/*
+!tools/lpc-generator/game-batch.mjs
 
 # Claude Code session-local runtime state
 .claude/scheduled_tasks.lock

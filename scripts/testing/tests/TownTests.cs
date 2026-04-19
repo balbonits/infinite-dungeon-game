@@ -92,12 +92,13 @@ public class TownTests : GameTestBase
     [Test]
     public async Task Town_AllExpectedNpcsExist()
     {
+        // 3-NPC roster per NPC-ROSTER-REWIRE-01; the legacy Teleporter NPC
+        // was retired (its teleport service is now a Guild Maid menu action).
         string[] expected =
         {
             Strings.Npcs.GuildMaid,
             Strings.Npcs.Blacksmith,
             Strings.Npcs.VillageChief,
-            Strings.Npcs.Teleporter,
         };
 
         // Collect all NPCs currently in the tree (walk from scene-tree root)
@@ -116,6 +117,46 @@ public class TownTests : GameTestBase
         {
             Expect(found.Contains(name), $"NPC '{name}' present in town");
         }
+    }
+
+    // Guards the ADR-007 top-down pivot: Town's tileset must be Square.
+    [Test]
+    public async Task Town_Tileset_IsSquare32x32()
+    {
+        var town = Ui.FindNodeOfType<Town>();
+        if (town is null) { Expect(false, "Town missing"); return; }
+        var layer = town.GetNodeOrNull<TileMapLayer>("TileMapLayer");
+        Expect(layer is not null, "Town has a TileMapLayer");
+        Expect(layer!.TileSet?.TileShape == TileSet.TileShapeEnum.Square,
+            $"Town TileShape is Square (got {layer.TileSet?.TileShape})");
+        Expect(layer.TileSet?.TileSize == new Vector2I(32, 32),
+            $"Town TileSize is 32x32 (got {layer.TileSet?.TileSize})");
+    }
+
+    // Regression guard: the iso building_* Sprite2Ds were deleted with
+    // ADR-007. Catches re-introduction of pre-pivot placeholder art.
+    [Test]
+    public async Task Town_HasNoIsoBuildingSprites()
+    {
+        var town = Ui.FindNodeOfType<Town>();
+        if (town is null) { Expect(false, "Town missing"); return; }
+
+        var banned = new[] { "building_forge", "building_shop", "building_guild" };
+        var strayPaths = new System.Collections.Generic.List<string>();
+        void Walk(Node n)
+        {
+            if (n is Sprite2D sprite && sprite.Texture is Texture2D tex)
+            {
+                string path = tex.ResourcePath ?? "";
+                foreach (var name in banned)
+                    if (path.Contains(name)) strayPaths.Add(path);
+            }
+            foreach (var c in n.GetChildren()) Walk(c);
+        }
+        Walk(town);
+
+        Expect(strayPaths.Count == 0,
+            $"No iso building sprites in Town (found: {string.Join(",", strayPaths)})");
     }
 
     [Test]

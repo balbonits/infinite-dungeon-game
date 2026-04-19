@@ -104,14 +104,17 @@ public class EnemySandboxTests
     [TestCase]
     public void AllSpecies_HaveValidConfigs()
     {
+        // SpeciesConfig carries rendering/physics tuning only (collision,
+        // sprite offset/scale); combat stats live on Enemy.cs and scale per
+        // floor. A null return is the library's sentinel for "unknown index"
+        // — each enum value must map to a concrete entry.
         foreach (var species in System.Enum.GetValues<EnemySpecies>())
         {
-            var cfg = SpeciesDatabase.Get(species);
-            AssertThat(cfg).IsNotNull($"{species}: config exists");
-            if (cfg == null) continue;
-            AssertThat(cfg.MoveSpeed).IsGreater(0f);
-            AssertThat(cfg.BaseHp).IsGreater(0);
+            var cfg = SpeciesDatabase.Get((int)species);
+            AssertThat(cfg).OverrideFailureMessage($"{species}: config exists").IsNotNull();
             AssertThat(cfg.CollisionRadius).IsGreater(0f);
+            AssertThat(cfg.HitAreaRadius).IsGreater(0f);
+            AssertThat(cfg.SpriteScale).IsGreater(0f);
         }
     }
 }

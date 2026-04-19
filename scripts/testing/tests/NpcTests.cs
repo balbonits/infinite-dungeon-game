@@ -61,10 +61,12 @@ public class NpcTests : GameTestBase
             return;
         }
 
-        // Move player to within 20 units of NPC (< 40 Area2D radius).
+        // Move player to within 12 units of NPC (< 40 Area2D radius).
         // Teleport is sufficient and deterministic for tests; proximity
         // is checked via Area2D body_entered when the physics step runs.
-        player.GlobalPosition = npc.GlobalPosition + new Vector2(20, 0);
+        // Offset is calibrated for the 32x32 square grid (post ADR-007);
+        // the prior 20 px value assumed iso-centered coords.
+        player.GlobalPosition = npc.GlobalPosition + new Vector2(12, 0);
         await Input.WaitFrames(6);
         // Nudge to force area re-evaluation
         await Input.Move(Vector2.Left, 0.1f);

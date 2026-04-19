@@ -14,6 +14,7 @@ public partial class SplashScreen : Control
     [Signal] public delegate void ContinuePressedEventHandler();
 
     private bool _ready;
+    private VBoxContainer _btnBox = null!;
 
     public override void _Ready()
     {
@@ -52,9 +53,10 @@ public partial class SplashScreen : Control
         vbox.AddChild(spacer);
 
         // Buttons
-        var btnBox = new VBoxContainer();
-        btnBox.AddThemeConstantOverride("separation", 10);
-        vbox.AddChild(btnBox);
+        _btnBox = new VBoxContainer();
+        _btnBox.AddThemeConstantOverride("separation", 10);
+        vbox.AddChild(_btnBox);
+        var btnBox = _btnBox;
 
         // Continue button (opens Load Game screen). Disabled when no saves exist.
         var continueBtn = new Button();
@@ -131,6 +133,17 @@ public partial class SplashScreen : Control
     private void OpenSettings()
     {
         SettingsPanel.Open(this);
+    }
+
+    /// <summary>
+    /// Re-grabs focus on the first enabled button. Call after the splash is
+    /// un-hidden (e.g., returning from the Load Game screen) — keyboard focus
+    /// is otherwise orphaned on a now-freed control, leaving nav dead and
+    /// New Game unreachable via Enter/S.
+    /// </summary>
+    public void FocusFirstButton()
+    {
+        UiTheme.FocusFirstButton(_btnBox);
     }
 
     public override void _UnhandledInput(InputEvent @event)

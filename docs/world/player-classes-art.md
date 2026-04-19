@@ -103,29 +103,30 @@ How player class sprites interact with [color-system.md](../systems/color-system
 
 This is the canonical reference instance of the §1 template. Ranger and Mage in §7–8 follow the same shape with less prose.
 
-**Fiction beat.** A frontier guild fighter trained in plate and shield, sent into the dungeon as the Guild's first-line heavy: the one expected to absorb the hits so the lighter classes can land theirs.
+> **REVISED 2026-04-18 — lighter armor, not plate.** PO direction + reference image (sprite-sheet style, classic fighter archetype: tunic + hauberk + round shield + sword, no pauldrons or plate). Spec below updated accordingly. The accent-location rule unchanged — brick-red surcoat is still the class-color anchor.
 
-**Role in party fantasy.** Tanky melee. The classic ARPG "stand in front" archetype. High STR, high STA per `ClassSelect.cs:25` (STR 3 / STA 2). Rewards trading hits and closing distance.
+**Fiction beat.** A frontier guild fighter trained in blade and shield, sent into the dungeon as the Guild's first-line combatant: the one expected to close the gap and trade hits where the lighter classes can't.
 
-**Silhouette readability constraint.** From 8 tiles away, the Warrior must read as **a bulky armored mass with a horned helmet**. Specifically: visibly wider than a baseline humanoid silhouette (shield + pauldrons account for the extra width), helmet outline shows two upward horns or a single visible crest above the headline, no skin visible (face is fully covered by the helmet visor). Rationale: the player is the one entity on screen the camera centers on; their identity must read first, even when the screen is busy with monsters and FX.
+**Role in party fantasy.** Melee frontline — not a heavy tank, more a classic fighter. The classic ARPG "hold the line" archetype with the mobility to flank. High STR, high STA per `ClassSelect.cs:25` (STR 3 / STA 2). Rewards closing distance + shield-timing.
 
-**Starter equipment (world sprite).** Plate cuirass + steel pauldrons + greaves + horned full helm covering the face. Right hand: one-handed steel longsword. Left hand: round metal shield with iron rim. Surcoat (cloth tabard) underneath the plate carries the class accent (brick red `#b53238` per SPEC-CLASS-COLOR-CODING-01 — superseding the prior player-blue).
+**Silhouette readability constraint.** From 8 tiles away, the Warrior must read as **a sword-and-shield fighter in a tunic + hauberk**. Specifically: visibly wider than a baseline humanoid silhouette (shield held at the side extends the horizontal bounding box), sword visible in the off-hand, head visible (bareheaded or simple circlet — NOT a horned full helm, NOT a hood, NOT a pointed hat). Rationale: the player is the one entity on screen the camera centers on; their identity must read first, even when the screen is busy with monsters and FX. The "widest class" axis from §2 still holds — the shield is what extends the bounding box, not pauldrons.
+
+**Starter equipment (world sprite).** **Tunic over light hauberk or leather chest armor** (NOT plate cuirass, NOT steel pauldrons). Visible belt with pouches. Cloth leggings or leather breeches. Short boots. Right hand: one-handed steel longsword. Left hand: round wooden shield with iron rim (smaller than a plate-era tower shield). Bareheaded or simple circlet — face is VISIBLE (key differentiator from the prior horned-helm spec). The tunic itself carries the brick-red class accent.
 
 **Color-coding contract.**
 - Base tint surface: full sprite, never modulated (per §5).
-- Class-accent location (**brick red `#b53238`** per SPEC-CLASS-COLOR-CODING-01, superseding the prior player-blue `#8ed6ff`): **the surcoat / tabard** beneath the plate (a small visible panel of brick-red cloth between the cuirass and the belt, plus an optional small shield-boss insignia if the artist has the pixels for it).
-- Class-identity colors: dark steel plate (palette-clamp `#3c4664` deep blue-gray), silver trim on armor edges, leather straps in palette-clamp brown.
+- Class accent location: **the tunic / surcoat** over the hauberk — a visible `#b53238` brick-red garment covering the chest / waist area (larger surface area than the prior "small panel beneath plate"). Optional small brick-red shield-boss insignia if the artist has the pixels for it.
+- Class-identity colors: warm leather brown (belt, shoulder straps), iron grey (hauberk, sword, shield rim), desaturated red-brown (tunic body), cream / neutral (linen underlayer). NO `#8ed6ff` player-blue anywhere (per SPEC-CLASS-COLOR-CODING-01 supersession in §5).
 
 **Scale + anchor.** Scale multiplier = **1.00** (Warrior is the canonical reference scale; all other character entities — including monsters via `species-template.md` §6 and the other two PCs — are scaled relative to him). Z-offset = 0 (ground-walking). Canvas = 128×128 per `CHAR-HUM-ISO` in `prompt-templates.md` §1a. Sprite import offset `Vector2(0, -80)` per the same.
 
-**Locked animation set (v1):**
-- `walk` — 8-directional walk cycle (the standard PixelLab humanoid walk template).
-- `idle_combat` — fight-stance idle: knees slightly bent, shield raised to chest height, sword angled forward. Not the default neutral parade-rest — this is a "ready to swing" pose because the Warrior is in a dungeon, not a town square.
-- `attack` — **downward overhead sword slash**. The signature Warrior swing: sword raised over the head, brought down in front of the body, ending in a low follow-through. Reads as "heavy committed strike" not "quick jab." Maps to PixelLab humanoid template animation: use the closest "slash" or "hammer-down" preset; if none is a clean fit, generate a custom 4-frame action via `animate_with_skeleton`.
+**Locked animation set (MVP):** per `feedback_mvp_animation_scope.md` — 3 animations only at MVP, weapons baked in, no equipped/unequipped variants.
+- `walk` — 8-directional walk cycle. **The default PixelLab humanoid walk templates (`walking`, `walking-6-frames`) drop the shield + sword in the first half of the cycle** (observed 2026-04-18) — the mannequin template does not track held equipment during the back-swing arm phase. Custom `action_description` walk is required; see SPEC-PC-WALK-01 (if/when authored) or the in-flight dispatch 2026-04-18.
+- `attack` — 8-directional. **SUPERSEDED by SPEC-PC-ATK-01 ([`docs/ui/class-attack-animations.md §3`](../ui/class-attack-animations.md))** — locked as 4-frame downward cleave, sword raised overhead then swung straight down, hit-tick on frame 2. Custom `action_description` path. This replaces the prior "downward overhead sword slash (map to `slash` or `hammer-down` template)" line — the template path was rejected across all three classes in the attack spec.
+- `death` — south-facing only.
+- `idle_combat`, running, hit-react, etc. deferred to v1.
 
-(Idle-out-of-combat / death / hit-react are deferred to a later ticket — v1 ships walk + combat-idle + attack only, sufficient for the live combat loop.)
-
-**Build / age / gender beat.** Per §3: 20s–40s, broad-shouldered build (the silhouette differentiator), gender-neutral / hero-archetype face (mostly hidden by the helmet anyway).
+**Build / age / gender beat.** Per §3: 20s–40s, broad-shouldered build (the silhouette differentiator), **bareheaded or simple circlet** per the 2026-04-18 REVISED banner at the top of this section — face is visible (NOT hidden by a helmet; the prior "hero-archetype face mostly hidden by the helmet anyway" line was stale against the tunic + hauberk direction). Adult male proportions match the canonical human reference (this sprite IS the reference).
 
 **Naming coupling.** Addressed in-game as **"Warrior Guildmaster."** No personal name. World sprite carries no name label.
 
@@ -133,25 +134,30 @@ This is the canonical reference instance of the §1 template. Ranger and Mage in
 
 ### 7. Worked Example — Ranger (every field filled)
 
+> **REVISED 2026-04-18** after theme-review generation. Three accepted changes: (1) bow slung on back / shoulder rather than held vertically in-hand — PixelLab's mannequin template defaults this at 92×92 and the archer silhouette still reads cleanly via the quiver + fletching; (2) inner-hood-lining forest-green strip didn't render as a distinct stripe — instead, the whole hood exterior reads as forest-green, which satisfies SPEC-CLASS-COLOR-CODING-01's "accent renders on the class identity surface"; (3) **PO locked the Ranger as a woman (v6 theme-review sprite, file `assets/characters/player/ranger/_theme-review/south.png`).** Proportions use the canonical human recipe (`realistic_male` preset with feminine-presentation description — the preset name is a PixelLab proportion label, not a gender prescription).
+
 - **Fiction beat.** A frontier scout who hunted in the woods around the settlement long before the dungeon was found, now drawn into it as the Guild's eyes and ranged blade.
 - **Role in party fantasy.** Agile DPS at range. High DEX per `ClassSelect.cs:28` (DEX 3, STR 1). Rewards positioning and clean line-of-sight, punished for getting cornered.
-- **Silhouette readability constraint.** From 8 tiles away, the Ranger must read as **a hooded lean archer with a bow silhouette held close to the body**. Specifically: drawn-up hood with a visible point or fold above the head (but lower than the Mage's hat), bow held vertically along the side of the body (not extended outward in idle), no shoulder armor — the silhouette is markedly narrower than the Warrior's. Rationale: the bow is the one piece of equipment that visually differentiates this class from any future light-armor melee class; it must be visible in idle, not just when attacking.
-- **Starter equipment (world sprite).** Leather jerkin + leather bracers + soft hood drawn up + cloth leggings + soft boots. Right hand: shortbow held vertically along the right side of the body, string facing forward. Left hand: empty (free for an arrow draw on attack frame). Quiver visible on the back as a strap detail (not a full back-pack to keep the silhouette narrow).
+- **Silhouette readability constraint.** From 8 tiles away, the Ranger must read as **a hooded lean archer with a visible quiver and bow**. Bow placement can be on-back or in-hand — both read as "archer" at 92×92 and PixelLab's mannequin template tends toward on-back at small scale. The quiver + arrow fletching over the shoulder is the load-bearing identity cue.
+- **Starter equipment (world sprite).** Leather jerkin + leather bracers + soft hood drawn up + cloth leggings + soft boots. Shortbow carried either held at the side OR slung on the back/shoulder (art-lead's call; PixelLab's default at 92×92 is on-back). Quiver visible on the back with arrow fletching at the shoulder — this is the key "archer" silhouette cue, not the bow itself.
 - **Color-coding contract.**
   - Base tint surface: full sprite, never modulated.
-  - Class-accent location (**forest green `#3a7a4d`** per SPEC-CLASS-COLOR-CODING-01, superseding the prior player-blue `#8ed6ff`): **the inner lining of the hood** (visible as a small forest-green strip where the hood meets the face), plus an optional forest-green arrow-fletching color on the equipped quiver.
-  - Class-identity colors: leather brown jerkin (palette-clamp warm browns), forest-green hood (a desaturated muted green that fits the "gritty dungeon" palette — not bright spring green), darker brown boots and bracers.
+  - Class accent location: **the hood exterior** is the primary forest-green (`#3a7a4d`) surface. Optional forest-green inner-lining strip at the face opening + arrow fletching if pixel budget allows, but the exterior alone satisfies SPEC-CLASS-COLOR-CODING-01 identity requirements.
+  - Class-identity colors: leather brown jerkin (palette-clamp warm browns), forest-green hood (`#3a7a4d` per SPEC-CLASS-COLOR-CODING-01 — a desaturated muted green that fits the "gritty dungeon" palette, not bright spring green), darker brown boots and bracers. NO `#8ed6ff` player-blue anywhere.
 - **Scale + anchor.** Scale multiplier = **1.00** (same as Warrior — the silhouette differentiation is via shape, not size). Z-offset = 0. Canvas 128×128. Sprite import offset `Vector2(0, -80)`.
-- **Locked animation set (v1):**
+- **Locked animation set (MVP):** per `feedback_mvp_animation_scope.md` — 3 animations only at MVP, weapons baked in, no equipped/unequipped variants.
   - `walk` — 8-directional walk cycle.
-  - `idle_combat` — fight stance: bow raised slightly, weight on back foot, ready to draw.
-  - `attack` — **bow draw + release**. Two-stage: frame 1–2 draws the bowstring back, frame 3–4 releases. The arrow projectile spawns at release frame. Maps to PixelLab humanoid template "bow" or "ranged" preset; custom skeleton animation if no preset fits.
-- **Build / age / gender beat.** Per §3: 20s–40s, **lean** build (the silhouette differentiator), gender-neutral / hero-archetype face (partially shadowed by the hood).
+  - `attack` — 8-directional. **SUPERSEDED by SPEC-PC-ATK-01 ([`docs/ui/class-attack-animations.md §4`](../ui/class-attack-animations.md))** — locked as single-stage bow pull-and-release, 4 frames, arrow projectile spawns at frame 2 (release). Custom `action_description` path.
+  - `death` — south-facing only.
+  - `idle_combat`, running, hit-react, etc. deferred to v1.
+- **Build / age / gender beat.** Per §3: 20s–40s, **a woman** (PO direction 2026-04-18), **lean** build (the silhouette differentiator), face partially shadowed by the hood. Proportions match the Warrior v2 canonical reference (adult human ratio, not chibi).
 - **Naming coupling.** Addressed in-game as **"Ranger Guildmaster."** No personal name. World sprite carries no name label.
 
 ---
 
 ### 8. Worked Example — Mage (every field filled)
+
+> **REVISED 2026-04-18** after theme-review generation. Three accepted changes: (1) **PO locked the Mage as a Black man (v4 theme-review sprite, file `assets/characters/player/mage/_theme-review/south.png`, PixelLab character ID `4703290e-3779-40d3-b101-50ee8cf4fd3c`).** (2) Robe color shifted from deep blue-gray `#24314a` to neutral warm chocolate/walnut brown (keeps the muted-dungeon palette, reads as earthy-scholar rather than arcane-clichéd, and isolates the royal-violet accent to a single pixel cluster on the gem). (3) Class accent moved from `#8ed6ff` player-blue to royal-violet `#5b47a0` per SPEC-CLASS-COLOR-CODING-01 — the staff-gem at the top of the staff is now the sole violet surface on the sprite. The hat-tip extension above the head silhouette (12–16 px) remains locked and was rendered as expected.
 
 - **Fiction beat.** A frontier scholar who studied the magicule-warped strangeness of the dungeon from the outside before deciding to walk into it; carries a staff that channels what the scholarship can't yet explain.
 - **Role in party fantasy.** Squishy caster. High INT per `ClassSelect.cs:32` (INT 3). Rewards range and timing; punished by direct contact with anything dangerous.
@@ -159,14 +165,15 @@ This is the canonical reference instance of the §1 template. Ranger and Mage in
 - **Starter equipment (world sprite).** Long hooded robes that brush the ground (full-length, not knee-length) + pointed wizard hat (the iconic cone, not a soft hood) worn over the hood + leather belt + visible spellbook or pouch on the belt. Right hand: tall wooden staff with a carved head (a small crystal, orb, or stylized knot at the top — palette-neutral, not glowing). Left hand: empty / casting-ready.
 - **Color-coding contract.**
   - Base tint surface: full sprite, never modulated.
-  - Class-accent location (**royal violet `#5b47a0`** per SPEC-CLASS-COLOR-CODING-01, superseding the prior player-blue `#8ed6ff`): **the staff-head** (a small royal-violet crystal or carved facet at the top of the staff — this is the most visually prominent class-accent spot of any class because the staff-head sits at the silhouette's literal apex), plus an optional royal-violet trim on the robe hem.
-  - Class-identity colors: deep robe color (palette-clamp deep blue-gray `#24314a` for the robe body, fitting the muted dungeon palette and avoiding bright wizard-purple cliché), darker hat, weathered wood for the staff.
+  - Class accent location: **the staff-gem at the top of the staff** is the primary royal-violet (`#5b47a0`) surface per SPEC-CLASS-COLOR-CODING-01. The gem sits at the silhouette's literal apex for maximum visibility. No other violet on the sprite; no `#8ed6ff` player-blue on the sprite.
+  - Class-identity colors: neutral warm chocolate/walnut brown robe body (palette-clamp warm browns, fitting the muted dungeon palette and reading as earthy-scholar rather than arcane-cliché), darker warm-brown hat, weathered wood for the staff. The only violet on the entire sprite is the gem cluster.
 - **Scale + anchor.** Scale multiplier = **1.00** (the hat extends the visible silhouette upward but the underlying scale is unchanged — the canvas just uses more of its vertical pixels). Z-offset = 0. Canvas 128×128. Sprite import offset `Vector2(0, -80)`. **Note for art-lead**: the hat tip approaches but must NOT exceed the canvas top edge — leave 4–6 px clearance so the silhouette is not clipped and so future hat-related VFX have room.
-- **Locked animation set (v1):**
+- **Locked animation set (MVP):** per `feedback_mvp_animation_scope.md` — 3 animations only at MVP, weapons baked in, no equipped/unequipped variants.
   - `walk` — 8-directional walk cycle. Robes sway slightly with stride (artist's discretion within the PixelLab template).
-  - `idle_combat` — staff planted, slight forward lean, weight on the staff. Ready stance.
-  - `attack` — **staff overhead cast** culminating in a magic bolt projectile spawning forward. Two-stage: frame 1–2 raises the staff overhead with a charge cue (artist may add a small royal-violet glow at the staff-head as part of the bake — this glow is part of the animation, not a runtime FX), frame 3–4 brings the staff forward and the projectile spawns at release. Maps to PixelLab humanoid template "cast" or "magic" preset; custom skeleton animation if no preset fits.
-- **Build / age / gender beat.** Per §3: 20s–40s, build hidden under robes (no silhouette signal from build — the hat does the work), gender-neutral / hero-archetype face (shadowed by the hat brim).
+  - `attack` — 8-directional. **SUPERSEDED by SPEC-PC-ATK-01 ([`docs/ui/class-attack-animations.md §5`](../ui/class-attack-animations.md))** — locked as 5-frame forward staff swing with gem flare, projectile spawns at frame 3 (peak flare). Custom `action_description` path.
+  - `death` — south-facing only.
+  - `idle_combat`, running, hit-react, etc. deferred to v1.
+- **Build / age / gender beat.** Per §3: 20s–40s, **a Black man** (PO direction 2026-04-18), build hidden under robes (no silhouette signal from build — the hat does the work), face shadowed by the hat brim. Proportions match the Warrior v2 canonical reference (adult human ratio, not chibi).
 - **Naming coupling.** Addressed in-game as **"Mage Guildmaster."** No personal name. World sprite carries no name label.
 
 ---

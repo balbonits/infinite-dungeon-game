@@ -74,6 +74,55 @@ public class SplashTests : GameTestBase
             timeout: 2f, what: "ClassSelect to appear");
     }
 
+    // Regression for the "New Game button doesn't work after Continue" bug:
+    // clicking Continue opened LoadGameScreen; pressing Back re-showed splash
+    // but left keyboard focus on a now-freed control, so Enter/S on New Game
+    // silently did nothing. Fix: Main.ShowLoadGameScreen's Back handler calls
+    // splash.FocusFirstButton() after restoring visibility.
+    [Test]
+    public async Task Splash_AfterContinueBack_NewGameStillWorks()
+    {
+        // Force a save to exist so Continue is enabled and clickable.
+        DungeonGame.Autoloads.GameState.Instance.SelectedClass = PlayerClass.Warrior;
+        DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
+        DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
+
+        // Reset so the splash re-reads save state and enables Continue.
+        bool atSplash = await ResetToFreshSplash();
+        if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
+
+        var continueBtn = Ui.FindButton("Continue");
+        if (continueBtn is null || continueBtn.Disabled)
+        {
+            Expect(false, "Continue is not enabled — save did not register");
+            return;
+        }
+
+        continueBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+        await WaitUntil(() => Ui.HasNodeOfType<LoadGameScreen>(),
+            timeout: 2f, what: "LoadGameScreen to appear");
+
+        // Press Escape to Back out of LoadGameScreen.
+        await Input.PressKey(Key.Escape);
+        await Input.WaitSeconds(0.3f);
+
+        // Splash should be visible again AND a button should be focused.
+        await WaitUntil(() => Ui.HasFocus, timeout: 2f,
+            what: "a splash button is focused after Back");
+
+        var newGameBtn = Ui.FindButton("New Game");
+        if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }
+        newGameBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+
+        // If Back left focus orphaned, this would never trigger ClassSelect.
+        await WaitUntil(() => Ui.HasNodeOfType<ClassSelect>(),
+            timeout: 2f, what: "ClassSelect appears after Continue→Back→New Game");
+    }
+
     [CleanupAll]
     public void CleanupAll() => PrintSummary("SplashTests");
 }

@@ -11,26 +11,56 @@ public class SpriteViewerTests
     private static readonly string[] Directions =
         ["south", "south-west", "west", "north-west", "north", "north-east", "east", "south-east"];
 
-    private static readonly (string Label, string Path)[] Subjects =
+    // Tuple: (label, atlas path, atlas layout). After the LPC pivot (ADR-007),
+    // sprites load via DirectionalSprite.LoadFromAtlas from single-sheet PNGs
+    // at known region offsets; the legacy per-direction PNG directories are
+    // archived at assets/archive/pixellab-iso-sprites/.
+    private static readonly (string Label, string Path, DirectionalSprite.AtlasLayout Layout)[] Subjects =
     [
-        ("Warrior",  "res://assets/characters/player/warrior/rotations"),
-        ("Ranger",   "res://assets/characters/player/ranger/rotations"),
-        ("Mage",     "res://assets/characters/player/mage/rotations"),
-        ("Goblin",   "res://assets/characters/enemies/goblin/rotations"),
-        ("Orc",      "res://assets/characters/enemies/orc/rotations"),
-        ("Skeleton", "res://assets/characters/enemies/skeleton/rotations"),
+        ("Warrior",  "res://assets/characters/player/warrior/warrior_full_sheet.png", DirectionalSprite.LpcCharacterWalk),
+        ("Ranger",   "res://assets/characters/player/ranger/ranger_full_sheet.png",   DirectionalSprite.LpcCharacterWalk),
+        ("Mage",     "res://assets/characters/player/mage/mage_full_sheet.png",       DirectionalSprite.LpcCharacterWalk),
+        ("Goblin",   "res://assets/downloaded/lpc_monsters/lpc-monsters/small_worm.png", DirectionalSprite.LpcMonster()),
+        ("Orc",      "res://assets/downloaded/lpc_monsters/lpc-monsters/pumpking.png",   DirectionalSprite.LpcMonster()),
+        ("Skeleton", "res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png",      DirectionalSprite.LpcMonster()),
     ];
 
     [TestCase]
     [RequireGodotRuntime]
     public void AllSubjects_Have8DirectionTextures()
     {
-        foreach (var (label, path) in Subjects)
+        foreach (var (label, path, layout) in Subjects)
         {
-            var textures = DirectionalSprite.LoadRotations(path);
-            AssertThat(textures.Count).IsEqual(8, $"{label} should have 8 direction textures");
+            var textures = DirectionalSprite.LoadFromAtlas(path, layout);
+            AssertThat(textures.Count).OverrideFailureMessage($"{label} should have 8 direction textures").IsEqual(8);
             foreach (var dir in Directions)
-                AssertThat(textures.ContainsKey(dir)).IsTrue($"{label}/{dir} missing");
+                AssertThat(textures.ContainsKey(dir)).OverrideFailureMessage($"{label}/{dir} missing").IsTrue();
+        }
+    }
+
+    // Guards the LPC atlas contract (ADR-007): each direction must resolve to
+    // an AtlasTexture with non-zero region inside the source atlas bounds.
+    // Catches silent fallbacks (e.g., returning the full sheet instead of a
+    // cropped region) that DirectionalSprite.LoadFromAtlas could regress into.
+    [TestCase]
+    [RequireGodotRuntime]
+    public void AllSubjects_AtlasRegions_AreBounded()
+    {
+        foreach (var (label, path, layout) in Subjects)
+        {
+            var textures = DirectionalSprite.LoadFromAtlas(path, layout);
+            var source = Godot.GD.Load<Godot.Texture2D>(path);
+            int sw = source.GetWidth(), sh = source.GetHeight();
+            foreach (var dir in Directions)
+            {
+                var tex = textures[dir];
+                AssertThat(tex).IsInstanceOf<Godot.AtlasTexture>();
+                var atlas = (Godot.AtlasTexture)tex;
+                AssertThat(atlas.Region.Size.X).IsGreater(0);
+                AssertThat(atlas.Region.Size.Y).IsGreater(0);
+                AssertThat(atlas.Region.Position.X + atlas.Region.Size.X).IsLessEqual(sw);
+                AssertThat(atlas.Region.Position.Y + atlas.Region.Size.Y).IsLessEqual(sh);
+            }
         }
     }
 
@@ -66,10 +96,67 @@ public class TileViewerTests
     {
         foreach (var path in TilePaths)
         {
-            AssertThat(Godot.ResourceLoader.Exists(path)).IsTrue($"Tile missing: {path}");
+            AssertThat(Godot.ResourceLoader.Exists(path)).OverrideFailureMessage($"Tile missing: {path}").IsTrue();
             var tex = Godot.GD.Load<Godot.Texture2D>(path);
-            AssertThat(tex).IsNotNull($"Failed to load: {path}");
+            AssertThat(tex).OverrideFailureMessage($"Failed to load: {path}").IsNotNull();
         }
+    }
+
+    // Guards against an accidental re-import of 64x32 iso-era tiles
+    // (ADR-007 locked the grid to 32x32 top-down).
+    [TestCase]
+    [RequireGodotRuntime]
+    public void AllTiles_Are32x32_TopDown()
+    {
+        var townPaths = new[]
+        {
+            "res://assets/tiles/town/town_floor.png",
+            "res://assets/tiles/town/town_wall.png",
+        };
+        foreach (var path in System.Linq.Enumerable.Concat(TilePaths, townPaths))
+        {
+            var tex = Godot.GD.Load<Godot.Texture2D>(path);
+            AssertThat(tex.GetWidth()).IsEqual(32);
+            AssertThat(tex.GetHeight()).IsEqual(32);
+        }
+    }
+}
+
+// ── NPC Atlas Contract ────────────────────────────────────────────────────────
+
+[TestSuite]
+public class NpcAtlasTests
+{
+    private static readonly (string Npc, string Path)[] Sheets =
+    [
+        ("guild_maid",    "res://assets/characters/npcs/guild_maid/guild_maid_full_sheet.png"),
+        ("blacksmith",    "res://assets/characters/npcs/blacksmith/blacksmith_full_sheet.png"),
+        ("village_chief", "res://assets/characters/npcs/village_chief/village_chief_full_sheet.png"),
+    ];
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void AllNpcSheets_LoadSouthFrame()
+    {
+        foreach (var (npc, path) in Sheets)
+        {
+            AssertThat(Godot.ResourceLoader.Exists(path)).OverrideFailureMessage($"{npc} sheet missing: {path}").IsTrue();
+            var textures = DirectionalSprite.LoadFromAtlas(path, DirectionalSprite.LpcCharacterWalk);
+            AssertThat(textures.ContainsKey("south")).OverrideFailureMessage($"{npc}/south region missing").IsTrue();
+            AssertThat(textures["south"]).IsInstanceOf<Godot.AtlasTexture>();
+        }
+    }
+
+    // Regression guard: iso-era NPC sprite paths (`rotations/south.png`)
+    // are archived; nothing at runtime should resolve under the archive dir.
+    [TestCase]
+    [RequireGodotRuntime]
+    public void IsoArchive_IsNotReferenced_ByNpcSheets()
+    {
+        foreach (var (_, path) in Sheets)
+            AssertThat(path.Contains("archive")).IsFalse();
+        foreach (var (_, path) in Sheets)
+            AssertThat(path.Contains("rotations/")).IsFalse();
     }
 }
 
@@ -97,7 +184,7 @@ public class ProjectileViewerTests
     {
         foreach (var path in ProjectilePaths)
         {
-            AssertThat(Godot.ResourceLoader.Exists(path)).IsTrue($"Projectile missing: {path}");
+            AssertThat(Godot.ResourceLoader.Exists(path)).OverrideFailureMessage($"Projectile missing: {path}").IsTrue();
             var tex = Godot.GD.Load<Godot.Texture2D>(path);
             AssertThat(tex).IsNotNull();
         }

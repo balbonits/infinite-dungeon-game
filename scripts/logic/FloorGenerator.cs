@@ -27,7 +27,7 @@ public class FloorGenerator
     private const int MinRoomH = 8;
     private const int MaxRoomW = 18;
     private const int MaxRoomH = 18;
-    private const int CorridorWidth = 4;  // tiles wide — needed for isometric movement
+    private const int CorridorWidth = 4;  // tiles wide
     private const int TargetMinRooms = 5;
     private const int TargetMaxRooms = 8;
     private const float LoopCorridorChance = 0.15f;

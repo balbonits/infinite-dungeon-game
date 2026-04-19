@@ -46,10 +46,10 @@ public partial class Player : CharacterBody2D
         var bodyShape = GetNode<CollisionShape2D>("CollisionShape2D");
         ((CircleShape2D)bodyShape.Shape).Radius = playerConfig.CollisionRadius;
 
-        // Load class sprites
+        // Load class sprites from the LPC full-sheet atlas.
         int classIndex = (int)selectedClass;
-        string rotationsPath = Constants.Assets.PlayerClassRotations[classIndex];
-        _rotations = DirectionalSprite.LoadRotations(rotationsPath);
+        string atlasPath = Constants.Assets.PlayerClassSheets[classIndex];
+        _rotations = DirectionalSprite.LoadFromAtlas(atlasPath, DirectionalSprite.LpcCharacterWalk);
         if (_rotations.TryGetValue("south", out var southTex))
             _sprite.Texture = southTex;
 

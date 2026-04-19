@@ -23,6 +23,14 @@ are the only world-space character art for the PC slot.
 
 ## Current State
 
+> **REVISED 2026-04-18 — multiple design + recipe locks supersede §1-§3 below.** Reader summary:
+> - **Canonical human recipe locked.** All humanoid `create_character` dispatches now use `mode="standard"` + `proportions={"type": "preset", "name": "realistic_male"}` + `shading="medium shading"` + `detail="medium detail"`. This overrides the per-class `heroic` / `default` / `stylized` preset column in §1 and the `detailed shading` / `high detail` rows. The `realistic_male` preset applies to all genders (it is a PixelLab proportion label, not a gender prescription); gender presentation is handled by `description` text. Bake-off 2026-04-18 proved `realistic_male` + standard beats `pro` mode at 1/20th–1/40th the cost. Rationale recorded in `feedback_pixellab_human_recipe.md` (Claude memory).
+> - **Canonical human reference locked.** The Warrior v2 theme-review sprite (`assets/characters/player/warrior/_theme-review/south.png`, PixelLab character ID `50fa6ac2-f601-4893-b82e-d13076f9b05e`) is the canonical human style + proportion reference for all PCs, NPCs, and humanoid enemies. PixelLab MCP does NOT accept image uploads as style reference — the anchor is text + preset based. Rationale in `feedback_warrior_v2_canon.md`.
+> - **Demographic locks (PO direction 2026-04-18).** Ranger is a woman (v6 theme-review sprite, ID `2c4f2261-6eef-4c2a-b727-cd6a19159db6`). Mage is a Black man (v4 theme-review sprite, ID `4703290e-3779-40d3-b101-50ee8cf4fd3c`). Warrior remains an adult male. The §1 per-class fill-in tables still read as the historical draft — current demographic truth lives in SPEC-PC-ART-01 §6/§7/§8's REVISED banners.
+> - **Color-coding supersession.** SPEC-CLASS-COLOR-CODING-01 assigns class accents: Warrior `#b53238` brick-red / Ranger `#3a7a4d` forest-green / Mage `#5b47a0` royal-violet. These supersede the §1 COLOR-ACCENT rows that reference `#8ed6ff` player-blue (player-blue is removed from PC sprites entirely). Mage robe color also shifted from `#24314a` deep blue-gray to warm chocolate/walnut brown.
+> - **Animation supersession (SPEC-PC-ATK-01).** The §3 attack template table (`cross-punch` / `lead-jab` / `fireball`) is fully superseded by [`docs/ui/class-attack-animations.md`](../ui/class-attack-animations.md). All three class attacks now use custom `action_description` paths with user-locked motion intents (downward cleave / bow pull-and-release / forward staff swing with gem flare). The `fight-stance-idle-8-frames` template row is also deferred per MVP scope — MVP ships walk + attack + death only per `feedback_mvp_animation_scope.md`.
+> - **Warrior walk template rejected.** `walking` and `walking-6-frames` templates both drop the shield + sword in the back-swing arm phase (observed 2026-04-18 across both cadences). Warrior walk now uses custom `action_description` with explicit "weapon held throughout all frames" language. Ranger and Mage walk paths TBD pending the Warrior-walk-custom one-first render.
+
 Three existing player sprites (`assets/characters/player/warrior/`,
 `/ranger/`, `/mage/`) are authored for the wrong perspective (low
 top-down, not true 2:1 iso) and anchor to the wrong point (diamond
@@ -30,9 +38,11 @@ center, not diamond top vertex). They are on the
 [asset-inventory.md](asset-inventory.md) **Bucket A** redraw list.
 Delete-before-regen is mandatory — see §7 below.
 
-This spec supersedes any per-class prompt scraps that may have lived in
-older ART tickets. It is the single authoritative generation recipe
-until SPEC-PC-ART-01 or ART-SPEC-01 is revised.
+This spec was the single authoritative generation recipe until the
+2026-04-18 revisions above. Read the REVISED banner first — the
+sections below still carry useful scaffolding (download layout §4,
+verification §5, delete-before-regen §7) but §1-§3 are the
+pre-revision recipe.
 
 ## Design
 
