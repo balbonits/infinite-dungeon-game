@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/Player.cs" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/characters/player/warrior/rotations/south.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/characters/player/warrior/warrior_full_sheet.png" id="2_sprite"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0

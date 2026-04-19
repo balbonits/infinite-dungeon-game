@@ -11,23 +11,27 @@ public class SpriteViewerTests
     private static readonly string[] Directions =
         ["south", "south-west", "west", "north-west", "north", "north-east", "east", "south-east"];
 
-    private static readonly (string Label, string Path)[] Subjects =
+    // Tuple: (label, atlas path, atlas layout). After the LPC pivot (ADR-007),
+    // sprites load via DirectionalSprite.LoadFromAtlas from single-sheet PNGs
+    // at known region offsets; the legacy per-direction PNG directories are
+    // archived at assets/archive/pixellab-iso-sprites/.
+    private static readonly (string Label, string Path, DirectionalSprite.AtlasLayout Layout)[] Subjects =
     [
-        ("Warrior",  "res://assets/characters/player/warrior/rotations"),
-        ("Ranger",   "res://assets/characters/player/ranger/rotations"),
-        ("Mage",     "res://assets/characters/player/mage/rotations"),
-        ("Goblin",   "res://assets/characters/enemies/goblin/rotations"),
-        ("Orc",      "res://assets/characters/enemies/orc/rotations"),
-        ("Skeleton", "res://assets/characters/enemies/skeleton/rotations"),
+        ("Warrior",  "res://assets/characters/player/warrior/warrior_full_sheet.png", DirectionalSprite.LpcCharacterWalk),
+        ("Ranger",   "res://assets/characters/player/ranger/ranger_full_sheet.png",   DirectionalSprite.LpcCharacterWalk),
+        ("Mage",     "res://assets/characters/player/mage/mage_full_sheet.png",       DirectionalSprite.LpcCharacterWalk),
+        ("Goblin",   "res://assets/downloaded/lpc_monsters/lpc-monsters/small_worm.png", DirectionalSprite.LpcMonster()),
+        ("Orc",      "res://assets/downloaded/lpc_monsters/lpc-monsters/pumpking.png",   DirectionalSprite.LpcMonster()),
+        ("Skeleton", "res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png",      DirectionalSprite.LpcMonster()),
     ];
 
     [TestCase]
     [RequireGodotRuntime]
     public void AllSubjects_Have8DirectionTextures()
     {
-        foreach (var (label, path) in Subjects)
+        foreach (var (label, path, layout) in Subjects)
         {
-            var textures = DirectionalSprite.LoadRotations(path);
+            var textures = DirectionalSprite.LoadFromAtlas(path, layout);
             AssertThat(textures.Count).IsEqual(8, $"{label} should have 8 direction textures");
             foreach (var dir in Directions)
                 AssertThat(textures.ContainsKey(dir)).IsTrue($"{label}/{dir} missing");

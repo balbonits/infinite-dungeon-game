@@ -85,10 +85,12 @@ public partial class Enemy : CharacterBody2D, IDamageable
         var hitShape = _hitArea.GetNode<CollisionShape2D>("HitShape");
         ((CircleShape2D)hitShape.Shape).Radius = speciesConfig.HitAreaRadius;
 
-        // Load species-specific directional sprites
-        if (SpeciesIndex >= 0 && SpeciesIndex < Constants.Assets.EnemySpeciesRotations.Length)
+        // Load species-specific directional sprites from the LPC monster atlas.
+        if (SpeciesIndex >= 0 && SpeciesIndex < Constants.Assets.EnemySpeciesSheets.Length)
         {
-            _rotations = DirectionalSprite.LoadRotations(Constants.Assets.EnemySpeciesRotations[SpeciesIndex]);
+            _rotations = DirectionalSprite.LoadFromAtlas(
+                Constants.Assets.EnemySpeciesSheets[SpeciesIndex],
+                DirectionalSprite.LpcMonster());
             if (_rotations.TryGetValue("south", out var southTex))
                 _sprite.Texture = southTex;
         }

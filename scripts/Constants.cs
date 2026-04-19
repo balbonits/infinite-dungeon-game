@@ -267,21 +267,21 @@ public static class Constants
     // --- Asset Paths ---
     public static class Assets
     {
-        // Player class rotations (indexed by PlayerClass enum)
-        public static readonly string[] PlayerClassRotations =
+        // Player class full-sheet atlases (LPC, indexed by PlayerClass enum).
+        // Loaded via DirectionalSprite.LoadFromAtlas with LpcCharacterWalk layout.
+        public static readonly string[] PlayerClassSheets =
         {
-            "res://assets/characters/player/warrior/rotations",
-            "res://assets/characters/player/ranger/rotations",
-            "res://assets/characters/player/mage/rotations",
+            "res://assets/characters/player/warrior/warrior_full_sheet.png",
+            "res://assets/characters/player/ranger/ranger_full_sheet.png",
+            "res://assets/characters/player/mage/mage_full_sheet.png",
         };
 
-        // Player class display sprites (south-facing, for selection screen)
-        public static readonly string[] PlayerClassPreviews =
-        {
-            "res://assets/characters/player/warrior/rotations/south.png",
-            "res://assets/characters/player/ranger/rotations/south.png",
-            "res://assets/characters/player/mage/rotations/south.png",
-        };
+        // Back-compat alias for code that still reads this name.
+        public static readonly string[] PlayerClassRotations = PlayerClassSheets;
+
+        // Player class display sprites (south-facing, for selection screen).
+        // Points at the same full sheet — UI uses an AtlasTexture region crop.
+        public static readonly string[] PlayerClassPreviews = PlayerClassSheets;
 
         // Projectiles — 8-direction sheets where available, single-frame fallback otherwise
         public const string ArrowProjectile = "res://assets/projectiles/arrow_8dir.png";
@@ -298,17 +298,22 @@ public static class Constants
         public const string OrbHp = "res://assets/ui/orb_hp.png";
         public const string OrbMp = "res://assets/ui/orb_mp.png";
 
-        // Enemies (indexed by EnemySpecies enum)
-        public static readonly string[] EnemySpeciesRotations =
+        // Enemies (indexed by EnemySpecies enum) — tech-demo LPC monster mapping.
+        // Fiction-loose; SPEC-SPECIES-LPC-REWRITE-01 will tighten this.
+        // Loaded via DirectionalSprite.LoadFromAtlas with LpcMonster layout.
+        public static readonly string[] EnemySpeciesSheets =
         {
-            "res://assets/characters/enemies/skeleton/rotations",   // 0 Skeleton
-            "res://assets/characters/enemies/goblin/rotations",     // 1 Goblin
-            "res://assets/characters/enemies/bat/rotations",        // 2 Bat
-            "res://assets/characters/enemies/wolf/rotations",       // 3 Wolf
-            "res://assets/characters/enemies/orc/rotations",        // 4 Orc
-            "res://assets/characters/enemies/dark_mage/rotations",  // 5 DarkMage
-            "res://assets/characters/enemies/spider/rotations",     // 6 Spider
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png",       // 0 Skeleton → ghost
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/small_worm.png",  // 1 Goblin → small worm
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/bat.png",         // 2 Bat (direct match)
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/snake.png",       // 3 Wolf → snake
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/pumpking.png",    // 4 Orc → pumpking
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png",       // 5 DarkMage → ghost
+            "res://assets/downloaded/lpc_monsters/lpc-monsters/eyeball.png",     // 6 Spider → eyeball
         };
+
+        // Back-compat alias
+        public static readonly string[] EnemySpeciesRotations = EnemySpeciesSheets;
 
         // Dungeon tiles (zone 1 default — kept for fallback)
         public static readonly string[] DungeonFloorTextures =
