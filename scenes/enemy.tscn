@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/Enemy.cs" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/lpc/ghost.png" id="2_sprite"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 10.0

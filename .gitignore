@@ -59,12 +59,12 @@ TestResults/
 # Unsorted raw asset downloads
 assets/to-be-sorted/
 
-# OGA pack zip archives — redundant with the extracted sibling folders
-assets/downloaded/*.zip
-
-# Pre-pivot Kenney isometric pack — retained offline but not tracked (ADR-007)
-assets/downloaded/kenney_isometric-miniature-dungeon/
-assets/downloaded/kenney_isometric-miniature-dungeon.zip
+# Downloaded OGA/Kenney asset packs — available for re-download from the original
+# sources (see assets/downloaded/_oga-* search notes and ADR-007 for provenance).
+# Not tracked in git — they bloat the repo (~40 MB of 3D models, FBX, OBJ, etc.
+# we don't ship from this path) and the extracted sprites that the game actually
+# consumes live under assets/characters/, assets/tiles/, and assets/ui/ instead.
+assets/downloaded/
 
 # Isometric asset source files (Blender, GIMP, PSD)
 assets/isometric/source/

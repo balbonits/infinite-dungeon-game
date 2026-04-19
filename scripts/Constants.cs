@@ -305,13 +305,13 @@ public static class Constants
         // Loaded via DirectionalSprite.LoadFromAtlas with LpcMonster layout.
         public static readonly string[] EnemySpeciesSheets =
         {
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png",       // 0 Skeleton → ghost
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/small_worm.png",  // 1 Goblin → small worm
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/bat.png",         // 2 Bat (direct match)
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/snake.png",       // 3 Wolf → snake
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/pumpking.png",    // 4 Orc → pumpking
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/ghost.png",       // 5 DarkMage → ghost
-            "res://assets/downloaded/lpc_monsters/lpc-monsters/eyeball.png",     // 6 Spider → eyeball
+            "res://assets/characters/enemies/lpc/ghost.png",       // 0 Skeleton → ghost
+            "res://assets/characters/enemies/lpc/small_worm.png",  // 1 Goblin → small worm
+            "res://assets/characters/enemies/lpc/bat.png",         // 2 Bat (direct match)
+            "res://assets/characters/enemies/lpc/snake.png",       // 3 Wolf → snake
+            "res://assets/characters/enemies/lpc/pumpking.png",    // 4 Orc → pumpking
+            "res://assets/characters/enemies/lpc/ghost.png",       // 5 DarkMage → ghost
+            "res://assets/characters/enemies/lpc/eyeball.png",     // 6 Spider → eyeball
         };
 
         // Back-compat alias
