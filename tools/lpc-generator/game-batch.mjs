@@ -52,6 +52,7 @@ const RECIPES = {
       legs: "Long_Pants_leather",        // file variant — "leather" reads as warm brown
       shoes_toe: "Thick_Plated_Toe_bronze",
       weapon: "Longsword_longsword",
+      shield: "Round_Shield_silver",     // round shield, silver (full Name is "Round Shield" per sheet def)
     },
     output: "assets/characters/player/warrior/warrior_full_sheet.png",
   },
@@ -66,7 +67,8 @@ const RECIPES = {
       head: "Human_Female_light",
       hair: "Lob_green",                // shoulder-length bob, green to match theme
       clothes: "Tunic_green",           // bright green tunic (file variant, female-only)
-      hat: "Hood_brown",                // hood accessory, brown (green variant doesn't exist for hood)
+      hat: "Hood_green",                // hood accessory, green (PO direction)
+      gloves: "Gloves_leather",         // leather gloves (PO direction)
       legs: "Long_Pants_leather",       // warm brown pants for contrast
       shoes: "Revised_Shoes_brown",
       weapon: "Normal_iron",            // bow, name="Normal", variant=iron
@@ -92,18 +94,18 @@ const RECIPES = {
     },
     output: "assets/characters/player/mage/mage_full_sheet.png",
   },
-  // Blacksmith: male, BLACK theme. BALD with full beard (PO direction —
-  // classic smith silhouette: hairless head, thick beard). Use "Balding"
-  // hair style which renders as bald/receded. Keep the black beard.
+  // Blacksmith: MUSCULAR body + SHIRTLESS (PO direction 2026-04-19).
+  // Bald (Balding hair style) + full beard for the classic shirtless
+  // smith-at-the-forge silhouette. No jacket/torso layer — bare torso
+  // shows the muscular body definition. Pants + shoes kept.
   blacksmith: {
     hash: {
-      sex: "male",
+      sex: "muscular",                  // muscular body type (not male)
       body: "Body_Color_amber",
       head: "Human_Male_amber",
       hair: "Balding_black",            // bald / heavy receded hairline
       beard: "Basic_Beard_black",       // type=beard, name="Basic Beard", palette=hair
-      jacket: "Iverness_cloak_black",   // file variant black
-      legs: "Long_Pants_black",
+      legs: "Pants_black",              // pants (not Long_Pants/pants2 — pants2 has no muscular variant; pants does)
       shoes: "Revised_Shoes_black",
       weapon: "Mace_mace",              // name="Mace", variant=mace (only one)
     },

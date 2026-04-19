@@ -117,3 +117,17 @@ weapon/sword/longsword/walk/longsword.png
 		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 		- https://opengameart.org/content/lpc-extended-weapon-animations
 
+shield/round/walk/silver.png
+	- Licenses:
+		- OGA-BY 3.0
+		- CC-BY-SA 3.0
+		- GPL 3.0
+	- Authors:
+		- Johannes Sjölund (wulax)
+		- Michael Whitlock (bigbeargames)
+		- DarkwallLKE
+		- Tuomo Untinen (reemax)
+	- Links:
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+		- https://opengameart.org/content/lpc-shields-pack
+

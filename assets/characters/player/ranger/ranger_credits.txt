@@ -68,7 +68,7 @@ torso/clothes/tunic/female/walk/green.png
 		- https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more
 		- http://opengameart.org/content/lpc-clothing-updates
 
-hat/cloth/hood/adult/walk/brown.png
+hat/cloth/hood/adult/walk/green.png
 	- Note: Brown hood by Wulax, original black/white recolors by ??, mapped to idle/run/jump/revised combat by JaidynReiman, along with additional recolors.
 	- Licenses:
 		- OGA-BY 3.0
@@ -80,6 +80,21 @@ hat/cloth/hood/adult/walk/brown.png
 	- Links:
 		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 		- https://opengameart.org/content/lpc-expanded-hats-facial-helmets
+
+arms/gloves/female/walk/leather.png
+	- Note: metal gloves by wulax, extended to female base by makrohn, recolors by bigbeargames, adapted to v3 bases by bluecarrot16, added to expanded animations by JaidynReiman
+	- Licenses:
+		- OGA-BY 3.0
+		- CC-BY-SA 3.0
+		- GPL 3.0
+	- Authors:
+		- Michael Whitlock (bigbeargames)
+		- Matthew Krohn (makrohn)
+		- Johannes Sjölund (wulax)
+		- bluecarrot16
+	- Links:
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+		- http://opengameart.org/content/lpc-clothing-updates
 
 legs/pants2/thin/walk.png
 	- Note: Original bases by Redshrike, thrust/shoot bases by Wulax, original pants by ElizaWy, climb/jump/run/sit/emotes/revised combat by JaidynReiman

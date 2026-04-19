@@ -1,30 +1,31 @@
-body/bodies/male/walk.png
-	- Note: see details at https://opengameart.org/content/lpc-character-bases; 'Thick' Male Revised Run/Climb by JaidynReiman (based on ElizaWy's LPC Revised)
+body/bodies/muscular/walk.png
+	- Note: see details at https://opengameart.org/content/lpc-character-bases
 	- Licenses:
-		- OGA-BY 3.0
 		- CC-BY-SA 3.0
 		- GPL 3.0
 	- Authors:
 		- bluecarrot16
 		- JaidynReiman
-		- Benjamin K. Smith (BenCreating)
 		- Evert
-		- Eliza Wyatt (ElizaWy)
 		- TheraHedwig
 		- MuffinElZangano
 		- Durrani
-		- Johannes Sjölund (wulax)
+		- Sander Frenken (castelonia)
+		- Benjamin K. Smith (BenCreating)
+		- Eliza Wyatt (ElizaWy)
+		- dalonedrau
 		- Stephen Challener (Redshrike)
 	- Links:
 		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
-		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
-		- https://opengameart.org/content/lpc-male-jumping-animation-by-durrani
-		- https://opengameart.org/content/lpc-runcycle-and-diagonal-walkcycle
+		- https://opengameart.org/content/lpc-barbarian-sprite-base
+		- https://opengameart.org/content/lpc-muscular-swing-animation
+		- https://opengameart.org/content/lpc-muscular-hurt-animation
+		- https://opengameart.org/content/lpc-jump-expanded
 		- https://opengameart.org/content/lpc-revised-character-basics
 		- https://opengameart.org/content/lpc-be-seated
-		- https://opengameart.org/content/lpc-runcycle-for-male-muscular-and-pregnant-character-bases-with-modular-heads
 		- https://opengameart.org/content/lpc-jump-expanded
 		- https://opengameart.org/content/lpc-character-bases
+		- https://opengameart.org/content/lpc-male-jumping-animation-by-durrani
 
 head/heads/human/male/walk.png
 	- Note: original head by Redshrike, tweaks by BenCreating, modular version by bluecarrot16
@@ -59,29 +60,22 @@ beards/beard/basic/walk.png
 	- Links:
 		- https://opengameart.org/content/lpc-white-beard
 
-torso/jacket/iverness/male/walk/black.png
-	- Licenses:
-		- CC-BY-SA 3.0
-		- GPL 3.0
-	- Authors:
-		- bluecarrot16
-	- Links:
-		- https://opengameart.org/content/lpc-gentleman
-
-legs/pants2/male/walk.png
-	- Note: original overalls by ElizaWy, base animations adapted from v3 overalls by bluecarrot16, pants by JaidynReiman
+legs/pants/male/walk.png
+	- Note: original male pants by wulax, recolors and edits to v3 base by bluecarrot16, climb/jump/run/sit/emotes/revised combat by JaidynReiman based on ElizaWy's LPC Revised
 	- Licenses:
 		- OGA-BY 3.0
 		- GPL 3.0
+		- CC-BY-SA 3.0
 	- Authors:
+		- bluecarrot16
 		- JaidynReiman
 		- ElizaWy
-		- Bluecarrot16
+		- Matthew Krohn (makrohn)
 		- Johannes Sjölund (wulax)
 		- Stephen Challener (Redshrike)
 	- Links:
-		- https://github.com/ElizaWy/LPC/tree/main/Characters/Clothing
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
+		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
 		- https://opengameart.org/content/lpc-expanded-pants
 
 feet/shoes/revised/male/walk/black.png
