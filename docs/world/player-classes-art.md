@@ -1,12 +1,21 @@
 # Player Classes — Visual Identity & Sprite Spec (SPEC-PC-ART-01)
 
+> **ADR-007 SUPERSESSION (2026-04-18):** the art pipeline pivoted from isometric PixelLab-generated sprites to top-down LPC-generated sprites. The **silhouette, color-contract, and identity template below remain authoritative**, but the pipeline references and sprite paths have moved:
+>
+> - Sprite path: `assets/characters/player/{warrior,ranger,mage}/{warrior,ranger,mage}_full_sheet.png` (LPC full-sheet atlas, not per-direction `rotations/*.png`).
+> - Pipeline doc: [`lpc-automation-pipeline.md`](../assets/lpc-automation-pipeline.md) + [`lpc-generator-options.md`](../assets/lpc-generator-options.md) (replaces the retired `player-class-pipeline.md` / PixelLab references).
+> - Canvas: 64×64 per frame (LPC walk row), not 128×128. Silhouette constraints scale accordingly (64-frame reads, not 64-of-128 thumbnail).
+> - Recipes: `tools/lpc-generator/game-batch.mjs`. Current MVP recipes: Warrior = male + amber + Mop_chestnut + Plate_bronze + Longsword + Round_Shield_silver; Ranger = female + light + Lob_green + Tunic_green + Hood_green + Gloves_leather + bow; Mage = male + brown + Bedhead_black + Tabard_blue + Gnarled_staff_iron.
+>
+> The sections below are preserved as the design-intent record. When in doubt between this doc and the current LPC recipe, the recipe is the shipping truth.
+
 ## Summary
 
-The game-facing visual identity spec for the three playable classes — **Warrior**, **Ranger**, **Mage**. Defines the silhouette, fiction beat, starter equipment, color contract, scale, and animation set for the **single canonical world sprite** each class ships with. Equipment changes (armor tier, weapon swaps) are reflected in the inventory paperdoll UI, **not** on the world sprite. Paired with [ART-SPEC-PC-01 — player class sprite pipeline](../assets/player-class-pipeline.md), which specifies the PixelLab generation half. Co-lock criterion: neither half reaches "Ready-for-impl" alone.
+The game-facing visual identity spec for the three playable classes — **Warrior**, **Ranger**, **Mage**. Defines the silhouette, fiction beat, starter equipment, color contract, scale, and animation set for the **single canonical world sprite** each class ships with. Equipment changes (armor tier, weapon swaps) are reflected in the inventory paperdoll UI, **not** on the world sprite. Originally paired with the retired `player-class-pipeline.md` (PixelLab half); post-ADR-007 the paired pipeline half is [`lpc-automation-pipeline.md`](../assets/lpc-automation-pipeline.md). Co-lock criterion: neither half reaches "Ready-for-impl" alone.
 
 ## Current State
 
-The repo ships three player class sprites today (`assets/characters/player/{warrior,ranger,mage}/rotations/*.png`, referenced by `Constants.PlayerClassPreviews` and the live `Player.cs` scene). They were authored ad-hoc before this spec existed and are slated for re-generation under [ART-SPEC-01 v2](../assets/prompt-templates.md) (the iso pivot rewrite at commit `5e9e70f`). The class roster — Warrior, Ranger, Mage — is locked in `scripts/logic/PlayerClass.cs` and `scripts/ui/ClassSelect.cs`; this spec extends but does not change that roster.
+Three LPC-generated full-sheet sprites ship in `assets/characters/player/{warrior,ranger,mage}/*_full_sheet.png`, referenced by `Constants.Assets.PlayerClassSheets` (aliased as `PlayerClassPreviews` + `PlayerClassRotations` for back-compat) and consumed by `Player.cs` via `DirectionalSprite.LoadFromAtlas` (in-game 8-direction sprite) and by `CharacterCard` / `ClassSelect` via `DirectionalSprite.LoadPortraitFrame` (UI portraits — crops the south-facing walk frame). The class roster — Warrior, Ranger, Mage — is locked in `scripts/logic/PlayerClass.cs` and `scripts/ui/ClassSelect.cs`; this spec extends but does not change that roster.
 
 This spec mirrors the eight-section rigor of [`docs/world/species-template.md`](species-template.md) (SPEC-SPECIES-01) but adapted for player characters: PCs do not have AI patterns, drop tables, or level-relative tint behavior, so those sections are dropped or reframed. Identity, silhouette, scale, color contract, and art-pairing carry over directly.
 

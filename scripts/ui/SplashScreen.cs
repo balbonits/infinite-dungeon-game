@@ -121,10 +121,17 @@ public partial class SplashScreen : Control
             ("Enter", "Select"));
         vbox.AddChild(hints);
 
-        // Auto-focus first button after short delay
+        // Auto-focus first button after short delay. Guard the callback:
+        // Godot tests queue-free + reload scene between runs, so by the time
+        // the 0.3s timer fires, this SplashScreen may already have been
+        // disposed. Without the guard, the callback raises
+        // ObjectDisposedException, which CI UI-tests surfaced as
+        // "Timeout waiting for: SplashScreen to appear".
         var timer = GetTree().CreateTimer(0.3);
         timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(() =>
         {
+            if (!IsInstanceValid(this) || !IsInsideTree())
+                return;
             _ready = true;
             UiTheme.FocusFirstButton(btnBox);
         }));

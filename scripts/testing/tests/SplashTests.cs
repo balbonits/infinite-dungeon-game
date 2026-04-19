@@ -123,6 +123,84 @@ public class SplashTests : GameTestBase
             timeout: 2f, what: "ClassSelect appears after Continue→Back→New Game");
     }
 
+    /// <summary>
+    /// Regression: LoadGameScreen populated slot cards must render portrait
+    /// TextureRects with region-cropped AtlasTextures. Loading the full LPC
+    /// sheet directly produced the tiled-grid bug (2026-04-19) where each
+    /// card rendered the entire ~832x1344 animation atlas instead of a
+    /// single 64x64 south-facing frame. Mirrors
+    /// ClassSelect_PortraitsAreCroppedAtlasTextures.
+    /// </summary>
+    [Test]
+    public async Task LoadGame_PopulatedCardsUseCroppedPortraits()
+    {
+        // Fabricate a save so Continue is enabled.
+        DungeonGame.Autoloads.GameState.Instance.SelectedClass = PlayerClass.Warrior;
+        DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
+        DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
+
+        bool atSplash = await ResetToFreshSplash();
+        if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
+
+        var continueBtn = Ui.FindButton("Continue");
+        if (continueBtn is null || continueBtn.Disabled)
+        {
+            Expect(false, "Continue is not enabled — save did not register");
+            return;
+        }
+        continueBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+
+        bool loaded = await WaitUntil(() => Ui.HasNodeOfType<LoadGameScreen>(),
+            timeout: 2f, what: "LoadGameScreen to appear");
+        if (!loaded) return;
+
+        // Let the slot cards finish mounting after _Ready.
+        await Input.WaitFrames(5);
+
+        var loadScreen = Ui.FindNodeOfType<LoadGameScreen>();
+        Expect(loadScreen is not null, "LoadGameScreen present");
+        if (loadScreen is null) return;
+
+        var portraits = new System.Collections.Generic.List<TextureRect>();
+        CollectPortraitRects(loadScreen, portraits);
+
+        Expect(portraits.Count >= 1,
+            $"At least one portrait TextureRect found under LoadGameScreen (got: {portraits.Count})");
+
+        foreach (var tr in portraits)
+        {
+            var tex = tr.Texture;
+            Expect(tex is not null, "Portrait TextureRect has a texture");
+            if (tex is null) continue;
+
+            int w = tex.GetWidth();
+            int h = tex.GetHeight();
+            Expect(w <= 128 && h <= 128,
+                $"Load-game portrait is region-cropped ({w}x{h} ≤ 128x128). " +
+                "If this fails, CharacterCard is loading the full LPC sheet instead of LoadPortraitFrame.");
+
+            Expect(tex is AtlasTexture,
+                $"Load-game portrait is AtlasTexture (got: {tex.GetType().Name})");
+        }
+
+        // Back out so the next test starts from a clean splash.
+        await Input.PressKey(Key.Escape);
+        await Input.WaitSeconds(0.3f);
+    }
+
+    private static void CollectPortraitRects(Node root, System.Collections.Generic.List<TextureRect> output)
+    {
+        if (root is TextureRect tr && tr.Texture is not null &&
+            tr.CustomMinimumSize.X >= 64 && tr.CustomMinimumSize.Y >= 64)
+        {
+            output.Add(tr);
+        }
+        foreach (var child in root.GetChildren())
+            CollectPortraitRects(child, output);
+    }
+
     [CleanupAll]
     public void CleanupAll() => PrintSummary("SplashTests");
 }

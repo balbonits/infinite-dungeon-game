@@ -4,6 +4,31 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-19 — LPC portrait rendering fix + regression test coverage
+
+The Load Game screen and New Game class picker were each rendering the **entire LPC `full_sheet.png` animation atlas** as a portrait — hundreds of 64×64 frames tiled into a 92×92 slot, producing the "many tiny characters" visual on every card. The root cause was the same in two places: `CharacterCard.cs` and `ClassSelect.cs` both loaded the sheet directly via `GD.Load<Texture2D>(path)` and assigned it to a `TextureRect.Texture`, with no region cropping.
+
+Gameplay code (`Player.cs`, `Npc.cs`) already handled LPC sheets correctly — via `DirectionalSprite.LoadFromAtlas` which returns cardinal-keyed `AtlasTexture` views. The gap was that **no shared helper existed for the "single south-facing portrait frame" case**, so each UI site reinvented the wheel and got it wrong. When the art pivoted from PixelLab pre-cropped PNGs to LPC full_sheet atlases (ADR-007), the gameplay load path was updated but the UI load paths were not.
+
+Fix: new `DirectionalSprite.LoadPortraitFrame(path)` returns an `AtlasTexture` cropped to the south-facing walk frame 0 (64×64 at y=640 — the neutral standing pose, same region used by the in-game south-facing sprite). Both UI sites migrated to it. PR #30.
+
+The more durable fix was **writing the regression test that would have caught the bug**. Two in-game GoDotTests were added:
+
+- `ClassSelect_PortraitsAreCroppedAtlasTextures` walks the ClassSelect scene tree after New Game, collects every portrait-sized `TextureRect` (CustomMinimumSize ≥ 64×64 filter), and asserts each one's texture is an `AtlasTexture` with effective dimensions ≤ 128×128. A raw full-sheet load would return 832×1344, failing the 128×128 check decisively.
+- `LoadGame_PopulatedCardsUseCroppedPortraits` fabricates a save via `SaveManager.SaveToSlot(0)`, resets to a fresh splash, clicks Continue to open LoadGameScreen, and applies the same constraint. All three populated cards now pass: 64×64 AtlasTexture, LpcCharacterWalk.South region.
+
+These tests were the PO's explicit ask — "how would you know that bug with the character sprites would exist if you never wrote a test for it?" The GoDotTest framework is scene-based (runs inside a real running Godot scene), which is the right layer for this: it asserts rendered state, not loader-function contracts, so it survives refactors of *how* the portrait is loaded as long as the rendered output stays small and cropped.
+
+**Drive-by fixes bundled into the same PR:** the `SplashScreen._Ready` auto-focus timer had a lifetime bug — the 0.3s callback could fire after the node was disposed (scene-reloaded between tests), raising `ObjectDisposedException`. CI UI-tests surfaced this as "Timeout waiting for: SplashScreen to appear" intermittently. Guarded with `IsInstanceValid(this) && IsInsideTree()`. Also fixed the deprecated `HSplitContainer.SplitOffset` warning in `SandboxBase.cs` by switching to the `SplitOffsets = new[] { 500 }` array form per the Godot 4.6 API.
+
+**UI-tests delta after the fix:** main baseline was 33 passed / 8 failed. After this PR: 36 passed / 7 failed — added two new regression tests, fixed one pre-existing splash-timer failure. The remaining 7 failures are all Town-loading timeouts unrelated to this fix and are tracked as a separate follow-up.
+
+**Audit of remaining texture loads.** Before landing the PR I grepped every `GD.Load<Texture2D>` call site in the codebase (20+ locations) to confirm the bug was isolated to two UI sites. All others are single-frame assets (tiles, skill icons, orbs, stairs, projectiles) or are the helper itself (`DirectionalSprite.LoadFromAtlas`). `DialogueBox.PortraitPath` has the same raw-load shape but no caller passes an LPC full-sheet path — it's used for NPC dialogue portraits that don't exist yet. Logged as a migration-when-wired follow-up rather than a speculative fix.
+
+Copilot rounds on the adjacent open PRs (#28 + #29) landed in parallel today: #28 CREDITS.md clarified OGA-BY as a distinct license (not a CC-BY-SA "exemption") and linked the license texts; #29 fixed the stale Warrior-hair comment (said "High_and_Tight / short cropped" while the recipe was `Mop_chestnut`) and removed the unknown-attribution `??` in the Ranger hood credits. Both pushed for re-review.
+
+---
+
 ## 2026-04-18 — SPEC-SPECIES-GOBLIN-01 locked (Phase E, zones 2 + 7)
 
 Authored the Goblin species spec at [docs/world/species/goblin.md](world/species/goblin.md). This is the second species in the Phase E fan-out to claim the `pack-management` reaction (after Wolf), but the two specs attack the reaction from opposite sides: Wolf is a *Tier 2 Large-band* pack where the danger is coordinated flanking by big predators; Goblin is a *Tier 1 Small-band* pack where the danger is sheer volume and positional clutter. Goblins are the "laughable individually, problem collectively" slot — the one the template's worked example called out by name.
