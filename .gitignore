@@ -68,5 +68,10 @@ docs/evidence/**/frame_*.png
 *.log
 crash_reports/
 
+# Local-only vendored tooling (LPC generator ~855 MB of layer PNGs + HTML app).
+# Our custom batch runner (game-batch.mjs) lives inside but must be tracked.
+tools/lpc-generator/*
+!tools/lpc-generator/game-batch.mjs
+
 # Claude Code session-local runtime state
 .claude/scheduled_tasks.lock
