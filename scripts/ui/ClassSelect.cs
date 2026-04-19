@@ -161,17 +161,24 @@ public partial class ClassSelect : Control
         vbox.AddChild(nameLabel);
 
         // --- Character sprite ---
+        // LPC sheets are multi-row animation atlases. Crop to south-facing
+        // walk frame 0 (standing pose) via LoadPortraitFrame — loading the
+        // full sheet would tile the entire animation grid into the card.
         int classIndex = (int)data.PlayerClass;
         if (classIndex < Constants.Assets.PlayerClassPreviews.Length)
         {
-            var sprite = new TextureRect();
-            sprite.Texture = GD.Load<Texture2D>(Constants.Assets.PlayerClassPreviews[classIndex]);
-            sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-            sprite.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-            sprite.CustomMinimumSize = new Vector2(92, 92);
-            sprite.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-            sprite.MouseFilter = MouseFilterEnum.Ignore;
-            vbox.AddChild(sprite);
+            var portrait = DirectionalSprite.LoadPortraitFrame(Constants.Assets.PlayerClassPreviews[classIndex]);
+            if (portrait != null)
+            {
+                var sprite = new TextureRect();
+                sprite.Texture = portrait;
+                sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
+                sprite.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+                sprite.CustomMinimumSize = new Vector2(92, 92);
+                sprite.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+                sprite.MouseFilter = MouseFilterEnum.Ignore;
+                vbox.AddChild(sprite);
+            }
         }
 
         // --- Description ---

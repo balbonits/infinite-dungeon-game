@@ -129,7 +129,7 @@ public abstract partial class SandboxBase : Control
         // Body — split: controls left, log right
         var body = new HSplitContainer();
         body.SizeFlagsVertical = SizeFlags.Expand;
-        body.SplitOffset = 500;
+        body.SplitOffsets = new[] { 500 };
         root.AddChild(body);
 
         // Controls panel (left)

@@ -51,15 +51,18 @@ public partial class CharacterCard : PanelContainer
         nameLabel.MouseFilter = MouseFilterEnum.Ignore;
         vbox.AddChild(nameLabel);
 
-        // Character sprite
+        // Character sprite — LPC sheets are multi-row animation atlases, so
+        // we crop to the south-facing walk frame 0 (neutral standing pose)
+        // rather than loading the entire sheet as a raw Texture2D. Without
+        // this, the card renders the whole sprite grid tiled into 92x92.
         int classIdx = (int)save.SelectedClass;
         if (classIdx < Constants.Assets.PlayerClassPreviews.Length)
         {
-            string path = Constants.Assets.PlayerClassPreviews[classIdx];
-            if (ResourceLoader.Exists(path))
+            var portrait = DirectionalSprite.LoadPortraitFrame(Constants.Assets.PlayerClassPreviews[classIdx]);
+            if (portrait != null)
             {
                 var sprite = new TextureRect();
-                sprite.Texture = GD.Load<Texture2D>(path);
+                sprite.Texture = portrait;
                 sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
                 sprite.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
                 sprite.CustomMinimumSize = new Vector2(92, 92);

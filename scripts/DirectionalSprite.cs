@@ -98,6 +98,25 @@ public static class DirectionalSprite
     }
 
     /// <summary>
+    /// Load a single south-facing portrait frame from an LPC full-sheet atlas.
+    /// Returns an AtlasTexture cropped to the walk-row south frame 0 (the
+    /// neutral standing pose). UI-only helper — use this wherever a
+    /// TextureRect/Sprite2D should display a character "avatar" without
+    /// rendering the entire multi-row animation sheet. Returns null if the
+    /// path is missing (caller decides whether to skip the node or fall back).
+    /// </summary>
+    public static AtlasTexture? LoadPortraitFrame(string atlasPath)
+    {
+        if (!ResourceLoader.Exists(atlasPath))
+        {
+            GD.PushWarning($"DirectionalSprite.LoadPortraitFrame: missing {atlasPath}");
+            return null;
+        }
+        var source = GD.Load<Texture2D>(atlasPath);
+        return new AtlasTexture { Atlas = source, Region = LpcCharacterWalk.South };
+    }
+
+    /// <summary>
     /// Legacy loader: 8 per-direction PNGs in a directory. Retained as a
     /// fallback path; current builds use LoadFromAtlas instead.
     /// </summary>

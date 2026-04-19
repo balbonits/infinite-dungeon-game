@@ -194,6 +194,61 @@ public class ClassSelectTests : GameTestBase
             what: "Town scene loaded after confirm");
     }
 
+    /// <summary>
+    /// Regression: class-select portraits must render as region-cropped
+    /// AtlasTextures (south-facing walk frame 0), not as raw full-sheet
+    /// Texture2D loads. The LPC character full_sheet.png is a multi-row
+    /// animation atlas ~832x1344; loading it directly caused every card to
+    /// tile the entire sprite grid (visible bug 2026-04-19). Assert each
+    /// card's portrait TextureRect uses a ≤128x128 effective texture region.
+    /// </summary>
+    [Test]
+    public async Task ClassSelect_PortraitsAreCroppedAtlasTextures()
+    {
+        var classSelect = Ui.FindNodeOfType<ClassSelect>();
+        Expect(classSelect is not null, "ClassSelect node present in tree");
+        if (classSelect is null) return;
+
+        var portraits = new System.Collections.Generic.List<TextureRect>();
+        CollectPortraitRects(classSelect, portraits);
+
+        Expect(portraits.Count >= 3,
+            $"At least 3 portrait TextureRects found under ClassSelect (got: {portraits.Count})");
+
+        foreach (var tr in portraits)
+        {
+            var tex = tr.Texture;
+            Expect(tex is not null, "Portrait TextureRect has a texture");
+            if (tex is null) continue;
+
+            int w = tex.GetWidth();
+            int h = tex.GetHeight();
+            Expect(w <= 128 && h <= 128,
+                $"Portrait texture is region-cropped ({w}x{h} ≤ 128x128). " +
+                $"If this fails, the card is loading the full LPC sheet instead of LoadPortraitFrame.");
+
+            Expect(tex is AtlasTexture,
+                $"Portrait texture is AtlasTexture (got: {tex.GetType().Name})");
+        }
+
+        await Input.WaitFrames(2);
+    }
+
+    private static void CollectPortraitRects(Node root, System.Collections.Generic.List<TextureRect> output)
+    {
+        // Class-select cards include a portrait TextureRect whose size is
+        // driven by CustomMinimumSize = (92, 92). Skill icons live in a nested
+        // HBoxContainer and have smaller min sizes (~32 typically). Filter to
+        // the portrait-sized rects only.
+        if (root is TextureRect tr && tr.Texture is not null &&
+            tr.CustomMinimumSize.X >= 64 && tr.CustomMinimumSize.Y >= 64)
+        {
+            output.Add(tr);
+        }
+        foreach (var child in root.GetChildren())
+            CollectPortraitRects(child, output);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>
