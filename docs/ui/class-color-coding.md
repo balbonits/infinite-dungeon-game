@@ -2,7 +2,7 @@
 
 ## Summary
 
-Per-class accent color: **Warrior = brick red, Ranger = forest green, Mage = royal violet-blue.** Shifted RGB triad — the hues are recognizably R/G/B, but darker and less saturated than the existing HP/heal/MP semantic slots so they don't collide. Applies to class-specific UI surfaces (class-select cards, class-name labels, class sprite accent zones); does NOT apply to gameplay feedback colors (HP stays red, MP stays blue, heals stay green). SPEC-CLASS-COLOR-CODING-01 (post-Phase H addendum).
+Per-class accent color: **Warrior = brick red, Ranger = forest green, Mage = royal violet-blue.** Shifted RGB triad — the hues are recognizably R/G/B, but darker and less saturated than the gameplay-feedback colors (HP orb / heal-toast / MP orb fills and their related UiTheme semantic slots) so they don't collide. Applies to class-specific UI surfaces (class-select cards, class-name labels, class sprite accent zones); does NOT apply to gameplay feedback colors (HP stays red, MP stays blue, heals stay green). SPEC-CLASS-COLOR-CODING-01 (post-Phase H addendum).
 
 ## Current State
 
