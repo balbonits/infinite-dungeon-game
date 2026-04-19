@@ -69,7 +69,7 @@ torso/clothes/tunic/female/walk/green.png
 		- http://opengameart.org/content/lpc-clothing-updates
 
 hat/cloth/hood/adult/walk/green.png
-	- Note: Brown hood by Wulax, original black/white recolors by ??, mapped to idle/run/jump/revised combat by JaidynReiman, along with additional recolors.
+	- Note: Brown hood by Wulax, mapped to idle/run/jump/revised combat by JaidynReiman, with additional recolors by JaidynReiman.
 	- Licenses:
 		- OGA-BY 3.0
 		- CC-BY-SA 3.0

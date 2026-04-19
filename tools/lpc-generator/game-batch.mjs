@@ -38,9 +38,9 @@ const RECIPES = {
   // validation confirms the pipeline works. These are initial guesses
   // built from item-metadata.js categories; the validation run above
   // confirms the hash format is correct.
-  // Warrior: male, amber skin, CHESTNUT theme. Short cropped hair for a
-  // martial silhouette (Natural → High_and_Tight — reads as soldier cut,
-  // distinct from Village Chief's Natural long hair).
+  // Warrior: male, amber skin, CHESTNUT theme. Loose messy mop hair for a
+  // rugged martial silhouette (Mop — PO pick, visually distinct from
+  // Village Chief's Natural long hair).
   warrior: {
     hash: {
       sex: "male",
