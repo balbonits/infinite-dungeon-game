@@ -42,17 +42,13 @@ head/heads/human/female/walk.png
 		- https://opengameart.org/content/
 		- https://opengameart.org/content/lpc-character-bases
 
-hair/natural/adult/walk.png
-	- Note: Original by bluecarrot16, animations by ElizaWy.
+hair/lob/adult/walk.png
 	- Licenses:
 		- CC0
 	- Authors:
-		- ElizaWy
 		- bluecarrot16
 	- Links:
 		- https://opengameart.org/content/lpc-hair
-		- https://github.com/ElizaWy/LPC/blob/main/Characters/Hair
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 
 torso/clothes/tunic/female/walk/green.png
 	- Note: "pirate shirt" by MadMarcel, edited to all poses by makrohn, edited from tube-top/tanktop to sleeveless then to tunic by JaidynReiman, edits for v3 bases and further cleanup by bluecarrot16
@@ -71,6 +67,19 @@ torso/clothes/tunic/female/walk/green.png
 		- https://opengameart.org/content/lpc-female-orcogregoblintroll-base-walkcycle
 		- https://opengameart.org/content/lpc-curly-hair-elven-ears-white-cape-with-blue-trim-and-more
 		- http://opengameart.org/content/lpc-clothing-updates
+
+hat/cloth/hood/adult/walk/brown.png
+	- Note: Brown hood by Wulax, original black/white recolors by ??, mapped to idle/run/jump/revised combat by JaidynReiman, along with additional recolors.
+	- Licenses:
+		- OGA-BY 3.0
+		- CC-BY-SA 3.0
+		- GPL 3.0
+	- Authors:
+		- Johannes Sjölund (wulax)
+		- JaidynReiman
+	- Links:
+		- https://opengameart.org/content/lpc-medieval-fantasy-character-sprites
+		- https://opengameart.org/content/lpc-expanded-hats-facial-helmets
 
 legs/pants2/thin/walk.png
 	- Note: Original bases by Redshrike, thrust/shoot bases by Wulax, original pants by ElizaWy, climb/jump/run/sit/emotes/revised combat by JaidynReiman

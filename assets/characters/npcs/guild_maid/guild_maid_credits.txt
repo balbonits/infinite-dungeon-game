@@ -42,17 +42,16 @@ head/heads/human/female/walk.png
 		- https://opengameart.org/content/
 		- https://opengameart.org/content/lpc-character-bases
 
-hair/natural/adult/walk.png
-	- Note: Original by bluecarrot16, animations by ElizaWy.
+hair/ponytail/adult/fg/walk.png
 	- Licenses:
-		- CC0
+		- CC-BY-SA 3.0
+		- GPL 3.0
 	- Authors:
-		- ElizaWy
-		- bluecarrot16
+		- JaidynReiman
+		- Manuel Riecke (MrBeast)
 	- Links:
-		- https://opengameart.org/content/lpc-hair
-		- https://github.com/ElizaWy/LPC/blob/main/Characters/Hair
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
+		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
+		- https://opengameart.org/content/lpc-expanded-hair
 
 torso/clothes/blouse/female/walk/yellow.png
 	- Note: original princess.xcf by Sharm, edited to blouse by ElizaWy; adapted to v3 bases by bluecarrot16

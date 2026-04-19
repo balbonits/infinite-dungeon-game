@@ -40,17 +40,17 @@ head/heads/human/male/walk.png
 		- https://opengameart.org/content/liberated-pixel-cup-lpc-base-assets-sprites-map-tiles
 		- https://opengameart.org/content/lpc-character-bases
 
-hair/natural/adult/walk.png
-	- Note: Original by bluecarrot16, animations by ElizaWy.
+hair/mop/adult/walk.png
+	- Note: (george)
 	- Licenses:
-		- CC0
+		- CC-BY-SA 3.0
+		- GPL 3.0
 	- Authors:
-		- ElizaWy
+		- Radomir Dopieralski
 		- bluecarrot16
 	- Links:
+		- https://opengameart.org/content/alternate-lpc-character-sprites-george
 		- https://opengameart.org/content/lpc-hair
-		- https://github.com/ElizaWy/LPC/blob/main/Characters/Hair
-		- https://opengameart.org/content/lpc-expanded-sit-run-jump-more
 
 beards/beard/basic/walk.png
 	- Note: Original by Nemisys, repositioning by JaidynReiman.
