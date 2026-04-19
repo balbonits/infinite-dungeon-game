@@ -6,7 +6,7 @@ The game-facing visual identity spec for the three town NPCs — **Blacksmith**,
 
 ## Current State
 
-> **⚠ ADR-007 reconciliation (2026-04-18):** this spec was authored during the PixelLab + iso era. Per [ADR-007](../decisions/007-top-down-oga-pivot.md), PixelLab is retired for MVP and iso rendering is reverted to top-down. The NPC **roster**, **south-only direction rule**, **NPC-vs-PC silhouette constraints**, and **pose conventions** below remain canon and apply equally to the LPC art pipeline. References to `prompt-templates.md`, `iso-rendering.md`, PixelLab modes, and the `mannequin` template are **superseded**; treat them as historical notes. Replacement pipeline lives at `assets/md/lpc-sprite-recipes.md`.
+> **⚠ Art-pipeline reconciliation (2026-04-18):** this spec was authored during the PixelLab + iso era. A parallel decision (ADR-007, landing on main via the top-down / OGA-LPC pivot PR) retires PixelLab for MVP and reverts iso rendering to top-down. The NPC **roster**, **south-only direction rule**, **NPC-vs-PC silhouette constraints**, and **pose conventions** below remain canon and apply equally to the LPC art pipeline. References to `prompt-templates.md`, `iso-rendering.md`, PixelLab modes, and the `mannequin` template are **superseded**; treat them as historical notes. Replacement pipeline is the LPC Universal Sprite Character Generator recipes (landing alongside ADR-007).
 
 The NPC roster was reduced and re-mapped on 2026-04-17 (PO decision, captured in the `NPC-ROSTER-REWIRE-01` ticket and the `project_npc_naming` agent memory). The roster is now exactly three: Blacksmith (forge + craft + shop), Guild Maid (bank + teleport / floor-select), Village Chief (quest giver). The earlier roster (Guild Master, Shopkeeper, Banker, Teleporter, Blacksmith, Guild Maid, Village Chief) is deprecated — the dropped roles fold into these three NPCs as services, not separate sprites.
 
@@ -69,15 +69,13 @@ The full town-services catalog maps onto the three NPCs as follows. This is the 
 
 **Locked decision: ONE south-facing idle frame per NPC. No rotations. No walk cycle.**
 
-PO direction 2026-04-18: *"NPCs do not move, so, let's skip generating the rest of the angles/directions ... we're gonna save pixellab renders/tokens this way."*
+PO direction 2026-04-18 (paraphrased): **NPCs do not move, so skip generating the rest of the angles/directions.** (The original PO note cited PixelLab credit savings as motivation; that framing is superseded by ADR-007's art-pipeline pivot — PixelLab is no longer the pipeline. The *behavioral* justification below is what stands.)
 
 Rationale:
 - NPCs are stationary in town — they occupy a fixed station tile and never path. No walk cycle, no turn-to-face-player.
 - The player approaches the NPC from the front; south-facing is the canonical camera angle, and other rotations are never seen.
-- Only the south frame is extracted, committed to the repo, and referenced from the scene. Non-south frames (if the underlying art source produces them as a spritesheet) are discarded at import, not stored.
+- Only the south frame is extracted, committed to the repo, and referenced from the scene. Non-south frames (if the underlying art source produces them as a spritesheet) are discarded at import, not stored. Saves repo storage and scene-wiring complexity — this is the actual savings, independent of which generator produced the sprite.
 - "Turn to face the player" UX feedback is replaced by the existing NpcPanel interaction (panel fades in centered on screen) — no sprite turn needed.
-
-*(Original PO framing cited PixelLab credit savings; post-[ADR-007](../decisions/007-top-down-oga-pivot.md) the savings realized are storage + scene-wiring simplicity rather than generation credits, but the south-only rule and its behavioral justification stand.)*
 
 **Frame budget per NPC:** 1 idle frame (south). No rotations, no walk, no attack, no death. **Total: 1 frame × 3 NPCs = 3 NPC frames** for the entire town roster.
 
@@ -106,7 +104,7 @@ NPCs must never be mistaken for player classes at a glance. The player must alwa
 
 ### 5. Village Chief Fresh-Design Section
 
-Village Chief had no existing sprite at the time this section was authored; it was a from-scratch design, and the resulting south-facing sprite has since shipped at `assets/characters/npcs/village_chief/rotations/south.png` (see §9). The locked archetype below remains the reference for any future regeneration (including under the LPC pipeline per ADR-007):
+Village Chief had no existing sprite at the time this section was authored (per the original Current State); the from-scratch design was generated from the archetype below, and the resulting south-facing sprite has since shipped at `assets/characters/npcs/village_chief/rotations/south.png` (see §9 for the delivery status and the Current State bullet list at the top for the updated path). The locked archetype below remains the reference for any future regeneration (including under the LPC pipeline post-ADR-007):
 
 > **An elderly figure in muted-green hooded robes with a silver chain-of-office across the chest, leaning on a gnarled wooden walking staff, with a long white beard or weathered kindly features.**
 
