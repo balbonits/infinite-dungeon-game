@@ -35,7 +35,7 @@ Each class color is a darker, less-saturated cousin of the pure hue — the tria
 
 | Class | Hex | Name | HSL | Intent |
 |-------|-----|------|-----|--------|
-| Warrior | `#b53238` | **Brick Red** | H=357, S=57%, L=45% | Martial, weighty, blood-and-iron — distinct from `#ff6f6f` HP (brighter, more saturated). |
+| Warrior | `#b53238` | **Brick Red** | H=357, S=57%, L=45% | Martial, weighty, blood-and-iron — distinct from `#ff6f6f` Danger (damage numbers, warning states) and from the separate `#CC2222` HP orb fill. |
 | Ranger | `#3a7a4d` | **Forest Green** | H=140, S=35%, L=35% | Woodland, wilderness, earthy — distinct from `#6bff89` heal (brighter, mint-forward). |
 | Mage | `#5b47a0` | **Royal Violet** | H=255, S=39%, L=45% | Arcane, deep-magic, purple-blue — distinct from `#518ef4` Action button blue (brighter, pure blue). |
 
@@ -97,8 +97,8 @@ Plus a helper method:
 - [ ] Class-select cards render each card's border + header in its class color.
 - [ ] Class-name text labels (Stats panel header, NpcPanel greetings that use `{Class} Guildmaster`, pause-menu titles) render the class name in its class color.
 - [ ] Player-class sprites (Warrior / Ranger / Mage) have accent pixels in their class color (not the old `#8ed6ff` player-blue).
-- [ ] HUD HP orb stays `Danger` red regardless of class.
-- [ ] HUD MP orb stays `Action` blue regardless of class.
+- [ ] HUD HP orb stays `#CC2222` (pulsing to `#FF4444` below 25% HP) per [hud-layout.md](hud-layout.md), regardless of class.
+- [ ] HUD MP orb stays `#2244CC` per [hud-layout.md](hud-layout.md), regardless of class.
 - [ ] Damage numbers, heal text, crit indicators stay on their semantic slots regardless of class.
 - [ ] Accessibility: every class-coded surface has text or icon redundancy so the color is not the only identity signal.
 
