@@ -11,10 +11,9 @@
 
 <p align="center">
   <a href="https://github.com/balbonits/infinite-dungeon-game/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/balbonits/infinite-dungeon-game/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white" alt="CI"></a>
-  <img src="https://img.shields.io/badge/unit%20tests-471%20passing-brightgreen?logo=xunit&logoColor=white" alt="Unit tests">
-  <img src="https://img.shields.io/badge/integration%20tests-11%20passing-brightgreen?logo=xunit&logoColor=white" alt="Integration tests">
-  <img src="https://img.shields.io/badge/UI%20tests-37%20passing-yellowgreen?logo=godotengine&logoColor=white" alt="UI tests">
-  <img src="https://img.shields.io/badge/coverage-%E2%89%A575%25-brightgreen" alt="Coverage">
+  <a href="https://github.com/balbonits/infinite-dungeon-game/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/unit%20%2B%20integration%20tests-passing-brightgreen?logo=xunit&logoColor=white" alt="xUnit tests"></a>
+  <a href="https://github.com/balbonits/infinite-dungeon-game/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/UI%20tests-in%20progress-yellowgreen?logo=godotengine&logoColor=white" alt="UI tests"></a>
+  <img src="https://img.shields.io/badge/coverage-%E2%89%A575%25-brightgreen" alt="Coverage ≥ 75%">
   <br/>
   <img src="https://img.shields.io/badge/Godot-4.6.2%20.NET-478CBF?logo=godotengine&logoColor=white" alt="Godot 4.6.2 .NET">
   <img src="https://img.shields.io/badge/.NET-8+-512BD4?logo=dotnet&logoColor=white" alt=".NET 8+">
@@ -37,9 +36,12 @@
 | **3 — Balance + content** | ⏳ Pending | Zone species rosters, boss fan-out (Phase E/F specs locked), endgame pacts tuning |
 | **4 — Export + release** | ⏳ Pending | Platform exports (Mac/Win/Linux), store listings, launch polish |
 
-**Progress rollup:** 130 done · 1 partial · 39 to-do + 17 audit findings (see [`docs/dev-tracker.md`](docs/dev-tracker.md) for the full ledger) · every session logged in [`docs/dev-journal.md`](docs/dev-journal.md).
+**Where to look for detail:**
 
-**Recent merges:** #28 asset cleanup · #29 character regens (5 LPC sheets) · #30 portrait rendering fix · #31 delete-slot New Game regression fix.
+- [`docs/dev-tracker.md`](docs/dev-tracker.md) — live ticket ledger (Done / Partial / To-do per system, audit findings, P3 future work). The authoritative count lives here; this README intentionally avoids snapshotting it.
+- [`docs/dev-journal.md`](docs/dev-journal.md) — narrative log of every session (what shipped, what broke, what the conversation was).
+- [`CHANGELOG.md`](CHANGELOG.md) — release-facing change log.
+- [Merged pull requests](https://github.com/balbonits/infinite-dungeon-game/pulls?q=is%3Apr+is%3Amerged+sort%3Aupdated-desc) — reverse-chronological merged work.
 
 ---
 
