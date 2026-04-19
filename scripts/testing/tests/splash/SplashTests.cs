@@ -134,6 +134,89 @@ public class SplashTests : GameTestBase
     }
 
     /// <summary>
+    /// Regression for the "New Game doesn't work after deleting a save slot"
+    /// bug reported 2026-04-19: user flow was splash → Continue → LoadGameScreen →
+    /// delete slot → Back → New Game → silently did nothing. Mirrors the existing
+    /// AfterContinueBack test but adds a slot-delete step before going back, since
+    /// RebuildSlots() (post-delete) frees + re-initializes all LoadGameScreen
+    /// children which can leave the splash's focus path in an unrecoverable state.
+    /// </summary>
+    [Test]
+    public async Task Splash_AfterDeleteSlotBack_NewGameStillWorks()
+    {
+        // Populate slot 0 so Continue is enabled AND we have a slot to delete.
+        DungeonGame.Autoloads.GameState.Instance.SelectedClass = PlayerClass.Warrior;
+        DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
+        DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
+
+        bool atSplash = await ResetToFreshSplash();
+        if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
+
+        var continueBtn = Ui.FindButton("Continue");
+        if (continueBtn is null || continueBtn.Disabled)
+        {
+            Expect(false, "Continue is not enabled — save did not register");
+            return;
+        }
+        continueBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+        bool loaded = await WaitUntil(() => Ui.HasNodeOfType<LoadGameScreen>(),
+            timeout: 2f, what: "LoadGameScreen appears after Continue");
+        if (!loaded) return;
+        await Input.WaitFrames(5);
+
+        // Find the slot 0 delete button (red "X") and fire its Pressed signal
+        // directly. GrabFocus + PressEnter on the X is unreliable under the
+        // anchor-based positioning the button uses (tests showed focus
+        // didn't grant in time); firing the signal exercises the same code
+        // path (OpenDeleteDialog) without the focus race.
+        var deleteBtn = Ui.FindButton("X");
+        if (deleteBtn is null)
+        {
+            Expect(false, "Delete (X) button not found on populated slot");
+            return;
+        }
+        deleteBtn.EmitSignal(BaseButton.SignalName.Pressed);
+        await Input.WaitFrames(5);
+
+        // DeleteConfirmDialog should open.
+        bool dialogOpen = await WaitUntil(() => Ui.FindButton("Delete") is not null,
+            timeout: 2f, what: "DeleteConfirmDialog appears");
+        if (!dialogOpen) return;
+
+        // Fire the Delete confirm signal directly (same reason).
+        var confirmBtn = Ui.FindButton("Delete");
+        if (confirmBtn is null) { Expect(false, "Delete confirm button missing"); return; }
+        confirmBtn.EmitSignal(BaseButton.SignalName.Pressed);
+        await Input.WaitFrames(5);
+
+        // Wait for RebuildSlots to complete (0.05 + 0.15 = 0.2s + frame buffer).
+        await Input.WaitSeconds(0.5f);
+
+        // Press Escape to go back to splash.
+        await Input.PressKey(Key.Escape);
+        await Input.WaitSeconds(0.3f);
+
+        // Splash should be visible again AND a button should be focused.
+        bool focused = await WaitUntil(() => Ui.HasFocus, timeout: 2f,
+            what: "a splash button is focused after delete+Back");
+        if (!focused) return;
+
+        // Now try New Game.
+        var newGameBtn = Ui.FindButton("New Game");
+        if (newGameBtn is null) { Expect(false, "New Game button missing on splash"); return; }
+        newGameBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+
+        // THE assertion: ClassSelect must appear. If this fails, the New Game
+        // button click silently did nothing — the bug the user reported.
+        await WaitUntil(() => Ui.HasNodeOfType<ClassSelect>(),
+            timeout: 2f, what: "ClassSelect appears after delete → Back → New Game");
+    }
+
+    /// <summary>
     /// Regression: LoadGameScreen populated slot cards must render portrait
     /// TextureRects with region-cropped AtlasTextures. Loading the full LPC
     /// sheet directly produced the tiled-grid bug (2026-04-19) where each

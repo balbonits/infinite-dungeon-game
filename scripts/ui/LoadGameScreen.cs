@@ -20,6 +20,15 @@ public partial class LoadGameScreen : Control
 {
     [Signal] public delegate void LoadSelectedEventHandler(int slotIndex);
     [Signal] public delegate void BackPressedEventHandler();
+    /// <summary>
+    /// Fired after a save slot is deleted. The caller (Main.ShowLoadGameScreen)
+    /// is expected to tear down this instance and create a fresh LoadGameScreen
+    /// rather than try to mutate this one in place — in-place rebuild hit
+    /// lifecycle bugs where the screen's freed children + CallDeferred(_Ready)
+    /// could race with a user pressing Back, orphaning splash focus and
+    /// silently breaking the New Game button on return.
+    /// </summary>
+    [Signal] public delegate void SlotDeletedEventHandler();
 
     private int _focusedSlot = -1;    // 0..2 when a card is focused; -1 when buttons focused
     private int _buttonZone = 0;      // 0 = Load, 1 = Back
@@ -102,9 +111,14 @@ public partial class LoadGameScreen : Control
         root.AddChild(hints);
 
         // Focus the first populated slot, falling back to Back if everything is empty.
+        // Guard the callback: the user may press Back (freeing this screen) before
+        // the 0.15s timer fires. Touching the freed C# wrapper would throw
+        // ObjectDisposedException.
         var timer = GetTree().CreateTimer(0.15);
         timer.Timeout += () =>
         {
+            if (!IsInstanceValid(this) || !IsInsideTree())
+                return;
             _ready = true;
             FocusFirstAvailable();
         };
@@ -243,30 +257,14 @@ public partial class LoadGameScreen : Control
         {
             SaveManager.Instance?.DeleteSlot(slotIndex);
             Toast.Instance?.Success($"Deleted slot {slotIndex + 1}");
-            RebuildSlots();
+            // Emit instead of rebuild-in-place. The Main flow owns the full
+            // screen lifecycle and will create a fresh LoadGameScreen on the
+            // next frame, avoiding the freed-children / CallDeferred(_Ready)
+            // race that used to orphan splash focus on Back.
+            EmitSignal(SignalName.SlotDeleted);
         });
         AddChild(dialog);
         dialog.Open();
-    }
-
-    private void RebuildSlots()
-    {
-        // Find the HBoxContainer holding the cards.
-        foreach (var entry in _slots)
-            entry.Root.QueueFree();
-
-        // Re-scan and re-populate in place. Simplest approach: free screen and reinstantiate.
-        // Caller: the splash flow should re-create LoadGameScreen when a slot is deleted.
-        // For MVP we just free children and reinitialize from fresh state.
-        var timer = GetTree().CreateTimer(0.05);
-        timer.Timeout += () =>
-        {
-            foreach (Node child in GetChildren())
-                child.QueueFree();
-            _ready = false;
-            _focusedSlot = -1;
-            CallDeferred(MethodName._Ready);
-        };
     }
 
     public override void _UnhandledInput(InputEvent @event)
