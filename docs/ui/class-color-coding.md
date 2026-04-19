@@ -20,12 +20,14 @@ The raw R/G/B triad collides with UiTheme's semantic slots:
 
 | Semantic slot | Hex | Role |
 |---------------|-----|------|
-| `Danger` | `#ff6f6f` | HP orb, damage numbers, high-threat enemies |
+| `Danger` | `#ff6f6f` | Damage numbers, warning states, high-threat enemies |
 | `Safe` | `#6bff89` | Heals, success toasts, low-threat enemies |
-| `Action` | `#518ef4` | Buttons, interactive UI |
+| `Action` | `#518ef4` | Buttons, interactive UI, action emphasis |
 | `Player` | `#8ed6ff` | Current player accent (before this spec) |
 
-A literal Warrior-`Danger`-red would make a red "Warrior Guildmaster" label look like a low-HP warning. A literal Ranger-`Safe`-green would blur into heal toasts. Pure RGB is out.
+(The HP orb and MP orb use their own fills — `#CC2222` / `#2244CC` respectively per the locked [HUD layout](hud-layout.md) — not the `Danger` / `Action` semantic slots.)
+
+A literal Warrior-`Danger`-red would make a red "Warrior Guildmaster" label look like a warning. A literal Ranger-`Safe`-green would blur into heal toasts. Pure RGB is out.
 
 ### Locked colors (shifted RGB)
 
@@ -45,14 +47,14 @@ Players should perceive these as "red / green / blue class" in under half a seco
 
 1. **Class-select screen cards.** Each class card's border + header banner + highlight uses its class color.
 2. **Class name labels in menus.** Anywhere a class name appears as text (`Warrior Guildmaster`, `Mage Class`, Stats panel header), render the name in the class color.
-3. **Player-class sprites — accent zones.** Per [SPEC-PC-ART-01 §Color](../world/player-classes-art.md), PCs are exempt from level-relative tint and carry an accent color on specific pixel clusters (cape trim, gem/glow, insignia). Replace the single player-blue (#8ed6ff) accent rule with **per-class accent**: Warrior sprites carry brick-red accent pixels, Ranger sprites carry forest-green, Mage sprites carry royal-violet. Exempt-pixel technique (child Sprite2D with `modulate = Color.White`) stays.
+3. **Player-class sprites — accent zones.** Per [SPEC-PC-ART-01 §Color](../world/player-classes-art.md), PCs are not modulated by the level-relative tint system — so no exempt-pixel carve-out mechanism is needed for PC accents. The class accent is instead **baked directly into specific pixel clusters** (cape trim, gem/glow, insignia) on the sprite sheet. Replace the single player-blue (`#8ed6ff`) accent rule with **per-class accent**: Warrior sprites carry brick-red accent pixels, Ranger sprites carry forest-green, Mage sprites carry royal-violet.
 4. **HUD class indicator** (if added later) — small class-name chip uses the class color.
 5. **Skill-bar slot borders for class-specific abilities** (future polish) — may carry a subtle class-color accent to distinguish Warrior abilities from Innate / generic ones.
 
 **NOT applied — these stay on their semantic slots regardless of class:**
 
-1. **HP orb** — always `#ff6f6f` Danger red. Not per class.
-2. **MP orb** — always `#518ef4` Action blue. Not per class.
+1. **HP orb** — always `#CC2222` red per the locked [HUD layout](hud-layout.md) (pulsing to `#FF4444` below 25% HP). Not per class.
+2. **MP orb** — always `#2244CC` blue per the locked [HUD layout](hud-layout.md). Not per class.
 3. **Damage numbers** — Danger red regardless of attacker class.
 4. **Heal text / buff toasts** — Safe green regardless of caster class.
 5. **Crit indicator** — Accent gold (`#f5c86b`), not class.
