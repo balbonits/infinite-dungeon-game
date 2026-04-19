@@ -34,11 +34,7 @@ public class GuildWindowTests : GameTestBase
         await WaitUntil(() => Ui.HasNodeOfType<ClassSelect>(),
             timeout: 3f, what: "ClassSelect appears");
         await Input.WaitSeconds(0.3f);
-        await Input.PressEnter();
-        await Input.WaitFrames(5);
-        await Input.NavDown();
-        await Input.WaitFrames(5);
-        await Input.PressEnter();
+        await Flow.ClassSelect.SelectWarriorAndConfirm();
         await Input.WaitSeconds(0.6f);
 
         await WaitUntil(() => Ui.FindNodeOfType<Town>() is not null,

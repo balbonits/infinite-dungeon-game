@@ -45,6 +45,11 @@ coverage/
 tests/e2e/screenshots/
 tests/e2e/recordings/
 tests/e2e/artifacts/
+# Track the committed visual-regression baselines — everything else under
+# tests/e2e/screenshots/ (received/ mismatches, ad-hoc Screenshot() captures)
+# stays gitignored.
+!tests/e2e/screenshots/baselines/
+!tests/e2e/screenshots/baselines/**
 
 # Sandbox artifacts
 scenes/sandbox/screenshots/

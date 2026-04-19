@@ -20,7 +20,34 @@ public partial class SaveManager : Node
     public static SaveManager Instance { get; private set; } = null!;
 
     public const int SlotCount = 3;
-    private const string SaveDir = "user://saves";
+
+    // Production save directory. Distinct from the test-sandbox directory
+    // below so tests can never clobber real player saves.
+    private const string ProductionSaveDir = "user://saves";
+    private const string TestSandboxSaveDir = "user://test_saves";
+
+    /// <summary>Active save directory. Defaults to <c>user://saves</c>;
+    /// tests flip to <c>user://test_saves</c> via <see cref="UseTestSandbox"/>.</summary>
+    public static string SaveDir { get; private set; } = ProductionSaveDir;
+
+    /// <summary>
+    /// Route all saves to <c>user://test_saves/</c>. Call at the very top of
+    /// any GoDotTest run so fabricated-save fixtures can't overwrite real
+    /// player data. Idempotent — safe to call repeatedly.
+    /// </summary>
+    public static void UseTestSandbox()
+    {
+        SaveDir = TestSandboxSaveDir;
+        DirAccess.MakeDirAbsolute(SaveDir);
+        GD.Print($"[SaveManager] Using TEST SANDBOX save dir: {SaveDir}");
+    }
+
+    /// <summary>Flip back to the real user save directory (post-test teardown).</summary>
+    public static void UseProductionSaves()
+    {
+        SaveDir = ProductionSaveDir;
+        DirAccess.MakeDirAbsolute(SaveDir);
+    }
 
     /// <summary>Storage backend. Overridable for tests.</summary>
     public ISaveStorage Storage { get; set; } = new GodotFileSaveStorage();

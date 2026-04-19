@@ -323,7 +323,12 @@ public partial class ClassSelect : Control
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!Visible)
+        // Skip input handling when the screen is invisible OR no longer in
+        // the tree (QueueFree-d mid-transition). Without the tree guard,
+        // GetViewport()?.SetInputAsHandled() calls below would NRE when
+        // Input.ParseInputEvent fires after OnConfirmPressed triggers
+        // Visible = false + QueueFree.
+        if (!Visible || !IsInsideTree())
             return;
 
         // Left/Right — navigate within cards (zone 0)

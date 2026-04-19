@@ -38,11 +38,7 @@ public class NpcTests : GameTestBase
             timeout: 3f, what: "ClassSelect to appear");
         await Input.WaitSeconds(0.3f);
 
-        await Input.PressEnter();          // select warrior (first card)
-        await Input.WaitFrames(5);
-        await Input.NavDown();             // focus Confirm
-        await Input.WaitFrames(5);
-        await Input.PressEnter();          // LoadTown
+        await Flow.ClassSelect.SelectWarriorAndConfirm();
         await Input.WaitSeconds(0.6f);
 
         await WaitUntil(() => Ui.FindNodeOfType<Town>() is not null,

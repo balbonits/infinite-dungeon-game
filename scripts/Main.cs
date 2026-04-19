@@ -58,13 +58,24 @@ public partial class Main : Node
 
         splash.Connect(Ui.SplashScreen.SignalName.NewGamePressed, Callable.From(() =>
         {
+            GD.Print("[Main] NewGamePressed");
             // Spec: if all 3 save slots are full, block New Game and nudge to Load Game
             // for deletion. See docs/flows/load-game.md § Interaction with New Game.
+            // UX: modal dialog with "Open Load Game / Cancel" — toast alone was
+            // too easy to miss and looked like a silently broken button.
             var sm = Autoloads.SaveManager.Instance;
             if (sm != null && sm.AreAllSlotsFull())
             {
-                Ui.Toast.Instance?.Error(
-                    "All save slots are full. Delete a character from Load Game first.");
+                GD.Print("[Main] NewGamePressed blocked: all 3 save slots are full.");
+                var dialog = Ui.SlotsFullDialog.Create(() => ShowLoadGameScreen(splash));
+                // Parent under splash so the dialog is freed whenever splash
+                // is freed (New Game → ClassSelection transition, or user quit).
+                // Previously parented under UILayer → every blocked-click
+                // leaked a hidden SlotsFullDialog (Copilot PR #33 finding).
+                // SlotsFullDialog also self-QueueFrees in its button handlers
+                // so back-to-back blocked clicks don't stack.
+                splash.AddChild(dialog);
+                dialog.Open();
                 return;
             }
             // Reserve the first empty slot as the new character's home. Auto-save targets it.
@@ -214,6 +225,12 @@ public partial class Main : Node
 #if DEBUG
     private void RunTests()
     {
+        // Sandbox isolation for tests: redirect save I/O to user://test_saves/
+        // BEFORE any test can write a save. Without this, SaveManager.SaveToSlot
+        // in test fixtures would overwrite the real player's save files under
+        // user://saves/. This MUST be set before GoTest.RunTests spins up.
+        Autoloads.SaveManager.UseTestSandbox();
+
         // Attach test runner to the SceneTree root (not Main) so it survives scene changes.
         // GoDotTest uses the passed node as TestScene — if that node is freed during tests
         // (e.g., when ChangeSceneToFile is called during class select confirm), all subsequent
