@@ -150,7 +150,7 @@ public partial class Dungeon : Node2D
         var (floorPaths, wallPath) = Constants.Assets.GetZoneTheme(zone);
 
         var tileSet = new TileSet();
-        tileSet.TileShape = TileSet.TileShapeEnum.Isometric;
+        tileSet.TileShape = TileSet.TileShapeEnum.Square;
         tileSet.TileSize = Constants.Tiles.TileSize;
         tileSet.AddPhysicsLayer();
 

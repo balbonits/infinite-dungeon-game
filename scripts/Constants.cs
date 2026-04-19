@@ -239,14 +239,16 @@ public static class Constants
     // --- Tiles ---
     public static class Tiles
     {
-        public static readonly Vector2I TileSize = new(64, 32);
-        public static readonly Vector2I TextureRegionSize = new(64, 64);
+        // Top-down 32x32 grid (ADR-007 pivot). Previous iso dimensions
+        // (64x32 floor, 64x64 wall) archived alongside the PixelLab sprites.
+        public static readonly Vector2I TileSize = new(32, 32);
+        public static readonly Vector2I TextureRegionSize = new(32, 32);
         public static readonly Vector2I AtlasCoords = new(0, 0);
 
-        // Wall collision polygon (full rectangle for smooth sliding)
+        // Wall collision polygon — axis-aligned 32x32 square centered on cell.
         public static readonly Vector2[] WallCollisionPolygon =
         {
-            new(-32, -16), new(32, -16), new(32, 16), new(-32, 16)
+            new(-16, -16), new(16, -16), new(16, 16), new(-16, 16)
         };
     }
 
@@ -325,59 +327,17 @@ public static class Constants
         };
         public const string DungeonWallTexture = "res://assets/tiles/dungeon/wall.png";
 
-        // Zone-themed tilesets: floors[] + wall per zone
+        // Zone-themed tilesets: floors[] + wall per zone.
+        // Tech-demo (ADR-007 pivot): all zones fall back to the shared
+        // top-down dungeon tile pair (floor.png + wall.png). Re-theming
+        // per zone with top-down art is a post-tech-demo task — the iso
+        // dungeon_dark/cathedral/volcano/sky_temple/nether/ sources still
+        // exist at res:// but aren't loaded here until they're rebuilt
+        // for the top-down grid.
         public static (string[] floors, string wall) GetZoneTheme(int zone)
         {
-            return zone switch
-            {
-                1 => (new[]
-                {
-                    "res://assets/tiles/dungeon_dark/floor_0.png",
-                    "res://assets/tiles/dungeon_dark/floor_1.png",
-                    "res://assets/tiles/dungeon_dark/floor_2.png",
-                    "res://assets/tiles/dungeon_dark/floor_3.png",
-                    "res://assets/tiles/dungeon_dark/floor_4.png",
-                    "res://assets/tiles/dungeon_dark/floor_5.png",
-                }, "res://assets/tiles/dungeon_dark/wall_0.png"),
-                2 => (new[]
-                {
-                    "res://assets/tiles/cathedral/floor_0.png",
-                    "res://assets/tiles/cathedral/floor_1.png",
-                    "res://assets/tiles/cathedral/floor_2.png",
-                    "res://assets/tiles/cathedral/floor_3.png",
-                    "res://assets/tiles/cathedral/floor_4.png",
-                    "res://assets/tiles/cathedral/floor_5.png",
-                }, "res://assets/tiles/cathedral/wall_0.png"),
-                3 => (new[]
-                {
-                    "res://assets/tiles/volcano/floor_0.png",
-                    "res://assets/tiles/volcano/floor_1.png",
-                    "res://assets/tiles/volcano/floor_2.png",
-                    "res://assets/tiles/volcano/floor_3.png",
-                    "res://assets/tiles/volcano/floor_4.png",
-                    "res://assets/tiles/volcano/floor_5.png",
-                }, "res://assets/tiles/volcano/wall_0.png"),
-                4 => (new[]
-                {
-                    "res://assets/tiles/sky_temple/floor_0.png",
-                    "res://assets/tiles/sky_temple/floor_1.png",
-                    "res://assets/tiles/sky_temple/floor_2.png",
-                    "res://assets/tiles/sky_temple/floor_3.png",
-                    "res://assets/tiles/sky_temple/floor_4.png",
-                    "res://assets/tiles/sky_temple/floor_5.png",
-                }, "res://assets/tiles/sky_temple/wall_0.png"),
-                5 => (new[]
-                {
-                    "res://assets/tiles/nether/floor_0.png",
-                    "res://assets/tiles/nether/floor_1.png",
-                    "res://assets/tiles/nether/floor_2.png",
-                    "res://assets/tiles/nether/floor_3.png",
-                    "res://assets/tiles/nether/floor_4.png",
-                    "res://assets/tiles/nether/floor_5.png",
-                }, "res://assets/tiles/nether/wall_0.png"),
-                // Zone 6+: cycle through themes
-                _ => GetZoneTheme(((zone - 1) % 5) + 1),
-            };
+            _ = zone; // ignored until per-zone top-down art exists
+            return (DungeonFloorTextures, DungeonWallTexture);
         }
         public const string StairsDownTexture = "res://assets/tiles/dungeon/stairs_down.png";
         public const string StairsUpTexture = "res://assets/tiles/dungeon/stairs_up.png";
