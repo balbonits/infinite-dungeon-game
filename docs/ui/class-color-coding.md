@@ -16,7 +16,7 @@ PO direction 2026-04-18: class identity should read immediately at a glance — 
 
 ### The collision with existing semantic colors
 
-The raw R/G/B triad collides with UiTheme's semantic slots:
+The raw R/G/B triad collides with UiTheme's semantic slots. Values below are the canonical slot colors as defined in [`scripts/ui/UiTheme.cs`](../../scripts/ui/UiTheme.cs) (the compiled source of truth for UI colors):
 
 | Semantic slot | Hex | Role |
 |---------------|-----|------|
@@ -26,6 +26,8 @@ The raw R/G/B triad collides with UiTheme's semantic slots:
 | `Player` | `#8ed6ff` | Current player accent (before this spec) |
 
 (The HP orb and MP orb use their own fills — `#CC2222` / `#2244CC` respectively per the locked [HUD layout](hud-layout.md) — not the `Danger` / `Action` semantic slots.)
+
+**Known doc drift:** [`docs/assets/ui-theme.md`](../assets/ui-theme.md) currently lists the `safe` slot as `#76f79f`, which is stale against `UiTheme.cs`'s `Colors.Safe = #6bff89` (the running code). This spec uses the code value. `ui-theme.md` should be reconciled in a separate follow-up.
 
 A literal Warrior-`Danger`-red would make a red "Warrior Guildmaster" label look like a warning. A literal Ranger-`Safe`-green would blur into heal toasts. Pure RGB is out.
 

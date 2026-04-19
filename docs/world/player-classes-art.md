@@ -86,7 +86,9 @@ The portrait/sprite coupling is what makes the locked single-sprite decision wor
 
 ### 5. Color-Coding Contract (shared rules, per-class accents below)
 
-> **SUPERSESSION NOTICE (2026-04-18):** the "single player-blue accent for all three classes" rule below is **superseded by [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md)**. Each class now has its own accent color: **Warrior brick red `#b53238`, Ranger forest green `#3a7a4d`, Mage royal violet `#5b47a0`**. The accent-location guidance in §6–8 below still applies — only the hex value per class changes. The exempt-pixel mechanism + "baked into sprite pixels" rule are unchanged. Art redraw (Bucket A) must use the per-class hex values.
+> **SUPERSESSION NOTICE (2026-04-18):** the "single player-blue accent for all three classes" rule below is **superseded by [SPEC-CLASS-COLOR-CODING-01](../ui/class-color-coding.md)**. Each class now has its own accent color: **Warrior brick red `#b53238`, Ranger forest green `#3a7a4d`, Mage royal violet `#5b47a0`**.
+>
+> **The §6–8 worked examples below have been updated in-place to reflect the new per-class hex values.** Any remaining mentions of the prior `#8ed6ff` player-blue are historical references (annotated inline as "superseding the prior player-blue"). The accent-zone locations on each sprite are unchanged; the exempt-pixel mechanism and "baked into sprite pixels" rule are unchanged. Art redraw (Bucket A) must use the per-class hex values.
 
 How player class sprites interact with [color-system.md](../systems/color-system.md):
 
