@@ -221,7 +221,7 @@ public partial class GameState : Node
             Achievements.SetCounter(classCounter, Level);
 
             // Recalculate MaxHp including STA bonus (spec: leveling.md)
-            MaxHp = Constants.PlayerStats.GetMaxHp(Level) + Stats.BonusMaxHp;
+            MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(Level, Stats.BonusMaxHp);
             // Spec: HP restore = floor(max_hp * 0.15)
             int healAmount = (int)(MaxHp * Constants.PlayerStats.HealOnLevelUpPercent);
             Hp = Math.Min(MaxHp, Hp + healAmount);

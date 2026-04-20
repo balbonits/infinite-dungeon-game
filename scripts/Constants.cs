@@ -90,6 +90,23 @@ public static class Constants
             if (total > int.MaxValue) return int.MaxValue;
             return (int)total;
         }
+
+        /// <summary>
+        /// Combine a level-derived MaxHp with an additive bonus, clamped so
+        /// the sum cannot overflow int. Callers that recompute MaxHp
+        /// (GameState recalc, StatAllocDialog, PauseMenu, DebugConsole)
+        /// should go through this instead of adding raw
+        /// <c>GetMaxHp(level) + bonus</c> — otherwise a saturated GetMaxHp
+        /// plus a positive bonus would wrap to a negative int.
+        /// Copilot PR #41 round-2 finding.
+        /// </summary>
+        public static int GetEffectiveMaxHp(int level, int bonus)
+        {
+            long total = (long)GetMaxHp(level) + bonus;
+            if (total > int.MaxValue) return int.MaxValue;
+            if (total < 0) return 0;
+            return (int)total;
+        }
     }
 
     // --- Class-specific combat ---

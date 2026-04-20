@@ -95,21 +95,34 @@ public class ConstantsTests
     // closed-form computes level * (long)level to stay safe; these tests
     // pin that behavior well past the realistic player-level ceiling.
 
-    [Fact]
-    public void GetMaxHp_AtLevel46340_NoOverflow()
+    // Copilot PR #41 round-2 asked for exact-value assertions at the
+    // overflow boundary — a bare "> 0" check could pass with wrong
+    // arithmetic that stays positive. Expected values computed in long
+    // space so the assertion itself isn't subject to int32 overflow.
+    private static int ExpectedMaxHpAt(int level)
     {
-        // 46340² = 2,147,395,600 — last product that fits int32.
-        int result = Constants.PlayerStats.GetMaxHp(46340);
-        (result > 0).Should().BeTrue("MaxHp at level 46340 must remain positive (no overflow)");
+        long total = (long)Constants.PlayerStats.StartingHp + 8L * level + (long)level * level / 4L;
+        if (total > int.MaxValue) return int.MaxValue;
+        return (int)total;
     }
 
     [Fact]
-    public void GetMaxHp_AtLevel46341_NoOverflow()
+    public void GetMaxHp_AtLevel46340_MatchesLongSpaceReference()
+    {
+        // 46340² = 2,147,395,600 — last product that fits int32.
+        int expected = ExpectedMaxHpAt(46340);
+        Constants.PlayerStats.GetMaxHp(46340).Should().Be(expected,
+            "matches the int64-space reference at the last in-int32-range level");
+    }
+
+    [Fact]
+    public void GetMaxHp_AtLevel46341_MatchesLongSpaceReference()
     {
         // 46341² = 2,147,488,281 — would overflow int32 multiplication.
         // The closed form must compute in long space to stay correct here.
-        int result = Constants.PlayerStats.GetMaxHp(46341);
-        (result > 0).Should().BeTrue("MaxHp at level 46341 must remain positive (no overflow)");
+        int expected = ExpectedMaxHpAt(46341);
+        Constants.PlayerStats.GetMaxHp(46341).Should().Be(expected,
+            "matches the int64-space reference just past the int32-mult overflow point");
     }
 
     [Fact]
@@ -146,5 +159,37 @@ public class ConstantsTests
         // so the implementation must saturate rather than wrap.
         int result = Constants.PlayerStats.GetMaxHp(int.MaxValue);
         result.Should().Be(int.MaxValue, "saturates to int.MaxValue for unbounded level");
+    }
+
+    // GetEffectiveMaxHp is the caller-safe wrapper: MaxHp + bonus in long
+    // space, clamped to int range. Without it, callers that compute
+    // GetMaxHp(level) + BonusMaxHp would wrap a saturated GetMaxHp to a
+    // negative int once the bonus is positive. Copilot PR #41 round-2.
+
+    [Fact]
+    public void GetEffectiveMaxHp_NormalCase_JustAddsBonus()
+    {
+        int baseMax = Constants.PlayerStats.GetMaxHp(50);
+        Constants.PlayerStats.GetEffectiveMaxHp(50, 200).Should().Be(baseMax + 200);
+    }
+
+    [Fact]
+    public void GetEffectiveMaxHp_SaturatedBaseWithPositiveBonus_ClampsToIntMax()
+    {
+        // GetMaxHp(int.MaxValue) saturates to int.MaxValue. A naive
+        // int addition with a positive bonus would wrap negative;
+        // the helper must clamp instead.
+        int effective = Constants.PlayerStats.GetEffectiveMaxHp(int.MaxValue, 1000);
+        effective.Should().Be(int.MaxValue, "positive bonus on saturated base can't push past int.MaxValue");
+    }
+
+    [Fact]
+    public void GetEffectiveMaxHp_NegativeBonusBelowBase_ClampsToZero()
+    {
+        // Defensive: a bonus that would take effective below zero clamps to 0
+        // rather than going negative. The production callsite doesn't produce
+        // this today (BonusMaxHp comes from Sta and is always >= 0), but
+        // leaving the clamp documents the contract.
+        Constants.PlayerStats.GetEffectiveMaxHp(level: 1, bonus: -9999).Should().Be(0);
     }
 }
