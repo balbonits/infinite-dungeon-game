@@ -133,6 +133,15 @@ Before implementing any visual, physics, or UI code, check [docs/basics/](docs/b
 - Touching UI? → [ui-design.md](docs/basics/ui-design.md)
 - Adding effects? → [game-feel.md](docs/basics/game-feel.md)
 
+### 0a. Generative-AI Safety (Non-Negotiable)
+
+All AI generation in this project — art, text, code, specs, audio — runs under [docs/conventions/ai-safety-policy.md](docs/conventions/ai-safety-policy.md) (SPEC-AI-SAFETY-01). Legal requirement, not a preference.
+
+- **Before prompting a generator:** confirm the prompt can't produce any §1 category (CSAM, non-consensual deepfakes, scams, hate speech, deceptive election content, bullying, sexually-explicit gratification content). Named real persons require PO sign-off.
+- **Before committing output:** eyeball or classifier-pass the result; bulk generation uses the "one image first, then batch" discipline — generate a sample, review for theme + §1-safety, then authorize the batch.
+- **Every pipeline spec** (prompt-templates.md, npc-pipeline.md, audio-pipeline.md, etc.) must carry a §Policy Reference back-pointer to the policy doc — tracked by `POL-AI-PIPELINE-REF-01`.
+- **Runtime AI** isn't in MVP yet — when it lands, §3 (runtime classification + fallback templates + kill switch) and §4 (in-app reporting UI) become mandatory before ship.
+
 ### 1. Scope Discipline (READ THIS FIRST)
 
 **This project is micromanaged. AI must stay strictly within the scope of the current task.**

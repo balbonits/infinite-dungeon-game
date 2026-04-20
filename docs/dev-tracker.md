@@ -407,6 +407,14 @@ Full report: [docs/audits/2026-04-17-full-project.md](audits/2026-04-17-full-pro
 
 ---
 
+## Cross-Cutting Policy
+
+| ID | Title | Status | Priority | Notes |
+|----|-------|--------|----------|-------|
+| SPEC-AI-SAFETY-01 | Generative-AI safety policy (legal compliance) | Spec'd | P1 | Locked 2026-04-20 per PO directive responding to new generative-AI regulatory requirements. [docs/conventions/ai-safety-policy.md](conventions/ai-safety-policy.md): §1 prohibited-content taxonomy (7 hard-reject categories + narrow nudity allowance + gray-zones escalate to PO), §2 dev-time guardrails (prompt + output classification + provenance audit trail at `docs/assets/ai-provenance.ndjson`), §3 runtime guardrails (future — MVP has no runtime AI), §4 in-app reporting (F10 global + per-surface context menu; local-only in MVP via `user://ai_reports.ndjson`, cloud opt-in post-launch), §5 weekly triage + filter-update loop, §6 compliance-by-law table, §7 audit artifacts list, §8 roles, §10 **five** impl follow-ups (Report UI, credits sweep, triage stub, pipeline-spec back-refs, provenance log init). **MVP blocker:** POL-AI-REPORT-UI-01 must ship in the **first shipped build** containing any player-visible AI-generated surface (dev-time static AI assets count); internal/dev-only builds do not gate on this ticket. Trigger matches §4.1 language. |
+
+---
+
 ## P3 -- Future
 
 | ID | Title | Status | Notes |
