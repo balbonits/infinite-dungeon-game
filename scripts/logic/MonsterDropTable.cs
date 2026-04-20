@@ -1,22 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DungeonGame;
 
 /// <summary>
-/// Per-species drop tables (ITEM-02) — implements docs/systems/monster-drops.md.
-/// Replaces <see cref="LootTable.RollItemDrop"/> for species-aware drops; the old
-/// level-only helper stays for legacy callers (e.g., floor-wipe bonus drop).
+/// Per-species drop tables (ITEM-02) — implements the monster-side of
+/// docs/systems/monster-drops.md. Material-only after LOOT-01; the equipment
+/// channel moved to <see cref="ContainerLootTable"/> per SPEC-LOOT-01.
 ///
 /// Design highlights:
-/// - **Uniform slot weighting** for equipment drops (per catalog Q5:A). The
-///   monster-drops spec lists "preferred slots" per species as thematic identity,
-///   but the 2× weighting is reserved until species variety per zone expands.
 /// - **Per-species signature material** on top of generic tiered drops.
 /// - **Floor-tiered material** type (ore/bone/hide) is species-biased: each
 ///   species's thematic generic rolls 60%, others 20% each.
-/// - **Quality roll** uses the 6-tier Normal..Transcendent distribution from
-///   depth-gear-tiers.md; applied by the item generator, NOT stored here.
 /// </summary>
 public static class MonsterDropTable
 {
@@ -52,37 +48,26 @@ public static class MonsterDropTable
     public static DropTable? Get(EnemySpecies species) =>
         Tables.TryGetValue(species, out var t) ? t : null;
 
-    // ─── Equipment drop ──────────────────────────────────────────────────
-
     /// <summary>
-    /// Roll for an equipment drop on this species kill. Returns null on no-drop.
-    /// Per monster-drops.md: base rate by tier + floor bonus (capped at +5%).
-    /// Slot is rolled uniformly from the catalog's valid equippable slots
-    /// whose tier matches the current floor bracket.
+    /// All signature-material IDs across every species table. Single source
+    /// of truth for ContainerLootTable's zone-weighted signature roll so the
+    /// two tables can't silently desync when a species signature is renamed
+    /// or added. Ordered by <see cref="EnemySpecies"/> enum value so the
+    /// iteration order is deterministic across platforms and .NET versions
+    /// — required for ContainerLootTable's seeded-RNG determinism contract.
     /// </summary>
-    public static ItemDef? RollEquipment(EnemySpecies species, int floorNumber, Random? rng = null)
-    {
-        rng ??= Random.Shared;
-        var table = Get(species);
-        if (table == null) return null;
+    public static IReadOnlyList<string> AllSignatureMaterialIds { get; } =
+        Tables.Values
+            .OrderBy(t => t.Species)
+            .Select(t => t.SignatureMaterialId)
+            .ToList()
+            .AsReadOnly();
 
-        float baseRate = table.Tier switch
-        {
-            MonsterTier.One => 0.08f,
-            MonsterTier.Two => 0.12f,
-            MonsterTier.Three => 0.18f,
-            _ => 0.08f,
-        };
-        float floorBonus = Math.Min(0.05f, floorNumber * 0.001f);
-        float dropChance = baseRate + floorBonus;
-        if (rng.NextSingle() > dropChance) return null;
-
-        int tier = FloorToTier(floorNumber);
-        var candidates = CandidatesForTier(tier);
-        if (candidates.Count == 0) return null;
-
-        return candidates[rng.Next(candidates.Count)];
-    }
+    // ─── Equipment drop ──────────────────────────────────────────────────
+    //
+    // LOOT-01 / SPEC-LOOT-01: the equipment channel was removed from
+    // monsters. Equipment now drops exclusively from world containers
+    // (see ContainerLootTable). Monsters keep gold + XP + materials.
 
     // ─── Material drop ───────────────────────────────────────────────────
 
@@ -143,17 +128,4 @@ public static class MonsterDropTable
         _ => 5,
     };
 
-    /// <summary>All equipment items in the catalog at the given tier (any slot/class).</summary>
-    private static List<ItemDef> CandidatesForTier(int tier)
-    {
-        var list = new List<ItemDef>();
-        foreach (var item in ItemDatabase.All)
-        {
-            if (item.Tier != tier) continue;
-            if (item.Slot == EquipSlot.None) continue;
-            if (item.Slot == EquipSlot.Ammo) continue; // Quivers have Tier=0; excluded by above already.
-            list.Add(item);
-        }
-        return list;
-    }
 }
