@@ -405,20 +405,38 @@ public partial class Dungeon : Node2D
         return placed;
     }
 
-    private Vector2? FindValidContainerPosition()
+    /// <summary>
+    /// Exclusion-zone check shared by strict and relaxed placement. Player
+    /// spawn sits at the up-stairs tile per Dungeon._Ready / PerformFloorDescent,
+    /// so the same stairs buffer covers both.
+    /// </summary>
+    private bool IsOutsideExclusionZones(Vector2 pos)
     {
+        const float bufferDistance = 48f; // 1-2 tile buffer.
         Vector2 stairsUpWorld = _tileMap.MapToLocal(_stairsUpPosition);
         Vector2 stairsDownWorld = _tileMap.MapToLocal(_stairsDownPosition);
-        const float bufferDistance = 48f; // 1-2 tile buffer from player spawn + stairs.
+        if (pos.DistanceTo(stairsUpWorld) < bufferDistance) return false;
+        if (pos.DistanceTo(stairsDownWorld) < bufferDistance) return false;
 
+        // Player spawn. _player is null for the frame of _Ready before it's
+        // instantiated — in that window the spawn position equals the
+        // stairs-up tile so the stairsUp buffer above covers it.
+        if (_player != null)
+        {
+            if (pos.DistanceTo(_player.GlobalPosition) < bufferDistance) return false;
+        }
+        return true;
+    }
+
+    private Vector2? FindValidContainerPosition()
+    {
         for (int attempt = 0; attempt < Constants.Spawning.MaxSpawnRetries; attempt++)
         {
             Vector2 pos = GetRandomFloorPosition();
             Vector2I tileCoord = _tileMap.LocalToMap(pos);
 
             if (!IsFloorTile(tileCoord)) continue;
-            if (pos.DistanceTo(stairsUpWorld) < bufferDistance) continue;
-            if (pos.DistanceTo(stairsDownWorld) < bufferDistance) continue;
+            if (!IsOutsideExclusionZones(pos)) continue;
 
             // Avoid stacking on an enemy or another container already placed.
             bool occupied = false;
@@ -441,10 +459,12 @@ public partial class Dungeon : Node2D
     }
 
     /// <summary>
-    /// Placement fallback — drops a container on any floor tile ignoring the
-    /// entity-overlap check. Only fires when strict placement yielded zero
-    /// containers for the whole floor; keeps the spec's min-1 contract from
-    /// breaking even on an edge-case layout.
+    /// Placement fallback — relaxes the entity-overlap check so the spec's
+    /// min-1 container contract can't be violated by an edge-case layout
+    /// where every candidate tile collides with an enemy / prior container.
+    /// Still enforces the stairs + player-spawn exclusion zones because
+    /// dropping a container on stairs would block descent/ascent and
+    /// dropping it on spawn would trap the player on floor entry.
     /// </summary>
     private void PlaceContainerRelaxed(ContainerLootTable.ContainerType type)
     {
@@ -453,6 +473,7 @@ public partial class Dungeon : Node2D
             Vector2 pos = GetRandomFloorPosition();
             Vector2I tileCoord = _tileMap.LocalToMap(pos);
             if (!IsFloorTile(tileCoord)) continue;
+            if (!IsOutsideExclusionZones(pos)) continue;
             var container = Container.Create(type, pos);
             _entities.AddChild(container);
             return;

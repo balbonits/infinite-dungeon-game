@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DungeonGame;
 
@@ -46,6 +47,15 @@ public static class MonsterDropTable
 
     public static DropTable? Get(EnemySpecies species) =>
         Tables.TryGetValue(species, out var t) ? t : null;
+
+    /// <summary>
+    /// All signature-material IDs across every species table. Single source
+    /// of truth for ContainerLootTable's zone-weighted signature roll so the
+    /// two tables can't silently desync when a species signature is renamed
+    /// or added.
+    /// </summary>
+    public static IReadOnlyList<string> AllSignatureMaterialIds { get; } =
+        Tables.Values.Select(t => t.SignatureMaterialId).ToList().AsReadOnly();
 
     // ─── Equipment drop ──────────────────────────────────────────────────
     //

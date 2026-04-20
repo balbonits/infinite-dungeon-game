@@ -178,49 +178,58 @@ public static class ContainerLootTable
 
     /// <summary>
     /// Pick a signature-material ID using the zone-tilt weighting scheme.
-    /// Full signature roster is available at every zone; weight 5× for
-    /// species in the floor's zone, weight 1× for species outside.
-    /// Zones 5+ (mixed species per Constants.Zones) flatten to uniform
-    /// weight 1 across all signatures.
+    /// Full signature roster comes from
+    /// <see cref="MonsterDropTable.AllSignatureMaterialIds"/> (single source
+    /// of truth, can't desync). On-zone species are derived from
+    /// <see cref="Constants.Zones.GetZoneSpecies"/> so the weighting tracks
+    /// the game's actual species roster per zone.
+    ///
+    /// Weighting: 5× for on-zone species signatures, 1× for off-zone.
+    /// Zone-5+ returns a uniform-weighted pick because every species is
+    /// reachable at that depth — "on-zone" is the empty set, so all
+    /// signatures get base weight 1.
     /// </summary>
     private static string? PickWeightedSignature(int zone, Random rng)
     {
-        var onZone = OnZoneSignatures(zone);
-        if (AllSignatures.Count == 0) return null;
+        var all = MonsterDropTable.AllSignatureMaterialIds;
+        if (all.Count == 0) return null;
 
+        var onZone = OnZoneSignatures(zone);
         int totalWeight = 0;
-        foreach (var sig in AllSignatures)
+        foreach (var sig in all)
             totalWeight += onZone.Contains(sig) ? 5 : 1;
         if (totalWeight <= 0) return null;
 
         int pick = rng.Next(totalWeight);
         int running = 0;
-        foreach (var sig in AllSignatures)
+        foreach (var sig in all)
         {
             running += onZone.Contains(sig) ? 5 : 1;
             if (pick < running) return sig;
         }
-        return AllSignatures[^1]; // unreachable, but keeps the compiler happy
+        return all[^1]; // unreachable if totalWeight > 0; compiler appeasement
     }
 
-    private static readonly List<string> AllSignatures = new()
+    /// <summary>
+    /// On-zone signature IDs derived from Constants.Zones.GetZoneSpecies —
+    /// avoids hard-coding zone→signature mappings that could desync from
+    /// the game's species roster (e.g., zone 4 ships DarkMage + Skeleton +
+    /// Orc, not just DarkMage). Uses a representative floor inside each
+    /// zone (floor = (zone-1)*10 + 1, i.e. the first floor of that zone).
+    /// </summary>
+    private static HashSet<string> OnZoneSignatures(int zone)
     {
-        "material_sig_skeleton", "material_sig_bat",
-        "material_sig_goblin", "material_sig_wolf",
-        "material_sig_orc", "material_sig_spider",
-        "material_sig_darkmage",
-    };
+        int representativeFloor = Math.Max(1, (zone - 1) * 10 + 1);
+        int[] speciesIndices = Constants.Zones.GetZoneSpecies(representativeFloor);
 
-    private static HashSet<string> OnZoneSignatures(int zone) => zone switch
-    {
-        1 => new HashSet<string> { "material_sig_skeleton", "material_sig_bat" },
-        2 => new HashSet<string> { "material_sig_goblin", "material_sig_wolf" },
-        3 => new HashSet<string> { "material_sig_orc", "material_sig_spider" },
-        4 => new HashSet<string> { "material_sig_darkmage" },
-        // Zones 5+ — all species can appear per Constants.Zones; no one species
-        // gets the tilt weight, so the weighted pick falls back to uniform.
-        _ => new HashSet<string>(),
-    };
+        var result = new HashSet<string>();
+        foreach (int idx in speciesIndices)
+        {
+            var table = MonsterDropTable.Get((EnemySpecies)idx);
+            if (table != null) result.Add(table.SignatureMaterialId);
+        }
+        return result;
+    }
 
     // ─── Equipment ───────────────────────────────────────────────────────
 
