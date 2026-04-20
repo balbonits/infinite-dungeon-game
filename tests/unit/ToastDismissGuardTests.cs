@@ -103,20 +103,36 @@ public class ToastDismissGuardTests
     }
 
     /// <summary>
-    /// Locate "<paramref name="methodName"/>(" in the source and return the
-    /// slice from the method's opening brace to the matching closing brace.
+    /// Locate the actual method declaration (not a call site) via a regex
+    /// that matches "<c>[modifier ] return-type methodName(</c>" patterns,
+    /// then return the slice from that method's opening brace to the
+    /// matching closing brace. Copilot PR #38 round-3 caught that the
+    /// earlier "first <paramref name="methodName"/>(" heuristic could land
+    /// on a call site (e.g., a timer callback invocation) if the definition
+    /// came later — a small refactor to Toast.cs could silently break the
+    /// guard test for unrelated reasons.
+    ///
     /// Brace counting is literal-aware (line/block comments, strings, chars
     /// don't count their braces) so a comment like "// }" or a string
     /// with { won't fool the counter.
     /// </summary>
     private static string ExtractMethodBody(string src, string methodName)
     {
-        int methodIdx = src.IndexOf(methodName + "(");
-        if (methodIdx < 0)
-            throw new System.InvalidOperationException($"method '{methodName}' not found in source");
+        // Declaration: one or more modifier/whitespace tokens, then a
+        // return-type token (any identifier, possibly generic / nullable),
+        // then the method name, then '('. Excludes bare call-site syntax
+        // (which is just `methodName(` with no return type in front).
+        var declRegex = new System.Text.RegularExpressions.Regex(
+            @"\b(?:public|private|protected|internal|static|async|sealed|override|virtual|new)\s+(?:[A-Za-z_][A-Za-z0-9_<>?.,\s]*\s+)?"
+            + System.Text.RegularExpressions.Regex.Escape(methodName)
+            + @"\s*\(");
+        var match = declRegex.Match(src);
+        if (!match.Success)
+            throw new System.InvalidOperationException($"method '{methodName}' declaration not found in source");
+        int methodIdx = match.Index;
         int openBrace = src.IndexOf('{', methodIdx);
         if (openBrace < 0)
-            throw new System.InvalidOperationException($"no opening brace after '{methodName}'");
+            throw new System.InvalidOperationException($"no opening brace after '{methodName}' declaration");
 
         int depth = 1;
         int i = openBrace + 1;
