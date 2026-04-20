@@ -34,17 +34,13 @@ public class ClassSelectTests : GameTestBase
     [Setup]
     public async Task OpenClassSelect()
     {
-        // Wait for splash, click New Game, wait for ClassSelect to appear.
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 5f,
-            what: "SplashScreen to appear");
-
-        // If ClassSelect is already on-screen from a previous test, reset by
-        // pressing Cancel to go back to splash.
-        if (Ui.HasNodeOfType<ClassSelect>())
+        // Always start from a known-fresh splash. A prior test may have
+        // confirmed into Town or been left mid-ClassSelect; ResetToFreshSplash
+        // reloads the scene so this setup has one deterministic entry point.
+        if (!await ResetToFreshSplash())
         {
-            await Input.Cancel();
-            await Input.WaitSeconds(0.5f);
-            await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f);
+            Expect(false, "[setup] could not reset to splash");
+            return;
         }
 
         var newGameBtn = Ui.FindButton("New Game");
@@ -81,7 +77,9 @@ public class ClassSelectTests : GameTestBase
         Expect(FindTextInTree(Strings.Classes.Mage), "Mage label visible in ClassSelect");
 
         Expect(Ui.FindButton("Confirm") is not null, "Confirm button exists");
-        Expect(Ui.FindButton("Back") is not null, "Back button exists");
+        // Actual text is "Back to Main Menu" — use Contains so the test
+        // survives copy-changes without churning the spec.
+        Expect(Ui.FindButton(b => b.Text.Contains("Back")) is not null, "Back button exists");
 
         await Input.WaitFrames(2);
     }
@@ -148,7 +146,8 @@ public class ClassSelectTests : GameTestBase
         await Input.NavDown();           // zone 1 → 2 (Back)
         await Input.WaitFrames(5);
 
-        Expect(Ui.FocusedButtonText == "Back",
+        // Actual text is "Back to Main Menu" — StartsWith matches either phrasing.
+        Expect(Ui.FocusedButtonText?.StartsWith("Back") == true,
             $"Back button has focus after two Downs (got: {Ui.FocusedButtonText ?? "null"})");
     }
 
