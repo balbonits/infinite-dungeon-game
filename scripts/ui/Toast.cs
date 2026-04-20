@@ -95,7 +95,15 @@ public partial class Toast : Control
         if (!IsInstanceValid(toast))
             return;
 
-        _activeToasts.Remove(toast);
+        // AUDIT-06 guard: the auto-dismiss SceneTreeTimer fires unconditionally,
+        // even if the toast was already dismissed early by MaxVisible overflow
+        // (DismissOldest). Without this check, the second call double-animates
+        // the same toast (double fade, double QueueFree callback). List.Remove
+        // silently returns false in that case but can't prevent the downstream
+        // duplicate work. Use Remove's return as the "already dismissed" signal
+        // and bail cleanly before spinning up a second tween.
+        if (!_activeToasts.Remove(toast))
+            return;
 
         var tween = CreateTween();
         tween.SetParallel(true);
