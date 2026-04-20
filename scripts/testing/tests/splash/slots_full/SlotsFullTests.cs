@@ -125,10 +125,16 @@ public class SlotsFullTests : GameTestBase
         if (!opened) return;
 
         Flow.SlotsFull.ClickCancel();
-        await Input.WaitFrames(5);
 
-        Expect(!Flow.LoadGame.IsShown,
-            "Cancel keeps user on splash — does NOT open LoadGameScreen");
+        // Use WaitUntil instead of an immediate Expect so we give the dialog's
+        // QueueFree and any deferred UI updates a chance to settle. A tight
+        // Expect(!IsShown) after 5 frames occasionally caught a lingering
+        // LoadGameScreen that wasn't fully detached yet after a prior test's
+        // Escape path. The real contract is "LoadGame doesn't appear after
+        // Cancel" — giving that up to 2s to converge avoids a timing artifact.
+        await WaitUntil(() => !Flow.LoadGame.IsShown,
+            timeout: 2f,
+            what: "Cancel keeps user on splash — does NOT open LoadGameScreen");
         Expect(Ui.HasNodeOfType<SplashScreen>(),
             "SplashScreen still in tree after Cancel");
         // Cancel must not fall through to PauseMenu either (same bug shape

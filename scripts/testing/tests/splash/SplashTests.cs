@@ -95,8 +95,10 @@ public class SplashTests : GameTestBase
         DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
         DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
 
-        // Reset so the splash re-reads save state and enables Continue.
-        bool atSplash = await ResetToFreshSplash();
+        // Reset so the splash re-reads save state and enables Continue. Must
+        // preserve the save just written — ResetToFreshSplash wipes the
+        // sandbox by default, so opt out of the wipe here.
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
 
         var continueBtn = Ui.FindButton("Continue");
@@ -147,7 +149,9 @@ public class SplashTests : GameTestBase
         DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
         DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
 
-        bool atSplash = await ResetToFreshSplash();
+        // Preserve the seeded save across the reload — default wipe would
+        // destroy the slot we just created and fail the Continue-enabled check.
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
 
         var continueBtn = Ui.FindButton("Continue");

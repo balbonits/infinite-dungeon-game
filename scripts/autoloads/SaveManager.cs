@@ -63,7 +63,12 @@ public partial class SaveManager : Node
         if (dir == null) return;
         foreach (var file in dir.GetFiles())
         {
-            if (file.EndsWith(".json"))
+            // Narrow the filter to save slot files only (save_0.json, save_1.json,
+            // save_2.json). The earlier "any .json" rule matched the doc comment
+            // of WipeAllSandboxSaves in spirit but could delete unrelated JSON
+            // artifacts — e.g., a future test dropping a config file in the
+            // sandbox. Copilot PR #33 round-10 finding.
+            if (file.StartsWith("save_") && file.EndsWith(".json"))
                 dir.Remove(file);
         }
     }

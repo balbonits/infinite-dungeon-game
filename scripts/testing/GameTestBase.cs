@@ -197,30 +197,36 @@ public abstract class GameTestBase : TestClass
         }
     }
 
-    // Cache the declaring type of the last-identified test (sync method or
-    // async state-machine). While the current Expect is still inside that
-    // same frame, we skip the reflection walk entirely. Invalidated when the
-    // top stack frame's declaring type changes.
-    private System.Type? _lastTestDeclaringType;
+    // Cache the key "<declaringType>::<methodName>" of the last-identified
+    // immediate caller. Caching on declaring type alone was wrong because all
+    // tests in a suite share one declaring type (either the test class for
+    // sync tests or one state-machine nested type per async test), so the
+    // fast path swallowed every transition between [Test]s and left the
+    // overlay / screenshot dir naming stuck on the first test. Keying on the
+    // caller method restores per-test detection while keeping the walk to
+    // once per Expect-call-site-transition. Copilot PR #33 round-10 finding.
+    private string? _lastImmediateCallerKey;
 
     // Walks the call stack to find the [Test] method and, when it changes,
     // updates the on-screen overlay + prints a RUNNING banner. Handles both
     // sync methods (attribute is on the method itself) and async state
     // machines (attribute is on the outer method whose name is embedded in
     // the compiler-generated nested type's name "<TestName>d__N").
-    //
-    // Cached fast-path means reflection only runs once per test, not per
-    // Expect — addresses PR #33 round-6 Copilot concern about overhead.
     private void UpdateCurrentTestFromStack()
     {
         var stack = new StackTrace();
         if (stack.FrameCount < 2) return;
 
-        // Fast path: if the immediate caller's declaring type matches the
-        // cached one, we're still in the same test — no walk needed.
-        var directCallerType = stack.GetFrame(1)?.GetMethod()?.DeclaringType;
-        if (_lastTestDeclaringType != null && directCallerType == _lastTestDeclaringType)
+        // Fast path: if the immediate caller method matches the cached key
+        // (same method, same declaring type), we're in the same execution
+        // context — no walk needed.
+        var directCaller = stack.GetFrame(1)?.GetMethod();
+        var directCallerKey = directCaller is null
+            ? null
+            : $"{directCaller.DeclaringType?.FullName}::{directCaller.Name}";
+        if (directCallerKey != null && directCallerKey == _lastImmediateCallerKey)
             return;
+        _lastImmediateCallerKey = directCallerKey;
 
         for (int i = 1; i < stack.FrameCount; i++)
         {
@@ -260,7 +266,6 @@ public abstract class GameTestBase : TestClass
 
     private void MaybeUpdateTestName(string testName, System.Type? declaringType)
     {
-        _lastTestDeclaringType = declaringType;
         if (_currentTestName == testName) return;
         _currentTestName = testName;
         _screenshotStep = 0;
