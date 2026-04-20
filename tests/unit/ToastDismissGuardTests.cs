@@ -73,14 +73,20 @@ public class ToastDismissGuardTests
     /// DismissToast without it — the AUDIT-06 regression shape — this test
     /// fails. Cheaper than instantiating a Godot node in a unit project
     /// that can't link Godot.
+    ///
+    /// Narrowed (Copilot PR #38 round-2) to only search within
+    /// DismissToast's body rather than the whole file, so the guard can't
+    /// be falsely satisfied by the same substring appearing in a comment
+    /// or a different method elsewhere in Toast.cs.
     /// </summary>
     [Fact]
-    public void ToastCs_StillContainsDoubleDismissGuard()
+    public void ToastCs_DismissToastMethodContainsDoubleDismissGuard()
     {
         string toastPath = FindRepoFile("scripts/ui/Toast.cs");
         string src = File.ReadAllText(toastPath);
-        src.Should().Contain("!_activeToasts.Remove(toast)",
-            "Toast.DismissToast must keep the AUDIT-06 guard expression. If you renamed the field or refactored, update this test to match the new invariant.");
+        string body = ExtractMethodBody(src, "DismissToast");
+        body.Should().Contain("!_activeToasts.Remove(toast)",
+            "DismissToast must keep the AUDIT-06 guard expression. If you renamed the field or refactored, update this test to match the new invariant.");
     }
 
     /// <summary>Walk up from the test binary to find a repo-relative file.</summary>
@@ -94,5 +100,44 @@ public class ToastDismissGuardTests
             dir = dir.Parent;
         }
         throw new FileNotFoundException($"Could not locate {relPath} walking up from cwd");
+    }
+
+    /// <summary>
+    /// Locate "<paramref name="methodName"/>(" in the source and return the
+    /// slice from the method's opening brace to the matching closing brace.
+    /// Brace counting is literal-aware (line/block comments, strings, chars
+    /// don't count their braces) so a comment like "// }" or a string
+    /// with { won't fool the counter.
+    /// </summary>
+    private static string ExtractMethodBody(string src, string methodName)
+    {
+        int methodIdx = src.IndexOf(methodName + "(");
+        if (methodIdx < 0)
+            throw new System.InvalidOperationException($"method '{methodName}' not found in source");
+        int openBrace = src.IndexOf('{', methodIdx);
+        if (openBrace < 0)
+            throw new System.InvalidOperationException($"no opening brace after '{methodName}'");
+
+        int depth = 1;
+        int i = openBrace + 1;
+        bool inLineComment = false, inBlockComment = false, inString = false, inChar = false;
+        for (; i < src.Length && depth > 0; i++)
+        {
+            char c = src[i];
+            char prev = i > 0 ? src[i - 1] : '\0';
+
+            if (inLineComment) { if (c == '\n') inLineComment = false; continue; }
+            if (inBlockComment) { if (c == '/' && prev == '*') inBlockComment = false; continue; }
+            if (inString) { if (c == '"' && prev != '\\') inString = false; continue; }
+            if (inChar) { if (c == '\'' && prev != '\\') inChar = false; continue; }
+
+            if (c == '/' && i + 1 < src.Length && src[i + 1] == '/') { inLineComment = true; continue; }
+            if (c == '/' && i + 1 < src.Length && src[i + 1] == '*') { inBlockComment = true; continue; }
+            if (c == '"') { inString = true; continue; }
+            if (c == '\'') { inChar = true; continue; }
+            if (c == '{') depth++;
+            else if (c == '}') depth--;
+        }
+        return src.Substring(openBrace, i - openBrace);
     }
 }
