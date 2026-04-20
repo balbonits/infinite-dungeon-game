@@ -1,7 +1,6 @@
 #if DEBUG
 using System;
 using Chickensoft.GodotTestDriver.Drivers;
-using DungeonGame.Autoloads;
 using DungeonGame.Ui;
 using Godot;
 
