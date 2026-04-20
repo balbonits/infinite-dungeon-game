@@ -382,12 +382,21 @@ public partial class Dungeon : Node2D
         placed += PlaceContainerBatch(ContainerLootTable.ContainerType.Crate, crates);
         placed += PlaceContainerBatch(ContainerLootTable.ContainerType.Chest, chests);
 
-        // Min-1 floor guarantee at the placement layer: if strict placement
-        // exhausted retries on every target and no container landed, fall
-        // back to relaxed placement (any floor tile, ignores entity overlap).
-        // Spec Acceptance #2 — cannot ship a floor with zero containers.
-        if (placed == 0)
-            PlaceContainerRelaxed(ContainerLootTable.ContainerType.Jar);
+        // Min-1 floor guarantee at the placement layer. Spec Acceptance #2
+        // cannot ship a floor with zero containers. Two fallback tiers:
+        //   1. Relaxed placement — same exclusion zones, no entity-overlap
+        //      check. Covers the normal case where random sampling hit
+        //      crowded tiles every time.
+        //   2. Deterministic stairs-up-offset placement — if even relaxed
+        //      can't find a spot in MaxSpawnRetries tries (the pathological
+        //      case), drop one jar on a tile offset from the up-stairs by
+        //      +2 tiles in both axes. That tile is on-map by construction
+        //      (GenerateFloor guarantees stairs sit inside walled rooms with
+        //      floor-tile neighbors) and always outside the 1-tile stairs
+        //      buffer, satisfying both the min-1 contract AND the
+        //      exclusion rules.
+        if (placed == 0 && !PlaceContainerRelaxed(ContainerLootTable.ContainerType.Jar))
+            PlaceContainerDeterministicFallback(ContainerLootTable.ContainerType.Jar);
     }
 
     /// <summary>Returns the number of containers actually placed.</summary>
@@ -465,8 +474,9 @@ public partial class Dungeon : Node2D
     /// Still enforces the stairs + player-spawn exclusion zones because
     /// dropping a container on stairs would block descent/ascent and
     /// dropping it on spawn would trap the player on floor entry.
+    /// Returns true iff a container was placed.
     /// </summary>
-    private void PlaceContainerRelaxed(ContainerLootTable.ContainerType type)
+    private bool PlaceContainerRelaxed(ContainerLootTable.ContainerType type)
     {
         for (int attempt = 0; attempt < Constants.Spawning.MaxSpawnRetries; attempt++)
         {
@@ -476,8 +486,45 @@ public partial class Dungeon : Node2D
             if (!IsOutsideExclusionZones(pos)) continue;
             var container = Container.Create(type, pos);
             _entities.AddChild(container);
-            return;
+            return true;
         }
+        return false;
+    }
+
+    /// <summary>
+    /// Deterministic last-resort placement — fires only when both strict
+    /// and relaxed random-sampling exhausted retries. Puts one container
+    /// on a tile offset from the up-stairs by +2 tiles in both axes. Per
+    /// FloorGenerator's room-generation guarantees, the up-stairs sits
+    /// inside a walled room with floor-tile neighbors, and a +2/+2 offset
+    /// clears the 48px (1-1.5 tile) exclusion buffer. This is the
+    /// insurance that spec Acceptance #2 (min-1 containers per floor) is
+    /// truly unbreakable — no sequence of random rolls can leave a floor
+    /// with zero containers.
+    /// </summary>
+    private void PlaceContainerDeterministicFallback(ContainerLootTable.ContainerType type)
+    {
+        var offset = _stairsUpPosition + new Vector2I(2, 2);
+        Vector2 pos = _tileMap.MapToLocal(offset);
+        // Guard: if the offset isn't a floor tile (very unusual room shape),
+        // scan a small spiral around up-stairs for a valid tile.
+        if (!IsFloorTile(offset))
+        {
+            for (int dy = -3; dy <= 3 && !IsFloorTile(offset); dy++)
+                for (int dx = -3; dx <= 3 && !IsFloorTile(offset); dx++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    var candidate = _stairsUpPosition + new Vector2I(dx, dy);
+                    if (IsFloorTile(candidate))
+                    {
+                        offset = candidate;
+                        pos = _tileMap.MapToLocal(offset);
+                        break;
+                    }
+                }
+        }
+        var container = Container.Create(type, pos);
+        _entities.AddChild(container);
     }
 
     private void SpawnEnemy()

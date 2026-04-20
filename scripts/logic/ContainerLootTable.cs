@@ -6,13 +6,17 @@ namespace DungeonGame;
 /// <summary>
 /// Container loot rolls (LOOT-01) — implements docs/systems/loot-containers.md.
 ///
-/// Pure-logic, no Godot dependency. Containers are the sole source of equipment
-/// drops (monsters keep gold + XP + materials only). Three sizes with distinct
-/// loot profiles scale on floor depth.
+/// Pure loot-rolling logic — deterministic for a given seed, no Godot node
+/// dependencies. Reads from <see cref="Constants.Zones"/> (zone → species
+/// roster) and <see cref="MonsterDropTable"/> (per-species signature IDs);
+/// those indirections are lightweight and testable via xUnit (the test
+/// project already links against Constants). Containers are the sole source
+/// of equipment drops (monsters keep gold + XP + materials only). Three
+/// sizes with distinct loot profiles scale on floor depth.
 ///
-/// Spawn counts and contents both scale on size + floor. Floor-scaling gold and
-/// material tier follow the same curves MonsterDropTable uses (re-used via
-/// <see cref="MonsterDropTable.FloorToTier"/>).
+/// Spawn counts and contents both scale on size + floor. Floor-scaling gold
+/// and material tier follow the same curves MonsterDropTable uses (re-used
+/// via <see cref="MonsterDropTable.FloorToTier"/>).
 /// </summary>
 public static class ContainerLootTable
 {
@@ -133,11 +137,20 @@ public static class ContainerLootTable
         return result;
     }
 
+    // Explicit array so a future enum-reorder in MonsterDropTable.MaterialType
+    // can't silently skew the uniform pick — each name is load-bearing here.
+    private static readonly MonsterDropTable.MaterialType[] GenericMaterialTypes =
+    {
+        MonsterDropTable.MaterialType.Ore,
+        MonsterDropTable.MaterialType.Bone,
+        MonsterDropTable.MaterialType.Hide,
+    };
+
     private static void AddGeneric(List<ItemDef> bucket, int tier, Random rng)
     {
         // Uniform across {Ore, Bone, Hide} — spec leaves thematic bias off
         // generics here and puts it on signature mats.
-        var type = (MonsterDropTable.MaterialType)rng.Next(3);
+        var type = GenericMaterialTypes[rng.Next(GenericMaterialTypes.Length)];
         string id = $"material_{type.ToString().ToLowerInvariant()}_t{tier}";
         var def = ItemDatabase.Get(id);
         if (def != null) bucket.Add(def);
