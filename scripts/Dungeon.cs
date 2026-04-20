@@ -365,26 +365,44 @@ public partial class Dungeon : Node2D
     /// (Jar / Crate / Chest) at the counts produced by ContainerLootTable.
     /// Each container lands on a valid floor tile clear of the player spawn,
     /// both staircases, enemies, and other placed containers.
+    ///
+    /// Spec Acceptance #2 ("Every floor has ≥1 container"): enforced at both
+    /// the roll layer (SpawnCounts min-1 guarantee) AND the placement layer
+    /// (see the final fallback in PlaceContainerBatch). A retry-exhausted
+    /// strict placement can't leave the floor with zero containers even if
+    /// every candidate tile collides with an entity.
     /// </summary>
     private void SpawnContainers()
     {
         int floor = GameState.Instance.FloorNumber;
         var (jars, crates, chests) = ContainerLootTable.SpawnCounts(floor);
 
-        PlaceContainerBatch(ContainerLootTable.ContainerType.Jar, jars);
-        PlaceContainerBatch(ContainerLootTable.ContainerType.Crate, crates);
-        PlaceContainerBatch(ContainerLootTable.ContainerType.Chest, chests);
+        int placed = 0;
+        placed += PlaceContainerBatch(ContainerLootTable.ContainerType.Jar, jars);
+        placed += PlaceContainerBatch(ContainerLootTable.ContainerType.Crate, crates);
+        placed += PlaceContainerBatch(ContainerLootTable.ContainerType.Chest, chests);
+
+        // Min-1 floor guarantee at the placement layer: if strict placement
+        // exhausted retries on every target and no container landed, fall
+        // back to relaxed placement (any floor tile, ignores entity overlap).
+        // Spec Acceptance #2 — cannot ship a floor with zero containers.
+        if (placed == 0)
+            PlaceContainerRelaxed(ContainerLootTable.ContainerType.Jar);
     }
 
-    private void PlaceContainerBatch(ContainerLootTable.ContainerType type, int count)
+    /// <summary>Returns the number of containers actually placed.</summary>
+    private int PlaceContainerBatch(ContainerLootTable.ContainerType type, int count)
     {
+        int placed = 0;
         for (int i = 0; i < count; i++)
         {
             var pos = FindValidContainerPosition();
-            if (pos == null) return; // ran out of placement attempts — accept fewer than target.
+            if (pos == null) continue; // skip this one, keep trying the batch.
             var container = Container.Create(type, pos.Value);
             _entities.AddChild(container);
+            placed++;
         }
+        return placed;
     }
 
     private Vector2? FindValidContainerPosition()
@@ -420,6 +438,25 @@ public partial class Dungeon : Node2D
             return pos;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Placement fallback — drops a container on any floor tile ignoring the
+    /// entity-overlap check. Only fires when strict placement yielded zero
+    /// containers for the whole floor; keeps the spec's min-1 contract from
+    /// breaking even on an edge-case layout.
+    /// </summary>
+    private void PlaceContainerRelaxed(ContainerLootTable.ContainerType type)
+    {
+        for (int attempt = 0; attempt < Constants.Spawning.MaxSpawnRetries; attempt++)
+        {
+            Vector2 pos = GetRandomFloorPosition();
+            Vector2I tileCoord = _tileMap.LocalToMap(pos);
+            if (!IsFloorTile(tileCoord)) continue;
+            var container = Container.Create(type, pos);
+            _entities.AddChild(container);
+            return;
+        }
     }
 
     private void SpawnEnemy()

@@ -29,7 +29,8 @@ public class ContainerLootTableTests
     [Fact]
     public void SpawnCounts_ScaleUpperBoundByDepth()
     {
-        // +1 per 10 floors. Floor 50 should allow upper bounds of 13 / 10 / 7.
+        // Spec milestone: at floor 50, upper bounds are 13 / 10 / 7
+        // (depthBonus = floor / 10 = 5; base upper 8 / 5 / 2 plus 5 = 13 / 10 / 7).
         var rng = new Random(42);
         int maxJars = 0, maxCrates = 0, maxChests = 0;
         for (int i = 0; i < 1000; i++)
@@ -39,12 +40,29 @@ public class ContainerLootTableTests
             if (c > maxCrates) maxCrates = c;
             if (ch > maxChests) maxChests = ch;
         }
-        // With 1000 trials we should hit near the upper bound on each.
-        maxJars.Should().BeGreaterThan(8, "floor-50 jars should exceed the floor-1 max (8)");
-        maxCrates.Should().BeGreaterThan(5);
-        maxChests.Should().BeGreaterThan(2);
-        // Absolute ceiling at floor 50: 4 + floorBonus(50→4)=4+9=13 jars upper.
-        maxJars.Should().BeLessThanOrEqualTo(13);
+        // Hard spec bounds — 1000 trials is enough to sample every value.
+        maxJars.Should().Be(13);
+        maxCrates.Should().Be(10);
+        maxChests.Should().Be(7);
+    }
+
+    [Fact]
+    public void SpawnCounts_ExactBoundsAtFloor100()
+    {
+        // Spec milestone: at floor 100, upper bounds are 18 / 15 / 12
+        // (depthBonus = floor / 10 = 10).
+        var rng = new Random(42);
+        int maxJars = 0, maxCrates = 0, maxChests = 0;
+        for (int i = 0; i < 2000; i++)
+        {
+            var (j, c, ch) = ContainerLootTable.SpawnCounts(100, rng);
+            if (j > maxJars) maxJars = j;
+            if (c > maxCrates) maxCrates = c;
+            if (ch > maxChests) maxChests = ch;
+        }
+        maxJars.Should().Be(18);
+        maxCrates.Should().Be(15);
+        maxChests.Should().Be(12);
     }
 
     [Fact]
@@ -174,17 +192,50 @@ public class ContainerLootTableTests
     }
 
     [Fact]
-    public void RollSignatureMaterial_Zone1_OnlyZoneOneSignatures()
+    public void RollSignatureMaterial_Zone1_FavorsZoneOneSignatures()
     {
-        // Zone 1 species: Skeleton + Bat. Signatures: material_sig_skeleton / material_sig_bat.
+        // Per spec §Locked Decisions #3 + example: zone tilt is WEIGHTED, not
+        // exclusive — an off-zone signature (like Orc Tusk on zone-1 floors)
+        // can still drop, just less often. Zone-1 on-zone species: Skeleton,
+        // Bat. Weighting in this impl: 5× on-zone / 1× off-zone → on-zone
+        // total weight 10, off-zone total weight 5, expected on-zone share
+        // ~66%. Off-zone 5 species share the remaining ~33%.
         var rng = new Random(42);
-        var seen = new HashSet<string>();
-        for (int i = 0; i < 1000; i++)
+        int onZone = 0, offZone = 0;
+        for (int i = 0; i < 2000; i++)
         {
             var mats = ContainerLootTable.RollSignatureMaterial(ContainerLootTable.ContainerType.Chest, 1, rng);
-            foreach (var m in mats) seen.Add(m.Id);
+            foreach (var m in mats)
+            {
+                if (m.Id == "material_sig_skeleton" || m.Id == "material_sig_bat") onZone++;
+                else offZone++;
+            }
         }
-        seen.Should().OnlyContain(id => id == "material_sig_skeleton" || id == "material_sig_bat");
+        // On-zone species should dominate but not monopolize.
+        onZone.Should().BeGreaterThan(offZone, "zone tilt should favor on-zone signatures");
+        offZone.Should().BeGreaterThan(0, "off-zone signatures must still be reachable per spec's weighted-not-exclusive semantics");
+    }
+
+    [Fact]
+    public void RollSignatureMaterial_Zone5_UniformAcrossAllSignatures()
+    {
+        // Zones 5+ have no one species on-zone per Constants.Zones. All 7
+        // signatures should appear at roughly uniform rate; no single signature
+        // should dominate.
+        var rng = new Random(42);
+        var counts = new Dictionary<string, int>();
+        for (int i = 0; i < 2000; i++)
+        {
+            var mats = ContainerLootTable.RollSignatureMaterial(ContainerLootTable.ContainerType.Chest, 5, rng);
+            foreach (var m in mats)
+                counts[m.Id] = counts.TryGetValue(m.Id, out var c) ? c + 1 : 1;
+        }
+        counts.Should().HaveCount(7, "all 7 signatures must be reachable at zone 5+");
+        // Uniform sampling: no one signature gets more than ~25% of the hits
+        // in a 7-way split (expected ~14% each).
+        int total = counts.Values.Sum();
+        foreach (var (_, n) in counts)
+            n.Should().BeLessThan(total / 3, "zone-5 sampling should be roughly uniform — no signature >33%");
     }
 
     [Fact]

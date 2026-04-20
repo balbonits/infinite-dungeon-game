@@ -34,7 +34,13 @@ public static class ContainerLootTable
     public static (int jars, int crates, int chests) SpawnCounts(int floor, Random? rng = null)
     {
         rng ??= Random.Shared;
-        int depthBonus = Math.Max(0, (floor - 1) / 10);
+        // +1 to upper bound per 10 floors. Spec milestone targets anchored
+        // in loot-containers.md §Spawn counts per floor:
+        //   floor 1   → bonus 0 → jars 4-8,   crates 2-5,   chests 0-2
+        //   floor 10  → bonus 1 → jars 4-9,   crates 2-6,   chests 0-3
+        //   floor 50  → bonus 5 → jars 4-13,  crates 2-10,  chests 0-7
+        //   floor 100 → bonus 10 → jars 4-18, crates 2-15,  chests 0-12
+        int depthBonus = Math.Max(0, floor / 10);
 
         int jars = rng.Next(4, 8 + depthBonus + 1);
         int crates = rng.Next(2, 5 + depthBonus + 1);
@@ -142,8 +148,15 @@ public static class ContainerLootTable
     /// <summary>
     /// Signature material channel — only Crate (30%, 0-1×) and Chest (50%, 1×)
     /// roll on this channel. Jars never roll signatures. Zone-tilted: the
-    /// signature is weighted toward the floor's zone species per spec
-    /// §Locked Decisions #3.
+    /// signature is WEIGHTED toward the floor's zone species (per spec
+    /// §Locked Decisions #3 + its example: "chest on floor 5 more likely to
+    /// drop Bone Dust + Echo Shard than Orc Tusk" — the Orc case implies
+    /// off-zone signatures still appear, just less often).
+    ///
+    /// Implementation: on-zone species get weight 5; off-zone species get
+    /// weight 1. With the zone-1 case (2 species) and 5 off-zone species,
+    /// that means ~66% on-zone / ~33% off-zone (2*5 = 10, 5*1 = 5, split
+    /// 10/15). Adjust the on-zone weight constant if playtest shifts.
     /// </summary>
     public static List<ItemDef> RollSignatureMaterial(ContainerType type, int zone, Random rng)
     {
@@ -156,34 +169,57 @@ public static class ContainerLootTable
         };
         if (rng.NextSingle() >= chance) return result;
 
-        var candidates = ZoneSignatureCandidates(zone);
-        if (candidates.Count == 0) return result;
-
-        string sigId = candidates[rng.Next(candidates.Count)];
+        string? sigId = PickWeightedSignature(zone, rng);
+        if (sigId == null) return result;
         var def = ItemDatabase.Get(sigId);
         if (def != null) result.Add(def);
         return result;
     }
 
     /// <summary>
-    /// Map a zone to its expected signature-material IDs. Mirrors the per-species
-    /// signature mappings in MonsterDropTable.Tables, collapsed to zones per the
-    /// existing zone→species assignments in Constants.Zones.
+    /// Pick a signature-material ID using the zone-tilt weighting scheme.
+    /// Full signature roster is available at every zone; weight 5× for
+    /// species in the floor's zone, weight 1× for species outside.
+    /// Zones 5+ (mixed species per Constants.Zones) flatten to uniform
+    /// weight 1 across all signatures.
     /// </summary>
-    private static List<string> ZoneSignatureCandidates(int zone) => zone switch
+    private static string? PickWeightedSignature(int zone, Random rng)
     {
-        1 => new List<string> { "material_sig_skeleton", "material_sig_bat" },
-        2 => new List<string> { "material_sig_goblin", "material_sig_wolf" },
-        3 => new List<string> { "material_sig_orc", "material_sig_spider" },
-        4 => new List<string> { "material_sig_darkmage" },
-        // Zones 5+ — all species can appear; surface every signature.
-        _ => new List<string>
+        var onZone = OnZoneSignatures(zone);
+        if (AllSignatures.Count == 0) return null;
+
+        int totalWeight = 0;
+        foreach (var sig in AllSignatures)
+            totalWeight += onZone.Contains(sig) ? 5 : 1;
+        if (totalWeight <= 0) return null;
+
+        int pick = rng.Next(totalWeight);
+        int running = 0;
+        foreach (var sig in AllSignatures)
         {
-            "material_sig_skeleton", "material_sig_bat",
-            "material_sig_goblin", "material_sig_wolf",
-            "material_sig_orc", "material_sig_spider",
-            "material_sig_darkmage",
-        },
+            running += onZone.Contains(sig) ? 5 : 1;
+            if (pick < running) return sig;
+        }
+        return AllSignatures[^1]; // unreachable, but keeps the compiler happy
+    }
+
+    private static readonly List<string> AllSignatures = new()
+    {
+        "material_sig_skeleton", "material_sig_bat",
+        "material_sig_goblin", "material_sig_wolf",
+        "material_sig_orc", "material_sig_spider",
+        "material_sig_darkmage",
+    };
+
+    private static HashSet<string> OnZoneSignatures(int zone) => zone switch
+    {
+        1 => new HashSet<string> { "material_sig_skeleton", "material_sig_bat" },
+        2 => new HashSet<string> { "material_sig_goblin", "material_sig_wolf" },
+        3 => new HashSet<string> { "material_sig_orc", "material_sig_spider" },
+        4 => new HashSet<string> { "material_sig_darkmage" },
+        // Zones 5+ — all species can appear per Constants.Zones; no one species
+        // gets the tilt weight, so the weighted pick falls back to uniform.
+        _ => new HashSet<string>(),
     };
 
     // ─── Equipment ───────────────────────────────────────────────────────
@@ -241,11 +277,18 @@ public static class ContainerLootTable
 
     private static List<ItemDef> FullEquipmentCandidates(int tier)
     {
+        // Floor-tiered gear must match the floor's tier bracket. Untiered
+        // equipment (Tier=0 — currently only quivers per ItemDef.Tier
+        // XML doc) is eligible at every floor: ITEM-01 doesn't tier
+        // quivers, so filtering them out here would deny Ranger ammo
+        // from containers entirely.
         var list = new List<ItemDef>();
         foreach (var item in ItemDatabase.All)
         {
-            if (item.Tier != tier) continue;
             if (item.Slot == EquipSlot.None) continue;
+            bool isMatchedTier = item.Tier == tier;
+            bool isUntieredEquipment = item.Tier == 0;
+            if (!isMatchedTier && !isUntieredEquipment) continue;
             list.Add(item);
         }
         return list;
