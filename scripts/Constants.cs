@@ -76,26 +76,22 @@ public static class Constants
         // quarter-square). So:
         //   total = StartingHp + 8*level + floor(level² / 4)
         // Exhaustive parity with the pre-fix loop is verified in
-        // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200. The earlier
-        // comment claimed float-identity ((int)(8 + l * 0.5f) == 8 + l/2)
-        // which isn't safe for large l (float precision fails past ~2^24);
-        // Copilot PR #41 round-3 asked for the pure-integer framing.
+        // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200.
         //
         // level <= 0: the original loop skipped entirely, so we return
-        // StartingHp. This preserves the pre-AUDIT-08 contract for any
-        // corrupted/debug state that slips through.  Copilot PR #41 R1.
+        // StartingHp to preserve that contract for corrupted/debug state.
         //
         // All arithmetic is in int64 and saturated back to int so the
         // leveling spec's unbounded level range doesn't silently overflow
         // past level ≈ 92 k (int max). HP is still stored as int, so we
-        // clamp instead of widening the API. Copilot PR #41 R2.
+        // clamp instead of widening the API.
         /// <summary>
-        /// Level-derived MaxHp in int64 space, no saturation. The int-bound
-        /// public API <see cref="GetMaxHp"/> saturates the result; callers
-        /// that want to combine this with further math (like a bonus) should
-        /// start from this long value so a saturated int.MaxValue doesn't
-        /// silently absorb a subsequent negative adjustment. Copilot PR #41
-        /// round-4 finding.
+        /// Internal helper that computes level-derived MaxHp in int64 space
+        /// without saturation. <see cref="GetMaxHp"/> clamps this raw value
+        /// into the int-based public API, and <see cref="GetEffectiveMaxHp"/>
+        /// uses the unsaturated result so additive bonuses are applied
+        /// before the final clamp — starting from a saturated int.MaxValue
+        /// would silently absorb a subsequent negative bonus.
         /// </summary>
         private static long GetMaxHpLong(int level)
         {
