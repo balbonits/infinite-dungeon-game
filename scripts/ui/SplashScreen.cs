@@ -127,12 +127,24 @@ public partial class SplashScreen : Control
         // disposed. Without the guard, the callback raises
         // ObjectDisposedException, which CI UI-tests surfaced as
         // "Timeout waiting for: SplashScreen to appear".
+        //
+        // Preserve pre-existing focus: if anything inside _btnBox already has
+        // focus (e.g., a test called newGameBtn.GrabFocus() within the 0.3s
+        // window), don't clobber it. Without this, tests that grab New Game
+        // after a prior test populated save slots were racing the timer —
+        // timer would re-focus the first enabled button (Continue) and the
+        // subsequent PressEnter would open the Load Game screen instead of
+        // Class Select, cascading into "Timeout waiting for: ClassSelect to
+        // appear" across every suite that reaches Town.
         var timer = GetTree().CreateTimer(0.3);
         timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(() =>
         {
             if (!IsInstanceValid(this) || !IsInsideTree())
                 return;
             _ready = true;
+            var focused = GetViewport()?.GuiGetFocusOwner();
+            if (focused != null && _btnBox.IsAncestorOf(focused))
+                return;
             UiTheme.FocusFirstButton(btnBox);
         }));
     }
