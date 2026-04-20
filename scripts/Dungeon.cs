@@ -497,6 +497,15 @@ public partial class Dungeon : Node2D
 
     private async void OnEnemyDefeated(Vector2 position, int tier)
     {
+        // AUDIT-07 guard: hoist the tree check to the top. Pre-fix, we
+        // incremented _killCount and fired quest-tracking before checking
+        // IsInsideTree — if the dungeon was mid-tear-down (scene unload
+        // during class-confirm transition), the mutation hit a freed-ish
+        // instance and the signal side effects leaked into the next run.
+        // Safer to bail immediately when we're off-tree.
+        if (!IsInsideTree())
+            return;
+
         _killCount++;
 
         // Track quest progress
@@ -505,7 +514,9 @@ public partial class Dungeon : Node2D
         if (completedQuest != null)
             Toast.Instance?.Success($"Quest ready: {completedQuest.Title}");
 
-        // Wait before checking wipe — gives QueueFree time to process
+        // Wait before checking wipe — gives QueueFree time to process.
+        // Re-check IsInsideTree after the await since the scene could
+        // unload during the 0.1s timer.
         await ToSignal(GetTree().CreateTimer(0.1), "timeout");
         if (!IsInsideTree())
             return;
