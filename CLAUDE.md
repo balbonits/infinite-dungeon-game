@@ -54,6 +54,7 @@ make run            # Launch Godot
 6. **Post-task protocol is non-negotiable.** Test → Docs → Journal → Changelog → Counts → Commit.
 7. **Never hardcode volatile numbers** (test counts, file counts) in AI-context files.
 8. **Every AI generation respects the safety policy.** Prohibited-content taxonomy + dev-time guardrails + reporting + triage loop per [docs/conventions/ai-safety-policy.md](docs/conventions/ai-safety-policy.md) (SPEC-AI-SAFETY-01).
+9. **UI verification is windowed, never headless.** Use `make test-ui` (already windowed) or `make run`. `--headless` is CI-only. See [AGENTS.md §0b](AGENTS.md#0b-ui-verification-windowed-not-headless-non-negotiable).
 
 ---
 

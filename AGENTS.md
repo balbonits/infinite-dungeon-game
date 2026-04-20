@@ -133,6 +133,15 @@ Before implementing any visual, physics, or UI code, check [docs/basics/](docs/b
 - Touching UI? → [ui-design.md](docs/basics/ui-design.md)
 - Adding effects? → [game-feel.md](docs/basics/game-feel.md)
 
+### 0b. UI Verification: Windowed, Not Headless (Non-Negotiable)
+
+**Banned: `--headless` as the default for UI verification.** When you touch anything visual (font, HUD, layout, floating text, colors, widgets, scenes), you do NOT get to claim the work as done by running a headless test and reading "0 failed" in the log. Headless only catches what the test suite asserts; it cannot catch font-import regressions, sub-pixel drift, label squish, color mismatch, text clipping, or anything else that's wrong-looking but passing.
+
+- **Local UI verification:** use `make test-ui` (already windowed by default per the Makefile) OR `make run` to launch the game and eyeball the change.
+- **Never** run `godot --headless ...` for local verification. The `--headless` flag is CI-only (CI has no display). Ditto `make run-headless` and any future `make test-ui-headless` target — those are for CI.
+- **When reporting UI work as done:** say what you saw (e.g., "launched `make run`, verified PS2P renders crisp on the splash title and Tab-peek stat panel"). Don't say "tests passed" without a windowed pass.
+- Don't re-introduce "headless" as a default just because it's faster or easier to script. Banned = banned.
+
 ### 0a. Generative-AI Safety (Non-Negotiable)
 
 All AI generation in this project — art, text, code, specs, audio — runs under [docs/conventions/ai-safety-policy.md](docs/conventions/ai-safety-policy.md) (SPEC-AI-SAFETY-01). Legal requirement, not a preference.

@@ -54,11 +54,23 @@ test: ## Run ALL tests (unit + integration)
 test-unit: ## Run unit tests only
 	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity normal 2>&1
 
+test-unit-one: ## Run a single xUnit unit test. Usage: make test-unit-one TEST=Namespace.ClassName.MethodName
+	@[ -z "$(TEST)" ] && echo "Usage: make test-unit-one TEST=<fully.qualified.MethodName>" && echo "Example: make test-unit-one TEST=DungeonGame.Tests.Unit.CombatFormulasTests.SoftCap_At60Raw_Returns30" && exit 1 || true
+	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --filter "FullyQualifiedName=$(TEST)" --verbosity normal 2>&1
+
 test-integration: ## Run integration tests only
 	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity normal 2>&1
 
+test-integration-one: ## Run a single xUnit integration test. Usage: make test-integration-one TEST=Namespace.ClassName.MethodName
+	@[ -z "$(TEST)" ] && echo "Usage: make test-integration-one TEST=<fully.qualified.MethodName>" && exit 1 || true
+	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --filter "FullyQualifiedName=$(TEST)" --verbosity normal 2>&1
+
 test-e2e: ## Run E2E tests (requires GODOT_BIN set)
 	@dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj --verbosity normal 2>&1
+
+test-e2e-one: ## Run a single GdUnit4 E2E test. Usage: make test-e2e-one TEST=Namespace.ClassName.MethodName
+	@[ -z "$(TEST)" ] && echo "Usage: make test-e2e-one TEST=<fully.qualified.MethodName>" && exit 1 || true
+	@dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj --filter "FullyQualifiedName=$(TEST)" --verbosity normal 2>&1
 
 test-coverage: ## Run tests + generate HTML coverage report (./coverage/report/index.html)
 	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj \
@@ -89,11 +101,18 @@ test-ui-headless: kill build ## Run UI tests headless (CI). Skips VerifyScreensh
 	@if grep -q "✗" .ui-test.log 2>/dev/null; then rm -f .ui-test.log; echo "❌ UI test failures reported"; exit 1; fi
 	@rm -f .ui-test.log
 
-test-ui-suite: kill build ## Run a specific GoDotTest suite: make test-ui-suite SUITE=SplashTests
-	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-suite SUITE=<name>" && exit 1 || true
-	@$(GODOT) --headless --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | tee .ui-test.log \
-		| (grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true)
+test-ui-suite: kill build ## Run a specific GoDotTest suite WINDOWED: make test-ui-suite SUITE=SplashTests
+	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-suite SUITE=<name>" && echo "Example: make test-ui-suite SUITE=SplashTests" && exit 1 || true
+	@$(GODOT) --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | tee .ui-test.log \
+		| (grep -E "(✓|✗|Test|═══|passed|failed|Screenshot|SEEDED|MISMATCH|Info \(GoTest\))" || true)
 	@if grep -q "✗" .ui-test.log 2>/dev/null; then rm -f .ui-test.log; echo "❌ UI test failures reported"; exit 1; fi
+	@rm -f .ui-test.log
+
+test-ui-one: kill build ## Run one GoDotTest suite WINDOWED (single-method filter = TEST-12 follow-up). Usage: make test-ui-one SUITE=SplashTests
+	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-one SUITE=<ClassName>" && echo "Example: make test-ui-one SUITE=SplashTests" && echo "" && echo "NOTE: Chickensoft.GoDotTest's --run-tests flag filters at the SUITE (class) level only." && echo "      Method-level filtering needs a small wrapper in Main.RunTests — tracked as TEST-12 follow-up." && exit 1 || true
+	@$(GODOT) --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | tee .ui-test.log \
+		| (grep -E "(✓|✗|Test|═══|passed|failed|Screenshot|SEEDED|MISMATCH|Info \(GoTest\))" || true)
+	@if grep -q "✗" .ui-test.log 2>/dev/null; then rm -f .ui-test.log; echo "❌ UI test failed"; exit 1; fi
 	@rm -f .ui-test.log
 
 # ─── PR / Copilot helpers ──────────────────────────────────────────────────
