@@ -42,15 +42,14 @@ public class PauseMenuTests : GameTestBase
             await Input.WaitSeconds(0.3f);
         }
 
-        // Already in Town? Nothing to do.
-        if (Ui.HasNodeOfType<Scenes.Town>())
+        // Always start from a known splash. Prior suites (Town/Death/Guild) may
+        // have left the game mid-flow; ResetToFreshSplash reloads the scene so
+        // this suite's own navigation is deterministic.
+        if (!await ResetToFreshSplash())
         {
+            Expect(false, "[setup] could not reset to splash");
             return;
         }
-
-        // Wait for splash to load if we're at game start.
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>() || Ui.HasNodeOfType<ClassSelect>(),
-            timeout: 5f, what: "[setup] splash or class-select present");
 
         // Splash → New Game → ClassSelect
         if (Ui.HasNodeOfType<SplashScreen>() && !Ui.HasNodeOfType<ClassSelect>())

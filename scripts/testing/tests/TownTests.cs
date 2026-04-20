@@ -27,9 +27,13 @@ public class TownTests : GameTestBase
     [Setup]
     public async Task NavigateToTown()
     {
-        // Splash
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(),
-            timeout: 3f, what: "SplashScreen to appear");
+        // Always start from a known-fresh splash — prior suites (ClassSelectTests,
+        // DeathTests, etc.) may have left the game in Town/Dungeon/Death state.
+        if (!await ResetToFreshSplash())
+        {
+            Expect(false, "[setup] could not reset to splash");
+            return;
+        }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }

@@ -26,7 +26,11 @@ public class DeathCinematicTests : GameTestBase
 
     private async Task GetToTown()
     {
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f, what: "splash appears");
+        if (!await ResetToFreshSplash())
+        {
+            Expect(false, "[setup] could not reset to splash");
+            return;
+        }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }

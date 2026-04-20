@@ -23,8 +23,11 @@ public class GuildWindowTests : GameTestBase
 
     private async Task GetToTown()
     {
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(),
-            timeout: 3f, what: "SplashScreen appears");
+        if (!await ResetToFreshSplash())
+        {
+            Expect(false, "[setup] could not reset to splash");
+            return;
+        }
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game missing"); return; }
         newGameBtn.GrabFocus();

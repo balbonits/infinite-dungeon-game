@@ -61,7 +61,7 @@ public class TransitionTests : GameTestBase
     public async Task ClassSelect_ConfirmLoadsTownWithOpaqueOverlay()
     {
         // Navigate: Splash → New Game → ClassSelect
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f, what: "splash appears");
+        if (!await ResetToFreshSplash()) { Expect(false, "could not reset to splash"); return; }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }
