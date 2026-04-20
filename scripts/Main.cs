@@ -43,9 +43,13 @@ public partial class Main : Node
         CallDeferred(MethodName.ShowSplashScreen);
 
 #if DEBUG
-        // After the game boots, run tests if --run-tests was passed
+        // After the game boots, run tests if --run-tests was passed.
+        // Guard against scene-reload re-entry: ResetToFreshSplash (test helper)
+        // calls ReloadCurrentScene which re-runs Main._Ready. Without the
+        // TestRoot check we'd spawn a new GoTest.RunTests on every reload,
+        // looping the test runner forever.
         var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
-        if (testEnv.ShouldRunTests)
+        if (testEnv.ShouldRunTests && GetTree().Root.GetNodeOrNull("TestRoot") == null)
             CallDeferred(MethodName.RunTests);
 #endif
     }
