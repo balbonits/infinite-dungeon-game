@@ -118,7 +118,9 @@ public partial class SlotGrid : VBoxContainer
         btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         btn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         btn.ClipText = true;
-        btn.AddThemeFontSizeOverride("font_size", 9);
+        // SPEC-UI-FONT-01: 8 (= FontSizes.Small) replaces hardcoded 9 — PS2P's
+        // native 8px cell renders crisp at this size; 9 produced sub-pixel drift.
+        btn.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Small);
         btn.AddThemeColorOverride("font_color", UiTheme.Colors.Ink);
         btn.AddThemeColorOverride("font_hover_color", UiTheme.Colors.Ink);
         btn.AddThemeColorOverride("font_focus_color", UiTheme.Colors.Ink);

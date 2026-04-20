@@ -49,14 +49,17 @@ public partial class ScreenTransition : Control
 
         _messageLabel = new Label();
         _messageLabel.AddThemeColorOverride("font_color", UiTheme.Colors.Accent);
-        _messageLabel.AddThemeFontSizeOverride("font_size", 28);
+        // SPEC-UI-FONT-01: 32 (= FontSizes.Title) replaces hardcoded 28 so PS2P's
+        // 8px native cell renders without sub-pixel drift.
+        _messageLabel.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Title);
         _messageLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _messageLabel.Modulate = new Color(1, 1, 1, 0);
         vbox.AddChild(_messageLabel);
 
         _subLabel = new Label();
         _subLabel.AddThemeColorOverride("font_color", UiTheme.Colors.Muted);
-        _subLabel.AddThemeFontSizeOverride("font_size", 14);
+        // 16 (= FontSizes.Body) replaces hardcoded 14 — closest integer-multiple-of-8.
+        _subLabel.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
         _subLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _subLabel.Modulate = new Color(1, 1, 1, 0);
         vbox.AddChild(_subLabel);

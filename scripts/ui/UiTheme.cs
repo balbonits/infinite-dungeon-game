@@ -57,11 +57,14 @@ public static class UiTheme
             var loaded = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");
             if (loaded == null)
             {
-                // Fail loud: the font file is a required shipping asset per
-                // SPEC-UI-FONT-01. A missing/unimported TTF here means the
-                // asset pipeline regressed — better to throw at theme-
-                // creation time than render default Godot font in place.
-                GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load — falling back to a bare FontFile to keep UI renderable. Re-import the font resource.");
+                // Intent: alert the operator LOUDLY but keep the game renderable
+                // so a broken import doesn't take the app down mid-play. The
+                // empty FontFile has no glyphs, so text renders as blank boxes —
+                // visibly wrong enough that the error log gets attention without
+                // blocking the rest of the scene. SPEC-UI-FONT-01 treats the TTF
+                // as a required shipping asset, so this branch indicates an
+                // asset-pipeline regression that needs a re-import.
+                GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load. Re-import the font resource; UI will render with an empty fallback font until fixed.");
                 loaded = new FontFile();
             }
             // Pixel-font rendering discipline: disable anti-aliasing so the
