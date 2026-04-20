@@ -68,12 +68,18 @@ public static class Constants
         };
 
         // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative.
-        // AUDIT-08: replaced O(level) loop with closed-form O(1). The per-level
-        // term simplifies: floor(8 + l * 0.5f) == 8 + l/2 (integer division)
-        // for all positive l. Summing over l = 1..level yields
+        // AUDIT-08: replaced O(level) loop with closed-form O(1). Derivation
+        // in integer terms — for positive integer l, the per-level term
+        // floor(8 + l/2) equals 8 + (l/2) under C# integer division.
+        // Summing (l/2) over l = 1..level yields floor(level² / 4):
+        // pair l = 2k-1 and l = 2k contribute k-1 and k (summing to the
+        // quarter-square). So:
         //   total = StartingHp + 8*level + floor(level² / 4)
         // Exhaustive parity with the pre-fix loop is verified in
-        // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200.
+        // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200. The earlier
+        // comment claimed float-identity ((int)(8 + l * 0.5f) == 8 + l/2)
+        // which isn't safe for large l (float precision fails past ~2^24);
+        // Copilot PR #41 round-3 asked for the pure-integer framing.
         //
         // level <= 0: the original loop skipped entirely, so we return
         // StartingHp. This preserves the pre-AUDIT-08 contract for any
