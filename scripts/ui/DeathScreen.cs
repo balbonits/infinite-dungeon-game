@@ -53,9 +53,11 @@ public partial class DeathScreen : Control
         _youDiedLabel.AddThemeColorOverride("font_color", new Color(0.8f, 0.05f, 0.05f, 1.0f));
         _youDiedLabel.AddThemeColorOverride("font_outline_color", new Color(0, 0, 0, 1));
         _youDiedLabel.AddThemeConstantOverride("outline_size", 12);
-        // 96 is 12×8 — already integer-multiple-of-8 so no migration needed,
-        // but kept literal here rather than adding a new FontSizes entry for
-        // a single-site "2× hero title" use.
+        // "2× hero title" derived from FontSizes.HeroTitle (48) so the size
+        // tracks any future ladder tweak and stays on the integer-multiple-
+        // of-8 contract automatically. Previous literal 96 happened to
+        // already be 12×8, but tying it to HeroTitle makes the relationship
+        // explicit.
         _youDiedLabel.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.HeroTitle * 2);
         _youDiedLabel.Modulate = new Color(1, 1, 1, 0);
         youDiedCenter.AddChild(_youDiedLabel);

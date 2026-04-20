@@ -48,8 +48,13 @@ public static class UiTheme
     /// readers never fire under xUnit — the load path is purely a Godot-
     /// runtime concern.
     /// </summary>
-    private static FontFile? _fontFamily;
-    public static FontFile FontFamily
+    // Return type is Font (the base class) — the happy path returns a
+    // FontFile with pixel-font settings applied; the error path returns
+    // ThemeDB.FallbackFont, which is the engine's built-in Font (not
+    // necessarily FontFile). Callers only need Font (Theme.DefaultFont and
+    // AddThemeFontSizeOverride bind against Font).
+    private static Font? _fontFamily;
+    public static Font FontFamily
     {
         get
         {
@@ -58,15 +63,14 @@ public static class UiTheme
             if (loaded == null)
             {
                 // Operator alert: the font is a required shipping asset per
-                // SPEC-UI-FONT-01. Fall back to Godot's built-in default font
-                // so UI stays readable while the error surfaces — an empty
-                // FontFile would produce tofu glyphs that drown the real
-                // error signal. Returning the engine default keeps text
-                // legible AND text-color semantics visible; the red error
-                // message makes the regression obvious in logs.
+                // SPEC-UI-FONT-01. Fall back to Godot's built-in engine font
+                // (ThemeDB.FallbackFont) so UI stays readable while the
+                // error surfaces. Previously cast the fallback to FontFile,
+                // which silently null'd out + produced tofu from an empty
+                // FontFile — worse than the engine default. Return Font so
+                // any engine font class is accepted.
                 GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load. Re-import the font resource; UI renders with Godot's built-in fallback font until fixed.");
-                var fallback = ThemeDB.FallbackFont;
-                _fontFamily = (fallback as FontFile) ?? new FontFile();
+                _fontFamily = ThemeDB.FallbackFont ?? new FontFile();
                 return _fontFamily;
             }
             // Pixel-font rendering discipline per SPEC-UI-FONT-01:
