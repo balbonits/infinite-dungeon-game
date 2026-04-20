@@ -37,7 +37,11 @@ public class DeathTests : GameTestBase
             timeout: 3f, what: "ClassSelect to appear");
         await Input.WaitSeconds(0.3f);
 
-        await Input.PressEnter();
+        // NavRight first to enter zone 0, focus card 0, and auto-select
+        // Warrior — otherwise _selectedCard is null and Confirm returns
+        // early without loading Town. See TownTests.cs NavigateToTown for
+        // the full bug analysis.
+        await Input.NavRight();
         await Input.WaitFrames(5);
         await Input.NavDown();
         await Input.WaitFrames(5);

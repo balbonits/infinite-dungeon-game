@@ -34,7 +34,9 @@ public class GuildWindowTests : GameTestBase
         await WaitUntil(() => Ui.HasNodeOfType<ClassSelect>(),
             timeout: 3f, what: "ClassSelect appears");
         await Input.WaitSeconds(0.3f);
-        await Input.PressEnter();
+        // NavRight first — auto-selects Warrior so Confirm actually fires.
+        // See TownTests.NavigateToTown for the full bug analysis.
+        await Input.NavRight();
         await Input.WaitFrames(5);
         await Input.NavDown();
         await Input.WaitFrames(5);

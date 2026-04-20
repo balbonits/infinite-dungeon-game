@@ -4,6 +4,18 @@
 
 Testing approach for "A Dungeon in the Middle of Nowhere" using Godot 4 + C#. Combines manual playtesting, unit tests (xUnit), and integration/scene tests (GdUnit4) to catch regressions and verify that game feel matches the Phaser 3 prototype.
 
+## Rule: Headless UI test runs are BANNED (PO direction, 2026-04-20)
+
+All flow / UI / snapshot tests must run **windowed**. A headless Godot process cannot render, cannot produce a viewport texture, and cannot produce meaningful signal for:
+
+- Screenshot / visual-regression baselines (capture returns an empty image).
+- Flow tests that assert rendered state (what the player actually sees).
+- Accessibility lint on a live tree (Theme color resolution requires the draw pass).
+
+Local: `make test-ui` launches the game windowed. CI: wraps the same invocation in `xvfb-run` so a virtual display is available. **No code path in Makefile or CI invokes `godot --headless --run-tests`** — if you see it in a diff, reject it.
+
+Pure-C# unit tests (`tests/unit/`, `tests/integration/`) remain headless-compatible — they don't need a rendering context. This ban applies only to the GoDotTest in-game UI suite and downstream snapshot / flow layers.
+
 ## Current State
 
 > **Active implementation** (branch: `feat/testing-setup`). Unit and integration tests are live. E2E is scaffolded but not yet automated. Screenshots and recordings are not yet set up.

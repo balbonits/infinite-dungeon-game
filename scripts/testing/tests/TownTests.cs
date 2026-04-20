@@ -42,12 +42,23 @@ public class TownTests : GameTestBase
             timeout: 3f, what: "ClassSelect to appear");
         await Input.WaitSeconds(0.3f);
 
-        // Select warrior (first card) with Enter, then press Confirm
-        await Input.PressEnter();          // selects focused card (warrior)
+        // ClassSelect initial state: _focusIndex=-1, _focusZone=0, _selectedCard=null.
+        // The pre-fix sequence fired PressEnter immediately, but zone 0 +
+        // focus index < 0 means nothing is selected yet, so OnCardClicked
+        // never ran and _selectedCard stayed null. Later NavDown→PressEnter
+        // on the Confirm button fired OnConfirmPressed, which returns early
+        // when _selectedCard is null → Town never loaded → every downstream
+        // test timed out.
+        //
+        // Fix: NavRight first. ClassSelect._UnhandledInput on ui_right calls
+        // MoveFocus(1), which enters zone 0, lands on card 0 (Warrior), and
+        // auto-calls OnCardClicked on that card — _selectedCard is set to
+        // Warrior. THEN NavDown moves to Confirm, PressEnter fires it.
+        await Input.NavRight();            // focus + auto-select first card (Warrior)
         await Input.WaitFrames(5);
-        await Input.NavDown();             // move focus to Confirm zone
+        await Input.NavDown();             // zone 0 → zone 1 (Confirm focused)
         await Input.WaitFrames(5);
-        await Input.PressEnter();          // press Confirm → LoadTown
+        await Input.PressEnter();          // fire Confirm → OnConfirmPressed → LoadTown
         await Input.WaitSeconds(0.6f);
 
         // Wait for town to load (ScreenTransition finishes, Town node is in the tree)

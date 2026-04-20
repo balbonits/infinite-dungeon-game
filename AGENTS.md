@@ -441,7 +441,7 @@ public override void _Ready() { _sprite = GetNode<Sprite2D>("Sprite"); }
 **Testing layers:**
 - **xUnit** (`tests/unit/`, `tests/integration/`) — pure C# logic, no Godot runtime. Fast.
 - **GdUnit4** (`tests/e2e/`) — scene loading, asset validation, system verification. Runs with `make test-gdunit`.
-- **GoDotTest** (`scripts/testing/tests/*.cs`) — in-game UI tests driven by simulated keyboard input. Runs via `godot --headless --run-tests --quit-on-finish` (see `Main.cs`). Run with `make test-ui` or `make test-ui-suite SUITE=<Name>`. Built on `GodotTestDriver` for input simulation + `InputHelper`/`UiHelper` helpers in `scripts/testing/`.
+- **GoDotTest** (`scripts/testing/tests/*.cs`) — in-game UI tests driven by simulated keyboard input. **Runs WINDOWED only** via `godot --path . --run-tests --quit-on-finish` (see `Main.cs`). Headless UI-test runs are BANNED per PO direction 2026-04-20 — headless Godot can't render a viewport, so screenshot / visual-regression / flow-state assertions produce no meaningful signal. Use `make test-ui` or `make test-ui-suite SUITE=<Name>`. CI wraps the command in `xvfb-run` for a virtual display. Built on `GodotTestDriver` for input simulation + `InputHelper`/`UiHelper` helpers in `scripts/testing/`.
 
 **Known limitation:** C# web export is not supported as of Godot 4.6. Desktop-only.
 

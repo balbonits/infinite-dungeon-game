@@ -174,10 +174,18 @@ jobs:
       - name: Rebuild Godot import cache
         run: godot --path ./ -e --headless --quit-after 2000
 
-      - name: Run GoDotTest UI suite
+      # Headless UI test runs are BANNED (PO direction, 2026-04-20). The
+      # suite contains flow tests + snapshot assertions that need a real
+      # rendering context. On a headless CI runner we spin up Xvfb as a
+      # virtual display so `godot --run-tests` (without --headless) has
+      # something to draw to, matching what local `make test-ui` uses.
+      - name: Install Xvfb
+        run: sudo apt-get update -qq && sudo apt-get install -y xvfb
+
+      - name: Run GoDotTest UI suite (windowed via Xvfb)
         run: |
-          godot --headless --path . --run-tests --quit-on-finish 2>&1 | tee ui-tests.log
-          # Fail the job if any test failed (GoDotTest reports "✗" for failures).
+          xvfb-run -a -s "-screen 0 1280x720x24" \
+            godot --path . --run-tests --quit-on-finish 2>&1 | tee ui-tests.log
           if grep -q "✗" ui-tests.log; then
             echo "❌ GoDotTest UI suite reported failures"
             exit 1

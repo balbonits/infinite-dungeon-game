@@ -58,13 +58,19 @@ test-gdunit: ## Run GdUnit4 E2E/scene tests (requires GODOT_BIN or Godot on PATH
 		--verbosity normal \
 		-m:1 2>&1
 
-test-ui: build ## Run GoDotTest in-game UI tests (keyboard nav, windows, etc)
-	@$(GODOT) --headless --path . --run-tests --quit-on-finish 2>&1 | \
-		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
+# Headless test runs are BANNED (PO direction, 2026-04-20). Windowed is the
+# only way flow / visual / snapshot assertions produce meaningful signal —
+# a headless run can't capture a frame, can't render the UI, and its
+# pass/fail count isn't comparable to what a user actually sees. If a CI
+# display is unavailable, UI tests skip; they never run headless.
+test-ui: kill build ## Run GoDotTest UI suite WINDOWED. Required for flow + snapshot tests.
+	@echo "Launching windowed GoDotTest suite (headless mode is banned for UI tests)…"
+	@$(GODOT) --path . --run-tests --quit-on-finish 2>&1 | \
+		grep -E "(✓|✗|Test|═══|passed|failed|Screenshot|SEEDED|MISMATCH|Info \(GoTest\))" || true
 
-test-ui-suite: build ## Run a specific GoDotTest suite: make test-ui-suite SUITE=SplashTests
+test-ui-suite: kill build ## Run a specific GoDotTest suite WINDOWED: make test-ui-suite SUITE=SplashTests
 	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-suite SUITE=<name>" && exit 1 || true
-	@$(GODOT) --headless --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | \
+	@$(GODOT) --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | \
 		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
 
 # ─── PR / Copilot helpers ──────────────────────────────────────────────────

@@ -38,11 +38,14 @@ public class NpcTests : GameTestBase
             timeout: 3f, what: "ClassSelect to appear");
         await Input.WaitSeconds(0.3f);
 
-        await Input.PressEnter();          // select warrior (first card)
+        // NavRight first to enter zone 0 and auto-select Warrior — otherwise
+        // Confirm fires on _selectedCard=null and Town never loads. See
+        // TownTests.NavigateToTown for full analysis.
+        await Input.NavRight();            // focus + auto-select Warrior
         await Input.WaitFrames(5);
         await Input.NavDown();             // focus Confirm
         await Input.WaitFrames(5);
-        await Input.PressEnter();          // LoadTown
+        await Input.PressEnter();          // fire Confirm → LoadTown
         await Input.WaitSeconds(0.6f);
 
         await WaitUntil(() => Ui.FindNodeOfType<Town>() is not null,
