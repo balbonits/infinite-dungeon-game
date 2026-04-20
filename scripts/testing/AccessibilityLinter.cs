@@ -11,15 +11,15 @@ namespace DungeonGame.Testing;
 /// tests can assert on.
 ///
 /// Coverage (MVP — extend as patterns accumulate):
-/// - <b>Focus reachability</b>: every focusable Button has a defined
-///   focus_neighbor or relies on Godot's layout-based inference. Flags
-///   orphaned focus chains.
 /// - <b>Touch-target size</b>: Button min size ≥ 44×44 (Apple HIG /
 ///   Material guideline). Smaller buttons miss with mouse + fat-finger.
 /// - <b>Text contrast</b>: foreground vs background luminance ratio ≥ 4.5
 ///   (WCAG AA) for body text. Uses Theme color pairs when available.
 /// - <b>Modal-close reachability</b>: any GameWindow on the WindowStack
 ///   has at least one visible "Close" or "Cancel" button.
+///
+/// Not yet implemented (planned): focus-reachability check that walks the
+/// focus_neighbor chain and flags orphans. Open a ticket if you need it.
 ///
 /// Usage:
 /// <code>

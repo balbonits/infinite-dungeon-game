@@ -4,7 +4,7 @@ Human-readable descriptions of the user flows the game must support. Each `.feat
 
 ## Relationship to code
 
-Each feature file maps 1:1 to a `[Test]` method in `scripts/testing/tests/*.cs`. The test name is noted at the top of the feature. If a feature and its test disagree, the test is the enforced behavior — but the mismatch is a bug in one or both.
+Each feature file maps 1:1 to a `[Test]` method in `scripts/testing/tests/*.cs`. The test name is noted at the top of the feature. If a feature and its test disagree, that's a bug in one of them — the spec is the source of truth per [docs/development-paradigm.md](../../development-paradigm.md), so resolve the mismatch by updating whichever side (feature doc, test, or implementation) is wrong against the canonical spec in `docs/`.
 
 These files do NOT run automatically via a Reqnroll/SpecFlow runner. They are documentation kept adjacent to the code that implements them. If the team grows past one contributor and PO-readable living docs are worth their own runner, we can add Reqnroll later — the Gherkin here will port directly.
 

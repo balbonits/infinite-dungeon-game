@@ -33,7 +33,7 @@ public static class ScreenshotHelper
     /// <summary>
     /// True when the game is running via <c>--headless</c>. Viewport capture
     /// does not work in that mode — GetTexture().GetImage() returns empty.
-    /// Visual-regression tests must run windowed (e.g., <c>make test-ui-windowed</c>).
+    /// Visual-regression tests must run windowed (e.g., <c>make test-ui</c>).
     /// </summary>
     public static bool IsHeadless => DisplayServer.GetName() == "headless";
 
