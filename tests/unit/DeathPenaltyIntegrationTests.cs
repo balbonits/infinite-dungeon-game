@@ -37,12 +37,7 @@ public class DeathPenaltyIntegrationTests
     /// <summary>
     /// Deterministic ItemDefs for the backpack/inventory tests — not routed
     /// through ItemDatabase so catalog changes can't silently break these
-    /// assertions. Note: the <c>DestroyRandomEquipped</c> tests below are
-    /// an intentional exception — they use <see cref="ItemDatabase"/> to
-    /// pull a real starter-gear entry because <see cref="EquipmentSet.ForceEquip"/>
-    /// validates item category against a live def; inlining a minimal
-    /// ItemDef with the right equip-slot plumbing is noisier than the
-    /// catalog lookup for a shipped starting-gear id.
+    /// assertions.
     /// </summary>
     private static ItemDef Potion(string id = "potion", int tier = 1) => new()
     {
@@ -83,20 +78,36 @@ public class DeathPenaltyIntegrationTests
     {
         var backpack = new Inventory(20) { Gold = backpackGold };
         // Populate varied categories so item-loss semantics exercise the mix.
-        backpack.TryAdd(Potion("potion_small"), 3);
-        backpack.TryAdd(Potion("potion_large"), 2);
-        backpack.TryAdd(Weapon("sword_t1"));
-        backpack.TryAdd(Weapon("sword_t2"));
-        backpack.TryAdd(Material("iron_ore"), 5);
-        backpack.TryAdd(Material("wood"), 10);
-        backpack.TryAdd(Potion("elixir"));
-        backpack.TryAdd(Weapon("dagger"));
-        backpack.TryAdd(Material("gem"));
-        backpack.TryAdd(Weapon("bow"));
+        // MustAdd fails the test if any TryAdd returns false — otherwise a
+        // future capacity/invariant change could silently shrink the seed
+        // and leave downstream assertions passing on the wrong fixture.
+        MustAdd(backpack, Potion("potion_small"), 3);
+        MustAdd(backpack, Potion("potion_large"), 2);
+        MustAdd(backpack, Weapon("sword_t1"));
+        MustAdd(backpack, Weapon("sword_t2"));
+        MustAdd(backpack, Material("iron_ore"), 5);
+        MustAdd(backpack, Material("wood"), 10);
+        MustAdd(backpack, Potion("elixir"));
+        MustAdd(backpack, Weapon("dagger"));
+        MustAdd(backpack, Material("gem"));
+        MustAdd(backpack, Weapon("bow"));
 
         var bank = new Bank();
         // Bank starts with default capacity; extra slots via Purchase API.
         return (backpack, bank);
+    }
+
+    /// <summary>
+    /// Assertion-wrapped <see cref="Inventory.TryAdd"/> for fixture seeding.
+    /// Throws with a descriptive message if the add fails so a broken
+    /// fixture blows up at seed time instead of producing misleading
+    /// downstream test results.
+    /// </summary>
+    private static void MustAdd(Inventory inv, ItemDef item, int count = 1)
+    {
+        if (!inv.TryAdd(item, count))
+            throw new System.InvalidOperationException(
+                $"fixture seed failed: TryAdd({item.Id}, {count}) returned false — check backpack capacity or Inventory invariants");
     }
 
     // ── Full-inventory death ─────────────────────────────────────────────────
@@ -335,16 +346,19 @@ public class DeathPenaltyIntegrationTests
     [Fact]
     public void DestroyRandomEquipped_WithOneItem_RemovesThatItemDeterministically()
     {
+        // Minimal ItemDef inline — EquipmentSet.IsCompatible only checks
+        // Category, so a Body-category record is all we need. Avoids
+        // coupling to ItemDatabase catalog stability for a test whose
+        // purpose is the primitive's slot-roll behavior.
+        var chest = new ItemDef { Id = "test_body", Name = "Test Body", Category = ItemCategory.Body };
         var equip = new EquipmentSet();
-        var chest = ItemDatabase.Get("body_warrior_armor_t1");
-        chest.Should().NotBeNull("fixture item must exist in ItemDatabase");
-        equip.ForceEquip(EquipSlot.Body, chest!);
+        equip.ForceEquip(EquipSlot.Body, chest);
 
         var rng = new System.Random(12345);
         var destroyed = equip.DestroyRandomEquipped(rng);
 
         destroyed.Should().NotBeNull("an item was equipped, so the primitive must destroy something");
-        destroyed!.Id.Should().Be(chest!.Id, "the only equipped item was the one destroyed");
+        destroyed!.Id.Should().Be(chest.Id, "the only equipped item was the one destroyed");
         equip.Body.Should().BeNull("Body slot is cleared after destruction");
     }
 
