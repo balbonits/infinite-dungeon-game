@@ -179,6 +179,57 @@ public class CraftingTests
         Crafting.RecycleItem(item).Should().Be(45);
     }
 
+    // AUDIT-11: quality ladder covers all 6 tiers, not just Superior + Elite.
+    // Ratios locked in SPEC-CRAFTING-QUALITY-LADDER-01 (geometric).
+
+    [Fact]
+    public void RecycleItem_MasterworkQualityBonus()
+    {
+        var item = MakeItem(level: 10, quality: BaseQuality.Masterwork);
+        int baseGold = 5 + 10 * 2; // 25
+        // Masterwork = ×1.00 → bonus equals baseGold
+        Crafting.RecycleItem(item).Should().Be(baseGold + baseGold); // 50
+    }
+
+    [Fact]
+    public void RecycleItem_MythicQualityBonus()
+    {
+        var item = MakeItem(level: 10, quality: BaseQuality.Mythic);
+        int baseGold = 5 + 10 * 2; // 25
+        // Mythic = ×2.00
+        Crafting.RecycleItem(item).Should().Be(baseGold + baseGold * 2); // 75
+    }
+
+    [Fact]
+    public void RecycleItem_TranscendentQualityBonus()
+    {
+        var item = MakeItem(level: 10, quality: BaseQuality.Transcendent);
+        int baseGold = 5 + 10 * 2; // 25
+        // Transcendent = ×4.00
+        Crafting.RecycleItem(item).Should().Be(baseGold + baseGold * 4); // 125
+    }
+
+    [Fact]
+    public void RecycleItem_QualityLadder_IsStrictlyMonotonic()
+    {
+        // Spec guarantees each tier yields more than the previous at the same
+        // item level + affix count. Regression guard.
+        int LevelOnly(BaseQuality q) => Crafting.RecycleItem(MakeItem(level: 10, quality: q));
+
+        int normal = LevelOnly(BaseQuality.Normal);
+        int superior = LevelOnly(BaseQuality.Superior);
+        int elite = LevelOnly(BaseQuality.Elite);
+        int masterwork = LevelOnly(BaseQuality.Masterwork);
+        int mythic = LevelOnly(BaseQuality.Mythic);
+        int transcendent = LevelOnly(BaseQuality.Transcendent);
+
+        (normal < superior).Should().BeTrue();
+        (superior < elite).Should().BeTrue();
+        (elite < masterwork).Should().BeTrue();
+        (masterwork < mythic).Should().BeTrue();
+        (mythic < transcendent).Should().BeTrue();
+    }
+
     // -- GetDisplayName --
 
     [Fact]

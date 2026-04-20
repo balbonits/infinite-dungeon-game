@@ -58,17 +58,26 @@ public static class Crafting
     }
 
     /// <summary>
-    /// Recycle an item into materials. Returns gold value.
+    /// Recycle an item and return the gold payout. (The Blacksmith flow
+    /// presents this as "recycling into gold + materials"; the logic layer
+    /// returns only the gold component — material award is a separate
+    /// concern at the call site.)
+    /// Quality-bonus ladder locked in SPEC-CRAFTING-QUALITY-LADDER-01
+    /// (see docs/systems/depth-gear-tiers.md § Interaction with Other
+    /// Systems → Recycling): geometric multipliers applied to
+    /// baseGold = 5 + item.ItemLevel * 2. AUDIT-11 impl.
     /// </summary>
     public static int RecycleItem(CraftableItem item)
     {
-        // Gold return scales with item level and quality
         int baseGold = 5 + item.ItemLevel * 2;
         int qualityBonus = item.Quality switch
         {
-            BaseQuality.Superior => baseGold / 4,
-            BaseQuality.Elite => baseGold / 2,
-            _ => 0,
+            BaseQuality.Superior => baseGold / 4,    // ×0.25
+            BaseQuality.Elite => baseGold / 2,       // ×0.50
+            BaseQuality.Masterwork => baseGold,      // ×1.00
+            BaseQuality.Mythic => baseGold * 2,      // ×2.00
+            BaseQuality.Transcendent => baseGold * 4, // ×4.00
+            _ => 0,                                  // Normal: no bonus
         };
         return baseGold + qualityBonus + item.Affixes.Count * 10;
     }
