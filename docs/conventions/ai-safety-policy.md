@@ -2,7 +2,9 @@
 
 Status: **Locked (policy v1)** — 2026-04-20. Revisions require PO sign-off + a dated entry in §11.
 
-This policy governs all generative-AI use in the project — both **dev-time** (sprite/tile/icon generation via PixelLab, code/docs/specs generation via Claude, tilesets via LPC) and any **runtime** AI that ships with the game (future — not present in MVP). It exists because applicable laws now mandate active prevention of prohibited output, an in-app user reporting channel, and demonstrable use of those reports to improve filtering. This document is how we satisfy those obligations.
+This policy governs all **generative-AI** use in the project — both **dev-time** (sprite/icon generation via PixelLab, code / docs / specs generation via Claude) and any **runtime** AI that ships with the game (future — not present in MVP). It exists because applicable laws now mandate active prevention of prohibited output, an in-app user reporting channel, and demonstrable use of those reports to improve filtering. This document is how we satisfy those obligations.
+
+> **What this policy is scoped to:** *generative-AI pipelines* only — anything that takes a prompt or seed and produces novel output via a model. **Not** in scope: the LPC (Liberated Pixel Cup) layer-composition generator and downloaded OpenGameArt / Kenney asset packs per ADR-007. LPC is a deterministic compositor over pre-authored human art, not a generative model; OGA assets are human-authored third-party art we attribute per their licenses. Those pipelines have their own review discipline (per-asset license + attribution + PR check) but don't carry the §1–§5 obligations that apply to model-generated content.
 
 > **Scope at MVP:** the game currently ships ZERO runtime generative AI — all AI-generated assets are baked at dev time and shipped as static files. Every runtime surface the player sees is deterministic. This policy still applies: (a) dev-time pipelines can still produce prohibited output that would ship with the game, (b) future runtime-AI features (procedural dialogue, emergent narrative, etc.) must design against this policy from day one, and (c) the in-app reporting channel is a MVP blocker once *any* AI-generated surface is player-facing.
 
@@ -44,7 +46,15 @@ Every dev-time AI pipeline in the project must satisfy all three of the followin
 
 ### §2.3 Shipping-time audit trail
 
-- **Provenance record.** Every AI-generated shipped asset records: source pipeline (PixelLab / LPC / Claude / etc), prompt block name (CHAR-HUM-ISO / TILE-ISO-ATLAS / ability-icon / etc), generation-time commit SHA of the project. This lets us re-generate on demand and audit retroactively if a §1-category issue surfaces.
+- **Provenance record.** Every AI-generated shipped asset carries a record of: source pipeline (PixelLab / Claude / etc; see §§scope preamble for the generative-AI-only definition), prompt block name (CHAR-HUM-ISO / TILE-ISO-ATLAS / ability-icon / etc), generation-time commit SHA of the project, and generation timestamp. The record lets us re-generate on demand and audit retroactively if a §1-category issue surfaces.
+
+  **Storage location + schema:** a single repo-root file `docs/assets/ai-provenance.ndjson` — one JSON object per line, append-only, committed to git alongside the asset it records. Minimum schema:
+
+  ```json
+  {"asset": "assets/items/ring/iron_ring.png", "pipeline": "pixellab", "prompt_block": "ITEM-ICON-64", "commit": "abc1234", "generated_at": "2026-04-20T18:30:00Z"}
+  ```
+
+  Additional fields are optional; the four above are required. Impl ticket `POL-AI-PROVENANCE-INIT-01` (added to §10) stubs the file and the art-pipeline CI check that blocks PRs adding an AI-generated asset without a matching provenance row.
 - **CREDITS.md reference.** Shipped AI-generated assets are listed in the project's credits alongside attribution for non-AI assets. Transparency is itself a safety feature — players who want to know what's AI-generated can find out in one place.
 
 ---
@@ -57,7 +67,7 @@ When the game adds its first runtime-generating AI feature (procedural dialogue,
 
 - **Blocklist / classifier on the inference path.** Every AI-generated string or image emitted during play passes through a content classifier *before* rendering. The classifier targets §1 categories specifically and additionally blocks slurs, explicit language, and real-person references unless surfaced via a curated whitelist.
 - **Fallback template.** If the classifier rejects an output, the surface renders a safe fallback (a neutral template string, a placeholder sprite, or simply nothing) rather than the raw AI output.
-- **Logging.** Rejected generations are logged locally (attached to `docs/evidence/ai-rejections.ndjson` or equivalent) with a timestamp + surface + classifier-reason. No user PII, no full raw output — just the metadata needed to audit whether the classifier is over- or under-filtering.
+- **Logging.** Rejected generations are logged to `user://ai_rejections.ndjson` at runtime (same `user://` address space as the save-data + ai-reports files in §4.3 — the shipped game can write there; the repo tree is read-only). Logs carry a timestamp + surface + classifier-reason only — no user PII, no full raw output. A dev-only export tool can copy exported logs into `docs/evidence/` for audit purposes; that's a manual step, not a runtime path.
 
 ### §3.2 Deterministic-by-default
 
@@ -71,7 +81,7 @@ When the game adds its first runtime-generating AI feature (procedural dialogue,
 ### §4.1 When required
 
 - **Trigger: any player-visible surface containing AI-generated content.** Once a single AI-generated surface is in front of the player at runtime (text, image, audio, whatever), the reporting channel must be available. This is the MVP blocker mentioned in the scope preamble.
-- **Scope of "surface":** includes surfaces rendered at dev-time and shipped as static files (like our current sprites), because the player sees them at play time and the law treats shipped content no differently than runtime-generated content for reporting purposes.
+- **Scope of "surface":** the project's compliance posture is to treat shipped dev-time AI-generated assets the same as runtime-generated content for reporting purposes. Even though current specific statutes are worded around runtime generation, the player experience of encountering AI-generated content is identical in both cases, and we'd rather over-comply than risk a gap. (Per §9 this is not a legal opinion — it's a project compliance stance that errs on the side of covering more, not less.)
 
 ### §4.2 Placement + UX contract
 
@@ -164,6 +174,7 @@ Everything in-repo, version-controlled, auditable without access to internal too
 | POL-AI-CREDITS-SWEEP-01 | Audit shipped assets + tag provenance in CREDITS.md | To Do (P2) |
 | POL-AI-TRIAGE-INIT-01 | Create `docs/evidence/ai-report-triage.md` stub + set up weekly PO reminder | To Do (P3 — no reports yet) |
 | POL-AI-PIPELINE-REF-01 | Add §Policy Reference back-pointers to every existing pipeline spec | To Do (P2) |
+| POL-AI-PROVENANCE-INIT-01 | Create `docs/assets/ai-provenance.ndjson` stub + CI check blocking AI-asset PRs without a provenance row | To Do (P2) |
 
 ---
 
