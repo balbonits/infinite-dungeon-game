@@ -46,7 +46,7 @@ Every dev-time AI pipeline in the project must satisfy all three of the followin
 
 ### §2.3 Shipping-time audit trail
 
-- **Provenance record.** Every AI-generated shipped asset carries a record of: source pipeline (PixelLab / Claude / etc; see §§scope preamble for the generative-AI-only definition), prompt block name (CHAR-HUM-ISO / TILE-ISO-ATLAS / ability-icon / etc), generation-time commit SHA of the project, and generation timestamp. The record lets us re-generate on demand and audit retroactively if a §1-category issue surfaces.
+- **Provenance record.** Every AI-generated shipped asset carries a record of: source pipeline (PixelLab / Claude / etc; see the scope preamble above for the generative-AI-only definition), prompt block name (CHAR-HUM-ISO / TILE-ISO-ATLAS / ability-icon / etc), generation-time commit SHA of the project, and generation timestamp. The record lets us re-generate on demand and audit retroactively if a §1-category issue surfaces.
 
   **Storage location + schema:** a single repo-root file `docs/assets/ai-provenance.ndjson` — one JSON object per line, append-only, committed to git alongside the asset it records. Minimum schema:
 
@@ -93,7 +93,7 @@ When the game adds its first runtime-generating AI feature (procedural dialogue,
 
 ### §4.3 Local vs. network submission
 
-- **MVP: local-only.** Reports write to `user://ai_reports/` (JSON-lines, one report per line, pseudonymized). A support script pulls them from playtester machines manually. Rationale: MVP has no cloud backend and we are not collecting PII.
+- **MVP: local-only.** Reports write to a single append-only UTF-8 file at `user://ai_reports.ndjson`. Format: newline-delimited JSON, one report object per line, pseudonymized (no user PII). A support script pulls this file from playtester machines manually. Rationale: MVP has no cloud backend and we are not collecting PII.
 - **Post-launch: cloud submission.** When the game has a network-enabled distribution channel (`SPEC-EXPORT-PLATFORMS-01`), reports can opt in to cloud submission per the deferred `SPEC-ANALYTICS-BACKEND-01`. Default remains "local save + manual export" — submission is opt-in, always.
 
 ---
