@@ -179,18 +179,40 @@ public partial class SaveManager : Node
 
     // ── Current-slot auto-save convenience ──────────────────────────────
 
-    /// <summary>Save to the current slot (or slot 0 if none is active). Returns false on I/O failure.</summary>
+    /// <summary>
+    /// Save to the currently-owned slot. Returns false on I/O failure OR if
+    /// <see cref="GameState.CurrentSaveSlot"/> is null (no character owns a
+    /// slot yet — e.g., pre-New-Game boot, or after a reset that hasn't
+    /// reserved a slot yet). Refusing instead of falling through to slot 0
+    /// prevents silently overwriting an unrelated save when an auto-save
+    /// fires before slot reservation has completed.
+    /// </summary>
     public bool Save()
     {
-        int slot = GameState.Instance.CurrentSaveSlot ?? 0;
-        return SaveToSlot(slot);
+        int? slot = GameState.Instance.CurrentSaveSlot;
+        if (slot == null)
+        {
+            GD.PrintErr("[SaveManager] Save() refused: CurrentSaveSlot is null — no character owns a slot yet.");
+            return false;
+        }
+        return SaveToSlot(slot.Value);
     }
 
-    /// <summary>Load the current slot (or slot 0 if none is active). True on success.</summary>
+    /// <summary>
+    /// Load the currently-owned slot. Returns false if the slot is empty,
+    /// the file is corrupt, OR if <see cref="GameState.CurrentSaveSlot"/>
+    /// is null. Refusing on null prevents silently restoring slot 0 over
+    /// whatever partial state a caller already had.
+    /// </summary>
     public bool Load()
     {
-        int slot = GameState.Instance.CurrentSaveSlot ?? 0;
-        return LoadSlot(slot);
+        int? slot = GameState.Instance.CurrentSaveSlot;
+        if (slot == null)
+        {
+            GD.PrintErr("[SaveManager] Load() refused: CurrentSaveSlot is null.");
+            return false;
+        }
+        return LoadSlot(slot.Value);
     }
 
     // ── Backwards-compatible helpers ────────────────────────────────────
