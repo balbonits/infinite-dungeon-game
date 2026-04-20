@@ -145,7 +145,7 @@ Affixes are the core of item depth. They are **never** found on drops — all af
 | Utility | Energizing (+mana), Flowing (+mana regen) | of Swiftness (+move speed), of Learning (+XP bonus) |
 | Elemental | Fiery (+fire damage), Frozen (+frost damage), Shocking (+lightning) | of Flame Resist, of Frost Resist, of Storm Resist |
 
-*Affix definitions are implemented in `AffixDatabase.cs` (specced for tiers 1-6; currently registers tiers 1-4 pending AUDIT-10 impl). The categories above are representative — see code for the complete list. T5/T6 values locked in the T5+T6 ladder table below.*
+*Affix definitions are implemented in `AffixDatabase.cs`. After AUDIT-10, the registry contains **46 affixes** — 30 across tiers 1-4 and 16 across tiers 5-6. (The SPEC-AFFIX-TIER-LADDER-01 ticket originally counted 28 pre-existing T1-T4 affixes; the actual figure on code was 30 — 2 more than the spec-author estimated. Net roster is unchanged from the spec's intent.) T5/T6 values locked in the T5+T6 ladder table below.*
 
 #### T5 + T6 Affix Ladder (SPEC-AFFIX-TIER-LADDER-01)
 
@@ -187,7 +187,7 @@ T5 ("Elite", min item level 75) and T6 ("Legendary", min item level 100) extend 
 | `bear_6` | of the Bear | Suffix | Defensive | max_hp | 6 | 100 | 130 | false | 4000 | 42 |
 | `swiftness_6` | of Swiftness | Suffix | Utility | move_speed | 6 | 100 | 22 | true | 3800 | 40 |
 
-**Implementation note for AUDIT-10:** The impl ticket copies these rows directly into the `Register*` calls under two new comment headers (`// --- Tier 5 (Item Level 75+) ---` and `// --- Tier 6 (Item Level 100+) ---`) in `AffixDatabase.cs` following the existing T1–T4 formatting. No code logic changes — `GetMaxTier` already returns 5/6 at the correct item-level thresholds. After the impl ticket lands, update this doc's footnote from "currently registers tiers 1-4 pending AUDIT-10 impl" to "28 affixes across tiers 1-4 + 16 affixes across tiers 5-6 = 44 total."
+**Implementation note for AUDIT-10 (landed):** These 16 rows were copied directly into the `Register*` calls under two new comment headers (`// --- Tier 5 (Item Level 75+) ---` and `// --- Tier 6 (Item Level 100+) ---`) in `AffixDatabase.cs` following the existing T1–T4 formatting. No code logic changes — `GetMaxTier` already returned 5/6 at the correct item-level thresholds. Final registry total = **46 affixes** (30 pre-existing T1-T4 + 16 new T5-T6), per the footnote above; the spec's original "28 T1-T4" estimate was 2 low against the actual code, but the 16-affix T5/T6 ladder intent is preserved.
 
 ### Crafting at the Blacksmith
 
