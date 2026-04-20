@@ -32,6 +32,7 @@ __pycache__/
 tests/bin/
 tests/obj/
 tests/TestResults/
+.ui-test.log
 
 # gdUnit4 auto-generated runner scene (regenerated on every build)
 tests/e2e/gdunit4_testadapter_v5/

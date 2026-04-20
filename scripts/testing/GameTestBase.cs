@@ -115,6 +115,11 @@ public abstract class GameTestBase : TestClass
                 // Reviewer promotes it intentionally, so we don't hard-fail here.
                 Expect(true, $"screenshot {stepName} seeded new baseline at {report.VerifiedPath}");
                 break;
+            case ScreenshotHelper.VerifyStatus.Skipped:
+                // Headless run — capture unavailable. Log without failing;
+                // visual assertions only run in windowed test jobs (xvfb on CI).
+                GD.Print($"[VerifyScreenshot] {stepName} skipped — headless mode");
+                break;
             case ScreenshotHelper.VerifyStatus.Mismatch:
                 Expect(false, $"screenshot {stepName} DIFFERS from baseline by {report.PixelDifferencePercent:F2}% (> {tolerancePercent}%). Diff image: {report.DiffPath}");
                 break;

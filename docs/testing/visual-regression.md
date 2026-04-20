@@ -93,4 +93,10 @@ If the change is NOT intended, that's your regression — fix it and re-run.
 
 ## CI integration
 
-The `tests/e2e/screenshots/baselines/` directory is committed. CI runs with the same tolerance as local and fails the build on any pixel mismatch above tolerance. Platform diffs (macOS vs Linux GL rendering) can drift subpixels — tuneable via `tolerancePercent` per test.
+The `tests/e2e/screenshots/baselines/` directory is committed.
+
+CI runs the UI test suite **windowed** (not `--headless`): the GitHub Actions job wraps Godot with `xvfb-run -a -s "-screen 0 1280x720x24"` to provide a virtual X display, which gives `DisplayServer` a real rendering context so `Viewport.GetTexture().GetImage()` produces a non-empty capture.
+
+`ScreenshotHelper.IsHeadless` (checks `DisplayServer.GetName() == "headless"`) is the skip-gate for pure headless runs (Godot flag `--headless`); under xvfb it reports a real display name, so verification proceeds as on a dev box. When the check does skip, `VerifyScreenshot` returns `VerifyStatus.Skipped` and the step logs without failing — intentionally separate from "baseline was written".
+
+Pixel mismatches above `tolerancePercent` fail the CI job. Platform diffs (macOS vs Linux GL rendering) can drift subpixels — tune `tolerancePercent` per test if needed, or seed baselines on the same platform CI runs on.

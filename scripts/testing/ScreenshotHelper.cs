@@ -134,6 +134,12 @@ public static class ScreenshotHelper
         Mismatch,
         /// <summary>Capture failed for environmental reasons (no viewport, empty image).</summary>
         Failed,
+        /// <summary>
+        /// Headless run — viewport capture unavailable; verification neither
+        /// passed nor failed. Distinct from <see cref="BaselineSeeded"/> so the
+        /// test reporter can't conflate "didn't check" with "wrote baseline".
+        /// </summary>
+        Skipped,
     }
 
     public readonly record struct VerifyReport(
@@ -147,18 +153,18 @@ public static class ScreenshotHelper
     private const string ReceivedDir = "tests/e2e/screenshots/received";
 
     /// <summary>
+    /// Sentinel returned by <see cref="VerifyAgainstBaseline"/> when headless
+    /// mode prevents viewport capture — the check is skipped, not passed.
+    /// </summary>
+    public static readonly VerifyReport HeadlessSkipped =
+        new(VerifyStatus.Skipped, null, null, null, 0);
+
+    /// <summary>
     /// Capture the viewport and compare against a baseline PNG under
     /// <c>tests/e2e/screenshots/baselines/&lt;suite&gt;/&lt;test&gt;/NN_&lt;step&gt;.verified.png</c>.
     /// First run seeds the baseline; subsequent runs assert diff ≤ tolerancePercent.
     /// On mismatch, writes <c>.received.png</c> + <c>.diff.png</c> for review.
     /// </summary>
-    /// <summary>
-    /// Add this to VerifyReport.Status when headless mode skips the check —
-    /// distinguishes "skipped because can't render" from "failed".
-    /// </summary>
-    public static readonly VerifyReport HeadlessSkipped =
-        new(VerifyStatus.BaselineSeeded, null, null, null, 0);
-
     public static async Task<VerifyReport> VerifyAgainstBaseline(
         Node host,
         string suiteName,

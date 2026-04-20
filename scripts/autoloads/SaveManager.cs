@@ -34,12 +34,29 @@ public partial class SaveManager : Node
     /// Route all saves to <c>user://test_saves/</c>. Call at the very top of
     /// any GoDotTest run so fabricated-save fixtures can't overwrite real
     /// player data. Idempotent — safe to call repeatedly.
+    ///
+    /// Also wipes any pre-existing save files in the sandbox so runs start
+    /// deterministic — otherwise leftover slot files from a prior test session
+    /// can make <see cref="AreAllSlotsFull"/> / <see cref="AnySaveExists"/>
+    /// return true before a suite's own Setup wipes.
     /// </summary>
     public static void UseTestSandbox()
     {
         SaveDir = TestSandboxSaveDir;
         DirAccess.MakeDirAbsolute(SaveDir);
-        GD.Print($"[SaveManager] Using TEST SANDBOX save dir: {SaveDir}");
+        WipeSandboxFiles();
+        GD.Print($"[SaveManager] Using TEST SANDBOX save dir: {SaveDir} (wiped)");
+    }
+
+    private static void WipeSandboxFiles()
+    {
+        using var dir = DirAccess.Open(TestSandboxSaveDir);
+        if (dir == null) return;
+        foreach (var file in dir.GetFiles())
+        {
+            if (file.EndsWith(".json"))
+                dir.Remove(file);
+        }
     }
 
     /// <summary>Flip back to the real user save directory (post-test teardown).</summary>

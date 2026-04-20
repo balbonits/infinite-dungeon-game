@@ -39,12 +39,21 @@ public partial class Main : Node
         var existingWorld = GetNodeOrNull("Dungeon") ?? GetNodeOrNull("Town");
         existingWorld?.QueueFree();
 
+#if DEBUG
+        // Sandbox MUST be engaged BEFORE ShowSplashScreen is deferred: SplashScreen._Ready
+        // reads SaveManager.SaveDir to set Continue-button state, and any test fixture
+        // that writes a save does so against whatever SaveDir was when the splash booted.
+        // If we moved this into RunTests (also deferred), ShowSplashScreen runs first and
+        // sees the production dir — Copilot PR #33 round-3 finding.
+        var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
+        if (testEnv.ShouldRunTests)
+            Autoloads.SaveManager.UseTestSandbox();
+#endif
+
         // Start with splash screen
         CallDeferred(MethodName.ShowSplashScreen);
 
 #if DEBUG
-        // After the game boots, run tests if --run-tests was passed
-        var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
         if (testEnv.ShouldRunTests)
             CallDeferred(MethodName.RunTests);
 #endif
