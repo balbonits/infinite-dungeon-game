@@ -134,6 +134,101 @@ public class SplashTests : GameTestBase
     }
 
     /// <summary>
+    /// Regression for the "New Game doesn't work after deleting a save slot"
+    /// bug reported 2026-04-19: user flow was splash → Continue → LoadGameScreen →
+    /// delete slot → Back → New Game → silently did nothing. The original
+    /// in-place RebuildSlots path had a timer lambda holding `this` across a
+    /// possible user Back press, which could free the screen mid-transition and
+    /// leave splash focus orphaned. The fix: deleting a slot now emits
+    /// SlotDeleted, and Main recreates a fresh LoadGameScreen. This test
+    /// asserts the recreate-on-delete lifecycle does NOT break splash's
+    /// post-Back focus/input state.
+    /// </summary>
+    [Test]
+    public async Task Splash_AfterDeleteSlotBack_NewGameStillWorks()
+    {
+        // Populate slot 0 so Continue is enabled AND we have a slot to delete.
+        DungeonGame.Autoloads.GameState.Instance.SelectedClass = PlayerClass.Warrior;
+        DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
+        DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
+
+        // Preserve the seeded save across the reload — the default reset
+        // wipes the sandbox, which would destroy the slot we just created
+        // and leave Continue disabled for the test flow.
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
+        if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
+
+        var continueBtn = Ui.FindButton("Continue");
+        if (continueBtn is null || continueBtn.Disabled)
+        {
+            Expect(false, "Continue is not enabled — save did not register");
+            return;
+        }
+        continueBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+        bool loaded = await WaitUntil(() => Ui.HasNodeOfType<LoadGameScreen>(),
+            timeout: 2f, what: "LoadGameScreen appears after Continue");
+        if (!loaded) return;
+        await Input.WaitFrames(5);
+
+        // Find the slot 0 delete button (red "X") and fire its Pressed signal
+        // directly. GrabFocus + PressEnter on the X is unreliable under the
+        // anchor-based positioning the button uses (tests showed focus
+        // didn't grant in time); firing the signal exercises the same code
+        // path (OpenDeleteDialog) without the focus race.
+        var deleteBtn = Ui.FindButton("X");
+        if (deleteBtn is null)
+        {
+            Expect(false, "Delete (X) button not found on populated slot");
+            return;
+        }
+        deleteBtn.EmitSignal(BaseButton.SignalName.Pressed);
+        await Input.WaitFrames(5);
+
+        // DeleteConfirmDialog should open.
+        bool dialogOpen = await WaitUntil(() => Ui.FindButton("Delete") is not null,
+            timeout: 2f, what: "DeleteConfirmDialog appears");
+        if (!dialogOpen) return;
+
+        // Fire the Delete confirm signal directly (same reason).
+        var confirmBtn = Ui.FindButton("Delete");
+        if (confirmBtn is null) { Expect(false, "Delete confirm button missing"); return; }
+        confirmBtn.EmitSignal(BaseButton.SignalName.Pressed);
+        await Input.WaitFrames(5);
+
+        // Wait for the SlotDeleted flow to tear down and recreate LoadGameScreen.
+        // Main.CallDeferred(ShowLoadGameScreen) fires on the next idle frame;
+        // wait on the observable condition (fresh screen mounted + _ready set)
+        // instead of a fixed sleep so the test doesn't rely on wall-clock timing.
+        await WaitUntil(
+            () => Ui.HasNodeOfType<LoadGameScreen>() &&
+                  Ui.FindButton("Load") is not null,
+            timeout: 2f, what: "fresh LoadGameScreen mounted after delete");
+
+        // Press Escape to go back to splash.
+        await Input.PressKey(Key.Escape);
+        await Input.WaitSeconds(0.3f);
+
+        // Splash should be visible again AND a button should be focused.
+        bool focused = await WaitUntil(() => Ui.HasFocus, timeout: 2f,
+            what: "a splash button is focused after delete+Back");
+        if (!focused) return;
+
+        // Now try New Game.
+        var newGameBtn = Ui.FindButton("New Game");
+        if (newGameBtn is null) { Expect(false, "New Game button missing on splash"); return; }
+        newGameBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+
+        // THE assertion: ClassSelect must appear. If this fails, the New Game
+        // button click silently did nothing — the bug the user reported.
+        await WaitUntil(() => Ui.HasNodeOfType<ClassSelect>(),
+            timeout: 2f, what: "ClassSelect appears after delete → Back → New Game");
+    }
+
+    /// <summary>
     /// Regression: LoadGameScreen populated slot cards must render portrait
     /// TextureRects with region-cropped AtlasTextures. Loading the full LPC
     /// sheet directly produced the tiled-grid bug (2026-04-19) where each

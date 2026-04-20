@@ -133,6 +133,8 @@ public partial class Main : Node
     /// Show the Load Game screen as an overlay on top of the splash. On Back, the
     /// Load Game screen frees itself and the splash is re-shown. On Load, a
     /// ScreenTransition covers everything while the save is restored and town loads.
+    /// On SlotDeleted, the current screen is freed and a fresh one is created so
+    /// the UI reflects the new slot state without an in-place rebuild race.
     /// </summary>
     private void ShowLoadGameScreen(Ui.SplashScreen splash)
     {
@@ -150,6 +152,20 @@ public partial class Main : Node
             // queue-freed; without this, Enter/S on splash fires nothing and
             // New Game appears broken.
             splash.FocusFirstButton();
+        }));
+
+        screen.Connect(Ui.LoadGameScreen.SignalName.SlotDeleted, Callable.From(() =>
+        {
+            // Tear down this screen and open a fresh one. The in-place rebuild
+            // used to race with a subsequent Back press: freed children +
+            // CallDeferred(_Ready) could execute after the screen was already
+            // queue-freed by the Back handler, orphaning splash focus and
+            // leaving New Game unreachable (symptom: silent no-op on click).
+            screen.QueueFree();
+            // Defer so the current signal dispatch unwinds cleanly before we
+            // re-enter ShowLoadGameScreen (which would otherwise add the new
+            // screen while the old one is still technically alive).
+            CallDeferred(MethodName.ShowLoadGameScreen, splash);
         }));
 
         screen.Connect(Ui.LoadGameScreen.SignalName.LoadSelected, Callable.From((int slotIndex) =>
