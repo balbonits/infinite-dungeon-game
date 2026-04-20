@@ -368,9 +368,10 @@ public partial class Dungeon : Node2D
     ///
     /// Spec Acceptance #2 ("Every floor has ≥1 container"): enforced at both
     /// the roll layer (SpawnCounts min-1 guarantee) AND the placement layer
-    /// (see the final fallback in PlaceContainerBatch). A retry-exhausted
-    /// strict placement can't leave the floor with zero containers even if
-    /// every candidate tile collides with an entity.
+    /// (see the relaxed + deterministic fallbacks at the end of
+    /// SpawnContainers itself). A retry-exhausted strict placement cannot
+    /// leave the floor with zero containers even if every candidate tile
+    /// collides with an entity.
     /// </summary>
     private void SpawnContainers()
     {

@@ -52,10 +52,16 @@ public static class MonsterDropTable
     /// All signature-material IDs across every species table. Single source
     /// of truth for ContainerLootTable's zone-weighted signature roll so the
     /// two tables can't silently desync when a species signature is renamed
-    /// or added.
+    /// or added. Ordered by <see cref="EnemySpecies"/> enum value so the
+    /// iteration order is deterministic across platforms and .NET versions
+    /// — required for ContainerLootTable's seeded-RNG determinism contract.
     /// </summary>
     public static IReadOnlyList<string> AllSignatureMaterialIds { get; } =
-        Tables.Values.Select(t => t.SignatureMaterialId).ToList().AsReadOnly();
+        Tables.Values
+            .OrderBy(t => t.Species)
+            .Select(t => t.SignatureMaterialId)
+            .ToList()
+            .AsReadOnly();
 
     // ─── Equipment drop ──────────────────────────────────────────────────
     //

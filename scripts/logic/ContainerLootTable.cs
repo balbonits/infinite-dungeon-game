@@ -199,8 +199,9 @@ public static class ContainerLootTable
     ///
     /// Weighting: 5× for on-zone species signatures, 1× for off-zone.
     /// Zone-5+ returns a uniform-weighted pick because every species is
-    /// reachable at that depth — "on-zone" is the empty set, so all
-    /// signatures get base weight 1.
+    /// reachable at that depth — all signatures are on-zone, so every
+    /// signature gets the same 5× weight and the weighted sum flattens
+    /// to a uniform roll.
     /// </summary>
     private static string? PickWeightedSignature(int zone, Random rng)
     {
