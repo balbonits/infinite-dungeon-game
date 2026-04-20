@@ -58,6 +58,11 @@ public abstract class GameTestBase : TestClass
     /// </summary>
     protected async Task Screenshot(string stepName)
     {
+        // Auto-identify the currently running test (same stack walk Expect uses)
+        // so artifacts land under the right directory even if the test captured
+        // a screenshot before its first Expect and forgot StartTest. Copilot PR
+        // #33 round-8 finding: the prior behavior silently wrote to "unknown".
+        UpdateCurrentTestFromStack();
         _screenshotStep++;
         await ScreenshotHelper.Capture(
             TestScene,
@@ -97,6 +102,9 @@ public abstract class GameTestBase : TestClass
     /// </summary>
     protected async Task VerifyScreenshot(string stepName, double tolerancePercent = 1.0)
     {
+        // Same rationale as Screenshot: keep baselines/received under the right
+        // directory even when the first capture happens before any Expect call.
+        UpdateCurrentTestFromStack();
         _screenshotStep++;
         var report = await ScreenshotHelper.VerifyAgainstBaseline(
             TestScene,
@@ -139,20 +147,30 @@ public abstract class GameTestBase : TestClass
 
     /// <summary>
     /// Return the game to a fresh splash-screen state (TEST-09). Resets the
-    /// singleton <see cref="GameState"/> and reloads the current scene so
-    /// Main._Ready re-runs and the splash screen shows again. Awaits the
-    /// splash screen's reappearance with a short timeout.
+    /// singleton <see cref="GameState"/>, wipes the sandbox save files (so a
+    /// prior test's saved character doesn't fill slots for the next test),
+    /// and reloads the current scene so Main._Ready re-runs and the splash
+    /// screen shows again. Awaits the splash screen's reappearance with a
+    /// short timeout.
     /// </summary>
+    /// <param name="wipeSaves">
+    /// When true (default), delete every <c>save_*.json</c> in the sandbox
+    /// before reloading. Pass false for tests (e.g., <c>SlotsFullTests</c>)
+    /// that seed save files first and need the reload to reveal them on the
+    /// splash's Continue-button state.
+    /// </param>
     /// <remarks>
     /// Safe to call at the top of any <c>[Setup]</c> or <c>[SetupAll]</c>. It's
     /// a heavy reset — use it once per suite or once per test, not per assertion.
     /// </remarks>
-    protected async Task<bool> ResetToFreshSplash()
+    protected async Task<bool> ResetToFreshSplash(bool wipeSaves = true)
     {
         var tree = TestScene.GetTree();
         if (tree == null) return false;
 
         GameState.Instance?.Reset();
+        if (wipeSaves)
+            Autoloads.SaveManager.WipeAllSandboxSaves();
         tree.Paused = false;
         tree.ReloadCurrentScene();
         await Input.WaitFrames(3);

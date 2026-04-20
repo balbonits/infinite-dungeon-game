@@ -59,7 +59,7 @@ public partial class SlotsFullDialog : GameWindow
         content.AddChild(row);
 
         var cancel = new Button { Text = "Cancel" };
-        cancel.CustomMinimumSize = new Vector2(160, 40);
+        cancel.CustomMinimumSize = new Vector2(160, 44);
         cancel.FocusMode = FocusModeEnum.All;
         UiTheme.StyleSecondaryButton(cancel, UiTheme.FontSizes.Button);
         // Close + free so repeat-blocked-clicks don't accumulate hidden
@@ -68,7 +68,7 @@ public partial class SlotsFullDialog : GameWindow
         row.AddChild(cancel);
 
         var openLoad = new Button { Text = "Open Load Game" };
-        openLoad.CustomMinimumSize = new Vector2(200, 40);
+        openLoad.CustomMinimumSize = new Vector2(200, 44);
         openLoad.FocusMode = FocusModeEnum.All;
         UiTheme.StyleButton(openLoad, UiTheme.FontSizes.Button);
         openLoad.Pressed += () =>

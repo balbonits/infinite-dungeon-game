@@ -36,7 +36,10 @@ public class SlotsFullTests : GameTestBase
         // for splash to exist" variant assumed other suites left the game on the
         // splash screen — fragile when test order shifts. Copilot PR #33 round-7
         // finding: bring SlotsFullTests in line with every other suite's setup.
-        await ResetToFreshSplash();
+        // Check the return value so downstream tests don't run against a half-reset
+        // scene with misleading errors (Copilot PR #33 round-8 finding).
+        if (!await ResetToFreshSplash())
+            Expect(false, "[setup] ResetToFreshSplash did not land on splash");
     }
 
     /// <summary>
@@ -50,9 +53,13 @@ public class SlotsFullTests : GameTestBase
     {
         StartTest(nameof(NewGameWithAllSlotsFull_ShowsSlotsFullDialog));
 
+        // Wipe + reload first so the sandbox is clean, THEN seed the 3 saves
+        // we actually want the splash to see, THEN reload again (preserving
+        // saves) so SplashScreen._Ready reads AnySaveExists = true and the
+        // Continue button renders enabled.
+        if (!await ResetToFreshSplash()) { Expect(false, "initial reset failed"); return; }
         await SeedAllThreeSlotsFull();
-
-        bool atSplash = await ResetToFreshSplash();
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after seed"); return; }
 
         // Visual baseline + a11y lint on the starting state.
@@ -101,9 +108,9 @@ public class SlotsFullTests : GameTestBase
     [Test]
     public async Task NewGameWithAllSlotsFull_CancelReturnsToSplash()
     {
+        if (!await ResetToFreshSplash()) { Expect(false, "initial reset failed"); return; }
         await SeedAllThreeSlotsFull();
-
-        bool atSplash = await ResetToFreshSplash();
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after seed"); return; }
 
         Flow.Splash.ClickNewGame();

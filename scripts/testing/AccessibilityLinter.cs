@@ -128,28 +128,37 @@ public static class AccessibilityLinter
 
     private static void CheckModalHasCloseOrCancel(Ui.GameWindow win, List<Violation> v)
     {
-        bool hasClose = FindButtonTextAnyOf(win, "Close", "Cancel", "Back", "X");
+        // Accept the full set of dismiss-verb labels currently used across
+        // GameWindow subclasses: exact-match "Close/Cancel/X/Resume/Quit",
+        // and StartsWith("Back") so "Back", "Back to Main Menu", and future
+        // variants all count. PauseMenu dismisses via "Resume"; other modals
+        // use "Back to ...". Copilot PR #33 round-8 flagged that the earlier
+        // exact-only list would false-positive on established UI copy.
+        bool hasClose = FindDismissButton(win);
         if (!hasClose)
         {
             v.Add(new Violation(
                 Severity.Error, "modal-trap",
                 win.GetPath(),
-                $"Modal {win.GetType().Name} has no visible Close/Cancel/Back button — keyboard-only users can't dismiss it"));
+                $"Modal {win.GetType().Name} has no visible Close/Cancel/Back/Resume button — keyboard-only users can't dismiss it"));
         }
     }
 
-    private static bool FindButtonTextAnyOf(Node root, params string[] options)
+    private static readonly string[] ExactDismissLabels = { "Close", "Cancel", "X", "Resume", "Quit" };
+
+    private static bool FindDismissButton(Node root)
     {
         // IsVisibleInTree() — a button with Visible=true inside a hidden parent
         // is not actually reachable by a keyboard user, so the modal-trap check
         // would otherwise miss real traps (Copilot PR #33 round-4).
         if (root is Button btn && btn.IsInsideTree() && btn.IsVisibleInTree())
         {
-            foreach (var opt in options)
+            foreach (var opt in ExactDismissLabels)
                 if (btn.Text == opt) return true;
+            if (btn.Text != null && btn.Text.StartsWith("Back")) return true;
         }
         foreach (var child in root.GetChildren())
-            if (FindButtonTextAnyOf(child, options)) return true;
+            if (FindDismissButton(child)) return true;
         return false;
     }
 

@@ -68,6 +68,22 @@ public partial class SaveManager : Node
         }
     }
 
+    /// <summary>
+    /// Public test-only: wipe every <c>save_*.json</c> in the sandbox dir.
+    /// Safe to call repeatedly; refuses to touch production saves by checking
+    /// that SaveDir is currently the sandbox. Called by
+    /// <c>GameTestBase.ResetToFreshSplash</c> between tests so the ClassSelect
+    /// → save-slot-0 flow in one test doesn't leave slot 0 populated for the
+    /// next test — which, after 3 confirmations, filled all slots and made
+    /// every subsequent New Game click hit the slots-full dialog instead of
+    /// the class-select screen (cascaded through Death/Guild/Npc/PauseMenu).
+    /// </summary>
+    public static void WipeAllSandboxSaves()
+    {
+        if (SaveDir != TestSandboxSaveDir) return;
+        WipeSandboxFiles();
+    }
+
     /// <summary>Flip back to the real user save directory (post-test teardown).</summary>
     public static void UseProductionSaves()
     {
