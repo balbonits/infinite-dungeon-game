@@ -296,11 +296,10 @@ public class DeathPenaltyIntegrationTests
         // as a free "Save Both" — so backpack gold must also survive
         // consumption, not just the items.
         //
-        // Copilot PR #35 round-2 asked us to remove the else-fallback: if
-        // the fixture seed is ever broken and HasSacrificialIdol returns
-        // false, we want the test to fail loudly rather than silently fall
-        // back to ApplyItemLoss (which only removes one unit from the 10-
-        // item seed, still passing the itemsBefore - 1 slot assertion).
+        // No else-fallback: assert the idol-branch precondition directly so
+        // a fixture break (idol not added) fails loudly. A silent fallback
+        // to ApplyItemLoss would still satisfy itemsBefore - 1 on the
+        // 10-item seed and hide the regression.
         var (backpack, _) = SeedCharacter(backpackGold: 500);
         backpack.TryAdd(Potion(IdolId));
         int itemsBefore = CountOccupied(backpack);
@@ -315,10 +314,11 @@ public class DeathPenaltyIntegrationTests
     }
 
     // ── Equipment-loss primitive (EquipmentSet.DestroyRandomEquipped) ───────
-    // Copilot PR #35 round-2 flagged that "gear" was in the PR title but no
-    // test covered the equipment-mutation primitive. Deterministic here by
-    // giving EquipmentSet exactly one equipped item — rng.Next(1) always
-    // returns 0, so DestroyRandomEquipped has no choice in which slot to hit.
+    // Keep direct coverage on the equipment-mutation primitive so gear-loss
+    // behavior remains exercised even if the higher-level death-flow wiring
+    // changes. Deterministic here by giving EquipmentSet exactly one equipped
+    // item — rng.Next(1) always returns 0, so DestroyRandomEquipped has no
+    // choice in which slot to hit.
 
     [Fact]
     public void DestroyRandomEquipped_WithOneItem_RemovesThatItemDeterministically()
