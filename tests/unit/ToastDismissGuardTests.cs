@@ -154,6 +154,14 @@ public class ToastDismissGuardTests
             if (c == '{') depth++;
             else if (c == '}') depth--;
         }
+        // If depth never reached 0, we hit EOF mid-method (unbalanced
+        // braces or a literal-edge-case the scanner didn't handle). Fail
+        // loudly rather than returning a substring that runs past the
+        // real method body — that would silently widen the search scope
+        // and produce false-positive guard matches.
+        if (depth > 0)
+            throw new System.InvalidOperationException(
+                $"failed to locate closing brace for '{methodName}' declaration — unbalanced braces or unhandled literal edge case");
         return src.Substring(openBrace, i - openBrace);
     }
 }
