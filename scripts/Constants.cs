@@ -75,11 +75,21 @@ public static class Constants
         // Exhaustive parity with the pre-fix loop is verified in
         // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200.
         //
-        // level * (long)level prevents int32 overflow past level ≈ 46340
-        // (Copilot finding). The result still fits int past any realistic
-        // player level, so the outer cast is safe for the spec domain.
-        public static int GetMaxHp(int level) =>
-            StartingHp + 8 * level + (int)(level * (long)level / 4);
+        // level <= 0: the original loop skipped entirely, so we return
+        // StartingHp. This preserves the pre-AUDIT-08 contract for any
+        // corrupted/debug state that slips through.  Copilot PR #41 R1.
+        //
+        // All arithmetic is in int64 and saturated back to int so the
+        // leveling spec's unbounded level range doesn't silently overflow
+        // past level ≈ 92 k (int max). HP is still stored as int, so we
+        // clamp instead of widening the API. Copilot PR #41 R2.
+        public static int GetMaxHp(int level)
+        {
+            if (level <= 0) return StartingHp;
+            long total = (long)StartingHp + 8L * level + (long)level * level / 4L;
+            if (total > int.MaxValue) return int.MaxValue;
+            return (int)total;
+        }
     }
 
     // --- Class-specific combat ---

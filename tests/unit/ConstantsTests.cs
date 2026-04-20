@@ -123,4 +123,28 @@ public class ConstantsTests
         (hp46340 >= hp46339).Should().BeTrue("no decrease at overflow-adjacent level 46340");
         (hp46341 >= hp46340).Should().BeTrue("no decrease at overflow-adjacent level 46341");
     }
+
+    // Copilot PR #41 round-2 findings — negative levels + int saturation.
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(-100)]
+    [InlineData(int.MinValue)]
+    public void GetMaxHp_NegativeLevel_ReturnsStartingHp(int level)
+    {
+        // Preserves the pre-AUDIT-08 loop contract: the loop body didn't run
+        // for level <= 0, so any corrupted/debug state fell through as
+        // StartingHp. Without this guard the closed form goes negative.
+        Constants.PlayerStats.GetMaxHp(level).Should().Be(Constants.PlayerStats.StartingHp);
+    }
+
+    [Fact]
+    public void GetMaxHp_AtUnboundedLevel_SaturatesToIntMax()
+    {
+        // The leveling spec has no level cap. Past level ≈ 92 k the closed
+        // form exceeds int.MaxValue even in long space; HP is stored as int,
+        // so the implementation must saturate rather than wrap.
+        int result = Constants.PlayerStats.GetMaxHp(int.MaxValue);
+        result.Should().Be(int.MaxValue, "saturates to int.MaxValue for unbounded level");
+    }
 }
