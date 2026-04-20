@@ -152,7 +152,10 @@ public class SplashTests : GameTestBase
         DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
         DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
 
-        bool atSplash = await ResetToFreshSplash();
+        // Preserve the seeded save across the reload — the default reset
+        // wipes the sandbox, which would destroy the slot we just created
+        // and leave Continue disabled for the test flow.
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
 
         var continueBtn = Ui.FindButton("Continue");
