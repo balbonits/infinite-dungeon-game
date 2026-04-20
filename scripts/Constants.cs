@@ -67,13 +67,63 @@ public static class Constants
             _ => 60,
         };
 
-        // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative
+        // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative.
+        // AUDIT-08: replaced O(level) loop with closed-form O(1). Derivation
+        // in integer terms — for positive integer l, the per-level term
+        // floor(8 + l/2) equals 8 + (l/2) under C# integer division.
+        // Summing (l/2) over l = 1..level yields floor(level² / 4):
+        // pair l = 2k-1 and l = 2k contribute k-1 and k (summing to the
+        // quarter-square). So:
+        //   total = StartingHp + 8*level + floor(level² / 4)
+        // Exhaustive parity with the pre-fix loop is verified in
+        // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200.
+        //
+        // level <= 0: the original loop skipped entirely, so we return
+        // StartingHp to preserve that contract for corrupted/debug state.
+        //
+        // All arithmetic is in int64 and saturated back to int so the
+        // leveling spec's unbounded level range doesn't silently overflow
+        // past level ≈ 92 k (int max). HP is still stored as int, so we
+        // clamp instead of widening the API.
+        /// <summary>
+        /// Internal helper that computes level-derived MaxHp in int64 space
+        /// without saturation. <see cref="GetMaxHp"/> clamps this raw value
+        /// into the int-based public API, and <see cref="GetEffectiveMaxHp"/>
+        /// uses the unsaturated result so additive bonuses are applied
+        /// before the final clamp — starting from a saturated int.MaxValue
+        /// would silently absorb a subsequent negative bonus.
+        /// </summary>
+        private static long GetMaxHpLong(int level)
+        {
+            if (level <= 0) return StartingHp;
+            return (long)StartingHp + 8L * level + (long)level * level / 4L;
+        }
+
         public static int GetMaxHp(int level)
         {
-            int total = StartingHp;
-            for (int l = 1; l <= level; l++)
-                total += (int)(8 + l * 0.5f);
-            return total;
+            long total = GetMaxHpLong(level);
+            if (total > int.MaxValue) return int.MaxValue;
+            return (int)total;
+        }
+
+        /// <summary>
+        /// Combine a level-derived MaxHp with an additive bonus, clamped so
+        /// the sum cannot overflow int. Callers that recompute MaxHp
+        /// (GameState recalc, StatAllocDialog, PauseMenu, DebugConsole)
+        /// should go through this instead of adding raw
+        /// <c>GetMaxHp(level) + bonus</c> — otherwise a saturated GetMaxHp
+        /// plus a positive bonus would wrap to a negative int. Works on the
+        /// pre-saturation long value so a negative bonus applied to a very
+        /// large level can still produce a correctly-clamped result (Copilot
+        /// PR #41 round-4: the earlier version saturated first, losing the
+        /// true base for negative-bonus cases).
+        /// </summary>
+        public static int GetEffectiveMaxHp(int level, int bonus)
+        {
+            long total = GetMaxHpLong(level) + bonus;
+            if (total > int.MaxValue) return int.MaxValue;
+            if (total < 0) return 0;
+            return (int)total;
         }
     }
 

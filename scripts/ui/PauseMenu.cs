@@ -869,7 +869,7 @@ public partial class PauseMenu : GameWindow
             stats.FreePoints--;
             increment(stats);
             var gs = GameState.Instance;
-            gs.MaxHp = Constants.PlayerStats.GetMaxHp(gs.Level) + gs.Stats.BonusMaxHp;
+            gs.MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(gs.Level, gs.Stats.BonusMaxHp);
             gs.EmitSignal(GameState.SignalName.StatsChanged);
             _tabs.SelectTab(_tabs.CurrentTab);
         }));

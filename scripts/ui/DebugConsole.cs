@@ -127,7 +127,7 @@ public partial class DebugConsole : Control
         {
             var s = GameState.Instance.Stats;
             s.Str += 10; s.Dex += 10; s.Sta += 10; s.Int += 10;
-            GameState.Instance.MaxHp = Constants.PlayerStats.GetMaxHp(GameState.Instance.Level) + s.BonusMaxHp;
+            GameState.Instance.MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(GameState.Instance.Level, s.BonusMaxHp);
             GameState.Instance.MaxMana = Constants.PlayerStats.GetClassBaseMana(GameState.Instance.SelectedClass) + s.BonusMaxMana;
             GameState.Instance.EmitSignal(GameState.SignalName.StatsChanged);
             Status("+10 STR/DEX/STA/INT");
