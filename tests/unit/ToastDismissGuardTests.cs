@@ -136,19 +136,44 @@ public class ToastDismissGuardTests
 
         int depth = 1;
         int i = openBrace + 1;
-        bool inLineComment = false, inBlockComment = false, inString = false, inChar = false;
+        bool inLineComment = false, inBlockComment = false, inString = false, inChar = false,
+             inVerbatimString = false;
         for (; i < src.Length && depth > 0; i++)
         {
             char c = src[i];
-            char prev = i > 0 ? src[i - 1] : '\0';
 
             if (inLineComment) { if (c == '\n') inLineComment = false; continue; }
-            if (inBlockComment) { if (c == '/' && prev == '*') inBlockComment = false; continue; }
-            if (inString) { if (c == '"' && prev != '\\') inString = false; continue; }
-            if (inChar) { if (c == '\'' && prev != '\\') inChar = false; continue; }
+            if (inBlockComment) { if (c == '*' && i + 1 < src.Length && src[i + 1] == '/') { inBlockComment = false; i++; } continue; }
+
+            // Regular string: closing quote is unescaped if the run of
+            // backslashes immediately preceding it has even length.
+            // "\\\\" ends the string (four backslashes = two escaped \
+            // pairs); "\\\"" does not ("\\" then literal "\\\"").
+            if (inString)
+            {
+                if (c == '"' && !IsEscaped(src, i)) inString = false;
+                continue;
+            }
+            if (inChar)
+            {
+                if (c == '\'' && !IsEscaped(src, i)) inChar = false;
+                continue;
+            }
+            // Verbatim strings terminate on a single " — doubled "" is an
+            // escaped quote, not the end.
+            if (inVerbatimString)
+            {
+                if (c == '"')
+                {
+                    if (i + 1 < src.Length && src[i + 1] == '"') { i++; continue; }
+                    inVerbatimString = false;
+                }
+                continue;
+            }
 
             if (c == '/' && i + 1 < src.Length && src[i + 1] == '/') { inLineComment = true; continue; }
-            if (c == '/' && i + 1 < src.Length && src[i + 1] == '*') { inBlockComment = true; continue; }
+            if (c == '/' && i + 1 < src.Length && src[i + 1] == '*') { inBlockComment = true; i++; continue; }
+            if (c == '@' && i + 1 < src.Length && src[i + 1] == '"') { inVerbatimString = true; i++; continue; }
             if (c == '"') { inString = true; continue; }
             if (c == '\'') { inChar = true; continue; }
             if (c == '{') depth++;
@@ -163,5 +188,18 @@ public class ToastDismissGuardTests
             throw new System.InvalidOperationException(
                 $"failed to locate closing brace for '{methodName}' declaration — unbalanced braces or unhandled literal edge case");
         return src.Substring(openBrace, i - openBrace);
+    }
+
+    /// <summary>
+    /// A quote/char-literal terminator at index <paramref name="quoteIdx"/>
+    /// is escaped iff the run of backslashes immediately preceding it has
+    /// odd length. "\" escapes; "\\" is an escaped backslash followed by a
+    /// true terminator; "\\\" is a backslash plus an escape; etc.
+    /// </summary>
+    private static bool IsEscaped(string src, int quoteIdx)
+    {
+        int backslashes = 0;
+        for (int k = quoteIdx - 1; k >= 0 && src[k] == '\\'; k--) backslashes++;
+        return (backslashes & 1) == 1;
     }
 }
