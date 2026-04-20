@@ -134,7 +134,7 @@ public class DeathPenaltyIntegrationTests
     public void ApplyItemLoss_NeverRemovesMoreThanExist()
     {
         var backpack = new Inventory(20) { Gold = 0 };
-        backpack.TryAdd(Potion("only_one"));  // single item
+        MustAdd(backpack, Potion("only_one"));  // single item
         DeathPenalty.ApplyItemLoss(backpack, itemsToLose: 999);
         CountOccupied(backpack).Should().Be(0, "loss capped at what exists");
     }
@@ -154,7 +154,7 @@ public class DeathPenaltyIntegrationTests
     public void HasIdol_ReturnsTrue_WhenIdolInBackpack()
     {
         var (backpack, _) = SeedCharacter();
-        backpack.TryAdd(Potion(IdolId));
+        MustAdd(backpack, Potion(IdolId));
         DeathPenalty.HasSacrificialIdol(backpack).Should().BeTrue();
     }
 
@@ -169,7 +169,7 @@ public class DeathPenaltyIntegrationTests
     public void ConsumeIdol_RemovesOne_LeavesRestIntact()
     {
         var (backpack, _) = SeedCharacter();
-        backpack.TryAdd(Potion(IdolId));
+        MustAdd(backpack, Potion(IdolId));
         int countBefore = CountOccupied(backpack);
 
         DeathPenalty.ConsumeSacrificialIdol(backpack);
@@ -324,7 +324,7 @@ public class DeathPenaltyIntegrationTests
         // to ApplyItemLoss would still satisfy itemsBefore - 1 on the
         // 10-item seed and hide the regression.
         var (backpack, _) = SeedCharacter(backpackGold: 500);
-        backpack.TryAdd(Potion(IdolId));
+        MustAdd(backpack, Potion(IdolId));
         int itemsBefore = CountOccupied(backpack);
 
         DeathPenalty.HasSacrificialIdol(backpack).Should().BeTrue(
