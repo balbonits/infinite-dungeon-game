@@ -57,22 +57,34 @@ public static class UiTheme
             var loaded = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");
             if (loaded == null)
             {
-                // Intent: alert the operator LOUDLY but keep the game renderable
-                // so a broken import doesn't take the app down mid-play. The
-                // empty FontFile has no glyphs, so text renders as blank boxes —
-                // visibly wrong enough that the error log gets attention without
-                // blocking the rest of the scene. SPEC-UI-FONT-01 treats the TTF
-                // as a required shipping asset, so this branch indicates an
-                // asset-pipeline regression that needs a re-import.
-                GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load. Re-import the font resource; UI will render with an empty fallback font until fixed.");
-                loaded = new FontFile();
+                // Operator alert: the font is a required shipping asset per
+                // SPEC-UI-FONT-01. Fall back to Godot's built-in default font
+                // so UI stays readable while the error surfaces — an empty
+                // FontFile would produce tofu glyphs that drown the real
+                // error signal. Returning the engine default keeps text
+                // legible AND text-color semantics visible; the red error
+                // message makes the regression obvious in logs.
+                GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load. Re-import the font resource; UI renders with Godot's built-in fallback font until fixed.");
+                var fallback = ThemeDB.FallbackFont;
+                _fontFamily = (fallback as FontFile) ?? new FontFile();
+                return _fontFamily;
             }
-            // Pixel-font rendering discipline: disable anti-aliasing so the
-            // 8-px native cell stays crisp at every integer-multiple size.
+            // Pixel-font rendering discipline per SPEC-UI-FONT-01:
+            // - Antialiasing=None keeps the 8-px native cell crisp.
+            // - Hinting=None disables hinting adjustments (PS2P is already
+            //   bitmap-pre-aligned; hinting would distort the grid).
+            // - SubpixelPositioning=Disabled locks glyphs to whole-pixel
+            //   positions — any sub-pixel offset smears the pixel font.
+            // - ForceAutohinter=false for completeness (belt-and-suspenders
+            //   when shipping on platforms whose freetype defaults changed).
+            // These properties live on the FontFile resource and don't rely
+            // on the .import sidecar (which isn't version-controlled here).
             // Godot's TextureFilter for the Theme is set to Nearest at the
-            // project level (SPEC-UI-HIGH-DPI-01) — Antialiasing=None is the
-            // font-resource half of the same "no smear" contract.
+            // project level (SPEC-UI-HIGH-DPI-01 — sibling spec).
             loaded.Antialiasing = TextServer.FontAntialiasing.None;
+            loaded.Hinting = TextServer.Hinting.None;
+            loaded.SubpixelPositioning = TextServer.SubpixelPositioning.Disabled;
+            loaded.ForceAutohinter = false;
             _fontFamily = loaded;
             return _fontFamily;
         }

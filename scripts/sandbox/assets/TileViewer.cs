@@ -63,7 +63,7 @@ public partial class TileViewer : SandboxBase
                 Position = new Vector2(baseX, baseY - 18),
                 ZIndex = 1,
             };
-            lbl.AddThemeFontSizeOverride("font_size", 10);
+            lbl.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Small);
             AddChild(lbl);
 
             for (int r = 0; r < repeat; r++)

@@ -335,7 +335,7 @@ public partial class Dungeon : Node2D
         label.AddThemeColorOverride("font_color", labelColor);
         label.AddThemeColorOverride("font_outline_color", Colors.Black);
         label.AddThemeConstantOverride("outline_size", 3);
-        label.AddThemeFontSizeOverride("font_size", 11);
+        label.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Small);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         label.Position = new Vector2(-30, -48);
         root.AddChild(label);

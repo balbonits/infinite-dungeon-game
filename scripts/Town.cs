@@ -132,7 +132,7 @@ public partial class Town : Node2D
         label.AddThemeColorOverride("font_color", UiTheme.Colors.Danger);
         label.AddThemeColorOverride("font_outline_color", Colors.Black);
         label.AddThemeConstantOverride("outline_size", 3);
-        label.AddThemeFontSizeOverride("font_size", 12);
+        label.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         label.Position = new Vector2(-28, -48);
         entrance.AddChild(label);
@@ -171,7 +171,7 @@ public partial class Town : Node2D
         _interactLabel.AddThemeColorOverride("font_color", UiTheme.Colors.Muted);
         _interactLabel.AddThemeColorOverride("font_outline_color", Colors.Black);
         _interactLabel.AddThemeConstantOverride("outline_size", 3);
-        _interactLabel.AddThemeFontSizeOverride("font_size", 12);
+        _interactLabel.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         _interactLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _interactLabel.Visible = false;
         AddChild(_interactLabel);

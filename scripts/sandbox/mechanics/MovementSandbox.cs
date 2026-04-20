@@ -47,7 +47,7 @@ public partial class MovementSandbox : SandboxBase
         _spriteLabel = new Label { Position = new Vector2(500, 140) };
         foreach (var l in new[] { _dirLabel, _velLabel, _spriteLabel })
         {
-            l.AddThemeFontSizeOverride("font_size", 14);
+            l.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Body);
             AddChild(l);
         }
 
