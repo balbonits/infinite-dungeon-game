@@ -1,4 +1,5 @@
 #if DEBUG
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Chickensoft.GoDotTest;
 using DungeonGame.Autoloads;
@@ -165,6 +166,7 @@ public abstract class GameTestBase : TestClass
     /// <summary>Log a passing or failing assertion.</summary>
     protected void Expect(bool condition, string description)
     {
+        UpdateCurrentTestFromStack();
         if (condition)
         {
             _passCount++;
@@ -174,6 +176,29 @@ public abstract class GameTestBase : TestClass
         {
             _failCount++;
             GD.PrintErr($"    ✗ {description}");
+        }
+    }
+
+    // Walks the call stack to find the first method tagged [Test] and, if the
+    // name differs from the tracked one, updates the on-screen overlay. Means
+    // every [Test] gets the banner for free without hand-calling StartTest.
+    private void UpdateCurrentTestFromStack()
+    {
+        var stack = new StackTrace();
+        for (int i = 1; i < stack.FrameCount; i++)
+        {
+            var method = stack.GetFrame(i)?.GetMethod();
+            if (method is null) continue;
+            var attrs = method.GetCustomAttributes(typeof(TestAttribute), false);
+            if (attrs.Length == 0) continue;
+            if (_currentTestName != method.Name)
+            {
+                _currentTestName = method.Name;
+                _screenshotStep = 0;
+                TestProgressOverlay.SetCurrentTest(GetType().Name, method.Name);
+                GD.Print($"\n▶▶▶ RUNNING: {GetType().Name}::{method.Name}\n");
+            }
+            return;
         }
     }
 

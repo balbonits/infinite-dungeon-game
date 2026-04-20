@@ -47,7 +47,11 @@ public partial class Main : Node
         // sees the production dir — Copilot PR #33 round-3 finding.
         var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
         if (testEnv.ShouldRunTests)
+        {
             Autoloads.SaveManager.UseTestSandbox();
+            // Attach the top-of-screen banner that shows current test name.
+            Testing.TestProgressOverlay.EnsureAttached(this);
+        }
 #endif
 
         // Start with splash screen
