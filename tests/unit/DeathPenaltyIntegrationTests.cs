@@ -9,8 +9,12 @@ namespace DungeonGame.Tests.Unit;
 /// call each primitive the death flow eventually hits, and assert the
 /// post-mutation state.
 ///
-/// Pure-logic edge cases (XP-loss formulas, idol bool, item-count math)
-/// are in <see cref="DeathPenaltyTests"/>. These tests cover:
+/// <see cref="DeathPenaltyTests"/> covers the same primitives in
+/// isolation (pure arithmetic edge cases); this class deliberately
+/// re-exercises those formulas — including <see cref="DeathPenalty.CalculateXpLoss"/>
+/// — against the populated-fixture setup so an integration regression
+/// (e.g., the flow passing the wrong value in) can't pass unit-only
+/// coverage. These tests cover:
 ///
 /// - <c>WipeBackpack</c> — used by the Accept Fate / Quit Game paths per
 ///   docs/systems/death.md §"The Five Options".
