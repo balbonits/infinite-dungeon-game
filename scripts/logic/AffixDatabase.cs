@@ -75,14 +75,6 @@ public static class AffixDatabase
         RegisterSuffix("swiftness_6", "of Swiftness", AffixCategory.Utility, "move_speed", 6, 100, 22, true, 3800, 40);
     }
 
-    /// <summary>
-    /// Total number of registered affixes across every tier. Used by
-    /// spec-locked registry-total tests that shouldn't silently miss
-    /// future high-MinItemLevel entries (a GetAvailable(itemLevel: 999)
-    /// count would).
-    /// </summary>
-    public static int Count => Affixes.Count;
-
     public static AffixDef? Get(string id) => Affixes.GetValueOrDefault(id);
 
     /// <summary>

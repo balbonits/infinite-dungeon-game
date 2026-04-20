@@ -65,11 +65,12 @@ public class AffixDatabaseTests
         // If this number shifts, either AUDIT-10 was reverted or a family was
         // added without updating both spec + this test. Either case needs
         // a conscious bump.
-        // Count directly off the registry rather than via GetAvailable(999),
-        // which filters by MinItemLevel — any future affix with MinItemLevel
-        // > 999 (or a typo setting it absurdly high) would be invisible to a
-        // level-window probe even though it's registered. Copilot PR #37.
-        AffixDatabase.Count.Should().Be(46);
+        // Count via GetAvailable(int.MaxValue) — large enough that no realistic
+        // MinItemLevel could gate anything out. Copilot PR #37 round-2 asked to
+        // avoid adding a test-only public API; int.MaxValue catches every
+        // registered affix without exposing Count.
+        int totalCount = AffixDatabase.GetAvailable(itemLevel: int.MaxValue).Count();
+        totalCount.Should().Be(46);
     }
 
     [Fact]
