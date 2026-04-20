@@ -34,8 +34,16 @@ public class DeathPenaltyIntegrationTests
 
     // ── Test fixtures ────────────────────────────────────────────────────────
 
-    /// <summary>Deterministic ItemDefs — not routed through ItemDatabase so the
-    /// tests don't assume catalog stability.</summary>
+    /// <summary>
+    /// Deterministic ItemDefs for the backpack/inventory tests — not routed
+    /// through ItemDatabase so catalog changes can't silently break these
+    /// assertions. Note: the <c>DestroyRandomEquipped</c> tests below are
+    /// an intentional exception — they use <see cref="ItemDatabase"/> to
+    /// pull a real starter-gear entry because <see cref="EquipmentSet.ForceEquip"/>
+    /// validates item category against a live def; inlining a minimal
+    /// ItemDef with the right equip-slot plumbing is noisier than the
+    /// catalog lookup for a shipped starting-gear id.
+    /// </summary>
     private static ItemDef Potion(string id = "potion", int tier = 1) => new()
     {
         Id = id,
