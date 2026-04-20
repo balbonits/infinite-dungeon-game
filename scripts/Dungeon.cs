@@ -507,22 +507,32 @@ public partial class Dungeon : Node2D
     {
         var offset = _stairsUpPosition + new Vector2I(2, 2);
         Vector2 pos = _tileMap.MapToLocal(offset);
-        // Guard: if the offset isn't a floor tile (very unusual room shape),
-        // scan a small spiral around up-stairs for a valid tile.
-        if (!IsFloorTile(offset))
+        // Guard: if the offset isn't a floor tile OR lands inside an
+        // exclusion zone, scan a small spiral around up-stairs for a
+        // valid tile. Both checks must pass — spiral must not pick a
+        // closer candidate like (1,0) that violates the stairs/spawn
+        // buffer (Copilot PR #49 round-5 finding).
+        if (!IsFloorTile(offset) || !IsOutsideExclusionZones(pos))
         {
-            for (int dy = -3; dy <= 3 && !IsFloorTile(offset); dy++)
-                for (int dx = -3; dx <= 3 && !IsFloorTile(offset); dx++)
+            bool found = false;
+            for (int dy = -3; dy <= 3 && !found; dy++)
+                for (int dx = -3; dx <= 3 && !found; dx++)
                 {
                     if (dx == 0 && dy == 0) continue;
                     var candidate = _stairsUpPosition + new Vector2I(dx, dy);
-                    if (IsFloorTile(candidate))
-                    {
-                        offset = candidate;
-                        pos = _tileMap.MapToLocal(offset);
-                        break;
-                    }
+                    if (!IsFloorTile(candidate)) continue;
+                    var candidatePos = _tileMap.MapToLocal(candidate);
+                    if (!IsOutsideExclusionZones(candidatePos)) continue;
+                    offset = candidate;
+                    pos = candidatePos;
+                    found = true;
                 }
+            // If the spiral also failed (deeply pathological layout),
+            // we prefer shipping zero containers on that floor over
+            // dropping one on the stairs. The min-1 spec contract
+            // assumes a valid layout; we don't sacrifice exclusion-zone
+            // safety to satisfy it.
+            if (!found) return;
         }
         var container = Container.Create(type, pos);
         _entities.AddChild(container);
