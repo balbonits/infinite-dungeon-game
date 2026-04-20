@@ -89,10 +89,23 @@ public static class Constants
         // leveling spec's unbounded level range doesn't silently overflow
         // past level ≈ 92 k (int max). HP is still stored as int, so we
         // clamp instead of widening the API. Copilot PR #41 R2.
-        public static int GetMaxHp(int level)
+        /// <summary>
+        /// Level-derived MaxHp in int64 space, no saturation. The int-bound
+        /// public API <see cref="GetMaxHp"/> saturates the result; callers
+        /// that want to combine this with further math (like a bonus) should
+        /// start from this long value so a saturated int.MaxValue doesn't
+        /// silently absorb a subsequent negative adjustment. Copilot PR #41
+        /// round-4 finding.
+        /// </summary>
+        private static long GetMaxHpLong(int level)
         {
             if (level <= 0) return StartingHp;
-            long total = (long)StartingHp + 8L * level + (long)level * level / 4L;
+            return (long)StartingHp + 8L * level + (long)level * level / 4L;
+        }
+
+        public static int GetMaxHp(int level)
+        {
+            long total = GetMaxHpLong(level);
             if (total > int.MaxValue) return int.MaxValue;
             return (int)total;
         }
@@ -103,12 +116,15 @@ public static class Constants
         /// (GameState recalc, StatAllocDialog, PauseMenu, DebugConsole)
         /// should go through this instead of adding raw
         /// <c>GetMaxHp(level) + bonus</c> — otherwise a saturated GetMaxHp
-        /// plus a positive bonus would wrap to a negative int.
-        /// Copilot PR #41 round-2 finding.
+        /// plus a positive bonus would wrap to a negative int. Works on the
+        /// pre-saturation long value so a negative bonus applied to a very
+        /// large level can still produce a correctly-clamped result (Copilot
+        /// PR #41 round-4: the earlier version saturated first, losing the
+        /// true base for negative-bonus cases).
         /// </summary>
         public static int GetEffectiveMaxHp(int level, int bonus)
         {
-            long total = (long)GetMaxHp(level) + bonus;
+            long total = GetMaxHpLong(level) + bonus;
             if (total > int.MaxValue) return int.MaxValue;
             if (total < 0) return 0;
             return (int)total;

@@ -192,4 +192,20 @@ public class ConstantsTests
         // leaving the clamp documents the contract.
         Constants.PlayerStats.GetEffectiveMaxHp(level: 1, bonus: -9999).Should().Be(0);
     }
+
+    [Fact]
+    public void GetEffectiveMaxHp_LargeLevelWithNegativeBonus_UsesLongBase()
+    {
+        // Copilot PR #41 round-4: GetEffectiveMaxHp must compute in long
+        // space from the start, not start from a saturated int.MaxValue.
+        // At level 200_000 the true long base is ~10 billion (well past
+        // int.MaxValue = ~2.15B). Subtracting 100 from that long base
+        // still leaves ~10B — which saturates to int.MaxValue. If the
+        // helper saturated GetMaxHp first then subtracted 100, you'd get
+        // int.MaxValue - 100 (wrong).
+        int effective = Constants.PlayerStats.GetEffectiveMaxHp(level: 200_000, bonus: -100);
+        effective.Should().Be(int.MaxValue,
+            "large level's true long MaxHp survives a small negative bonus; " +
+            "still saturates to int.MaxValue — not int.MaxValue - 100");
+    }
 }
