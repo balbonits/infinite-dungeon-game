@@ -50,7 +50,7 @@ Every dev-time AI pipeline in the project must satisfy all three of the followin
 
 - **Provenance record.** Every AI-generated shipped asset carries a record of: source pipeline (PixelLab / Claude / etc; see the scope preamble above for the generative-AI-only definition), prompt block name (CHAR-HUM-ISO / TILE-ISO-ATLAS / ability-icon / etc), generation-time commit SHA of the project, and generation timestamp. The record lets us re-generate on demand and audit retroactively if a §1-category issue surfaces.
 
-  **Storage location + schema:** a single repo-root file `docs/assets/ai-provenance.ndjson` — one JSON object per line, append-only, committed to git alongside the asset it records. Minimum schema:
+  **Storage location + schema:** a single canonical file at `docs/assets/ai-provenance.ndjson` (committed to git, append-only, one JSON object per line, written alongside the asset it records). Minimum schema:
 
   ```json
   {"asset": "assets/items/ring/iron_ring.png", "pipeline": "pixellab", "prompt_block": "ITEM-ICON-64", "commit": "abc1234", "generated_at": "2026-04-20T18:30:00Z"}
@@ -144,7 +144,7 @@ Should a regulator, publisher, or platform partner ever ask "show us how you com
 3. **CREDITS.md** with AI-generated asset tags + provenance.
 4. **`docs/evidence/ai-report-triage.md`** showing the weekly triage cadence.
 5. **Filter-update commit log** — `git log --grep="ai-safety:"` produces a filtered list of filter-improvement commits.
-6. **Release notes** with the aggregate report-stats section (once we have runtime AI + shipped builds).
+6. **Release notes** with the aggregate report-stats section (once we have shipped builds containing any player-visible AI content — same trigger as §4.1 and §5.3, not runtime-AI-specific).
 
 Everything in-repo, version-controlled, auditable without access to internal tooling.
 
