@@ -289,7 +289,15 @@ public class MagiculeAttunement
         if (clearedFloors != null)
         {
             foreach (int f in clearedFloors)
-                _clearedFloors.Add(f);
+            {
+                // Mirror the award filter in RecordFloorClear: only floors
+                // strictly above UnlockFloor contribute points. Without this
+                // guard, a corrupt or pre-unlock-era save that carries ≤50
+                // entries in its cleared-floors list would inflate TotalPoints
+                // on restore.
+                if (f > UnlockFloor)
+                    _clearedFloors.Add(f);
+            }
         }
 
         TotalPoints = _clearedFloors.Count;

@@ -243,6 +243,57 @@ public class MagiculeAttunementTests
         restored.IsUnlocked.Should().BeTrue();
     }
 
+    // AUDIT-04 regression: ImportState must filter cleared-floors by > UnlockFloor,
+    // mirroring RecordFloorClear's in-game filter. Without the filter, a corrupt
+    // save could inflate TotalPoints by carrying pre-unlock floors (e.g. 1, 2, 50)
+    // in the ExportClearedFloors array.
+
+    [Fact]
+    public void ImportState_FiltersFloorsAtOrBelowUnlockFloor()
+    {
+        var ma = new MagiculeAttunement();
+        // Simulate a corrupt / pre-unlock-era save that includes floors ≤ 50.
+        int[] corrupt = { 1, 25, 50, 51, 52, 100 };
+        ma.ImportState(
+            nodes: null,
+            clearedFloors: corrupt,
+            activeKeystone: -1,
+            isUnlocked: true);
+
+        // Only floors 51, 52, 100 qualify (> UnlockFloor). TotalPoints = 3.
+        ma.TotalPoints.Should().Be(3);
+    }
+
+    [Fact]
+    public void ImportState_OnlyQualifyingFloorsAreStored()
+    {
+        var ma = new MagiculeAttunement();
+        int[] mixed = { 10, 50, 51, 75 };
+        ma.ImportState(
+            nodes: null,
+            clearedFloors: mixed,
+            activeKeystone: -1,
+            isUnlocked: true);
+
+        // Exporting should round-trip only the qualifying floors.
+        var reexported = ma.ExportClearedFloors();
+        reexported.Should().BeEquivalentTo(new[] { 51, 75 });
+    }
+
+    [Fact]
+    public void ImportState_AllBelowUnlockFloor_YieldsZeroPoints()
+    {
+        var ma = new MagiculeAttunement();
+        ma.ImportState(
+            nodes: null,
+            clearedFloors: new[] { 1, 25, 49, 50 },
+            activeKeystone: -1,
+            isUnlocked: true);
+
+        ma.TotalPoints.Should().Be(0);
+        ma.AvailablePoints.Should().Be(0);
+    }
+
     [Fact]
     public void Reset_ClearsEverything()
     {
