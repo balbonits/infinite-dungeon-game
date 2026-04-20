@@ -20,8 +20,16 @@ public class SplashTests : GameTestBase
     [Setup]
     public async Task WaitForSplashScreen()
     {
-        // Wait for the game's splash screen to appear (Main._Ready → ShowSplashScreen)
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f, what: "SplashScreen to appear");
+        // Canonical cross-suite isolation (TEST-09): ResetToFreshSplash wipes
+        // the sandbox, reloads the scene, and awaits splash reappearance. The
+        // prior "just wait for splash" variant trusted that the preceding
+        // suite left the scene on splash — SlotsFullTests breaks that
+        // assumption (it ends with a SplashScreen that has seeded saves, and
+        // a following [Setup] that just polls for splash can find splash is
+        // already present but in a stale state, so the subsequent test body
+        // presses Enter and lands on LoadGame instead of ClassSelect).
+        if (!await ResetToFreshSplash())
+            Expect(false, "[setup] ResetToFreshSplash did not land on splash");
     }
 
     [Test]

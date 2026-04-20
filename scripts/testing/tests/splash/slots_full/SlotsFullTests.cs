@@ -28,17 +28,18 @@ public class SlotsFullTests : GameTestBase
     [SetupAll]
     public void SetupAll() => GD.Print("═══ SlotsFullTests ═══");
 
+    private bool _setupFailed;
+
     [Setup]
     public async Task ResetSplash()
     {
         // Use the canonical cross-suite isolation path (TEST-09): ResetToFreshSplash
-        // reloads the scene and awaits splash reappearance. The earlier "just wait
-        // for splash to exist" variant assumed other suites left the game on the
-        // splash screen — fragile when test order shifts. Copilot PR #33 round-7
-        // finding: bring SlotsFullTests in line with every other suite's setup.
-        // Check the return value so downstream tests don't run against a half-reset
-        // scene with misleading errors (Copilot PR #33 round-8 finding).
-        if (!await ResetToFreshSplash())
+        // reloads the scene and awaits splash reappearance. If the reset didn't
+        // land on splash we record the failure here and each [Test] early-exits
+        // before running assertions, so a half-reset scene doesn't produce a
+        // cascade of misleading null/timeout errors (Copilot PR #33 round-9).
+        _setupFailed = !await ResetToFreshSplash();
+        if (_setupFailed)
             Expect(false, "[setup] ResetToFreshSplash did not land on splash");
     }
 
@@ -51,6 +52,7 @@ public class SlotsFullTests : GameTestBase
     [Test]
     public async Task NewGameWithAllSlotsFull_ShowsSlotsFullDialog()
     {
+        if (_setupFailed) return;
         StartTest(nameof(NewGameWithAllSlotsFull_ShowsSlotsFullDialog));
 
         // Wipe + reload first so the sandbox is clean, THEN seed the 3 saves
@@ -108,6 +110,7 @@ public class SlotsFullTests : GameTestBase
     [Test]
     public async Task NewGameWithAllSlotsFull_CancelReturnsToSplash()
     {
+        if (_setupFailed) return;
         if (!await ResetToFreshSplash()) { Expect(false, "initial reset failed"); return; }
         await SeedAllThreeSlotsFull();
         bool atSplash = await ResetToFreshSplash(wipeSaves: false);
