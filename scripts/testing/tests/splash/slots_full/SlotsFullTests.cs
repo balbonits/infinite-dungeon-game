@@ -29,9 +29,14 @@ public class SlotsFullTests : GameTestBase
     public void SetupAll() => GD.Print("═══ SlotsFullTests ═══");
 
     [Setup]
-    public async Task WaitForSplashScreen()
+    public async Task ResetSplash()
     {
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f, what: "SplashScreen to appear");
+        // Use the canonical cross-suite isolation path (TEST-09): ResetToFreshSplash
+        // reloads the scene and awaits splash reappearance. The earlier "just wait
+        // for splash to exist" variant assumed other suites left the game on the
+        // splash screen — fragile when test order shifts. Copilot PR #33 round-7
+        // finding: bring SlotsFullTests in line with every other suite's setup.
+        await ResetToFreshSplash();
     }
 
     /// <summary>

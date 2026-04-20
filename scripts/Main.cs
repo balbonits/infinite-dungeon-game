@@ -23,6 +23,13 @@ public partial class Main : Node
         Instance = this;
         _deathScreen = GetNode<Control>("UILayer/DeathScreen");
 
+        // WindowStack is static; if a prior scene-run (esp. in test mode, where
+        // ResetToFreshSplash calls ReloadCurrentScene) left a modal open, the
+        // stack would still report HasModal=true and block splash input after
+        // reload. Clearing here guarantees every Main boot starts with no
+        // modal trapping focus. Copilot PR #33 round-7 finding.
+        Ui.WindowStack.Clear();
+
         // Apply global theme to all UI — set on each root Control so it cascades
         var globalTheme = Ui.GlobalTheme.Create();
         var uiLayer = GetNode<CanvasLayer>("UILayer");

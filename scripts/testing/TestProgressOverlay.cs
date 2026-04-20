@@ -18,7 +18,11 @@ public partial class TestProgressOverlay : CanvasLayer
 
     private Label _label = null!;
 
-    /// <summary>Idempotent: attach if not already present. Safe to call multiple times.</summary>
+    /// <summary>
+    /// Idempotent: attach if not already present. Safe to call multiple times
+    /// and safe to call from <c>_Ready</c> — defers the AddChild so the
+    /// current scene's "busy setting up children" state doesn't reject it.
+    /// </summary>
     public static void EnsureAttached(Node host)
     {
         if (_instance != null && IsInstanceValid(_instance))
@@ -26,8 +30,13 @@ public partial class TestProgressOverlay : CanvasLayer
 
         var root = host.GetTree().Root;
         var overlay = new TestProgressOverlay { Name = "TestProgressOverlay", Layer = 128 };
-        root.AddChild(overlay);
         _instance = overlay;
+        // Deferred: calling EnsureAttached from Main._Ready otherwise races with
+        // the engine's own "Main is being constructed under Root" state and
+        // fails with "Parent node is busy setting up children". Copilot PR #33
+        // round-7 finding: that error cascaded into every UI test timing out
+        // on splash → ClassSelect because the scene never finished booting.
+        root.CallDeferred(Node.MethodName.AddChild, overlay);
     }
 
     public static void SetCurrentTest(string suite, string testName)
