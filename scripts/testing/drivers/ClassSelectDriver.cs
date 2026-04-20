@@ -35,7 +35,11 @@ public sealed class ClassSelectDriver : ControlDriver<ClassSelect>
     public ButtonDriver Confirm { get; }
     public ButtonDriver Back { get; }
 
-    public bool IsShown => Root is not null && Root.IsInsideTree();
+    // IsVisibleInTree, not just IsInsideTree: ClassSelect stays in the tree
+    // briefly between Visible=false and QueueFree during the confirm-to-town
+    // transition, and driver-level assertions shouldn't see that window as
+    // "shown". (Copilot PR #33 round-4.)
+    public bool IsShown => Root is not null && Root.IsInsideTree() && Root.IsVisibleInTree();
 
     /// <summary>
     /// Full keyboard flow to pick Warrior and hit Confirm. Mirrors the
@@ -61,7 +65,9 @@ public sealed class ClassSelectDriver : ControlDriver<ClassSelect>
     private static Button? SearchButton(Node? root, string text)
     {
         if (root is null) return null;
-        if (root is Button btn && btn.Visible && btn.Text == text) return btn;
+        // IsVisibleInTree — a button with Visible=true under a hidden parent
+        // is not actually interactable. (Copilot PR #33 round-4.)
+        if (root is Button btn && btn.IsInsideTree() && btn.IsVisibleInTree() && btn.Text == text) return btn;
         foreach (var child in root.GetChildren())
         {
             var found = SearchButton(child, text);

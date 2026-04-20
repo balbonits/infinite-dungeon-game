@@ -52,11 +52,13 @@ public static class AccessibilityLinter
     {
         switch (node)
         {
-            case Button btn when btn.Visible && btn.FocusMode != Control.FocusModeEnum.None:
+            // Use IsVisibleInTree/IsInsideTree so a button with Visible=true but a
+            // hidden parent doesn't produce false violations (Copilot PR #33 round-4).
+            case Button btn when btn.IsInsideTree() && btn.IsVisibleInTree() && btn.FocusMode != Control.FocusModeEnum.None:
                 CheckTouchTarget(btn, v);
                 CheckButtonContrast(btn, v);
                 break;
-            case Label lbl when lbl.Visible:
+            case Label lbl when lbl.IsInsideTree() && lbl.IsVisibleInTree():
                 CheckLabelContrast(lbl, v);
                 break;
             case Ui.GameWindow win when win.IsOpen:
@@ -138,7 +140,10 @@ public static class AccessibilityLinter
 
     private static bool FindButtonTextAnyOf(Node root, params string[] options)
     {
-        if (root is Button btn && btn.Visible)
+        // IsVisibleInTree() — a button with Visible=true inside a hidden parent
+        // is not actually reachable by a keyboard user, so the modal-trap check
+        // would otherwise miss real traps (Copilot PR #33 round-4).
+        if (root is Button btn && btn.IsInsideTree() && btn.IsVisibleInTree())
         {
             foreach (var opt in options)
                 if (btn.Text == opt) return true;

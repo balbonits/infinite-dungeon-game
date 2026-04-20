@@ -213,8 +213,16 @@ public static class ScreenshotHelper
             return new VerifyReport(VerifyStatus.BaselineSeeded, null, verifiedPath, null, 0);
         }
 
-        // Baseline exists — save received + diff.
-        img.SavePng(receivedPath);
+        // Baseline exists — save received + diff. Check the SavePng error
+        // (Copilot PR #33 round-4): a silent failure here would leave the
+        // subsequent CalcDiff call to either throw or compare a stale/missing
+        // file, both of which report useless diagnostics to the reviewer.
+        var receivedErr = img.SavePng(receivedPath);
+        if (receivedErr != Error.Ok)
+        {
+            GD.PushError($"[VerifyScreenshot] failed to save received PNG for {relFile}: {receivedErr}");
+            return new VerifyReport(VerifyStatus.Failed, null, verifiedPath, null, 0);
+        }
         try
         {
             var diff = ImageSharpCompare.CalcDiff(receivedPath, verifiedPath);

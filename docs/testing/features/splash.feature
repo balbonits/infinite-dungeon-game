@@ -13,18 +13,18 @@ Feature: Splash screen
     And the splash screen is visible
     And a splash button has keyboard focus
 
-  # Test: scripts/testing/tests/SplashTests.cs :: Splash_HasNewGameButton
+  # Test: SplashTests :: Splash_HasNewGameButton
   Scenario: New Game button exists and is focusable
     Then a button labeled "New Game" is visible on the splash screen
     And the "New Game" button can receive keyboard focus
 
-  # Test: Splash_EnterOnNewGameOpensClassSelect
+  # Test: SplashTests :: Splash_EnterOnNewGameOpensClassSelect
   Scenario: New Game click opens class select (clean save state)
     Given no save slots are occupied
     When the user focuses "New Game" and presses Enter
     Then the class-select screen appears
 
-  # Test: Splash_NewGameWithAllSlotsFull_ShowsSlotsFullDialog
+  # Test: SlotsFullTests :: NewGameWithAllSlotsFull_ShowsSlotsFullDialog
   Scenario: New Game click with all 3 save slots full opens the slots-full dialog
     Given all 3 save slots are occupied by warriors
     When the user focuses "New Game" and presses Enter
@@ -34,7 +34,7 @@ Feature: Splash screen
     When the user clicks "Open Load Game"
     Then the Load Game screen appears
 
-  # Test: Splash_NewGameWithAllSlotsFull_CancelReturnsToSplash
+  # Test: SlotsFullTests :: NewGameWithAllSlotsFull_CancelReturnsToSplash
   Scenario: Slots-full dialog Cancel keeps user on splash
     Given all 3 save slots are occupied by warriors
     When the user clicks "New Game"
@@ -44,12 +44,12 @@ Feature: Splash screen
     And the Load Game screen is NOT opened
     And the splash screen is still visible
 
-  # Test: Splash_ContinueDisabledWhenNoSaves
+  # Test: SplashTests :: Splash_ContinueDisabledWhenNoSaves
   Scenario: Continue button is disabled when no saves exist
     Given no save slots are occupied
     Then the "Continue" button is disabled
 
-  # Test: Splash_AfterContinueBack_NewGameStillWorks
+  # Test: SplashTests :: Splash_AfterContinueBack_NewGameStillWorks
   Scenario: New Game still works after Continue -> Back round-trip (focus-preservation bug)
     Given a save in slot 0
     When the user clicks "Continue"
@@ -59,7 +59,7 @@ Feature: Splash screen
     And the user clicks "New Game"
     Then the class-select screen appears
 
-  # Test: Splash_AfterDeleteSlotBack_NewGameStillWorks
+  # Scenario documented but no enforcing test yet (planned under PR #31 branch).
   Scenario: New Game still works after deleting a save slot (lifecycle bug)
     Given a save in slot 0
     When the user clicks "Continue"
@@ -71,14 +71,14 @@ Feature: Splash screen
     And the user clicks "New Game"
     Then the class-select screen appears
 
-  # Test: Splash_ClickingTutorial_OpensTutorialPanel
+  # Test: SplashTests :: Splash_ClickingTutorial_OpensTutorialPanel
   Scenario: Tutorial button opens tutorial panel; Escape closes it
     When the user clicks "Tutorial"
     Then the TutorialPanel appears
     When the user presses Escape
     Then the TutorialPanel closes
 
-  # Test: Splash_ClickingSettings_OpensSettingsPanel
+  # Test: SplashTests :: Splash_ClickingSettings_OpensSettingsPanel
   Scenario: Settings button opens settings panel; Escape closes it
     When the user clicks "Settings"
     Then the SettingsPanel appears

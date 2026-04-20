@@ -85,4 +85,21 @@ public partial class SlotsFullDialog : GameWindow
     }
 
     public void Open() => Show();
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        // GameWindow.Close() on Cancel hides the Overlay but leaves this node
+        // in the splash's child list. Repeated blocked-New-Game clicks would
+        // then accumulate hidden dialogs even though the button handlers
+        // QueueFree correctly — the keyboard-cancel path bypassed that.
+        // (Copilot PR #33 round-4.)
+        if (IsOpen && KeyboardNav.IsCancelPressed(@event))
+        {
+            Close();
+            QueueFree();
+            GetViewport()?.SetInputAsHandled();
+            return;
+        }
+        base._UnhandledInput(@event);
+    }
 }
