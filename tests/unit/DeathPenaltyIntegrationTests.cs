@@ -284,7 +284,7 @@ public class DeathPenaltyIntegrationTests
 
         CountUnits(backpack).Should().Be(0, "Accept Fate wipes the whole backpack");
         backpack.Gold.Should().Be(0, "Accept Fate zeros backpack gold");
-        bank.Gold.Should().Be(1000, "bank never touched by death penalties");
+        bank.Gold.Should().Be(1000, "Accept Fate does not touch bank gold");
     }
 
     [Fact]
@@ -295,24 +295,54 @@ public class DeathPenaltyIntegrationTests
         // Per spec (docs/systems/death.md §"Sacrificial Idol"), the idol acts
         // as a free "Save Both" — so backpack gold must also survive
         // consumption, not just the items.
+        //
+        // Copilot PR #35 round-2 asked us to remove the else-fallback: if
+        // the fixture seed is ever broken and HasSacrificialIdol returns
+        // false, we want the test to fail loudly rather than silently fall
+        // back to ApplyItemLoss (which only removes one unit from the 10-
+        // item seed, still passing the itemsBefore - 1 slot assertion).
         var (backpack, _) = SeedCharacter(backpackGold: 500);
         backpack.TryAdd(Potion(IdolId));
         int itemsBefore = CountOccupied(backpack);
 
-        if (DeathPenalty.HasSacrificialIdol(backpack))
-        {
-            DeathPenalty.ConsumeSacrificialIdol(backpack);
-            // No ApplyItemLoss in the idol branch.
-        }
-        else
-        {
-            int toLose = DeathPenalty.GetItemsLost(deepestFloor: 15);
-            DeathPenalty.ApplyItemLoss(backpack, toLose);
-        }
+        DeathPenalty.HasSacrificialIdol(backpack).Should().BeTrue(
+            "test fixture seeds an idol before exercising the idol branch");
+        DeathPenalty.ConsumeSacrificialIdol(backpack);
 
         CountOccupied(backpack).Should().Be(itemsBefore - 1, "only the idol is gone");
         DeathPenalty.HasSacrificialIdol(backpack).Should().BeFalse();
         backpack.Gold.Should().Be(500, "idol is a free Save Both — backpack gold survives");
+    }
+
+    // ── Equipment-loss primitive (EquipmentSet.DestroyRandomEquipped) ───────
+    // Copilot PR #35 round-2 flagged that "gear" was in the PR title but no
+    // test covered the equipment-mutation primitive. Deterministic here by
+    // giving EquipmentSet exactly one equipped item — rng.Next(1) always
+    // returns 0, so DestroyRandomEquipped has no choice in which slot to hit.
+
+    [Fact]
+    public void DestroyRandomEquipped_WithOneItem_RemovesThatItemDeterministically()
+    {
+        var equip = new EquipmentSet();
+        var chest = ItemDatabase.Get("body_warrior_armor_t1");
+        chest.Should().NotBeNull("fixture item must exist in ItemDatabase");
+        equip.ForceEquip(EquipSlot.Body, chest!);
+
+        var rng = new System.Random(12345);
+        var destroyed = equip.DestroyRandomEquipped(rng);
+
+        destroyed.Should().NotBeNull("an item was equipped, so the primitive must destroy something");
+        destroyed!.Id.Should().Be(chest!.Id, "the only equipped item was the one destroyed");
+        equip.Body.Should().BeNull("Body slot is cleared after destruction");
+    }
+
+    [Fact]
+    public void DestroyRandomEquipped_WithNothingEquipped_ReturnsNull()
+    {
+        var equip = new EquipmentSet();
+        var rng = new System.Random(12345);
+        equip.DestroyRandomEquipped(rng).Should().BeNull(
+            "primitive must no-op when the caller's character has no equipment");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
