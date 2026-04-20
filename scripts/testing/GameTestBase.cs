@@ -179,27 +179,75 @@ public abstract class GameTestBase : TestClass
         }
     }
 
-    // Walks the call stack to find the first method tagged [Test] and, if the
-    // name differs from the tracked one, updates the on-screen overlay. Means
-    // every [Test] gets the banner for free without hand-calling StartTest.
+    // Cache the declaring type of the last-identified test (sync method or
+    // async state-machine). While the current Expect is still inside that
+    // same frame, we skip the reflection walk entirely. Invalidated when the
+    // top stack frame's declaring type changes.
+    private System.Type? _lastTestDeclaringType;
+
+    // Walks the call stack to find the [Test] method and, when it changes,
+    // updates the on-screen overlay + prints a RUNNING banner. Handles both
+    // sync methods (attribute is on the method itself) and async state
+    // machines (attribute is on the outer method whose name is embedded in
+    // the compiler-generated nested type's name "<TestName>d__N").
+    //
+    // Cached fast-path means reflection only runs once per test, not per
+    // Expect — addresses PR #33 round-6 Copilot concern about overhead.
     private void UpdateCurrentTestFromStack()
     {
         var stack = new StackTrace();
+        if (stack.FrameCount < 2) return;
+
+        // Fast path: if the immediate caller's declaring type matches the
+        // cached one, we're still in the same test — no walk needed.
+        var directCallerType = stack.GetFrame(1)?.GetMethod()?.DeclaringType;
+        if (_lastTestDeclaringType != null && directCallerType == _lastTestDeclaringType)
+            return;
+
         for (int i = 1; i < stack.FrameCount; i++)
         {
             var method = stack.GetFrame(i)?.GetMethod();
             if (method is null) continue;
-            var attrs = method.GetCustomAttributes(typeof(TestAttribute), false);
-            if (attrs.Length == 0) continue;
-            if (_currentTestName != method.Name)
+
+            // Sync test: [Test] is on the method itself.
+            if (method.GetCustomAttributes(typeof(TestAttribute), false).Length > 0)
             {
-                _currentTestName = method.Name;
-                _screenshotStep = 0;
-                TestProgressOverlay.SetCurrentTest(GetType().Name, method.Name);
-                GD.Print($"\n▶▶▶ RUNNING: {GetType().Name}::{method.Name}\n");
+                MaybeUpdateTestName(method.Name, method.DeclaringType);
+                return;
             }
-            return;
+
+            // Async test: the runtime frame is MoveNext on a compiler-
+            // generated nested state-machine type. The original method name
+            // is embedded in the nested type's name between angle brackets.
+            var declaringType = method.DeclaringType;
+            if (method.Name == "MoveNext" && declaringType is { IsNested: true })
+            {
+                var typeName = declaringType.Name;
+                int lt = typeName.IndexOf('<');
+                int gt = typeName.IndexOf('>');
+                if (lt >= 0 && gt > lt)
+                {
+                    var testName = typeName.Substring(lt + 1, gt - lt - 1);
+                    var outer = declaringType.DeclaringType;
+                    var outerMethod = outer?.GetMethod(testName);
+                    if (outerMethod?.GetCustomAttributes(typeof(TestAttribute), false).Length > 0)
+                    {
+                        MaybeUpdateTestName(testName, declaringType);
+                        return;
+                    }
+                }
+            }
         }
+    }
+
+    private void MaybeUpdateTestName(string testName, System.Type? declaringType)
+    {
+        _lastTestDeclaringType = declaringType;
+        if (_currentTestName == testName) return;
+        _currentTestName = testName;
+        _screenshotStep = 0;
+        TestProgressOverlay.SetCurrentTest(GetType().Name, testName);
+        GD.Print($"\n▶▶▶ RUNNING: {GetType().Name}::{testName}\n");
     }
 
     /// <summary>Poll a condition until true, or fail after timeout. Logs pass/fail if `what` provided.</summary>
