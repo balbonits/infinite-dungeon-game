@@ -116,9 +116,11 @@ public partial class StatAllocDialog : GameWindow
 
     private void OnStatChanged()
     {
-        // Recalculate MaxHp with new STA
+        // COMBAT-01 §5: unified recompute covers MaxHp + MaxMana and folds
+        // in equipment overlays — replaces the stat-only recomputation that
+        // used to live inline here.
         var gs = GameState.Instance;
-        gs.MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(gs.Level, gs.Stats.BonusMaxHp);
+        gs.RecomputeDerivedStats();
         gs.EmitSignal(GameState.SignalName.StatsChanged);
         Rebuild();
         UiTheme.FocusFirstButton(ContentBox);

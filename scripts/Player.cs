@@ -58,8 +58,25 @@ public partial class Player : CharacterBody2D
             GameState.SignalName.StatsChanged,
             new Callable(this, MethodName.OnStatsChanged));
 
+        // COMBAT-01 §8: subscribe to mitigation-outcome signals so Dodge/Block/
+        // Phase spawn FloatingText at the player's position without coupling
+        // GameState.TakeDamage directly to UI nodes.
+        EventBus.Instance.Connect(
+            EventBus.SignalName.PlayerDodged,
+            new Callable(this, MethodName.OnPlayerDodged));
+        EventBus.Instance.Connect(
+            EventBus.SignalName.PlayerBlocked,
+            new Callable(this, MethodName.OnPlayerBlocked));
+        EventBus.Instance.Connect(
+            EventBus.SignalName.PlayerPhased,
+            new Callable(this, MethodName.OnPlayerPhased));
+
         StartGracePeriod();
     }
+
+    private void OnPlayerDodged(Vector2 _) => FloatingText.Dodge(GetParent(), GlobalPosition);
+    private void OnPlayerBlocked(Vector2 _) => FloatingText.Block(GetParent(), GlobalPosition);
+    private void OnPlayerPhased(Vector2 _) => FloatingText.Phase(GetParent(), GlobalPosition);
 
     public override void _PhysicsProcess(double delta)
     {
@@ -227,22 +244,51 @@ public partial class Player : CharacterBody2D
     /// </summary>
     private void ExecuteAttack(AttackConfig attack, Node2D target)
     {
-        var stats = GameState.Instance.Stats;
-        int baseDamage = Constants.PlayerStats.GetDamage(GameState.Instance.Level);
+        ExecuteAttackImpl(attack, target, isFlurry: false);
+    }
 
-        // Apply stat bonuses based on attack type
+    /// <summary>
+    /// COMBAT-01 §6 / §7: outgoing-attack pipeline. Weapon base + equipment
+    /// BonusDamage → STR/INT scaling → Crit roll → Flurry follow-up.
+    /// <paramref name="isFlurry"/>=true means we're re-entering as a free
+    /// extra swing (no cooldown consumed, no recursive Flurry roll).
+    /// </summary>
+    private void ExecuteAttackImpl(AttackConfig attack, Node2D target, bool isFlurry)
+    {
+        var stats = GameState.Instance.Stats;
+        var es = GameState.Instance.Equipment.GetCombatStats(GameState.Instance.SelectedClass);
+
+        // COMBAT-01 §6: weapon base damage includes equipment BonusDamage.
+        float weaponBase = Constants.PlayerStats.GetDamage(GameState.Instance.Level) + es.BonusDamage;
+
         float statBonus = attack.IsProjectile
-            ? stats.SpellDamageMultiplier  // INT affects ranged/spell damage
-            : 1.0f + stats.MeleePercentBoost / 100f;  // STR affects melee damage
+            ? stats.SpellDamageMultiplier
+            : 1.0f + stats.MeleePercentBoost / 100f;
         float flatBonus = attack.IsProjectile ? 0 : stats.MeleeFlatBonus;
 
-        int finalDamage = (int)((baseDamage + flatBonus) * attack.DamageMultiplier * statBonus);
+        int finalDamage = (int)((weaponBase + flatBonus) * attack.DamageMultiplier * statBonus);
 
-        // Track damage dealt for Dungeon Intelligence
+        // COMBAT-01 §7 Crit: soft-capped chance to roll; overflow inflates
+        // crit-damage multiplier (unbounded per spec).
+        float critEff = CombatFormulas.SoftCap(es.CritRaw);
+        if (critEff > 0f && GameState.Instance.CombatRng.NextSingle() < critEff / 100f)
+        {
+            float critMult = CombatFormulas.CritDamageMultiplier(es.CritRaw);
+            finalDamage = (int)(finalDamage * critMult);
+        }
+
         GameState.Instance.Intelligence.RecordDamageDealt(finalDamage);
 
-        // DEX affects cooldown (attack speed)
-        _attackTimer = attack.Cooldown / stats.AttackSpeedMultiplier;
+        // COMBAT-01 §7 Haste: effective chance speeds cooldown; overflow rolls Flurry.
+        // Cooldown is only consumed on the primary swing; Flurry reuses the same
+        // weapon stats for a free second hit.
+        if (!isFlurry)
+        {
+            float hasteEff = CombatFormulas.SoftCap(es.HasteRaw);
+            _attackTimer = attack.Cooldown
+                         / stats.AttackSpeedMultiplier
+                         / (1.0f + hasteEff / 100f);
+        }
 
         switch (attack.TargetMode)
         {
@@ -288,6 +334,20 @@ public partial class Player : CharacterBody2D
                 HitEnemiesInRadius(GlobalPosition, attack.AoeRadius,
                     finalDamage, attack.MaxTargets, attack.EffectColor);
                 break;
+        }
+
+        // COMBAT-01 §7 Flurry — only the primary swing rolls; a Flurry swing
+        // doesn't trigger another Flurry (no recursion). Cooldown is not
+        // consumed by the Flurry follow-up.
+        if (!isFlurry)
+        {
+            float flurryChance = CombatFormulas.FlurryChance(es.HasteRaw);
+            if (flurryChance > 0f &&
+                GameState.Instance.CombatRng.NextSingle() < flurryChance &&
+                IsInstanceValid(target))
+            {
+                ExecuteAttackImpl(attack, target, isFlurry: true);
+            }
         }
     }
 

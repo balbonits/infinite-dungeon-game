@@ -34,6 +34,20 @@ public static class FloatingText
         Spawn(parent, position, Strings.Combat.LevelUp, UiTheme.Colors.Accent, 18, 1.2f);
     }
 
+    // COMBAT-01 §8 mitigation variants — wired via EventBus signals in Player.
+    private static readonly Color DodgeColor = new(1.0f, 0.96f, 0.20f, 1f); // yellow
+    private static readonly Color BlockColor = new(0.30f, 0.80f, 0.80f, 1f); // teal
+    private static readonly Color PhaseColor = new(0.40f, 0.85f, 1.0f, 1f); // cyan
+
+    public static void Dodge(Node parent, Vector2 position) =>
+        Spawn(parent, position, "MISS", DodgeColor);
+
+    public static void Block(Node parent, Vector2 position) =>
+        Spawn(parent, position, "BLOCK", BlockColor);
+
+    public static void Phase(Node parent, Vector2 position) =>
+        Spawn(parent, position, "PHASED", PhaseColor);
+
     public static void Spawn(Node parent, Vector2 position, string text, Color color,
         int fontSize = 13, float duration = 0.8f)
     {

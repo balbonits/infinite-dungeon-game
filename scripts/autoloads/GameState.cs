@@ -117,6 +117,29 @@ public partial class GameState : Node
     public EquipmentSet Equipment { get; set; } = new();
 
     /// <summary>
+    /// Shared RNG for combat rolls (crit / dodge / block / flurry). New per-run,
+    /// not serialized. Named so deterministic-replay concerns can thread a fixed
+    /// seed through this single field later without touching every callsite.
+    /// </summary>
+    public Random CombatRng { get; private set; } = new();
+
+    /// <summary>
+    /// COMBAT-01 §8: in-game time (seconds) when the active Phase i-frame
+    /// window expires. `0` = no active Phase. Consumed on the next incoming
+    /// hit OR auto-expires at the stored time, whichever comes first.
+    /// Transient — not serialized (phase is a ~500ms window, save/load never
+    /// fires mid-combat).
+    /// </summary>
+    private double _phaseExpiresAt;
+    public bool IsPhased => _phaseExpiresAt > 0 && _phaseTimeSource() < _phaseExpiresAt;
+
+    // Indirection so tests can inject a fake time source. Default = process ticks.
+    private System.Func<double> _phaseTimeSource = () => Time.GetTicksMsec() / 1000.0;
+    public void SetPhaseTimeSourceForTests(System.Func<double> source) => _phaseTimeSource = source;
+    public double GetPhaseExpiresAtForTests() => _phaseExpiresAt;
+    public void SetPhaseExpiresAtForTests(double value) => _phaseExpiresAt = value;
+
+    /// <summary>
     /// Index (0..SaveManager.SlotCount-1) of the save slot this character owns.
     /// Set when a slot is loaded (Load Game) OR reserved (New Game splash flow), and
     /// preserved across <see cref="Reset"/> — the slot is character identity, not run state.
@@ -220,24 +243,84 @@ public partial class GameState : Node
             };
             Achievements.SetCounter(classCounter, Level);
 
-            // Recalculate MaxHp including STA bonus (spec: leveling.md)
-            MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(Level, Stats.BonusMaxHp);
+            // COMBAT-01 §5: unified recompute folds stat allocation AND
+            // equipment overlays into MaxHp / MaxMana. Replaces two separate
+            // calls that used only Stats.BonusMaxHp / BonusMaxMana and
+            // ignored gear.
+            RecomputeDerivedStats();
             // Spec: HP restore = floor(max_hp * 0.15)
             int healAmount = (int)(MaxHp * Constants.PlayerStats.HealOnLevelUpPercent);
             Hp = Math.Min(MaxHp, Hp + healAmount);
-
-            // Recalculate MaxMana including INT bonus (spec: stats.md)
-            MaxMana = Constants.PlayerStats.GetClassBaseMana(SelectedClass) + Stats.BonusMaxMana;
             Mana = MaxMana; // Full mana restore on level-up
             xpToLevel = Constants.Leveling.GetXpToLevel(Level);
         }
     }
 
+    /// <summary>
+    /// COMBAT-01 §5: unified MaxHp / MaxMana recompute. Folds equipment stat
+    /// overlays into the StatBlock curve so all four prior callsites
+    /// (StatAllocDialog, PauseMenu, DebugConsole, level-up inside AwardXp)
+    /// end up at the same derived numbers. Must be called after any equipment
+    /// change, stat allocation, or level-up.
+    /// </summary>
+    public void RecomputeDerivedStats()
+    {
+        // COMBAT-01 §1 overlay model: equipment stats stack onto allocated
+        // stats BEFORE the DR curve, producing a single effective value per
+        // stat. Using StatBlock.BonusMaxHp / BonusMaxMana directly would
+        // apply DR to allocated stats only and lose the spec invariant.
+        var es = Equipment.GetCombatStats(SelectedClass);
+        int effectiveSta = Stats.Sta + (int)es.Sta;
+        int effectiveInt = Stats.Int + (int)es.Int;
+        int staDerivedHp = (int)(StatBlock.GetEffective(effectiveSta) * 5.0f);
+        int intDerivedMana = (int)(StatBlock.GetEffective(effectiveInt) * 4.0f);
+
+        MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(
+            Level,
+            staDerivedHp + (int)es.BonusHp);
+        MaxMana = Constants.PlayerStats.GetClassBaseMana(SelectedClass)
+                + intDerivedMana;
+    }
+
     public void TakeDamage(int amount)
     {
-        if (IsDead)
+        if (IsDead) return;
+
+        // COMBAT-01 §8 resolution order: Phase → Dodge → Block → Hp subtract.
+        var es = Equipment.GetCombatStats(SelectedClass);
+
+        // 1. PHASE — i-frame carryover from a prior dodge. Consumes on this hit.
+        if (IsPhased)
+        {
+            _phaseExpiresAt = 0;
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerPhased, Vector2.Zero);
             return;
-        Hp -= amount;
+        }
+
+        // 2. DODGE — DEX-derived dodge% + ring-contributed dodge%. Soft-capped
+        //    chance; overflow becomes Phase duration (ms).
+        float dodgeRaw = Stats.DodgeChance * 100f + es.DodgeRaw;
+        float dodgeEff = CombatFormulas.SoftCap(dodgeRaw);
+        if (CombatRng.NextSingle() < dodgeEff / 100f)
+        {
+            float phaseMs = CombatFormulas.PhaseDurationMs(dodgeRaw);
+            _phaseExpiresAt = _phaseTimeSource() + phaseMs / 1000.0;
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerDodged, Vector2.Zero);
+            return;
+        }
+
+        // 3. BLOCK — soft-capped chance; overflow raises reduction % over 50%.
+        int incoming = amount;
+        float blockRaw = es.BlockRaw;
+        float blockEff = CombatFormulas.SoftCap(blockRaw);
+        if (CombatRng.NextSingle() < blockEff / 100f)
+        {
+            float reduction = CombatFormulas.BlockReduction(blockRaw);
+            incoming = (int)(incoming * (1f - reduction));
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerBlocked, Vector2.Zero);
+        }
+
+        Hp -= incoming;
     }
 
     /// <summary>
