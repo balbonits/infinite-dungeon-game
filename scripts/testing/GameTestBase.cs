@@ -197,15 +197,15 @@ public abstract class GameTestBase : TestClass
         }
     }
 
-    // Cache the key "<declaringType>::<methodName>" of the last-identified
-    // immediate caller. Caching on declaring type alone was wrong because all
-    // tests in a suite share one declaring type (either the test class for
-    // sync tests or one state-machine nested type per async test), so the
-    // fast path swallowed every transition between [Test]s and left the
-    // overlay / screenshot dir naming stuck on the first test. Keying on the
-    // caller method restores per-test detection while keeping the walk to
-    // once per Expect-call-site-transition. Copilot PR #33 round-10 finding.
-    private string? _lastImmediateCallerKey;
+    // Cache key for the fast path: the first frame whose declaring type is
+    // NOT GameTestBase — i.e., the caller of Expect / Screenshot /
+    // VerifyScreenshot, which is either the [Test] method (sync) or the
+    // async state-machine MoveNext whose outer type is the [Test]. Using
+    // stack frame 1 alone was wrong because that's always GameTestBase.Expect
+    // (etc.), so the key never changed between tests within a suite and the
+    // overlay / screenshot dir stayed stuck on the first detected test.
+    // Copilot PR #33 round-12 finding.
+    private string? _lastTestCallerKey;
 
     // Walks the call stack to find the [Test] method and, when it changes,
     // updates the on-screen overlay + prints a RUNNING banner. Handles both
@@ -217,16 +217,25 @@ public abstract class GameTestBase : TestClass
         var stack = new StackTrace();
         if (stack.FrameCount < 2) return;
 
-        // Fast path: if the immediate caller method matches the cached key
-        // (same method, same declaring type), we're in the same execution
-        // context — no walk needed.
-        var directCaller = stack.GetFrame(1)?.GetMethod();
-        var directCallerKey = directCaller is null
-            ? null
-            : $"{directCaller.DeclaringType?.FullName}::{directCaller.Name}";
-        if (directCallerKey != null && directCallerKey == _lastImmediateCallerKey)
+        // Fast path: walk until the first frame whose declaring type is NOT
+        // GameTestBase (or a subclass of GameTestBase's internal helpers), and
+        // use that frame's "<declaringType>::<methodName>" as the cache key.
+        // When execution moves from one [Test] method to the next within the
+        // same suite, this key changes and we re-run the full walk.
+        string? firstNonBaseKey = null;
+        int firstNonBaseIndex = -1;
+        for (int i = 1; i < stack.FrameCount; i++)
+        {
+            var m = stack.GetFrame(i)?.GetMethod();
+            if (m is null) continue;
+            if (m.DeclaringType == typeof(GameTestBase)) continue;
+            firstNonBaseKey = $"{m.DeclaringType?.FullName}::{m.Name}";
+            firstNonBaseIndex = i;
+            break;
+        }
+        if (firstNonBaseKey != null && firstNonBaseKey == _lastTestCallerKey)
             return;
-        _lastImmediateCallerKey = directCallerKey;
+        _lastTestCallerKey = firstNonBaseKey;
 
         for (int i = 1; i < stack.FrameCount; i++)
         {
