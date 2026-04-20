@@ -10,8 +10,38 @@
 </p>
 
 <p align="center">
-  <strong>Status:</strong> In active development. Playable prototype with full game loop.
+  <a href="https://github.com/balbonits/infinite-dungeon-game/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/balbonits/infinite-dungeon-game/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white" alt="CI"></a>
+  <a href="https://github.com/balbonits/infinite-dungeon-game/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/unit%20%2B%20integration%20tests-passing-brightgreen?logo=xunit&logoColor=white" alt="xUnit tests"></a>
+  <a href="https://github.com/balbonits/infinite-dungeon-game/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/UI%20tests-in%20progress-yellowgreen?logo=godotengine&logoColor=white" alt="UI tests"></a>
+  <img src="https://img.shields.io/badge/coverage-%E2%89%A575%25-brightgreen" alt="Coverage ≥ 75%">
+  <br/>
+  <img src="https://img.shields.io/badge/Godot-4.6.2%20.NET-478CBF?logo=godotengine&logoColor=white" alt="Godot 4.6.2 .NET">
+  <img src="https://img.shields.io/badge/.NET-8+-512BD4?logo=dotnet&logoColor=white" alt=".NET 8+">
+  <img src="https://img.shields.io/badge/C%23-12-239120?logo=csharp&logoColor=white" alt="C# 12">
+  <img src="https://img.shields.io/badge/platform-mac%20%7C%20win%20%7C%20linux-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/license-proprietary-red" alt="License: Proprietary">
+  <img src="https://img.shields.io/badge/built%20by-AI%20%2B%20human%20director-purple?logo=anthropic&logoColor=white" alt="Built by AI + human director">
 </p>
+
+## Status
+
+**Phase:** Art + polish pass for the top-down LPC pivot (ADR-007). Playable prototype — full game loop works: splash → class select → town → dungeon → death → respawn. 130+ tracked systems complete; content + balance + platform-export phases still ahead.
+
+| Phase | Status | Scope |
+|---|---|---|
+| **0 — Visual foundation** | ✅ Done | Tile rendering, camera, character movement, first enemy |
+| **0.5 — Playable prototype** | ✅ Done | Auto-attack, HUD, GameState + signals, death/restart |
+| **1 — Complete systems** | ✅ Done | Class select, 80+ skills, quests, crafting, bank, achievements, monster families |
+| **2 — Art + polish (top-down)** | 🟡 In progress | LPC character regens (Warrior/Ranger/Mage + 3 NPCs), class color coding, NPC art, tile atlas |
+| **3 — Balance + content** | ⏳ Pending | Zone species rosters, boss fan-out (Phase E/F specs locked), endgame pacts tuning |
+| **4 — Export + release** | ⏳ Pending | Platform exports (Mac/Win/Linux), store listings, launch polish |
+
+**Where to look for detail:**
+
+- [`docs/dev-tracker.md`](docs/dev-tracker.md) — live ticket ledger (Done / Partial / To-do per system, audit findings, P3 future work). The authoritative count lives here; this README intentionally avoids snapshotting it.
+- [`docs/dev-journal.md`](docs/dev-journal.md) — narrative log of every session (what shipped, what broke, what the conversation was).
+- [`CHANGELOG.md`](CHANGELOG.md) — release-facing change log.
+- [Merged pull requests](https://github.com/balbonits/infinite-dungeon-game/pulls?q=is%3Apr+is%3Amerged+sort%3Aupdated-desc) — reverse-chronological merged work.
 
 ---
 
