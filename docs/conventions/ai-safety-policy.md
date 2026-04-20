@@ -22,7 +22,9 @@ The following categories are **never acceptable output** from any AI pipeline in
 | 4 | **Hate speech** | Content targeting protected classes (race, religion, gender, sexual orientation, disability, national origin) with dehumanization, slurs, incitement. |
 | 5 | **Deceptive election content** | Fabricated quotes / imagery / claims about real political figures, polling places, voting procedures, or election outcomes. |
 | 6 | **Bullying / harassment material** | Targeted attacks on real individuals or identifiable groups designed to intimidate. |
-| 7 | **Sexually explicit content meant to gratify** | Pornographic output regardless of subject. Narrative/artistic nudity is allowed in cases where it serves a game-design purpose and carries no gratification intent; borderline cases escalate to PO. |
+| 7 | **Sexually explicit / pornographic content** | Absolute prohibition on any AI-generated pornographic or sexually-explicit-for-gratification output, regardless of subject. Classifiers and review checklists treat this as a hard reject. See "Narrow nudity allowance" below for the single exception this does not cover. |
+
+**Narrow nudity allowance (§1 exception).** Non-pornographic nudity — anatomically matter-of-fact, no gratification intent, clearly serving a game-design purpose — is *not* automatically rejected by §1 row 7. These cases always escalate to explicit PO sign-off before ship; the default is still reject. This exists so the taxonomy doesn't block classical/mythological references that genre convention treats as non-sexual.
 
 **Adjacent gray zones** (not automatic rejection, but require PO review before ship): graphic violence beyond ARPG baseline; religious symbolism in a potentially offensive framing; political satire; real-location depictions in tragic/violent contexts.
 
@@ -170,7 +172,7 @@ Everything in-repo, version-controlled, auditable without access to internal too
 
 | ID | Description | Status |
 |----|-------------|--------|
-| POL-AI-REPORT-UI-01 | Report dialog (F10 keybind + context-menu integration + form) | To Do (**MVP-blocker** — must ship before any build with a player-visible AI-generated surface, including dev-time static assets already in the repo; see §4.1 trigger) |
+| POL-AI-REPORT-UI-01 | Report dialog (F10 keybind + context-menu integration + form) | To Do (**MVP-blocker** — must ship in the **first shipped build** containing any player-visible AI-generated surface, which for MVP includes dev-time static AI-generated assets already in the repo. Internal / dev-only builds do not gate on this ticket. Trigger language matches §4.1 "any player-visible surface containing AI-generated content".) |
 | POL-AI-CREDITS-SWEEP-01 | Audit shipped assets + tag provenance in CREDITS.md | To Do (P2) |
 | POL-AI-TRIAGE-INIT-01 | Create `docs/evidence/ai-report-triage.md` stub + set up weekly PO reminder | To Do (P3 — no reports yet) |
 | POL-AI-PIPELINE-REF-01 | Add §Policy Reference back-pointers to every existing pipeline spec | To Do (P2) |
