@@ -1,4 +1,5 @@
 #if DEBUG
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Chickensoft.GoDotTest;
 using DungeonGame.Autoloads;
@@ -26,31 +27,150 @@ public abstract class GameTestBase : TestClass
     protected InputHelper Input { get; private set; } = null!;
     protected UiHelper Ui { get; private set; } = null!;
 
+    /// <summary>
+    /// GodotTestDriver composition root — per-screen drivers with lazy
+    /// producers. Use this for flow tests ("click New Game → ClassSelect
+    /// appears → click Warrior → Town loads"); ad-hoc Ui.FindButton should
+    /// only be used for quick assertions, not flow steps.
+    /// Per docs/testing/godot-test-driver.md.
+    /// </summary>
+    protected Drivers.GameFlowDriver Flow { get; private set; } = null!;
+
     private int _passCount;
     private int _failCount;
+    private int _screenshotStep;
+    private string _currentTestName = "unknown";
+
+    /// <summary>
+    /// Tell the test base which test is currently executing so screenshots
+    /// land under the right directory. Call at the top of each [Test].
+    /// </summary>
+    protected void StartTest(string testName)
+    {
+        _currentTestName = testName;
+        _screenshotStep = 0;
+    }
+
+    /// <summary>
+    /// Capture the current viewport to <c>tests/e2e/screenshots/&lt;suite&gt;/&lt;test&gt;/NN_&lt;step&gt;.png</c>.
+    /// Unconditional capture — does not compare against a baseline.
+    /// Use for step-by-step flow documentation screenshots.
+    /// </summary>
+    protected async Task Screenshot(string stepName)
+    {
+        // Auto-identify the currently running test (same stack walk Expect uses)
+        // so artifacts land under the right directory even if the test captured
+        // a screenshot before its first Expect and forgot StartTest. Copilot PR
+        // #33 round-8 finding: the prior behavior silently wrote to "unknown".
+        UpdateCurrentTestFromStack();
+        _screenshotStep++;
+        await ScreenshotHelper.Capture(
+            TestScene,
+            GetType().Name,
+            _currentTestName,
+            _screenshotStep,
+            stepName);
+    }
+
+    /// <summary>
+    /// Run the accessibility linter on a subtree and Expect zero
+    /// Error-severity violations. Warnings are logged but don't fail.
+    /// Per AccessibilityLinter.cs — covers focus reachability, touch
+    /// targets, contrast ratios, modal-close reachability.
+    /// </summary>
+    protected void ExpectNoAccessibilityViolations(Node root, string what = "subtree")
+    {
+        var violations = AccessibilityLinter.Lint(root);
+        int errors = 0, warnings = 0;
+        foreach (var v in violations)
+        {
+            if (v.Severity == AccessibilityLinter.Severity.Error) errors++;
+            else warnings++;
+            GD.Print($"    [a11y:{v.Severity}] {v.Rule} @ {v.NodePath} — {v.Detail}");
+        }
+        Expect(errors == 0,
+            $"{what} has no accessibility Errors (found {errors} errors, {warnings} warnings)");
+    }
+
+    /// <summary>
+    /// Capture the viewport AND compare against the stored baseline under
+    /// <c>tests/e2e/screenshots/baselines/&lt;suite&gt;/&lt;test&gt;/</c>.
+    /// - First run seeds the baseline (marked BaselineSeeded in logs).
+    /// - Subsequent runs Expect the diff is within <paramref name="tolerancePercent"/>.
+    /// - On mismatch, a <c>.received.png</c> + <c>.diff.png</c> are written under
+    ///   <c>tests/e2e/screenshots/received/</c> for review.
+    /// </summary>
+    protected async Task VerifyScreenshot(string stepName, double tolerancePercent = 1.0)
+    {
+        // Same rationale as Screenshot: keep baselines/received under the right
+        // directory even when the first capture happens before any Expect call.
+        UpdateCurrentTestFromStack();
+        _screenshotStep++;
+        var report = await ScreenshotHelper.VerifyAgainstBaseline(
+            TestScene,
+            GetType().Name,
+            _currentTestName,
+            _screenshotStep,
+            stepName,
+            tolerancePercent);
+
+        switch (report.Status)
+        {
+            case ScreenshotHelper.VerifyStatus.Match:
+                Expect(true, $"screenshot {stepName} matches baseline ({report.PixelDifferencePercent:F2}% diff ≤ {tolerancePercent}%)");
+                break;
+            case ScreenshotHelper.VerifyStatus.BaselineSeeded:
+                // Treat as pass — first run of a new test creates the baseline.
+                // Reviewer promotes it intentionally, so we don't hard-fail here.
+                Expect(true, $"screenshot {stepName} seeded new baseline at {report.VerifiedPath}");
+                break;
+            case ScreenshotHelper.VerifyStatus.Skipped:
+                // Headless run — capture unavailable. Log without failing;
+                // visual assertions only run in windowed test jobs (xvfb on CI).
+                GD.Print($"[VerifyScreenshot] {stepName} skipped — headless mode");
+                break;
+            case ScreenshotHelper.VerifyStatus.Mismatch:
+                Expect(false, $"screenshot {stepName} DIFFERS from baseline by {report.PixelDifferencePercent:F2}% (> {tolerancePercent}%). Diff image: {report.DiffPath}");
+                break;
+            case ScreenshotHelper.VerifyStatus.Failed:
+                Expect(false, $"screenshot {stepName} capture failed (no viewport / empty image)");
+                break;
+        }
+    }
 
     protected GameTestBase(Node testScene) : base(testScene)
     {
         Input = new InputHelper(testScene);
         Ui = new UiHelper(testScene);
+        Flow = new Drivers.GameFlowDriver(testScene.GetTree(), () => Input);
     }
 
     /// <summary>
     /// Return the game to a fresh splash-screen state (TEST-09). Resets the
-    /// singleton <see cref="GameState"/> and reloads the current scene so
-    /// Main._Ready re-runs and the splash screen shows again. Awaits the
-    /// splash screen's reappearance with a short timeout.
+    /// singleton <see cref="GameState"/>, wipes the sandbox save files (so a
+    /// prior test's saved character doesn't fill slots for the next test),
+    /// and reloads the current scene so Main._Ready re-runs and the splash
+    /// screen shows again. Awaits the splash screen's reappearance with a
+    /// short timeout.
     /// </summary>
+    /// <param name="wipeSaves">
+    /// When true (default), delete every <c>save_*.json</c> in the sandbox
+    /// before reloading. Pass false for tests (e.g., <c>SlotsFullTests</c>)
+    /// that seed save files first and need the reload to reveal them on the
+    /// splash's Continue-button state.
+    /// </param>
     /// <remarks>
     /// Safe to call at the top of any <c>[Setup]</c> or <c>[SetupAll]</c>. It's
     /// a heavy reset — use it once per suite or once per test, not per assertion.
     /// </remarks>
-    protected async Task<bool> ResetToFreshSplash()
+    protected async Task<bool> ResetToFreshSplash(bool wipeSaves = true)
     {
         var tree = TestScene.GetTree();
         if (tree == null) return false;
 
         GameState.Instance?.Reset();
+        if (wipeSaves)
+            Autoloads.SaveManager.WipeAllSandboxSaves();
         tree.Paused = false;
         tree.ReloadCurrentScene();
         await Input.WaitFrames(3);
@@ -64,6 +184,7 @@ public abstract class GameTestBase : TestClass
     /// <summary>Log a passing or failing assertion.</summary>
     protected void Expect(bool condition, string description)
     {
+        UpdateCurrentTestFromStack();
         if (condition)
         {
             _passCount++;
@@ -74,6 +195,91 @@ public abstract class GameTestBase : TestClass
             _failCount++;
             GD.PrintErr($"    ✗ {description}");
         }
+    }
+
+    // Cache key for the fast path: the first frame whose declaring type is
+    // NOT GameTestBase — i.e., the caller of Expect / Screenshot /
+    // VerifyScreenshot, which is either the [Test] method (sync) or the
+    // async state-machine MoveNext whose outer type is the [Test]. Using
+    // stack frame 1 alone was wrong because that's always GameTestBase.Expect
+    // (etc.), so the key never changed between tests within a suite and the
+    // overlay / screenshot dir stayed stuck on the first detected test.
+    // Copilot PR #33 round-12 finding.
+    private string? _lastTestCallerKey;
+
+    // Walks the call stack to find the [Test] method and, when it changes,
+    // updates the on-screen overlay + prints a RUNNING banner. Handles both
+    // sync methods (attribute is on the method itself) and async state
+    // machines (attribute is on the outer method whose name is embedded in
+    // the compiler-generated nested type's name "<TestName>d__N").
+    private void UpdateCurrentTestFromStack()
+    {
+        var stack = new StackTrace();
+        if (stack.FrameCount < 2) return;
+
+        // Fast path: walk until the first frame whose declaring type is NOT
+        // GameTestBase (or a subclass of GameTestBase's internal helpers), and
+        // use that frame's "<declaringType>::<methodName>" as the cache key.
+        // When execution moves from one [Test] method to the next within the
+        // same suite, this key changes and we re-run the full walk.
+        string? firstNonBaseKey = null;
+        int firstNonBaseIndex = -1;
+        for (int i = 1; i < stack.FrameCount; i++)
+        {
+            var m = stack.GetFrame(i)?.GetMethod();
+            if (m is null) continue;
+            if (m.DeclaringType == typeof(GameTestBase)) continue;
+            firstNonBaseKey = $"{m.DeclaringType?.FullName}::{m.Name}";
+            firstNonBaseIndex = i;
+            break;
+        }
+        if (firstNonBaseKey != null && firstNonBaseKey == _lastTestCallerKey)
+            return;
+        _lastTestCallerKey = firstNonBaseKey;
+
+        for (int i = 1; i < stack.FrameCount; i++)
+        {
+            var method = stack.GetFrame(i)?.GetMethod();
+            if (method is null) continue;
+
+            // Sync test: [Test] is on the method itself.
+            if (method.GetCustomAttributes(typeof(TestAttribute), false).Length > 0)
+            {
+                MaybeUpdateTestName(method.Name, method.DeclaringType);
+                return;
+            }
+
+            // Async test: the runtime frame is MoveNext on a compiler-
+            // generated nested state-machine type. The original method name
+            // is embedded in the nested type's name between angle brackets.
+            var declaringType = method.DeclaringType;
+            if (method.Name == "MoveNext" && declaringType is { IsNested: true })
+            {
+                var typeName = declaringType.Name;
+                int lt = typeName.IndexOf('<');
+                int gt = typeName.IndexOf('>');
+                if (lt >= 0 && gt > lt)
+                {
+                    var testName = typeName.Substring(lt + 1, gt - lt - 1);
+                    var outer = declaringType.DeclaringType;
+                    var outerMethod = outer?.GetMethod(testName);
+                    if (outerMethod?.GetCustomAttributes(typeof(TestAttribute), false).Length > 0)
+                    {
+                        MaybeUpdateTestName(testName, declaringType);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    private void MaybeUpdateTestName(string testName, System.Type? declaringType)
+    {
+        if (_currentTestName == testName) return;
+        _currentTestName = testName;
+        _screenshotStep = 0;
+        TestProgressOverlay.SetCurrentTest(GetType().Name, testName);
+        GD.Print($"\n▶▶▶ RUNNING: {GetType().Name}::{testName}\n");
     }
 
     /// <summary>Poll a condition until true, or fail after timeout. Logs pass/fail if `what` provided.</summary>

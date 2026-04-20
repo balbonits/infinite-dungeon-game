@@ -20,7 +20,81 @@ public partial class SaveManager : Node
     public static SaveManager Instance { get; private set; } = null!;
 
     public const int SlotCount = 3;
-    private const string SaveDir = "user://saves";
+
+    // Production save directory. Distinct from the test-sandbox directory
+    // below so tests can never clobber real player saves.
+    private const string ProductionSaveDir = "user://saves";
+    private const string TestSandboxSaveDir = "user://test_saves";
+
+    /// <summary>Active save directory. Defaults to <c>user://saves</c>;
+    /// tests flip to <c>user://test_saves</c> via <see cref="UseTestSandbox"/>.</summary>
+    public static string SaveDir { get; private set; } = ProductionSaveDir;
+
+    // True after the first UseTestSandbox call in a process. A subsequent
+    // scene reload (e.g., ResetToFreshSplash → ReloadCurrentScene → Main._Ready)
+    // must NOT re-wipe sandbox files — otherwise a save seeded mid-test is
+    // lost when the test reloads.
+    private static bool _sandboxInitialized;
+
+    /// <summary>
+    /// Route all saves to <c>user://test_saves/</c>. Call at the very top of
+    /// any GoDotTest run so fabricated-save fixtures can't overwrite real
+    /// player data. Idempotent — safe to call repeatedly.
+    ///
+    /// First call wipes any pre-existing sandbox files so runs start
+    /// deterministic. Subsequent calls in the same process leave the sandbox
+    /// intact.
+    /// </summary>
+    public static void UseTestSandbox()
+    {
+        SaveDir = TestSandboxSaveDir;
+        DirAccess.MakeDirAbsolute(SaveDir);
+        if (!_sandboxInitialized)
+        {
+            WipeSandboxFiles();
+            _sandboxInitialized = true;
+            GD.Print($"[SaveManager] Using TEST SANDBOX save dir: {SaveDir} (wiped on first init)");
+        }
+    }
+
+    private static void WipeSandboxFiles()
+    {
+        using var dir = DirAccess.Open(TestSandboxSaveDir);
+        if (dir == null) return;
+        foreach (var file in dir.GetFiles())
+        {
+            // Narrow the filter to save slot files only (save_0.json, save_1.json,
+            // save_2.json). The earlier "any .json" rule matched the doc comment
+            // of WipeAllSandboxSaves in spirit but could delete unrelated JSON
+            // artifacts — e.g., a future test dropping a config file in the
+            // sandbox. Copilot PR #33 round-10 finding.
+            if (file.StartsWith("save_") && file.EndsWith(".json"))
+                dir.Remove(file);
+        }
+    }
+
+    /// <summary>
+    /// Public test-only: wipe every <c>save_*.json</c> in the sandbox dir.
+    /// Safe to call repeatedly; refuses to touch production saves by checking
+    /// that SaveDir is currently the sandbox. Called by
+    /// <c>GameTestBase.ResetToFreshSplash</c> between tests so the ClassSelect
+    /// → save-slot-0 flow in one test doesn't leave slot 0 populated for the
+    /// next test — which, after 3 confirmations, filled all slots and made
+    /// every subsequent New Game click hit the slots-full dialog instead of
+    /// the class-select screen (cascaded through Death/Guild/Npc/PauseMenu).
+    /// </summary>
+    public static void WipeAllSandboxSaves()
+    {
+        if (SaveDir != TestSandboxSaveDir) return;
+        WipeSandboxFiles();
+    }
+
+    /// <summary>Flip back to the real user save directory (post-test teardown).</summary>
+    public static void UseProductionSaves()
+    {
+        SaveDir = ProductionSaveDir;
+        DirAccess.MakeDirAbsolute(SaveDir);
+    }
 
     /// <summary>Storage backend. Overridable for tests.</summary>
     public ISaveStorage Storage { get; set; } = new GodotFileSaveStorage();

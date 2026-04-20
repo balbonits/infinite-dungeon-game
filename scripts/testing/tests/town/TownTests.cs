@@ -27,9 +27,11 @@ public class TownTests : GameTestBase
     [Setup]
     public async Task NavigateToTown()
     {
-        // Splash
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(),
-            timeout: 3f, what: "SplashScreen to appear");
+        if (!await ResetToFreshSplash())
+        {
+            Expect(false, "[setup] could not reset to splash");
+            return;
+        }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }
@@ -42,12 +44,16 @@ public class TownTests : GameTestBase
             timeout: 3f, what: "ClassSelect to appear");
         await Input.WaitSeconds(0.3f);
 
-        // Select warrior (first card) with Enter, then press Confirm
-        await Input.PressEnter();          // selects focused card (warrior)
-        await Input.WaitFrames(5);
-        await Input.NavDown();             // move focus to Confirm zone
-        await Input.WaitFrames(5);
-        await Input.PressEnter();          // press Confirm → LoadTown
+        // Select warrior + confirm. Uses the ClassSelectDriver 3-step keyboard
+        // flow (NavRight → NavDown → PressEnter) — the old bare PressEnter +
+        // NavDown + PressEnter sequence was broken because the initial
+        // PressEnter fires on zone 0 with _focusIndex = -1 (no card focused),
+        // so OnCardClicked never runs and _selectedCard stays null, causing
+        // OnConfirmPressed to return early. This bug was the root cause of
+        // all 7 pre-existing "Town scene to load" timeouts across this +
+        // DeathTests + DeathCinematicTests + NpcTests + TransitionTests +
+        // GuildWindowTests.
+        await Flow.ClassSelect.SelectWarriorAndConfirm();
         await Input.WaitSeconds(0.6f);
 
         // Wait for town to load (ScreenTransition finishes, Town node is in the tree)
