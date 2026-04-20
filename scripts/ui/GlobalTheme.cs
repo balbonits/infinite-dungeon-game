@@ -13,6 +13,13 @@ public static class GlobalTheme
     {
         var theme = new Theme();
 
+        // SPEC-UI-FONT-01: Press Start 2P as the default font at every text surface.
+        // Set the Theme's default_font so every control that doesn't override it
+        // picks up PS2P automatically. Per-control font_size overrides are still
+        // honored below.
+        theme.DefaultFont = UiTheme.FontFamily;
+        theme.DefaultFontSize = UiTheme.FontSizes.Body;
+
         // --- Default Label ---
         theme.SetColor("font_color", "Label", UiTheme.Colors.Ink);
         theme.SetFontSize("font_size", "Label", UiTheme.FontSizes.Body);

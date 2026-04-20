@@ -35,14 +35,45 @@ public static class UiTheme
         public static readonly Color BtnHover = new(0.420f, 0.655f, 1.0f, 1.0f);         // same as ActionHover
     }
 
+    /// <summary>
+    /// Press Start 2P (OFL 1.1, commercial OK) per SPEC-UI-FONT-01. Uppercase-
+    /// only bitmap font with an 8px native cell; every size on <see cref="FontSizes"/>
+    /// below is an integer multiple of 8 so glyphs snap to the pixel grid without
+    /// anti-aliasing blur.
+    ///
+    /// Null until first read — the font file loads once from disk via
+    /// <c>GD.Load</c>. Callers use the getter so the unit-test project (which
+    /// can't link Godot) never touches this path.
+    /// </summary>
+    private static FontFile? _fontFamily;
+    public static FontFile FontFamily
+    {
+        get
+        {
+            if (_fontFamily != null) return _fontFamily;
+            _fontFamily = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");
+            // filter=Off (nearest-neighbour) keeps the 8px bitmap crisp at every
+            // integer-multiple size; Godot defaults to linear filtering which
+            // smears the pixel-font edges.
+            _fontFamily.Antialiasing = TextServer.FontAntialiasing.None;
+            return _fontFamily;
+        }
+    }
+
+    /// <summary>
+    /// Font-size ladder per SPEC-UI-FONT-01. All sizes are integer multiples
+    /// of 8 so Press Start 2P's 8px native cell renders without sub-pixel
+    /// drift. Previous sizes (11/12/13/20) were legacy values that only made
+    /// sense for the proportional default font and are replaced here.
+    /// </summary>
     public static class FontSizes
     {
-        public const int Small = 11;
-        public const int Body = 12;
-        public const int Label = 13;
+        public const int Small = 8;
+        public const int Body = 16;
+        public const int Label = 16;
         public const int Button = 16;
-        public const int Heading = 20;
-        public const int Title = 24;
+        public const int Heading = 24;
+        public const int Title = 32;
         public const int HeroTitle = 48;
     }
 
