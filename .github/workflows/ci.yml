@@ -197,6 +197,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: coverage-check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # GdUnit4's dotnet-test runner reads GODOT_BIN; chickensoft-games/setup-godot
+    # exports GODOT + GODOT4 but not GODOT_BIN, so set it explicitly here.
+    env:
+      GODOT_BIN: /home/runner/bin/godot
     steps:
       - uses: actions/checkout@v4
 
