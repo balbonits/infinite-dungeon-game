@@ -67,14 +67,19 @@ public static class Constants
             _ => 60,
         };
 
-        // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative
-        public static int GetMaxHp(int level)
-        {
-            int total = StartingHp;
-            for (int l = 1; l <= level; l++)
-                total += (int)(8 + l * 0.5f);
-            return total;
-        }
+        // Spec: level_hp = floor(8 + level * 0.5) per level, cumulative.
+        // AUDIT-08: replaced O(level) loop with closed-form O(1). The per-level
+        // term simplifies: floor(8 + l * 0.5f) == 8 + l/2 (integer division)
+        // for all positive l. Summing over l = 1..level yields
+        //   total = StartingHp + 8*level + floor(level² / 4)
+        // Exhaustive parity with the pre-fix loop is verified in
+        // ConstantsTests.GetMaxHp_ExhaustiveMatchesLoop_0To200.
+        //
+        // level * (long)level prevents int32 overflow past level ≈ 46340
+        // (Copilot finding). The result still fits int past any realistic
+        // player level, so the outer cast is safe for the spec domain.
+        public static int GetMaxHp(int level) =>
+            StartingHp + 8 * level + (int)(level * (long)level / 4);
     }
 
     // --- Class-specific combat ---
