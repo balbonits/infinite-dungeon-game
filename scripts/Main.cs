@@ -23,6 +23,13 @@ public partial class Main : Node
         Instance = this;
         _deathScreen = GetNode<Control>("UILayer/DeathScreen");
 
+        // WindowStack is static; if a prior scene-run (esp. in test mode, where
+        // ResetToFreshSplash calls ReloadCurrentScene) left a modal open, the
+        // stack would still report HasModal=true and block splash input after
+        // reload. Clearing here guarantees every Main boot starts with no
+        // modal trapping focus. Copilot PR #33 round-7 finding.
+        Ui.WindowStack.Clear();
+
         // Apply global theme to all UI — set on each root Control so it cascades
         var globalTheme = Ui.GlobalTheme.Create();
         var uiLayer = GetNode<CanvasLayer>("UILayer");
@@ -39,13 +46,31 @@ public partial class Main : Node
         var existingWorld = GetNodeOrNull("Dungeon") ?? GetNodeOrNull("Town");
         existingWorld?.QueueFree();
 
+#if DEBUG
+        // Sandbox MUST be engaged BEFORE ShowSplashScreen is deferred: SplashScreen._Ready
+        // reads SaveManager.SaveDir to set Continue-button state, and any test fixture
+        // that writes a save does so against whatever SaveDir was when the splash booted.
+        // If we moved this into RunTests (also deferred), ShowSplashScreen runs first and
+        // sees the production dir — Copilot PR #33 round-3 finding.
+        var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
+        if (testEnv.ShouldRunTests)
+        {
+            Autoloads.SaveManager.UseTestSandbox();
+            // Attach the top-of-screen banner that shows current test name.
+            Testing.TestProgressOverlay.EnsureAttached(this);
+        }
+#endif
+
         // Start with splash screen
         CallDeferred(MethodName.ShowSplashScreen);
 
 #if DEBUG
-        // After the game boots, run tests if --run-tests was passed
-        var testEnv = TestEnvironment.From(OS.GetCmdlineArgs());
-        if (testEnv.ShouldRunTests)
+        // Only spin up RunTests once per process. ResetToFreshSplash (used by
+        // test [Setup]s for cross-suite isolation) calls ReloadCurrentScene,
+        // which re-enters Main._Ready — without this guard we'd spawn a new
+        // GoTest.RunTests for every scene reload, leading to a recursive
+        // test-restart loop that never terminates.
+        if (testEnv.ShouldRunTests && GetTree().Root.GetNodeOrNull("TestRoot") == null)
             CallDeferred(MethodName.RunTests);
 #endif
     }
@@ -58,13 +83,24 @@ public partial class Main : Node
 
         splash.Connect(Ui.SplashScreen.SignalName.NewGamePressed, Callable.From(() =>
         {
+            GD.Print("[Main] NewGamePressed");
             // Spec: if all 3 save slots are full, block New Game and nudge to Load Game
             // for deletion. See docs/flows/load-game.md § Interaction with New Game.
+            // UX: modal dialog with "Open Load Game / Cancel" — toast alone was
+            // too easy to miss and looked like a silently broken button.
             var sm = Autoloads.SaveManager.Instance;
             if (sm != null && sm.AreAllSlotsFull())
             {
-                Ui.Toast.Instance?.Error(
-                    "All save slots are full. Delete a character from Load Game first.");
+                GD.Print("[Main] NewGamePressed blocked: all 3 save slots are full.");
+                var dialog = Ui.SlotsFullDialog.Create(() => ShowLoadGameScreen(splash));
+                // Parent under splash so the dialog is freed whenever splash
+                // is freed (New Game → ClassSelection transition, or user quit).
+                // Previously parented under UILayer → every blocked-click
+                // leaked a hidden SlotsFullDialog (Copilot PR #33 finding).
+                // SlotsFullDialog also self-QueueFrees in its button handlers
+                // so back-to-back blocked clicks don't stack.
+                splash.AddChild(dialog);
+                dialog.Open();
                 return;
             }
             // Reserve the first empty slot as the new character's home. Auto-save targets it.
@@ -214,6 +250,12 @@ public partial class Main : Node
 #if DEBUG
     private void RunTests()
     {
+        // Sandbox isolation for tests: redirect save I/O to user://test_saves/
+        // BEFORE any test can write a save. Without this, SaveManager.SaveToSlot
+        // in test fixtures would overwrite the real player's save files under
+        // user://saves/. This MUST be set before GoTest.RunTests spins up.
+        Autoloads.SaveManager.UseTestSandbox();
+
         // Attach test runner to the SceneTree root (not Main) so it survives scene changes.
         // GoDotTest uses the passed node as TestScene — if that node is freed during tests
         // (e.g., when ChangeSceneToFile is called during class select confirm), all subsequent

@@ -12,7 +12,9 @@ public partial class PauseMenu : GameWindow
 {
     public static PauseMenu Instance { get; private set; } = null!;
 
-    private GameTabPanel _tabs = null!;
+    // Nullable because OnShow fully owns lifecycle — BuildContent no longer
+    // constructs a placeholder (dead code pre-AUDIT-05). Null on first OnShow.
+    private GameTabPanel? _tabs;
     private Label _pointsLabel = null!;
     private Label _detailLabel = null!;
 
@@ -55,8 +57,9 @@ public partial class PauseMenu : GameWindow
         _detailLabel.CustomMinimumSize = new Vector2(0, 36);
         content.AddChild(_detailLabel);
 
-        _tabs = new GameTabPanel();
-
+        // NOTE: _tabs is constructed fresh in OnShow each time (class may change
+        // between opens). BuildContent used to instantiate an orphan _tabs here
+        // that was never mounted — dead code, removed in AUDIT-05.
         content.AddChild(new HSeparator());
 
         var resumeBtn = new Button();
@@ -70,9 +73,15 @@ public partial class PauseMenu : GameWindow
 
     protected override void OnShow()
     {
-        // Rebuild tabs each time (class may have changed)
-        _tabs.GetParent()?.RemoveChild(_tabs);
-        _tabs.Free();
+        // Rebuild tabs each time (class may have changed). QueueFree rather
+        // than Free — Free() is synchronous and can race with pending signals
+        // on a node we just pulled from the tree (AUDIT-05). QueueFree defers
+        // to the end of the frame, giving Godot a safe release window.
+        if (_tabs is not null)
+        {
+            _tabs.GetParent()?.RemoveChild(_tabs);
+            _tabs.QueueFree();
+        }
 
         var cls = GameState.Instance.SelectedClass;
         string abilityTabName = cls switch
