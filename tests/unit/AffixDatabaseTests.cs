@@ -14,25 +14,10 @@ namespace DungeonGame.Tests.Unit;
 /// </summary>
 public class AffixDatabaseTests
 {
-    // ── Tier ceiling ────────────────────────────────────────────────────────
-
-    [Theory]
-    [InlineData(1, 1)]
-    [InlineData(9, 1)]
-    [InlineData(10, 2)]
-    [InlineData(24, 2)]
-    [InlineData(25, 3)]
-    [InlineData(49, 3)]
-    [InlineData(50, 4)]
-    [InlineData(74, 4)]
-    [InlineData(75, 5)]
-    [InlineData(99, 5)]
-    [InlineData(100, 6)]
-    [InlineData(500, 6)]
-    public void GetMaxTier_ReturnsExpected(int itemLevel, int expectedTier)
-    {
-        AffixDatabase.GetMaxTier(itemLevel).Should().Be(expectedTier);
-    }
+    // ── Tier ceiling: see DepthGearTierTests.AffixDatabase_GetMaxTier_ByItemLevel.
+    // The prior GetMaxTier_ReturnsExpected theory here duplicated that test;
+    // removed per Copilot PR #37 so a future threshold shift only has to
+    // update one place instead of two silently-paired ones.
 
     // ── T5/T6 registrations exist (AUDIT-10 impl) ──────────────────────────
 
@@ -80,8 +65,11 @@ public class AffixDatabaseTests
         // If this number shifts, either AUDIT-10 was reverted or a family was
         // added without updating both spec + this test. Either case needs
         // a conscious bump.
-        int totalCount = AffixDatabase.GetAvailable(itemLevel: 999).Count();
-        totalCount.Should().Be(46);
+        // Count directly off the registry rather than via GetAvailable(999),
+        // which filters by MinItemLevel — any future affix with MinItemLevel
+        // > 999 (or a typo setting it absurdly high) would be invisible to a
+        // level-window probe even though it's registered. Copilot PR #37.
+        AffixDatabase.Count.Should().Be(46);
     }
 
     [Fact]
