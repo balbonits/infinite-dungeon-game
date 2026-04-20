@@ -39,7 +39,7 @@ Every dev-time AI pipeline in the project must satisfy all three of the followin
 ### §2.2 Output-time classification
 
 - **Content classifier pass.** Before committing any generated asset to the repo, the operator runs a content-classification check. For text output, this is a review pass; for image output, this is either a visual review OR a classifier-tool pass when the batch is too large for per-asset eyeballing (bulk tile generation, etc).
-- **Sample-then-batch.** For large batch generation (e.g., a tile atlas, a dialogue corpus), generate **one sample first**, review for §1-category concerns, then authorize the batch. This mirrors the existing [feedback_one_image_first.md](../../.claude/projects/-Users-johndilig-Projects-infinite-dungeon-game/memory/feedback_one_image_first.md) discipline — repurposed here as a safety gate in addition to a theme gate.
+- **Sample-then-batch.** For large batch generation (e.g., a tile atlas, a dialogue corpus), generate **one sample first**, review for §1-category concerns, then authorize the batch. This reinforces the existing "one image first, then batch" discipline — repurposed here as a safety gate in addition to the existing theme gate.
 - **Zero-tolerance stop.** If a classifier or review finds a §1-category output at any stage, the batch is discarded, the prompt is reviewed for shape-that-produced-it, and the seed values are logged in the PR description so the configuration doesn't silently recur.
 
 ### §2.3 Shipping-time audit trail
@@ -94,7 +94,7 @@ The law isn't satisfied by "we have a report button." It requires demonstrable u
 
 ### §5.1 Weekly triage
 
-- **Every week, the PO reviews the week's report batch** (local-only in MVP, cloud-pulled post-launch). The review produces one of four outcomes per report, recorded in `docs/evidence/ai-report-triage.md`:
+- **Every week, the PO reviews the week's report batch** (local-only in MVP, cloud-pulled post-launch). The review produces one of four outcomes per report, recorded in a dated triage log. The log file itself (`docs/evidence/ai-report-triage.md`) is stubbed by `POL-AI-TRIAGE-INIT-01` in §10; it does not yet exist — the weekly cadence starts when that ticket lands, ahead of the first shipped AI surface.
   1. **False positive** — the reported output is OK; note why and move on.
   2. **True positive, filter miss** — the output is §1-category; the prompt/classifier/pipeline is updated *within this same week* to catch it.
   3. **True positive, borderline** — gray-zone; escalate to explicit PO decision, document in the same file.
@@ -160,7 +160,7 @@ Everything in-repo, version-controlled, auditable without access to internal too
 
 | ID | Description | Status |
 |----|-------------|--------|
-| POL-AI-REPORT-UI-01 | Report dialog (F10 keybind + context-menu integration + form) | To Do (MVP-blocker once first runtime-AI feature lands) |
+| POL-AI-REPORT-UI-01 | Report dialog (F10 keybind + context-menu integration + form) | To Do (**MVP-blocker** — must ship before any build with a player-visible AI-generated surface, including dev-time static assets already in the repo; see §4.1 trigger) |
 | POL-AI-CREDITS-SWEEP-01 | Audit shipped assets + tag provenance in CREDITS.md | To Do (P2) |
 | POL-AI-TRIAGE-INIT-01 | Create `docs/evidence/ai-report-triage.md` stub + set up weekly PO reminder | To Do (P3 — no reports yet) |
 | POL-AI-PIPELINE-REF-01 | Add §Policy Reference back-pointers to every existing pipeline spec | To Do (P2) |
