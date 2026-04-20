@@ -34,19 +34,14 @@ public class ClassSelectTests : GameTestBase
     [Setup]
     public async Task OpenClassSelect()
     {
-        // Order matters: if a previous test left ClassSelect on screen, we
-        // must cancel out of it BEFORE waiting for splash — the old logic
-        // waited for splash first and emitted a spurious "SplashScreen to
-        // appear" fail every setup after the first test.
-        if (Ui.HasNodeOfType<ClassSelect>())
+        // Always start from a known-fresh splash. A prior test may have
+        // confirmed into Town or been left mid-ClassSelect; ResetToFreshSplash
+        // reloads the scene so this setup has one deterministic entry point.
+        if (!await ResetToFreshSplash())
         {
-            await Input.Cancel();
-            await Input.WaitSeconds(0.5f);
-        }
-
-        if (!await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 5f,
-                what: "SplashScreen to appear"))
+            Expect(false, "[setup] could not reset to splash");
             return;
+        }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null)

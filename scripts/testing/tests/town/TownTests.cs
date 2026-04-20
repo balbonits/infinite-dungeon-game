@@ -27,9 +27,11 @@ public class TownTests : GameTestBase
     [Setup]
     public async Task NavigateToTown()
     {
-        // Splash
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(),
-            timeout: 3f, what: "SplashScreen to appear");
+        if (!await ResetToFreshSplash())
+        {
+            Expect(false, "[setup] could not reset to splash");
+            return;
+        }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }
