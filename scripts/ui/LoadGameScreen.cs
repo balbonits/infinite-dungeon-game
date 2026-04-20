@@ -271,22 +271,32 @@ public partial class LoadGameScreen : Control
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!Visible || !_ready) return;
+        if (!Visible) return;
 
+        // Escape / D must always back-navigate, even before the 150 ms
+        // auto-focus timer has set _ready. Blocking it on _ready let the
+        // event fall through to the global PauseMenu.UnhandledInput, which
+        // snapshot-opened the pause menu while splash was still the intended
+        // target — a player (or a test) pressing Escape immediately after
+        // opening LoadGame would land in PauseMenu instead of splash.
         if (@event is InputEventKey keyEvent && keyEvent.Pressed)
         {
-            // Delete key triggers slot-delete on the currently focused populated slot.
-            if (keyEvent.Keycode == Key.Delete && _focusedSlot >= 0 && _slots[_focusedSlot].IsPopulated)
-            {
-                OpenDeleteDialog(_focusedSlot);
-                GetViewport().SetInputAsHandled();
-                return;
-            }
-
-            // D or Esc → back.
             if (keyEvent.Keycode == Key.Escape || @event.IsActionPressed(Constants.InputActions.ActionTriangle))
             {
                 EmitSignal(SignalName.BackPressed);
+                GetViewport().SetInputAsHandled();
+                return;
+            }
+        }
+
+        if (!_ready) return;
+
+        if (@event is InputEventKey keyEvent2 && keyEvent2.Pressed)
+        {
+            // Delete key triggers slot-delete on the currently focused populated slot.
+            if (keyEvent2.Keycode == Key.Delete && _focusedSlot >= 0 && _slots[_focusedSlot].IsPopulated)
+            {
+                OpenDeleteDialog(_focusedSlot);
                 GetViewport().SetInputAsHandled();
                 return;
             }

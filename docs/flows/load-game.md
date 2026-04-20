@@ -168,9 +168,13 @@ Each populated card has a red square **`[X]`** button:
 When the player presses **New Game** on the splash screen:
 
 - If at least one slot is empty → proceed to Class Select normally. On confirm, the new character is saved to the first empty slot.
-- If all three slots are full → show a Toast error: "All save slots are full. Delete a character from Load Game first."
+- If all three slots are full → show a **SlotsFullDialog** modal with headline "ALL SAVE SLOTS ARE FULL", a short explanation, and two buttons:
+  - **Open Load Game** (default focus) → closes the dialog and navigates to the Load Game screen, where the player can delete a slot.
+  - **Cancel** → closes the dialog and returns the player to splash.
 
-(Alternative considered: present a slot-picker before Class Select. Rejected for now — too many steps. The Toast approach nudges players to use the dedicated Delete flow.)
+The dialog is parented under the splash screen and queue-frees itself in both button handlers and on keyboard Cancel, so repeated blocked-New-Game clicks don't accumulate hidden dialog instances.
+
+(Historical: an earlier pass used a transient Toast for the "slots full" case. It was replaced with the modal because a) the toast was easy to miss and made New Game look silently broken, and b) the modal lets us route the player directly to the only screen that can resolve the block.)
 
 ## Save File Layout
 

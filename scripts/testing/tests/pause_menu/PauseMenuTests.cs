@@ -35,22 +35,15 @@ public class PauseMenuTests : GameTestBase
     [Setup]
     public async Task EnterTown()
     {
-        // If a previous test left the pause menu open, close it first.
-        if (Ui.PauseMenuOpen)
+        // Always start from a fresh splash — prior suites may have left the
+        // game in any state (Town, Dungeon, Death, mid-transition). One
+        // deterministic entry point is easier to reason about than a cascade
+        // of state-probe branches.
+        if (!await ResetToFreshSplash())
         {
-            await Input.PressEscape();
-            await Input.WaitSeconds(0.3f);
-        }
-
-        // Already in Town? Nothing to do.
-        if (Ui.HasNodeOfType<Scenes.Town>())
-        {
+            Expect(false, "[setup] could not reset to splash");
             return;
         }
-
-        // Wait for splash to load if we're at game start.
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>() || Ui.HasNodeOfType<ClassSelect>(),
-            timeout: 5f, what: "[setup] splash or class-select present");
 
         // Splash → New Game → ClassSelect
         if (Ui.HasNodeOfType<SplashScreen>() && !Ui.HasNodeOfType<ClassSelect>())

@@ -26,7 +26,11 @@ public class DeathCinematicTests : GameTestBase
 
     private async Task GetToTown()
     {
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f, what: "splash appears");
+        if (!await ResetToFreshSplash())
+        {
+            Expect(false, "[setup] could not reset to splash");
+            return;
+        }
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null) { Expect(false, "New Game button missing"); return; }
@@ -36,11 +40,7 @@ public class DeathCinematicTests : GameTestBase
 
         await WaitUntil(() => Ui.HasNodeOfType<ClassSelect>(), timeout: 3f, what: "ClassSelect appears");
         await Input.WaitSeconds(0.3f);
-        await Input.PressEnter();
-        await Input.WaitFrames(5);
-        await Input.NavDown();
-        await Input.WaitFrames(5);
-        await Input.PressEnter();
+        await Flow.ClassSelect.SelectWarriorAndConfirm();
 
         await WaitUntil(() => Ui.FindNodeOfType<Town>() is not null,
             timeout: 6f, what: "Town scene loads");

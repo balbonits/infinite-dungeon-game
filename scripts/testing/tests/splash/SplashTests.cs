@@ -20,8 +20,16 @@ public class SplashTests : GameTestBase
     [Setup]
     public async Task WaitForSplashScreen()
     {
-        // Wait for the game's splash screen to appear (Main._Ready → ShowSplashScreen)
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f, what: "SplashScreen to appear");
+        // Canonical cross-suite isolation (TEST-09): ResetToFreshSplash wipes
+        // the sandbox, reloads the scene, and awaits splash reappearance. The
+        // prior "just wait for splash" variant trusted that the preceding
+        // suite left the scene on splash — SlotsFullTests breaks that
+        // assumption (it ends with a SplashScreen that has seeded saves, and
+        // a following [Setup] that just polls for splash can find splash is
+        // already present but in a stale state, so the subsequent test body
+        // presses Enter and lands on LoadGame instead of ClassSelect).
+        if (!await ResetToFreshSplash())
+            Expect(false, "[setup] ResetToFreshSplash did not land on splash");
     }
 
     [Test]
@@ -87,8 +95,10 @@ public class SplashTests : GameTestBase
         DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
         DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
 
-        // Reset so the splash re-reads save state and enables Continue.
-        bool atSplash = await ResetToFreshSplash();
+        // Reset so the splash re-reads save state and enables Continue. Must
+        // preserve the save just written — ResetToFreshSplash wipes the
+        // sandbox by default, so opt out of the wipe here.
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
 
         var continueBtn = Ui.FindButton("Continue");
@@ -139,7 +149,9 @@ public class SplashTests : GameTestBase
         DungeonGame.Autoloads.GameState.Instance.CurrentSaveSlot = 0;
         DungeonGame.Autoloads.SaveManager.Instance?.SaveToSlot(0);
 
-        bool atSplash = await ResetToFreshSplash();
+        // Preserve the seeded save across the reload — default wipe would
+        // destroy the slot we just created and fail the Continue-enabled check.
+        bool atSplash = await ResetToFreshSplash(wipeSaves: false);
         if (!atSplash) { Expect(false, "Could not return to splash after save"); return; }
 
         var continueBtn = Ui.FindButton("Continue");
@@ -201,7 +213,98 @@ public class SplashTests : GameTestBase
             CollectPortraitRects(child, output);
     }
 
+    // SlotsFullDialog subflow extracted to splash/slots_full/SlotsFullTests.cs
+    // per Chickensoft GameDemo convention (subfolder for subflow that grew
+    // its own scenarios). See also docs/testing/features/splash.feature.
+
+    /// <summary>
+    /// Flow: clicking Tutorial on splash opens TutorialPanel. A basic
+    /// "button → panel appears" flow test — catches wiring regressions
+    /// where Tutorial.Pressed was disconnected or TutorialPanel.Open stopped
+    /// pushing to the tree.
+    /// </summary>
+    [Test]
+    public async Task Splash_ClickingTutorial_OpensTutorialPanel()
+    {
+        bool atSplash = await ResetToFreshSplash();
+        if (!atSplash) { Expect(false, "Could not reach splash"); return; }
+
+        var tutorialBtn = Ui.FindButton("Tutorial");
+        if (tutorialBtn is null) { Expect(false, "Tutorial button missing"); return; }
+        tutorialBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+
+        await WaitUntil(() => Ui.HasNodeOfType<TutorialPanel>(),
+            timeout: 2f, what: "TutorialPanel appears after Tutorial click");
+
+        // Escape should close the panel.
+        await Input.PressKey(Key.Escape);
+        await Input.WaitSeconds(0.3f);
+
+        Expect(!Ui.HasNodeOfType<TutorialPanel>() ||
+               Ui.FindNodeOfType<TutorialPanel>()?.IsOpen == false,
+            "TutorialPanel closed after Escape");
+    }
+
+    /// <summary>
+    /// Flow: Settings button on splash opens SettingsPanel.
+    /// </summary>
+    [Test]
+    public async Task Splash_ClickingSettings_OpensSettingsPanel()
+    {
+        bool atSplash = await ResetToFreshSplash();
+        if (!atSplash) { Expect(false, "Could not reach splash"); return; }
+
+        var settingsBtn = Ui.FindButton("Settings");
+        if (settingsBtn is null) { Expect(false, "Settings button missing"); return; }
+        settingsBtn.GrabFocus();
+        await Input.WaitFrames(3);
+        await Input.PressEnter();
+
+        await WaitUntil(() => Ui.HasNodeOfType<SettingsPanel>(),
+            timeout: 2f, what: "SettingsPanel appears after Settings click");
+
+        await Input.PressKey(Key.Escape);
+        await Input.WaitSeconds(0.3f);
+
+        Expect(!Ui.HasNodeOfType<SettingsPanel>() ||
+               Ui.FindNodeOfType<SettingsPanel>()?.IsOpen == false,
+            "SettingsPanel closed after Escape");
+    }
+
+    /// <summary>
+    /// Flow: Continue button is Disabled when no save exists. Catches the
+    /// ugly but real regression where a bogus save-detection returns true
+    /// on a fresh install and Continue lets users click into a NullReference.
+    /// </summary>
+    [Test]
+    public async Task Splash_ContinueDisabledWhenNoSaves()
+    {
+        // Wipe any saves from prior tests.
+        var sm = DungeonGame.Autoloads.SaveManager.Instance;
+        for (int i = 0; i < 3; i++) sm?.DeleteSlot(i);
+
+        bool atSplash = await ResetToFreshSplash();
+        if (!atSplash) { Expect(false, "Could not reach splash"); return; }
+
+        var continueBtn = Ui.FindButton("Continue");
+        Expect(continueBtn is not null, "Continue button exists");
+        Expect(continueBtn?.Disabled == true,
+            $"Continue is disabled when no saves exist (got Disabled={continueBtn?.Disabled})");
+    }
+
     [CleanupAll]
-    public void CleanupAll() => PrintSummary("SplashTests");
+    public void CleanupAll()
+    {
+        // Wipe any single-save fixture the LoadGame/DeleteSlot scenarios
+        // wrote so downstream suites (DeathTests / NpcTests / TownTests)
+        // start clean. Writes are already sandboxed to user://test_saves/
+        // so real player saves under user://saves/ are never touched.
+        var sm = DungeonGame.Autoloads.SaveManager.Instance;
+        for (int i = 0; i < 3; i++)
+            sm?.DeleteSlot(i);
+        PrintSummary("SplashTests");
+    }
 }
 #endif
