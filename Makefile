@@ -1,6 +1,18 @@
 # Makefile — AI-drivable development automation
 # Run `make help` to see all available targets.
 
+# Force bash + pipefail so recipes like `dotnet build | tail -5` and
+# `godot --run-tests | grep ... || true` propagate the real exit code
+# instead of masking failures with tail/grep's zero exit. Copilot PR #33
+# round-3 finding: without this, `make build` reports success even when
+# `dotnet build` failed, because `tail` exited 0. Same for test pipes.
+#
+# pipefail only — intentionally NOT adding -e (errexit). Recipes like
+# `sandbox-headless` rely on being able to continue after a non-zero to
+# capture `EXIT=$$?` and act on it; -e would abort before that line runs.
+SHELL      := /bin/bash
+.SHELLFLAGS := -o pipefail -c
+
 GODOT      := /Applications/Godot_mono.app/Contents/MacOS/Godot
 PROJECT    := DungeonGame
 
@@ -9,15 +21,22 @@ PROJECT    := DungeonGame
 # aborts with "framework not found" instead of running the adapter.
 export DOTNET_ROLL_FORWARD := LatestMajor
 
-.PHONY: help build run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit test-ui test-ui-suite sandbox sandbox-headless sandbox-headless-all pr-copilot-request pr-copilot-wait pr-copilot-status kill clean clean-all status verify doctor branch squash done export-all export-mac export-win export-linux
+.PHONY: help build build-fast refresh run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit test-ui test-ui-headless test-ui-suite sandbox sandbox-headless sandbox-headless-all pr-copilot-request pr-copilot-wait pr-copilot-status kill clean clean-all status verify doctor branch squash done export-all export-mac export-win export-linux
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
-build: ## Build C# project (dotnet build)
+build: ## Build C# project + run Godot import (so art changes are never stale)
 	@dotnet build DungeonGame.csproj 2>&1 | tail -5
+	@$(GODOT) --headless --import --quit 2>&1 | tail -3
+
+build-fast: ## Build C# only — skip the Godot import pass (for pure C# iterations)
+	@dotnet build DungeonGame.csproj 2>&1 | tail -5
+
+refresh: ## Force re-import Godot assets (run after art / tile / sheet changes)
+	@$(GODOT) --headless --import --quit 2>&1 | tail -3
 
 run: build ## Build and launch the game (windowed)
 	@$(GODOT) --path . &
@@ -58,14 +77,24 @@ test-gdunit: ## Run GdUnit4 E2E/scene tests (requires GODOT_BIN or Godot on PATH
 		--verbosity normal \
 		-m:1 2>&1
 
-test-ui: build ## Run GoDotTest in-game UI tests (keyboard nav, windows, etc)
-	@$(GODOT) --headless --path . --run-tests --quit-on-finish 2>&1 | \
-		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
+test-ui: kill build ## Run UI tests WITH game window visible — default. Seeds screenshot baselines, lets watcher verify visually.
+	@$(GODOT) --path . --run-tests --quit-on-finish 2>&1 | tee .ui-test.log \
+		| (grep -E "(✓|✗|Test|═══|passed|failed|Screenshot|SEEDED|MISMATCH|Info \(GoTest\))" || true)
+	@if grep -q "✗" .ui-test.log 2>/dev/null; then rm -f .ui-test.log; echo "❌ UI test failures reported"; exit 1; fi
+	@rm -f .ui-test.log
 
-test-ui-suite: build ## Run a specific GoDotTest suite: make test-ui-suite SUITE=SplashTests
+test-ui-headless: kill build ## Run UI tests headless (CI). Skips VerifyScreenshot — screenshots require a rendering context.
+	@$(GODOT) --headless --path . --run-tests --quit-on-finish 2>&1 | tee .ui-test.log \
+		| (grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true)
+	@if grep -q "✗" .ui-test.log 2>/dev/null; then rm -f .ui-test.log; echo "❌ UI test failures reported"; exit 1; fi
+	@rm -f .ui-test.log
+
+test-ui-suite: kill build ## Run a specific GoDotTest suite: make test-ui-suite SUITE=SplashTests
 	@[ -z "$(SUITE)" ] && echo "Usage: make test-ui-suite SUITE=<name>" && exit 1 || true
-	@$(GODOT) --headless --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | \
-		grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true
+	@$(GODOT) --headless --path . --run-tests=$(SUITE) --quit-on-finish 2>&1 | tee .ui-test.log \
+		| (grep -E "(✓|✗|Test|═══|passed|failed|Info \(GoTest\))" || true)
+	@if grep -q "✗" .ui-test.log 2>/dev/null; then rm -f .ui-test.log; echo "❌ UI test failures reported"; exit 1; fi
+	@rm -f .ui-test.log
 
 # ─── PR / Copilot helpers ──────────────────────────────────────────────────
 # Usage patterns:
