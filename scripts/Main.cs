@@ -54,7 +54,12 @@ public partial class Main : Node
         CallDeferred(MethodName.ShowSplashScreen);
 
 #if DEBUG
-        if (testEnv.ShouldRunTests)
+        // Only spin up RunTests once per process. ResetToFreshSplash (used by
+        // test [Setup]s for cross-suite isolation) calls ReloadCurrentScene,
+        // which re-enters Main._Ready — without this guard we'd spawn a new
+        // GoTest.RunTests for every scene reload, leading to a recursive
+        // test-restart loop that never terminates.
+        if (testEnv.ShouldRunTests && GetTree().Root.GetNodeOrNull("TestRoot") == null)
             CallDeferred(MethodName.RunTests);
 #endif
     }

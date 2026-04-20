@@ -146,7 +146,8 @@ public class ClassSelectTests : GameTestBase
         await Input.NavDown();           // zone 1 → 2 (Back)
         await Input.WaitFrames(5);
 
-        Expect(Ui.FocusedButtonText == "Back",
+        // Actual text is "Back to Main Menu" — StartsWith matches either phrasing.
+        Expect(Ui.FocusedButtonText?.StartsWith("Back") == true,
             $"Back button has focus after two Downs (got: {Ui.FocusedButtonText ?? "null"})");
     }
 

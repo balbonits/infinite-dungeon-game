@@ -30,22 +30,31 @@ public partial class SaveManager : Node
     /// tests flip to <c>user://test_saves</c> via <see cref="UseTestSandbox"/>.</summary>
     public static string SaveDir { get; private set; } = ProductionSaveDir;
 
+    // True after the first UseTestSandbox call in a process. A subsequent
+    // scene reload (e.g., ResetToFreshSplash → ReloadCurrentScene → Main._Ready)
+    // must NOT re-wipe sandbox files — otherwise a save seeded mid-test is
+    // lost when the test reloads.
+    private static bool _sandboxInitialized;
+
     /// <summary>
     /// Route all saves to <c>user://test_saves/</c>. Call at the very top of
     /// any GoDotTest run so fabricated-save fixtures can't overwrite real
     /// player data. Idempotent — safe to call repeatedly.
     ///
-    /// Also wipes any pre-existing save files in the sandbox so runs start
-    /// deterministic — otherwise leftover slot files from a prior test session
-    /// can make <see cref="AreAllSlotsFull"/> / <see cref="AnySaveExists"/>
-    /// return true before a suite's own Setup wipes.
+    /// First call wipes any pre-existing sandbox files so runs start
+    /// deterministic. Subsequent calls in the same process leave the sandbox
+    /// intact.
     /// </summary>
     public static void UseTestSandbox()
     {
         SaveDir = TestSandboxSaveDir;
         DirAccess.MakeDirAbsolute(SaveDir);
-        WipeSandboxFiles();
-        GD.Print($"[SaveManager] Using TEST SANDBOX save dir: {SaveDir} (wiped)");
+        if (!_sandboxInitialized)
+        {
+            WipeSandboxFiles();
+            _sandboxInitialized = true;
+            GD.Print($"[SaveManager] Using TEST SANDBOX save dir: {SaveDir} (wiped on first init)");
+        }
     }
 
     private static void WipeSandboxFiles()
