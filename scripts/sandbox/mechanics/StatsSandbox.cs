@@ -31,7 +31,7 @@ public partial class StatsSandbox : SandboxBase
         }
 
         _derived = new Label { Position = new Vector2(500, 80) };
-        _derived.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Body);
+        _derived.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         AddChild(_derived);
 
         Refresh();

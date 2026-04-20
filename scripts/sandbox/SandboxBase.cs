@@ -118,7 +118,7 @@ public abstract partial class SandboxBase : Control
             Text = SandboxTitle,
             SizeFlagsHorizontal = SizeFlags.Expand,
         };
-        _titleLabel.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Heading);
+        _titleLabel.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Heading);
         headerHBox.AddChild(_titleLabel);
 
         // Reset button
@@ -150,7 +150,7 @@ public abstract partial class SandboxBase : Control
             FitContent = true,
             SelectionEnabled = true,
         };
-        _logPanel.AddThemeFontSizeOverride("normal_font_size"", Ui.UiTheme.FontSizes.Body);
+        _logPanel.AddThemeFontSizeOverride("normal_font_size", Ui.UiTheme.FontSizes.Body);
         logScroll.AddChild(_logPanel);
         body.AddChild(logScroll);
     }
@@ -164,7 +164,7 @@ public abstract partial class SandboxBase : Control
     {
         var label = new Label { Text = text };
         label.AddThemeColorOverride("font_color", new Color(0.6f, 0.8f, 1f));
-        label.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Body);
+        label.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         _controlsContainer.AddChild(label);
         return label;
     }

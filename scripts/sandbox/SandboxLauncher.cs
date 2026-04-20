@@ -60,7 +60,7 @@ public partial class SandboxLauncher : Control
         header.AddChild(headerInner);
 
         var title = new Label { Text = "🧪  Sandbox Launcher", HorizontalAlignment = HorizontalAlignment.Center };
-        title.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Heading);
+        title.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Heading);
         headerInner.AddChild(title);
 
         var subtitle = new Label
@@ -68,7 +68,7 @@ public partial class SandboxLauncher : Control
             Text = "isolated testing · no game state interference",
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        subtitle.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Small);
+        subtitle.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Small);
         subtitle.AddThemeColorOverride("font_color", new Color(0.6f, 0.6f, 0.6f));
         headerInner.AddChild(subtitle);
 
@@ -90,7 +90,7 @@ public partial class SandboxLauncher : Control
             content.AddChild(groupBox);
 
             var groupLabel = new Label { Text = group.Category };
-            groupLabel.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Body);
+            groupLabel.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
             groupLabel.AddThemeColorOverride("font_color", group.Color);
             groupBox.AddChild(groupLabel);
 
@@ -113,11 +113,11 @@ public partial class SandboxLauncher : Control
                 card.AddChild(cardInner);
 
                 var entryName = new Label { Text = entry.Name };
-                entryName.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Body);
+                entryName.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
                 cardInner.AddChild(entryName);
 
                 var desc = new Label { Text = entry.Description, AutowrapMode = TextServer.AutowrapMode.Word };
-                desc.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Small);
+                desc.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Small);
                 desc.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
                 cardInner.AddChild(desc);
 
@@ -134,7 +134,7 @@ public partial class SandboxLauncher : Control
             Text = "CLI: make sandbox SCENE=<name>   |   headless: make sandbox-headless SCENE=<name>",
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        footer.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Small);
+        footer.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Small);
         footer.AddThemeColorOverride("font_color", new Color(0.4f, 0.4f, 0.4f));
         root.AddChild(footer);
     }

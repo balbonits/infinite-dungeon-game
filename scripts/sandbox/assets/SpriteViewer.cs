@@ -46,7 +46,7 @@ public partial class SpriteViewer : SandboxBase
         AddChild(_sprite);
 
         _infoLabel = new Label { Position = new Vector2(500, 600) };
-        _infoLabel.AddThemeFontSizeOverride("font_size"", Ui.UiTheme.FontSizes.Body);
+        _infoLabel.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         AddChild(_infoLabel);
 
         AddSectionLabel("Subject");
