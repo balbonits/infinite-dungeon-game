@@ -34,18 +34,19 @@ public class ClassSelectTests : GameTestBase
     [Setup]
     public async Task OpenClassSelect()
     {
-        // Wait for splash, click New Game, wait for ClassSelect to appear.
-        await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 5f,
-            what: "SplashScreen to appear");
-
-        // If ClassSelect is already on-screen from a previous test, reset by
-        // pressing Cancel to go back to splash.
+        // Order matters: if a previous test left ClassSelect on screen, we
+        // must cancel out of it BEFORE waiting for splash — the old logic
+        // waited for splash first and emitted a spurious "SplashScreen to
+        // appear" fail every setup after the first test.
         if (Ui.HasNodeOfType<ClassSelect>())
         {
             await Input.Cancel();
             await Input.WaitSeconds(0.5f);
-            await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 3f);
         }
+
+        if (!await WaitUntil(() => Ui.HasNodeOfType<SplashScreen>(), timeout: 5f,
+                what: "SplashScreen to appear"))
+            return;
 
         var newGameBtn = Ui.FindButton("New Game");
         if (newGameBtn is null)
@@ -81,7 +82,9 @@ public class ClassSelectTests : GameTestBase
         Expect(FindTextInTree(Strings.Classes.Mage), "Mage label visible in ClassSelect");
 
         Expect(Ui.FindButton("Confirm") is not null, "Confirm button exists");
-        Expect(Ui.FindButton("Back") is not null, "Back button exists");
+        // Actual text is "Back to Main Menu" — use Contains so the test
+        // survives copy-changes without churning the spec.
+        Expect(Ui.FindButton(b => b.Text.Contains("Back")) is not null, "Back button exists");
 
         await Input.WaitFrames(2);
     }

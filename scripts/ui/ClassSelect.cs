@@ -336,14 +336,14 @@ public partial class ClassSelect : Control
         {
             _focusZone = 0;
             MoveFocus(-1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
         if (@event.IsActionPressed(Constants.InputActions.MoveRight))
         {
             _focusZone = 0;
             MoveFocus(1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -352,7 +352,7 @@ public partial class ClassSelect : Control
         {
             _focusZone = System.Math.Min(_focusZone + 1, 2);
             UpdateZoneFocus();
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -361,7 +361,7 @@ public partial class ClassSelect : Control
         {
             _focusZone = System.Math.Max(_focusZone - 1, 0);
             UpdateZoneFocus();
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -382,7 +382,7 @@ public partial class ClassSelect : Control
             {
                 OnCardClicked(_cards[_focusIndex], Classes[_focusIndex].PlayerClass);
             }
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -390,7 +390,7 @@ public partial class ClassSelect : Control
         if (KeyboardNav.IsCancelPressed(@event))
         {
             _backButton?.EmitSignal(BaseButton.SignalName.Pressed);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
         }
     }
 
