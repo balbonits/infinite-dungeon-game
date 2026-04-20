@@ -99,8 +99,10 @@ public class DeathPenaltyIntegrationTests
         DeathPenalty.ApplyItemLoss(backpack, shouldLose);
 
         long after = CountUnits(backpack);
-        // ApplyItemLoss removes 1 unit per call from distinct slots (stack count
-        // may decrement without the slot going empty). Assert on total units.
+        // ApplyItemLoss removes up to shouldLose total units in one call —
+        // it walks up to shouldLose distinct occupied slots and subtracts one
+        // unit from each (a stacked slot may decrement without emptying).
+        // Assert on the cumulative unit delta rather than slot count.
         (before - after).Should().Be(shouldLose);
         backpack.Gold.Should().Be(500, "gold isn't touched by item loss alone");
     }
@@ -266,7 +268,7 @@ public class DeathPenaltyIntegrationTests
     [Fact]
     public void DeathFlow_Floor15_NoIdol_AppliesExpectedLoss()
     {
-        // Floor 15: items lost = 15/10 + 1 = 2.
+        // Floor 15 Accept Fate scenario.
         // Character has 10 distinct items, 500 backpack gold, 1000 bank gold.
         var (backpack, bank) = SeedCharacter(backpackGold: 500);
         bank.Gold = 1000;
@@ -290,7 +292,10 @@ public class DeathPenaltyIntegrationTests
     {
         // Idol path: consume the idol, skip the item loss. This mirrors the
         // death-screen flow's branch when HasSacrificialIdol returns true.
-        var (backpack, _) = SeedCharacter();
+        // Per spec (docs/systems/death.md §"Sacrificial Idol"), the idol acts
+        // as a free "Save Both" — so backpack gold must also survive
+        // consumption, not just the items.
+        var (backpack, _) = SeedCharacter(backpackGold: 500);
         backpack.TryAdd(Potion(IdolId));
         int itemsBefore = CountOccupied(backpack);
 
@@ -307,6 +312,7 @@ public class DeathPenaltyIntegrationTests
 
         CountOccupied(backpack).Should().Be(itemsBefore - 1, "only the idol is gone");
         DeathPenalty.HasSacrificialIdol(backpack).Should().BeFalse();
+        backpack.Gold.Should().Be(500, "idol is a free Save Both — backpack gold survives");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
