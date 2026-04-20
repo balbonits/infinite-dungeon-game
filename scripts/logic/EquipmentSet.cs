@@ -319,9 +319,15 @@ public class EquipmentSet
     /// <see cref="CombatFormulas.SoftCap"/>. Non-ring items and stat-focus
     /// rings (RingFocus.None) contribute nothing here.
     ///
-    /// Class affinity DOES apply to ring-focus contributions: a Ranger
-    /// wearing a Ranger-affinity Precision ring gets 1.25× the per-tier %
-    /// vs the same ring on a Warrior. Mirrors GetTotalBonuses semantics.
+    /// Class affinity does NOT apply to ring-focus %s — COMBAT-01 §7's
+    /// raw formula is `sum(ring.Tier * per_tier_contribution)` with no
+    /// class multiplier. Combat-ring catalog ships with neutral
+    /// ClassAffinity by design: the ring focus itself IS the build-
+    /// identity signal; reinforcing it via affinity would double-down
+    /// and make off-class stacking feel useless. Stat-overlay fields
+    /// (Str/Dex/Sta/Int/BonusHp/BonusDamage) still get the 1.25×
+    /// multiplier in Accumulate — only the ring-focus channel bypasses
+    /// it.
     /// </summary>
     private static void AccumulateRingFocus(ItemDef? item,
         ref float critRaw, ref float hasteRaw, ref float dodgeRaw, ref float blockRaw)
@@ -330,11 +336,6 @@ public class EquipmentSet
         int tier = item.Tier;
         if (tier <= 0) return; // Untiered rings don't contribute.
 
-        // Note: affinity multiplier intentionally not applied to focus % —
-        // combat-ring catalog ships with neutral ClassAffinity (the ring
-        // focus itself is the build-identity signal; reinforcing it via
-        // class affinity would double-down and make off-class stacking
-        // feel useless). Revisit if balance playtesting shows a gap.
         switch (item.RingFocus)
         {
             case RingFocus.Crit: critRaw += tier * CritPerTier; break;
