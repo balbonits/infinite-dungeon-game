@@ -13,6 +13,7 @@ public static class Constants
     {
         public const string Player = "player";
         public const string Enemies = "enemies";
+        public const string Containers = "containers";
     }
 
     // --- Input Actions (must match project.godot [input] section) ---

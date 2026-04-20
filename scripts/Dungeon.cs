@@ -45,6 +45,9 @@ public partial class Dungeon : Node2D
         // Spawn initial enemies — GUARANTEE the minimum count
         SpawnInitialEnemies();
 
+        // LOOT-01: spawn world containers (Jar / Crate / Chest)
+        SpawnContainers();
+
         PlaceStairs();
 
         // Set compass targets
@@ -113,10 +116,12 @@ public partial class Dungeon : Node2D
         _floorWiped = false;
         _killCount = 0;
 
-        // Clear all enemies
+        // Clear all enemies + world containers. Both are floor-scoped
+        // (respawn on floor change).
         foreach (Node child in _entities.GetChildren())
         {
-            if (child.IsInGroup(Constants.Groups.Enemies))
+            if (child.IsInGroup(Constants.Groups.Enemies) ||
+                child.IsInGroup(Constants.Groups.Containers))
                 child.QueueFree();
         }
 
@@ -142,6 +147,9 @@ public partial class Dungeon : Node2D
 
         // Spawn enemies for new floor — GUARANTEE the minimum count
         SpawnInitialEnemies();
+
+        // LOOT-01: spawn fresh containers on the new floor.
+        SpawnContainers();
     }
 
     private void SetupTileset()
@@ -350,6 +358,68 @@ public partial class Dungeon : Node2D
             SpawnEnemy();
             attempts++;
         }
+    }
+
+    /// <summary>
+    /// LOOT-01 / SPEC-LOOT-01: spawn world containers on the current floor
+    /// (Jar / Crate / Chest) at the counts produced by ContainerLootTable.
+    /// Each container lands on a valid floor tile clear of the player spawn,
+    /// both staircases, enemies, and other placed containers.
+    /// </summary>
+    private void SpawnContainers()
+    {
+        int floor = GameState.Instance.FloorNumber;
+        var (jars, crates, chests) = ContainerLootTable.SpawnCounts(floor);
+
+        PlaceContainerBatch(ContainerLootTable.ContainerType.Jar, jars);
+        PlaceContainerBatch(ContainerLootTable.ContainerType.Crate, crates);
+        PlaceContainerBatch(ContainerLootTable.ContainerType.Chest, chests);
+    }
+
+    private void PlaceContainerBatch(ContainerLootTable.ContainerType type, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            var pos = FindValidContainerPosition();
+            if (pos == null) return; // ran out of placement attempts — accept fewer than target.
+            var container = Container.Create(type, pos.Value);
+            _entities.AddChild(container);
+        }
+    }
+
+    private Vector2? FindValidContainerPosition()
+    {
+        Vector2 stairsUpWorld = _tileMap.MapToLocal(_stairsUpPosition);
+        Vector2 stairsDownWorld = _tileMap.MapToLocal(_stairsDownPosition);
+        const float bufferDistance = 48f; // 1-2 tile buffer from player spawn + stairs.
+
+        for (int attempt = 0; attempt < Constants.Spawning.MaxSpawnRetries; attempt++)
+        {
+            Vector2 pos = GetRandomFloorPosition();
+            Vector2I tileCoord = _tileMap.LocalToMap(pos);
+
+            if (!IsFloorTile(tileCoord)) continue;
+            if (pos.DistanceTo(stairsUpWorld) < bufferDistance) continue;
+            if (pos.DistanceTo(stairsDownWorld) < bufferDistance) continue;
+
+            // Avoid stacking on an enemy or another container already placed.
+            bool occupied = false;
+            foreach (Node node in _entities.GetChildren())
+            {
+                if (node is not Node2D n2d) continue;
+                if (!node.IsInGroup(Constants.Groups.Enemies) &&
+                    !node.IsInGroup(Constants.Groups.Containers)) continue;
+                if (n2d.GlobalPosition.DistanceTo(pos) < 24f)
+                {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (occupied) continue;
+
+            return pos;
+        }
+        return null;
     }
 
     private void SpawnEnemy()

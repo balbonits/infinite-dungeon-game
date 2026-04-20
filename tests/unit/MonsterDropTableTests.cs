@@ -48,51 +48,11 @@ public class MonsterDropTableTests
         ItemDatabase.Get(expectedId).Should().NotBeNull();
     }
 
-    // ── RollEquipment ────────────────────────────────────────────────────
-
-    [Fact]
-    public void RollEquipment_NeverExceedsTierForFloor()
-    {
-        // Seed for determinism; sample many rolls and assert no out-of-bracket items.
-        var rng = new Random(42);
-        int floor = 15; // Tier 2 bracket.
-        int expectedTier = MonsterDropTable.FloorToTier(floor);
-
-        for (int i = 0; i < 200; i++)
-        {
-            var drop = MonsterDropTable.RollEquipment(EnemySpecies.Goblin, floor, rng);
-            if (drop != null)
-                drop.Tier.Should().Be(expectedTier);
-        }
-    }
-
-    [Fact]
-    public void RollEquipment_ReturnsNullForUnmappedSpecies()
-    {
-        // No species outside the 7-member enum is currently unmapped — all are in Tables.
-        // But confirm the guard returns null gracefully if one is.
-        var rng = new Random(0);
-        var unknown = (EnemySpecies)99;
-        MonsterDropTable.RollEquipment(unknown, 5, rng).Should().BeNull();
-    }
-
-    [Fact]
-    public void RollEquipment_EventuallyReturnsItemForSufficientRolls()
-    {
-        var rng = new Random(7);
-        bool gotOne = false;
-        for (int i = 0; i < 500; i++)
-        {
-            if (MonsterDropTable.RollEquipment(EnemySpecies.Orc, 30, rng) != null)
-            {
-                gotOne = true;
-                break;
-            }
-        }
-        gotOne.Should().BeTrue("base + floor rate should produce a drop within 500 Orc rolls");
-    }
-
     // ── RollMaterials ────────────────────────────────────────────────────
+    //
+    // LOOT-01: equipment tests removed — monsters no longer drop equipment
+    // (the channel moved to ContainerLootTable). MonsterDropTable now
+    // surfaces only materials + gold/XP (gold/XP not in this class).
 
     [Fact]
     public void RollMaterials_UnmappedSpecies_ReturnsEmpty()

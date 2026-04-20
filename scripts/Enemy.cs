@@ -145,18 +145,11 @@ public partial class Enemy : CharacterBody2D, IDamageable
             FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 10),
                 $"+{gold}g", UiTheme.Colors.Accent, 11);
 
-            // ITEM-02 — species-aware equipment + material drops.
+            // LOOT-01 / SPEC-LOOT-01: monsters no longer drop equipment —
+            // equipment is a container-only channel (Jar / Crate / Chest).
+            // Monsters keep gold (above), XP (above), and materials (below).
             var species = (EnemySpecies)SpeciesIndex;
             int floor = GameState.Instance.FloorNumber;
-
-            var equip = MonsterDropTable.RollEquipment(species, floor);
-            if (equip != null && GameState.Instance.PlayerInventory.TryAdd(equip))
-            {
-                FloatingText.Spawn(GetParent(), GlobalPosition + new Vector2(0, 20),
-                    equip.Name, UiTheme.Colors.Safe, 12, 1.5f);
-                if (Toast.Instance != null)
-                    Toast.Instance.Success($"Found: {equip.Name}");
-            }
 
             foreach (var mat in MonsterDropTable.RollMaterials(species, floor))
             {
