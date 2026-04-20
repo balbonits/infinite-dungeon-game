@@ -18,6 +18,12 @@ public class EquipmentSet
     public const int RingSlotCount = 10;
     private const float AffinityMultiplier = 1.25f;
 
+    // Per-tier contribution rates for combat-ring focuses (COMBAT-01 §7).
+    private const float CritPerTier = 2.0f;    // Precision: +2% raw crit per tier
+    private const float HastePerTier = 3.0f;   // Haste:     +3% raw attack-speed per tier
+    private const float DodgePerTier = 1.5f;   // Evasion:   +1.5% raw dodge per tier
+    private const float BlockPerTier = 2.0f;   // Bulwark:   +2% raw block per tier
+
     public ItemDef? Head { get; set; }
     public ItemDef? Body { get; set; }
     public ItemDef? Arms { get; set; }
@@ -27,7 +33,35 @@ public class EquipmentSet
     public ItemDef? MainHand { get; set; }
     public ItemDef? OffHand { get; set; }
     public ItemDef? Ammo { get; set; }
-    public ItemDef?[] Rings { get; } = new ItemDef?[RingSlotCount];
+
+    // Private backing array so external callers can't do `Rings[i] = x` and
+    // bypass cache invalidation. Public read access is via the IReadOnlyList
+    // projection below — existing `eq.Rings[i]` reads keep working.
+    private readonly ItemDef?[] _rings = new ItemDef?[RingSlotCount];
+    public System.Collections.Generic.IReadOnlyList<ItemDef?> Rings => _rings;
+
+    /// <summary>
+    /// Cached combat aggregate. Null = dirty; lazily rebuilt on next
+    /// <see cref="GetCombatStats"/> read. Invalidated by every mutator in
+    /// this class (TryEquip, ForceEquip, Unequip, RestoreState,
+    /// DestroyRandomEquipped). NOT serialized — recomputed from equipment
+    /// state on load.
+    /// </summary>
+    private EquipmentCombatStats? _cachedStats;
+
+    /// <summary>
+    /// The PlayerClass the cache was computed against. If the class changes
+    /// (future-proofing; today a class is fixed per run), the cache is
+    /// stale and must rebuild.
+    /// </summary>
+    private PlayerClass? _cachedClass;
+
+    /// <summary>Explicit cache invalidation — test hook + future callers.</summary>
+    public void InvalidateCache()
+    {
+        _cachedStats = null;
+        _cachedClass = null;
+    }
 
     /// <summary>
     /// True if an arrow-bearing quiver is equipped in the Ammo slot.
@@ -52,8 +86,8 @@ public class EquipmentSet
             if (MainHand != null) n++;
             if (OffHand != null) n++;
             if (Ammo != null) n++;
-            for (int i = 0; i < Rings.Length; i++)
-                if (Rings[i] != null) n++;
+            for (int i = 0; i < _rings.Length; i++)
+                if (_rings[i] != null) n++;
             return n;
         }
     }
@@ -114,6 +148,7 @@ public class EquipmentSet
         if (previous != null)
             backpack.TryAdd(previous, 1);
 
+        InvalidateCache();
         return true;
     }
 
@@ -126,6 +161,7 @@ public class EquipmentSet
         if (!IsCompatible(slot, item)) return;
         if (slot == EquipSlot.Ring && (ringIndex < 0 || ringIndex >= RingSlotCount)) return;
         SetSlot(slot, item, ringIndex);
+        InvalidateCache();
     }
 
     /// <summary>
@@ -146,6 +182,7 @@ public class EquipmentSet
 
         backpack.TryAdd(item, 1);
         SetSlot(slot, null, ringIndex);
+        InvalidateCache();
         return item;
     }
 
@@ -157,7 +194,7 @@ public class EquipmentSet
         EquipSlot.Legs => Legs,
         EquipSlot.Feet => Feet,
         EquipSlot.Neck => Neck,
-        EquipSlot.Ring => (ringIndex >= 0 && ringIndex < Rings.Length) ? Rings[ringIndex] : null,
+        EquipSlot.Ring => (ringIndex >= 0 && ringIndex < _rings.Length) ? _rings[ringIndex] : null,
         EquipSlot.MainHand => MainHand,
         EquipSlot.OffHand => OffHand,
         EquipSlot.Ammo => Ammo,
@@ -175,7 +212,7 @@ public class EquipmentSet
             case EquipSlot.Feet: Feet = item; break;
             case EquipSlot.Neck: Neck = item; break;
             case EquipSlot.Ring:
-                if (ringIndex >= 0 && ringIndex < Rings.Length) Rings[ringIndex] = item;
+                if (ringIndex >= 0 && ringIndex < _rings.Length) _rings[ringIndex] = item;
                 break;
             case EquipSlot.MainHand: MainHand = item; break;
             case EquipSlot.OffHand: OffHand = item; break;
@@ -192,19 +229,19 @@ public class EquipmentSet
     /// </summary>
     public EquipmentBonuses GetTotalBonuses(PlayerClass playerClass)
     {
-        var b = new EquipmentBonuses();
-        Accumulate(Head, playerClass, b);
-        Accumulate(Body, playerClass, b);
-        Accumulate(Arms, playerClass, b);
-        Accumulate(Legs, playerClass, b);
-        Accumulate(Feet, playerClass, b);
-        Accumulate(Neck, playerClass, b);
-        Accumulate(MainHand, playerClass, b);
-        Accumulate(OffHand, playerClass, b);
-        Accumulate(Ammo, playerClass, b);
-        for (int i = 0; i < Rings.Length; i++)
-            Accumulate(Rings[i], playerClass, b);
-        return b;
+        // Projected from GetCombatStats so the stat-aggregation walk lives
+        // in exactly one place (was previously duplicated with Recompute).
+        // Cache hit is O(1); cache miss costs the same as before.
+        var cs = GetCombatStats(playerClass);
+        return new EquipmentBonuses
+        {
+            Str = cs.Str,
+            Dex = cs.Dex,
+            Sta = cs.Sta,
+            Int = cs.Int,
+            Hp = cs.BonusHp,
+            Damage = cs.BonusDamage,
+        };
     }
 
     private static void Accumulate(ItemDef? item, PlayerClass playerClass, EquipmentBonuses b)
@@ -219,6 +256,98 @@ public class EquipmentSet
         b.Int += item.BonusInt * mult;
         b.Hp += item.BonusHp * mult;
         b.Damage += item.BonusDamage * mult;
+    }
+
+    /// <summary>
+    /// Full combat-facing aggregate (COMBAT-01 §4). Cached; rebuilt lazily
+    /// on cache miss or when <paramref name="playerClass"/> changes since
+    /// last compute. Every mutator in this class invalidates the cache so
+    /// subsequent reads hit the fresh state.
+    ///
+    /// Output fields:
+    /// - Str/Dex/Sta/Int/BonusHp/BonusDamage — mirror GetTotalBonuses
+    ///   (summed with 1.25× affinity multiplier per item).
+    /// - CritRaw/HasteRaw/DodgeRaw/BlockRaw — raw % values from combat
+    ///   rings, NOT pre-capped. Callers (Player.ExecuteAttack,
+    ///   GameState.TakeDamage) apply <see cref="CombatFormulas.SoftCap"/>
+    ///   and overflow conversion per §7/§8.
+    /// </summary>
+    public EquipmentCombatStats GetCombatStats(PlayerClass playerClass)
+    {
+        if (_cachedStats.HasValue && _cachedClass == playerClass)
+            return _cachedStats.Value;
+
+        _cachedStats = Recompute(playerClass);
+        _cachedClass = playerClass;
+        return _cachedStats.Value;
+    }
+
+    private EquipmentCombatStats Recompute(PlayerClass playerClass)
+    {
+        var b = new EquipmentBonuses();
+        float critRaw = 0, hasteRaw = 0, dodgeRaw = 0, blockRaw = 0;
+
+        Accumulate(Head, playerClass, b);
+        Accumulate(Body, playerClass, b);
+        Accumulate(Arms, playerClass, b);
+        Accumulate(Legs, playerClass, b);
+        Accumulate(Feet, playerClass, b);
+        Accumulate(Neck, playerClass, b);
+        Accumulate(MainHand, playerClass, b);
+        Accumulate(OffHand, playerClass, b);
+        Accumulate(Ammo, playerClass, b);
+
+        for (int i = 0; i < _rings.Length; i++)
+        {
+            Accumulate(_rings[i], playerClass, b);
+            AccumulateRingFocus(_rings[i], ref critRaw, ref hasteRaw, ref dodgeRaw, ref blockRaw);
+        }
+
+        return new EquipmentCombatStats
+        {
+            Str = b.Str,
+            Dex = b.Dex,
+            Sta = b.Sta,
+            Int = b.Int,
+            BonusHp = b.Hp,
+            BonusDamage = b.Damage,
+            CritRaw = critRaw,
+            HasteRaw = hasteRaw,
+            DodgeRaw = dodgeRaw,
+            BlockRaw = blockRaw,
+        };
+    }
+
+    /// <summary>
+    /// Per-ring contribution to a combat focus' raw %. Additive across
+    /// all equipped ring slots — callers run the result through
+    /// <see cref="CombatFormulas.SoftCap"/>. Non-ring items and stat-focus
+    /// rings (RingFocus.None) contribute nothing here.
+    ///
+    /// Class affinity does NOT apply to ring-focus %s — COMBAT-01 §7's
+    /// raw formula is `sum(ring.Tier * per_tier_contribution)` with no
+    /// class multiplier. Combat-ring catalog ships with neutral
+    /// ClassAffinity by design: the ring focus itself IS the build-
+    /// identity signal; reinforcing it via affinity would double-down
+    /// and make off-class stacking feel useless. Stat-overlay fields
+    /// (Str/Dex/Sta/Int/BonusHp/BonusDamage) still get the 1.25×
+    /// multiplier in Accumulate — only the ring-focus channel bypasses
+    /// it.
+    /// </summary>
+    private static void AccumulateRingFocus(ItemDef? item,
+        ref float critRaw, ref float hasteRaw, ref float dodgeRaw, ref float blockRaw)
+    {
+        if (item == null || item.RingFocus == RingFocus.None) return;
+        int tier = item.Tier;
+        if (tier <= 0) return; // Untiered rings don't contribute.
+
+        switch (item.RingFocus)
+        {
+            case RingFocus.Crit: critRaw += tier * CritPerTier; break;
+            case RingFocus.Haste: hasteRaw += tier * HastePerTier; break;
+            case RingFocus.Dodge: dodgeRaw += tier * DodgePerTier; break;
+            case RingFocus.Block: blockRaw += tier * BlockPerTier; break;
+        }
     }
 
     /// <summary>
@@ -238,13 +367,14 @@ public class EquipmentSet
         if (MainHand != null) slots.Add((EquipSlot.MainHand, 0));
         if (OffHand != null) slots.Add((EquipSlot.OffHand, 0));
         if (Ammo != null) slots.Add((EquipSlot.Ammo, 0));
-        for (int i = 0; i < Rings.Length; i++)
-            if (Rings[i] != null) slots.Add((EquipSlot.Ring, i));
+        for (int i = 0; i < _rings.Length; i++)
+            if (_rings[i] != null) slots.Add((EquipSlot.Ring, i));
 
         if (slots.Count == 0) return null;
         var (pickSlot, pickRing) = slots[rng.Next(slots.Count)];
         var item = GetSlot(pickSlot, pickRing);
         SetSlot(pickSlot, null, pickRing);
+        InvalidateCache();
         return item;
     }
 
@@ -263,8 +393,8 @@ public class EquipmentSet
             Ammo = Ammo?.Id,
             Rings = new string?[RingSlotCount],
         };
-        for (int i = 0; i < Rings.Length; i++)
-            data.Rings[i] = Rings[i]?.Id;
+        for (int i = 0; i < _rings.Length; i++)
+            data.Rings[i] = _rings[i]?.Id;
         return data;
     }
 
@@ -281,8 +411,10 @@ public class EquipmentSet
         Ammo = Resolve(data.Ammo, EquipSlot.Ammo);
 
         int ringCount = data.Rings?.Length ?? 0;
-        for (int i = 0; i < Rings.Length; i++)
-            Rings[i] = (i < ringCount) ? Resolve(data.Rings![i], EquipSlot.Ring) : null;
+        for (int i = 0; i < _rings.Length; i++)
+            _rings[i] = (i < ringCount) ? Resolve(data.Rings![i], EquipSlot.Ring) : null;
+
+        InvalidateCache();
     }
 
     private static ItemDef? Resolve(string? id, EquipSlot slot)
@@ -306,4 +438,35 @@ public class EquipmentBonuses
     public float Int;
     public float Hp;
     public float Damage;
+}
+
+/// <summary>
+/// Combat-facing aggregate of everything equipment contributes. Immutable
+/// snapshot produced by <see cref="EquipmentSet.GetCombatStats"/>; consumed
+/// by <c>Player.ExecuteAttack</c> and <c>GameState.TakeDamage</c>.
+///
+/// Core stat fields (Str/Dex/Sta/Int) feed the StatBlock DR curve as an
+/// overlay before derivation — see docs/systems/combat-equipment-integration.md §1.
+/// Combat-ring raw %s are NOT pre-capped; callers apply
+/// <see cref="CombatFormulas.SoftCap"/> and overflow conversion per §7.
+/// </summary>
+public readonly record struct EquipmentCombatStats
+{
+    // Core stat overlays (fed into StatBlock DR curve)
+    public float Str { get; init; }
+    public float Dex { get; init; }
+    public float Sta { get; init; }
+    public float Int { get; init; }
+
+    // Direct HP contribution (flat, already multiplied by affinity)
+    public float BonusHp { get; init; }
+
+    // Weapon/gear flat damage (added to baseDamage before STR/INT multiplier)
+    public float BonusDamage { get; init; }
+
+    // Combat-ring aggregates (raw %, NOT pre-capped)
+    public float CritRaw { get; init; }
+    public float HasteRaw { get; init; }
+    public float DodgeRaw { get; init; }
+    public float BlockRaw { get; init; }
 }

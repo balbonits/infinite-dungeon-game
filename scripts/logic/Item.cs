@@ -44,6 +44,29 @@ public record ItemDef
     /// Used by MonsterDropTable for floor-gated slot-roll selection.
     /// </summary>
     public int Tier { get; init; }
+
+    /// <summary>
+    /// Ring combat focus — base-item identity for combat-ring catalog (Precision /
+    /// Haste / Evasion / Bulwark). Feeds COMBAT-01's ring-focus formulas. None
+    /// for stat-focus rings (those use BonusStr/Dex/Sta/Int) and every non-ring
+    /// item. See docs/systems/combat-equipment-integration.md §7.
+    /// </summary>
+    public RingFocus RingFocus { get; init; } = RingFocus.None;
+}
+
+/// <summary>
+/// Combat-ring focus category per COMBAT-01. Determines which soft-capped
+/// combat stat a ring contributes to (and is computed as Tier × per-tier%
+/// at read-time). Stat-focus rings (Str/Dex/Sta/Int) don't use this field —
+/// they carry flat bonuses on the BonusStr/etc fields instead.
+/// </summary>
+public enum RingFocus
+{
+    None = 0,
+    Crit = 1,      // Precision rings — +2% raw crit per tier
+    Haste = 2,     // Haste rings — +3% raw attack speed per tier
+    Dodge = 3,     // Evasion rings — +1.5% raw dodge per tier
+    Block = 4,     // Bulwark rings — +2% raw block per tier
 }
 
 public enum ItemCategory
