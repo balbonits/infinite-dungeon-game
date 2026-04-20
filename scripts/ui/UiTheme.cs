@@ -41,9 +41,12 @@ public static class UiTheme
     /// below is an integer multiple of 8 so glyphs snap to the pixel grid without
     /// anti-aliasing blur.
     ///
-    /// Null until first read — the font file loads once from disk via
-    /// <c>GD.Load</c>. Callers use the getter so the unit-test project (which
-    /// can't link Godot) never touches this path.
+    /// Lazy-loaded from disk on first read. Property accesses happen only at
+    /// runtime inside Godot scenes (GlobalTheme.Create, StyleButton/StyleLabel
+    /// factories). The unit-test project compiles against GodotSharp but the
+    /// UI namespace is excluded from the test assembly's compile set, so these
+    /// readers never fire under xUnit — the load path is purely a Godot-
+    /// runtime concern.
     /// </summary>
     private static FontFile? _fontFamily;
     public static FontFile FontFamily
@@ -51,11 +54,23 @@ public static class UiTheme
         get
         {
             if (_fontFamily != null) return _fontFamily;
-            _fontFamily = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");
-            // filter=Off (nearest-neighbour) keeps the 8px bitmap crisp at every
-            // integer-multiple size; Godot defaults to linear filtering which
-            // smears the pixel-font edges.
-            _fontFamily.Antialiasing = TextServer.FontAntialiasing.None;
+            var loaded = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");
+            if (loaded == null)
+            {
+                // Fail loud: the font file is a required shipping asset per
+                // SPEC-UI-FONT-01. A missing/unimported TTF here means the
+                // asset pipeline regressed — better to throw at theme-
+                // creation time than render default Godot font in place.
+                GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load — falling back to a bare FontFile to keep UI renderable. Re-import the font resource.");
+                loaded = new FontFile();
+            }
+            // Pixel-font rendering discipline: disable anti-aliasing so the
+            // 8-px native cell stays crisp at every integer-multiple size.
+            // Godot's TextureFilter for the Theme is set to Nearest at the
+            // project level (SPEC-UI-HIGH-DPI-01) — Antialiasing=None is the
+            // font-resource half of the same "no smear" contract.
+            loaded.Antialiasing = TextServer.FontAntialiasing.None;
+            _fontFamily = loaded;
             return _fontFamily;
         }
     }
