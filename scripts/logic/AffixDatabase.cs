@@ -51,6 +51,28 @@ public static class AffixDatabase
         RegisterSuffix("ruin_4", "of Ruin", AffixCategory.Offensive, "crit_damage", 4, 50, 22, true, 950, 20);
         RegisterSuffix("bear_4", "of the Bear", AffixCategory.Defensive, "max_hp", 4, 50, 60, false, 750, 16);
         RegisterSuffix("swiftness_4", "of Swiftness", AffixCategory.Utility, "move_speed", 4, 50, 8, true, 700, 15);
+
+        // --- Tier 5 (Item Level 75+) — SPEC-AFFIX-TIER-LADDER-01 / AUDIT-10 ---
+        // 8 build-defining families. Values from docs/inventory/items.md
+        // § T5+T6 Affix Ladder (roster + formulas locked in spec).
+        RegisterPrefix("keen_5", "Keen", AffixCategory.Offensive, "damage", 5, 75, 35, false, 2000, 28);
+        RegisterPrefix("vicious_5", "Vicious", AffixCategory.Offensive, "damage_percent", 5, 75, 32, true, 2400, 32);
+        RegisterPrefix("sturdy_5", "Sturdy", AffixCategory.Defensive, "defense", 5, 75, 30, false, 2000, 28);
+        RegisterPrefix("warding_5", "Warding", AffixCategory.Defensive, "damage_resist", 5, 75, 28, true, 2300, 30);
+        RegisterSuffix("striking_5", "of Striking", AffixCategory.Offensive, "crit_chance", 5, 75, 18, true, 2200, 30);
+        RegisterSuffix("ruin_5", "of Ruin", AffixCategory.Offensive, "crit_damage", 5, 75, 35, true, 2400, 32);
+        RegisterSuffix("bear_5", "of the Bear", AffixCategory.Defensive, "max_hp", 5, 75, 90, false, 1900, 26);
+        RegisterSuffix("swiftness_5", "of Swiftness", AffixCategory.Utility, "move_speed", 5, 75, 14, true, 1800, 25);
+
+        // --- Tier 6 (Item Level 100+) — SPEC-AFFIX-TIER-LADDER-01 / AUDIT-10 ---
+        RegisterPrefix("keen_6", "Keen", AffixCategory.Offensive, "damage", 6, 100, 50, false, 4200, 45);
+        RegisterPrefix("vicious_6", "Vicious", AffixCategory.Offensive, "damage_percent", 6, 100, 48, true, 5000, 52);
+        RegisterPrefix("sturdy_6", "Sturdy", AffixCategory.Defensive, "defense", 6, 100, 45, false, 4200, 45);
+        RegisterPrefix("warding_6", "Warding", AffixCategory.Defensive, "damage_resist", 6, 100, 42, true, 4800, 50);
+        RegisterSuffix("striking_6", "of Striking", AffixCategory.Offensive, "crit_chance", 6, 100, 28, true, 4600, 48);
+        RegisterSuffix("ruin_6", "of Ruin", AffixCategory.Offensive, "crit_damage", 6, 100, 50, true, 5000, 52);
+        RegisterSuffix("bear_6", "of the Bear", AffixCategory.Defensive, "max_hp", 6, 100, 130, false, 4000, 42);
+        RegisterSuffix("swiftness_6", "of Swiftness", AffixCategory.Utility, "move_speed", 6, 100, 22, true, 3800, 40);
     }
 
     public static AffixDef? Get(string id) => Affixes.GetValueOrDefault(id);
