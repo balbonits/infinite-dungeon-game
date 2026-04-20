@@ -40,13 +40,13 @@ public static class FloatingText
     private static readonly Color PhaseColor = new(0.40f, 0.85f, 1.0f, 1f); // cyan
 
     public static void Dodge(Node parent, Vector2 position) =>
-        Spawn(parent, position, "MISS", DodgeColor);
+        Spawn(parent, position, Strings.Combat.Miss, DodgeColor);
 
     public static void Block(Node parent, Vector2 position) =>
-        Spawn(parent, position, "BLOCK", BlockColor);
+        Spawn(parent, position, Strings.Combat.Block, BlockColor);
 
     public static void Phase(Node parent, Vector2 position) =>
-        Spawn(parent, position, "PHASED", PhaseColor);
+        Spawn(parent, position, Strings.Combat.Phased, PhaseColor);
 
     public static void Spawn(Node parent, Vector2 position, string text, Color color,
         int fontSize = 13, float duration = 0.8f)

@@ -82,6 +82,11 @@ public static class Strings
         public static string Xp(int amount) => $"+{amount} XP";
         public static string Mana(int amount, bool restore) => $"{(restore ? "+" : "-")}{amount} MP";
         public const string LevelUp = "LEVEL UP!";
+        // COMBAT-01 §8 mitigation variants — keep all player-facing combat
+        // text here so i18n can localize from one place.
+        public const string Miss = "MISS";
+        public const string Block = "BLOCK";
+        public const string Phased = "PHASED";
     }
 
     // --- Floor Transitions ---

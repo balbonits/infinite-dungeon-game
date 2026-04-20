@@ -74,9 +74,9 @@ public partial class Player : CharacterBody2D
         StartGracePeriod();
     }
 
-    private void OnPlayerDodged(Vector2 _) => FloatingText.Dodge(GetParent(), GlobalPosition);
-    private void OnPlayerBlocked(Vector2 _) => FloatingText.Block(GetParent(), GlobalPosition);
-    private void OnPlayerPhased(Vector2 _) => FloatingText.Phase(GetParent(), GlobalPosition);
+    private void OnPlayerDodged() => FloatingText.Dodge(GetParent(), GlobalPosition);
+    private void OnPlayerBlocked() => FloatingText.Block(GetParent(), GlobalPosition);
+    private void OnPlayerPhased() => FloatingText.Phase(GetParent(), GlobalPosition);
 
     public override void _PhysicsProcess(double delta)
     {
@@ -258,13 +258,25 @@ public partial class Player : CharacterBody2D
         var stats = GameState.Instance.Stats;
         var es = GameState.Instance.Equipment.GetCombatStats(GameState.Instance.SelectedClass);
 
+        // COMBAT-01 §1 overlay model: equipment STR/DEX/INT stack onto
+        // allocated stats BEFORE the DR curve, producing a single effective
+        // value per stat. Drive all stat-derived multipliers off these
+        // effective values — the allocated-only Stats properties would skip
+        // the gear contribution and make equipment STR/DEX/INT inert in
+        // combat formulas.
+        int effStr = stats.Str + (int)es.Str;
+        int effDex = stats.Dex + (int)es.Dex;
+        int effInt = stats.Int + (int)es.Int;
+
         // COMBAT-01 §6: weapon base damage includes equipment BonusDamage.
         float weaponBase = Constants.PlayerStats.GetDamage(GameState.Instance.Level) + es.BonusDamage;
 
         float statBonus = attack.IsProjectile
-            ? stats.SpellDamageMultiplier
-            : 1.0f + stats.MeleePercentBoost / 100f;
-        float flatBonus = attack.IsProjectile ? 0 : stats.MeleeFlatBonus;
+            ? StatBlock.ComputeSpellDamageMultiplier(effInt)
+            : 1.0f + StatBlock.ComputeMeleePercentBoost(effStr) / 100f;
+        float flatBonus = attack.IsProjectile
+            ? 0
+            : StatBlock.ComputeMeleeFlatBonus(effStr);
 
         int finalDamage = (int)((weaponBase + flatBonus) * attack.DamageMultiplier * statBonus);
 
@@ -286,7 +298,7 @@ public partial class Player : CharacterBody2D
         {
             float hasteEff = CombatFormulas.SoftCap(es.HasteRaw);
             _attackTimer = attack.Cooldown
-                         / stats.AttackSpeedMultiplier
+                         / StatBlock.ComputeAttackSpeedMultiplier(effDex)
                          / (1.0f + hasteEff / 100f);
         }
 

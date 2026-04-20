@@ -179,6 +179,12 @@ public partial class GameState : Node
         Intelligence = new DungeonIntelligence();
         Attunement = new MagiculeAttunement();
         Equipment = new EquipmentSet();
+        // COMBAT-01 §7: fresh run → fresh RNG stream. Without this, back-to-
+        // back runs in the same app session share the same PRNG sequence and
+        // Crit/Flurry/Dodge/Block rolls correlate across runs, which is
+        // surprising and breaks the "each new game is a clean deal" feel.
+        CombatRng = new Random();
+        _phaseExpiresAt = 0;
         // CurrentSaveSlot is intentionally preserved across Reset(): it identifies
         // which save file this character owns, not run state. The New Game flow
         // reserves a slot on the splash screen BEFORE ClassSelect.Reset() runs;
@@ -293,19 +299,28 @@ public partial class GameState : Node
         if (IsPhased)
         {
             _phaseExpiresAt = 0;
-            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerPhased, Vector2.Zero);
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerPhased);
             return;
         }
 
-        // 2. DODGE — DEX-derived dodge% + ring-contributed dodge%. Soft-capped
-        //    chance; overflow becomes Phase duration (ms).
-        float dodgeRaw = Stats.DodgeChance * 100f + es.DodgeRaw;
+        // If IsPhased was false but _phaseExpiresAt is still non-zero, a
+        // prior Phase window elapsed without being consumed. Clear it so
+        // future HUD code keying off `_phaseExpiresAt > 0` (buff-bar icon,
+        // etc.) doesn't see a ghost-active Phase.
+        if (_phaseExpiresAt > 0) _phaseExpiresAt = 0;
+
+        // 2. DODGE — COMBAT-01 §1 overlay: equipment DEX stacks onto allocated
+        //    DEX before the DR curve, then derives dodge chance. Combat-ring
+        //    DodgeRaw is additive on top. Overflow of the combined raw becomes
+        //    Phase duration (ms, hard-capped at 500).
+        int effDex = Stats.Dex + (int)es.Dex;
+        float dodgeRaw = StatBlock.ComputeDodgeChance(effDex) * 100f + es.DodgeRaw;
         float dodgeEff = CombatFormulas.SoftCap(dodgeRaw);
         if (CombatRng.NextSingle() < dodgeEff / 100f)
         {
             float phaseMs = CombatFormulas.PhaseDurationMs(dodgeRaw);
             _phaseExpiresAt = _phaseTimeSource() + phaseMs / 1000.0;
-            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerDodged, Vector2.Zero);
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerDodged);
             return;
         }
 
@@ -317,7 +332,7 @@ public partial class GameState : Node
         {
             float reduction = CombatFormulas.BlockReduction(blockRaw);
             incoming = (int)(incoming * (1f - reduction));
-            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerBlocked, Vector2.Zero);
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.PlayerBlocked);
         }
 
         Hp -= incoming;
