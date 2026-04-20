@@ -323,7 +323,12 @@ public partial class ClassSelect : Control
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (!Visible)
+        // Guard against input fired after the node has been QueueFree-d or
+        // detached from the tree — the back-button handler transitions away
+        // from ClassSelect and Input.FlushBufferedEvents re-enters this method
+        // while the node is mid-teardown. Without the IsInsideTree() check,
+        // GetViewport() returns null on the trailing SetInputAsHandled call.
+        if (!Visible || !IsInsideTree())
             return;
 
         // Left/Right — navigate within cards (zone 0)
@@ -331,14 +336,14 @@ public partial class ClassSelect : Control
         {
             _focusZone = 0;
             MoveFocus(-1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
         if (@event.IsActionPressed(Constants.InputActions.MoveRight))
         {
             _focusZone = 0;
             MoveFocus(1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -347,7 +352,7 @@ public partial class ClassSelect : Control
         {
             _focusZone = System.Math.Min(_focusZone + 1, 2);
             UpdateZoneFocus();
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -356,7 +361,7 @@ public partial class ClassSelect : Control
         {
             _focusZone = System.Math.Max(_focusZone - 1, 0);
             UpdateZoneFocus();
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -377,7 +382,7 @@ public partial class ClassSelect : Control
             {
                 OnCardClicked(_cards[_focusIndex], Classes[_focusIndex].PlayerClass);
             }
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
 
@@ -385,7 +390,7 @@ public partial class ClassSelect : Control
         if (KeyboardNav.IsCancelPressed(@event))
         {
             _backButton?.EmitSignal(BaseButton.SignalName.Pressed);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
         }
     }
 
