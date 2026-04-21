@@ -104,9 +104,14 @@ public partial class Card : PanelContainer
             State.Highlighted => UiTheme.Colors.Accent,
             _ => UiTheme.Colors.PanelBorder,
         };
-        style.SetBorderWidthAll(state == State.Normal ? 2 : 3);
+        // Compensate content margin so the inner rect stays fixed across
+        // states — Godot StyleBox content rect = outer minus border minus
+        // content margin, so a 1-px border-width bump would otherwise shift
+        // every child 1 px on focus/hover/press. 22 = 2 + 20 (Normal pair).
+        int borderWidth = state == State.Normal ? 2 : 3;
+        style.SetBorderWidthAll(borderWidth);
         style.SetCornerRadiusAll(8);
-        style.SetContentMarginAll(20);
+        style.SetContentMarginAll(22 - borderWidth);
         return style;
     }
 }
