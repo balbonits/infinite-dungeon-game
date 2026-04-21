@@ -291,28 +291,28 @@ public partial class LoadGameScreen : Control
         // ClassSelect needed after the Card refactor.
         if (!_ready || !Visible || !IsInsideTree()) return;
 
-        if (@event.IsActionPressed("ui_left"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveLeft))
         {
             if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(-1);
             GetViewport()?.SetInputAsHandled();
             return;
         }
-        if (@event.IsActionPressed("ui_right"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveRight))
         {
             if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(1);
             GetViewport()?.SetInputAsHandled();
             return;
         }
-        if (@event.IsActionPressed("ui_down"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveDown))
         {
             if (_focusedSlot >= 0) { _buttonZone = 0; MoveToButtonZone(); }
             else if (_loadBtn.HasFocus()) { _buttonZone = 1; _backBtn.CallDeferred(Control.MethodName.GrabFocus); }
             GetViewport()?.SetInputAsHandled();
             return;
         }
-        if (@event.IsActionPressed("ui_up"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveUp))
         {
             if (_backBtn.HasFocus()) { _buttonZone = 0; _loadBtn.CallDeferred(Control.MethodName.GrabFocus); }
             else if (_loadBtn.HasFocus()) { FocusFirstAvailable(); }

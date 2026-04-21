@@ -22,7 +22,7 @@ public partial class ClassSelect : Control
             UiTheme.Colors.Safe, "res://assets/icons/skill_arrow.png"),
         new(PlayerClass.Mage, Strings.Classes.Mage, Strings.Classes.MageDescription,
             0, 1, 1, 3, Strings.Classes.SkillMagicBolt, Strings.Classes.SkillMagicBoltType,
-            new Color("4AE8E8"), "res://assets/icons/skill_magic_bolt.png"),
+            UiTheme.Colors.Info, "res://assets/icons/skill_magic_bolt.png"),
     };
 
     private ClassCard? _selectedCard;
