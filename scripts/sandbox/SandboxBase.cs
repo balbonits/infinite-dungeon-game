@@ -37,6 +37,11 @@ public abstract partial class SandboxBase : Control
 
     public override void _Ready()
     {
+        // Sandbox scenes can launch standalone (bypassing Main's UILayer theme
+        // assignment), so apply the global theme here so PS2P + palette cascade
+        // everywhere under the sandbox root per SPEC-UI-FONT-01.
+        Theme = Ui.GlobalTheme.Create();
+
         BuildUi();
         _SandboxReady();
 

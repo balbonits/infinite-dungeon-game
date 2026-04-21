@@ -332,6 +332,8 @@ public partial class Dungeon : Node2D
         // Label above stairs
         var label = new Label();
         label.Text = labelText;
+        // Under Node2D — explicit font override per SPEC-UI-FONT-01.
+        label.AddThemeFontOverride("font", Ui.UiTheme.FontFamily);
         label.AddThemeColorOverride("font_color", labelColor);
         label.AddThemeColorOverride("font_outline_color", Colors.Black);
         label.AddThemeConstantOverride("outline_size", 3);

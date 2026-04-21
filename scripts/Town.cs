@@ -129,6 +129,9 @@ public partial class Town : Node2D
         // Label
         var label = new Label();
         label.Text = Strings.Town.DungeonEntrance;
+        // Labels added under Node2D don't inherit the global theme — SPEC-UI-FONT-01
+        // requires PS2P everywhere, so apply the font explicitly.
+        label.AddThemeFontOverride("font", UiTheme.FontFamily);
         label.AddThemeColorOverride("font_color", UiTheme.Colors.Danger);
         label.AddThemeColorOverride("font_outline_color", Colors.Black);
         label.AddThemeConstantOverride("outline_size", 3);
@@ -168,6 +171,8 @@ public partial class Town : Node2D
     {
         _interactLabel = new Label();
         _interactLabel.Text = "";
+        // Under Node2D — explicit font override per SPEC-UI-FONT-01.
+        _interactLabel.AddThemeFontOverride("font", UiTheme.FontFamily);
         _interactLabel.AddThemeColorOverride("font_color", UiTheme.Colors.Muted);
         _interactLabel.AddThemeColorOverride("font_outline_color", Colors.Black);
         _interactLabel.AddThemeConstantOverride("outline_size", 3);
