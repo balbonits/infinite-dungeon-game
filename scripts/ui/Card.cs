@@ -51,6 +51,19 @@ public partial class Card : PanelContainer
     }
 
     /// <summary>
+    /// Builds an HSeparator subclasses can drop into Content without
+    /// swallowing mouse clicks. Default HSeparator has MouseFilter=Stop,
+    /// which would block the card's GuiInput when the user clicks on the
+    /// separator line.
+    /// </summary>
+    protected static HSeparator NonInteractiveSeparator()
+    {
+        var sep = new HSeparator();
+        sep.MouseFilter = MouseFilterEnum.Ignore;
+        return sep;
+    }
+
+    /// <summary>
     /// Mark this card as the "pressed" / active selection. Stays visually
     /// highlighted with the accent border until cleared. Screens use this for
     /// two-step flows (click to select, click Confirm to proceed).

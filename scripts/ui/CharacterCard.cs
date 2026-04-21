@@ -80,7 +80,7 @@ public partial class CharacterCard : Card
         levelLabel.MouseFilter = MouseFilterEnum.Ignore;
         Content.AddChild(levelLabel);
 
-        Content.AddChild(new HSeparator());
+        Content.AddChild(NonInteractiveSeparator());
 
         var statsGrid = new GridContainer();
         statsGrid.Columns = 4;
@@ -94,7 +94,7 @@ public partial class CharacterCard : Card
         AddStatRow(statsGrid, "INT", s.Int);
         Content.AddChild(statsGrid);
 
-        Content.AddChild(new HSeparator());
+        Content.AddChild(NonInteractiveSeparator());
 
         var hpMp = new Label { Text = $"HP: {s.Hp}/{s.MaxHp}   MP: {s.Mana}/{s.MaxMana}" };
         UiTheme.StyleLabel(hpMp, UiTheme.Colors.Ink, UiTheme.FontSizes.Small);

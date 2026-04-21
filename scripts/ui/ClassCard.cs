@@ -63,7 +63,7 @@ public partial class ClassCard : Card
         descLabel.MouseFilter = MouseFilterEnum.Ignore;
         Content.AddChild(descLabel);
 
-        Content.AddChild(new HSeparator());
+        Content.AddChild(NonInteractiveSeparator());
 
         var statsGrid = new GridContainer();
         statsGrid.Columns = 4;
@@ -77,7 +77,7 @@ public partial class ClassCard : Card
         AddStatRow(statsGrid, "INT", p.Int, p.Int >= 3);
         Content.AddChild(statsGrid);
 
-        Content.AddChild(new HSeparator());
+        Content.AddChild(NonInteractiveSeparator());
 
         var skillRow = new HBoxContainer();
         skillRow.AddThemeConstantOverride("separation", 8);
