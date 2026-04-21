@@ -343,6 +343,32 @@ Don't toggle the ruleset per PR — that's manual overhead. Just apply this filt
 - **Test-driven** — Tests are written before implementation. Manual test cases first, then automated tests (GdUnit4 + xUnit), then code.
 - **AI-coded** — All code is written by AI assistants. The user directs and reviews.
 - **Free assets only** — No paid assets. Polygon2D placeholders, then free/open-source packs.
+- **Dumb UI, smart BE.** UI components are presentational — they take neutral-DTO data in and emit events out. Screens / smart containers do the thinking, shape data, and handle events. Full model in [§3a](#3a-ui-component-model-dumb-ui-smart-be).
+
+### 3a. UI Component Model (Dumb UI, Smart BE)
+
+**Canonical doc:** [docs/conventions/ui-component-model.md](docs/conventions/ui-component-model.md). **Read that file in full** the first time you touch UI code in a session; this section is the index.
+
+The paradigm in one sentence: **UI components render; screens think.** Components take data via constructor/factory ("props"), render, emit events (Godot signals or injected callbacks). They know nothing about save systems, game state, navigation, or where their data came from. Screens/orchestrators own that knowledge — they fetch data, adapt it to the neutral shapes components expect, mount the components, handle the events.
+
+**Core rules** (see doc for the full treatment):
+
+1. **Props down, events up.** Data flows in through the factory; events flow out through signals/callbacks. A dumb component never reaches up, sideways, or into globals.
+2. **Neutral DTOs at the seam.** Components take neutral data shapes (e.g., `CharacterSummary`), not source-specific types (e.g., `SaveData`). The screen adapts its source into the neutral shape before handing it over.
+3. **Single responsibility.** `Card` draws a frame. `CharacterCard` renders a character summary inside that frame. `LoadGameScreen` orchestrates loading. Each does one thing.
+4. **Composition.** Bigger components compose smaller ones. Subclass a small base (`Card`), nest primitives — don't build god-components.
+5. **Pure render.** Same props → same pixels. No hidden reads from `GameState.Instance` or autoloads during render.
+6. **Reusability is the proof.** If a component can drop into a new context with only a data-adapter change, it's built right.
+
+**Systems & unifying** (the meta-principle):
+
+- The game is **systems composed in different configurations**, not screens built from scratch. Existing systems: theme, save, input, window/modal stack, card system (this), spec-driven dev. Before writing new UI, ask *"is there a system for this?"* If yes, use it. If it doesn't quite fit, extend it. Never duplicate.
+- **Same behavior → same mechanism.** Divergence is the enemy. Single source of truth for every visual/interaction contract — a change happens in ONE place and every user of that mechanism updates.
+- **Pre-coding reflex checklist**: is there a system for this? am I about to duplicate something? am I about to write something that'll need to be duplicated? is this doing more than one job? does this component know about things it shouldn't? If any answer surprises you, stop and redesign.
+
+**Anti-patterns** to watch for: per-screen one-off styleboxes, dumb components reading from globals, screens that know about styleboxes, components taking source-specific data types at their seam, "customize first, unify later."
+
+**When not to apply:** non-UI code (game logic, save system, RNG, AI) is data-and-logic, not view. One-off debug UI (`DebugConsole`, `DebugPanel`) and truly singleton views (HUD) can opt out with rationale, but default is to apply.
 
 ### 4. C# Conventions
 

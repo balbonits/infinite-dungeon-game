@@ -429,6 +429,14 @@ public static class ItemDatabase
             "STR", "DEX", "STA", "INT",
             "Crit chance", "Attack speed", "Dodge chance", "Block chance"
         };
+        // Combat-ring focus maps: f=4..7 → Crit/Haste/Dodge/Block per
+        // COMBAT-01 §7. Tier × per-tier% computation happens at read-time
+        // in EquipmentSet.GetCombatStats; this table just tags the base
+        // item identity.
+        RingFocus[] combatFocus = {
+            RingFocus.None, RingFocus.None, RingFocus.None, RingFocus.None,
+            RingFocus.Crit, RingFocus.Haste, RingFocus.Dodge, RingFocus.Block,
+        };
         for (int t = 1; t <= 5; t++)
         {
             for (int f = 0; f < 8; f++)
@@ -451,8 +459,7 @@ public static class ItemDatabase
                     BonusDex = f == 1 ? t : 0,
                     BonusSta = f == 2 ? t : 0,
                     BonusInt = f == 3 ? t : 0,
-                    // Combat focuses (crit/haste/dodge/block) currently carry no ItemDef
-                    // hook — they'll land with COMBAT-01 spec. Stats are 0 for now.
+                    RingFocus = combatFocus[f],
                 };
                 Register(def);
             }
