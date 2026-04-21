@@ -76,7 +76,7 @@ public partial class ClassSelect : Control
         _confirmButton.Pressed += OnConfirmPressed;
         mainVbox.AddChild(_confirmButton);
 
-        _backButton = new Button { Text = "Back to Main Menu" };
+        _backButton = new Button { Text = Strings.Ui.BackToMainMenu };
         _backButton.CustomMinimumSize = new Vector2(200, 48);
         _backButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleSecondaryButton(_backButton, UiTheme.FontSizes.Heading);

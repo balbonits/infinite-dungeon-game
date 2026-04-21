@@ -24,6 +24,9 @@ public static class Strings
         public const string ConfirmSelection = "Confirm";
         public const string ClickToSelect = "Click to select";
         public const string Cancel = "Cancel";
+        public const string BackToMainMenu = "Back to Main Menu";
+        public const string EmptySlot = "Empty Slot";
+        public static string SlotLabel(int oneBasedIndex) => $"Slot {oneBasedIndex}";
     }
 
     // --- Floor Wipe ---

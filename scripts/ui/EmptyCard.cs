@@ -25,13 +25,13 @@ public partial class EmptyCard : Card
         spacerTop.MouseFilter = MouseFilterEnum.Ignore;
         Content.AddChild(spacerTop);
 
-        var label = new Label { Text = "Empty Slot" };
+        var label = new Label { Text = Strings.Ui.EmptySlot };
         UiTheme.StyleLabel(label, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         label.MouseFilter = MouseFilterEnum.Ignore;
         Content.AddChild(label);
 
-        var sublabel = new Label { Text = $"Slot {slotIndex + 1}" };
+        var sublabel = new Label { Text = Strings.Ui.SlotLabel(slotIndex + 1) };
         UiTheme.StyleLabel(sublabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
         sublabel.HorizontalAlignment = HorizontalAlignment.Center;
         sublabel.MouseFilter = MouseFilterEnum.Ignore;
