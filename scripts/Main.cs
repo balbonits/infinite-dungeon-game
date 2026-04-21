@@ -30,7 +30,6 @@ public partial class Main : Node
         // modal trapping focus. Copilot PR #33 round-7 finding.
         Ui.WindowStack.Clear();
 
-        // Apply global theme to all UI — set on each root Control so it cascades
         var globalTheme = Ui.GlobalTheme.Create();
         var uiLayer = GetNode<CanvasLayer>("UILayer");
         foreach (Node child in uiLayer.GetChildren())
@@ -125,6 +124,11 @@ public partial class Main : Node
     {
         _classSelect = new Ui.ClassSelect();
         _classSelect.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        // Godot's Theme inheritance does not cross CanvasLayer → Control
+        // boundaries, so Control nodes added dynamically under UILayer need
+        // an explicit Theme assignment or they fall back to the engine
+        // default font (breaks the PS2P visual contract per SPEC-UI-FONT-01).
+        _classSelect.Theme = Ui.GlobalTheme.Create();
         GetNode<CanvasLayer>("UILayer").AddChild(_classSelect);
         GetTree().Paused = true;
     }

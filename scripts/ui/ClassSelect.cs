@@ -5,22 +5,14 @@ using DungeonGame.Autoloads;
 namespace DungeonGame.Ui;
 
 /// <summary>
-/// Class selection screen. Two-step: click card to highlight, click Confirm to proceed.
+/// Class selection screen. Keyboard nav is handled at the screen level in
+/// <see cref="_Input"/> because <see cref="Card"/>'s FocusMode=All lets
+/// Godot's GUI focus system intercept arrow keys before _UnhandledInput
+/// can see them — _Input runs first in the pipeline.
 /// </summary>
 public partial class ClassSelect : Control
 {
-    private record ClassData(
-        PlayerClass PlayerClass,
-        string Name,
-        string Description,
-        int Str, int Dex, int Sta, int Int,
-        string SkillName,
-        string SkillType,
-        Color SkillColor,
-        string SkillIconPath
-    );
-
-    private static readonly ClassData[] Classes =
+    private static readonly ClassPreview[] Previews =
     {
         new(PlayerClass.Warrior, Strings.Classes.Warrior, Strings.Classes.WarriorDescription,
             3, 0, 2, 0, Strings.Classes.SkillSlash, Strings.Classes.SkillSlashType,
@@ -33,40 +25,19 @@ public partial class ClassSelect : Control
             new Color("4AE8E8"), "res://assets/icons/skill_magic_bolt.png"),
     };
 
-    private PanelContainer? _selectedCard;
+    private ClassCard? _selectedCard;
     private PlayerClass _selectedClass;
     private Button _confirmButton = null!;
     private Button _backButton = null!;
     private int _focusIndex = -1;
     private int _focusZone; // 0 = cards, 1 = confirm, 2 = back
-    private readonly List<PanelContainer> _cards = new();
-
-    private static readonly StyleBoxFlat DefaultCardStyle = CreateCardStyle(false, false);
-    private static readonly StyleBoxFlat HoverCardStyle = CreateCardStyle(true, false);
-    private static readonly StyleBoxFlat SelectedCardStyle = CreateCardStyle(false, true);
-
-    private static StyleBoxFlat CreateCardStyle(bool hovered, bool selected)
-    {
-        var style = new StyleBoxFlat();
-        style.BgColor = selected
-            ? new Color(UiTheme.Colors.BgPanel, 0.95f)
-            : new Color(UiTheme.Colors.BgPanel, hovered ? 0.92f : 0.85f);
-        style.BorderColor = selected
-            ? UiTheme.Colors.Accent
-            : hovered ? UiTheme.Colors.PanelBorderBright : UiTheme.Colors.PanelBorder;
-        // Fixed border width prevents layout shift on state change
-        style.SetBorderWidthAll(2);
-        style.SetCornerRadiusAll(8);
-        style.SetContentMarginAll(20);
-        return style;
-    }
+    private readonly List<ClassCard> _cards = new();
 
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
 
-        var overlay = new ColorRect();
-        overlay.Color = UiTheme.Colors.BgDark;
+        var overlay = new ColorRect { Color = UiTheme.Colors.BgDark };
         overlay.SetAnchorsPreset(LayoutPreset.FullRect);
         AddChild(overlay);
 
@@ -78,260 +49,45 @@ public partial class ClassSelect : Control
         mainVbox.AddThemeConstantOverride("separation", 24);
         center.AddChild(mainVbox);
 
-        // Title
-        var title = new Label();
-        title.Text = Strings.Ui.ChooseClass;
+        var title = new Label { Text = Strings.Ui.ChooseClass };
         UiTheme.StyleLabel(title, UiTheme.Colors.Accent, UiTheme.FontSizes.Title);
         title.HorizontalAlignment = HorizontalAlignment.Center;
         mainVbox.AddChild(title);
 
-        // Class cards row
         var cardRow = new HBoxContainer();
         cardRow.AddThemeConstantOverride("separation", 24);
         cardRow.Alignment = BoxContainer.AlignmentMode.Center;
         mainVbox.AddChild(cardRow);
 
-        foreach (var data in Classes)
+        for (int i = 0; i < Previews.Length; i++)
         {
-            var card = CreateClassCard(data);
+            int capturedIndex = i;
+            var preview = Previews[i];
+            var card = ClassCard.Create(preview, () => OnCardActivated(capturedIndex));
             _cards.Add(card);
             cardRow.AddChild(card);
         }
 
-        // Confirm button
-        _confirmButton = new Button();
-        _confirmButton.Text = Strings.Ui.ConfirmSelection;
+        _confirmButton = new Button { Text = Strings.Ui.ConfirmSelection };
         _confirmButton.CustomMinimumSize = new Vector2(200, 48);
         _confirmButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
         UiTheme.StyleButton(_confirmButton, UiTheme.FontSizes.Heading);
         _confirmButton.Disabled = true;
-        _confirmButton.Connect(BaseButton.SignalName.Pressed,
-            Callable.From(OnConfirmPressed));
+        _confirmButton.Pressed += OnConfirmPressed;
         mainVbox.AddChild(_confirmButton);
 
-        // Back button
-        _backButton = new Button();
-        var backBtn = _backButton;
-        backBtn.Text = "Back to Main Menu";
-        backBtn.CustomMinimumSize = new Vector2(200, 48);
-        backBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        backBtn.FocusMode = FocusModeEnum.All;
-        UiTheme.StyleSecondaryButton(backBtn, UiTheme.FontSizes.Heading);
-        backBtn.Connect(BaseButton.SignalName.Pressed, Callable.From(() =>
-        {
-            Visible = false;
-            QueueFree();
-            GetTree().Paused = true;
-            GetTree().ReloadCurrentScene();
-        }));
-        mainVbox.AddChild(backBtn);
+        _backButton = new Button { Text = "Back to Main Menu" };
+        _backButton.CustomMinimumSize = new Vector2(200, 48);
+        _backButton.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+        UiTheme.StyleSecondaryButton(_backButton, UiTheme.FontSizes.Heading);
+        _backButton.Pressed += OnBackPressed;
+        mainVbox.AddChild(_backButton);
     }
 
-    private PanelContainer CreateClassCard(ClassData data)
+    public override void _Input(InputEvent @event)
     {
-        var panel = new PanelContainer();
-        panel.AddThemeStyleboxOverride("panel", DefaultCardStyle);
-        panel.CustomMinimumSize = new Vector2(220, 340);
-        panel.MouseFilter = MouseFilterEnum.Stop;
+        if (!Visible || !IsInsideTree()) return;
 
-        panel.MouseEntered += () => OnCardHovered(panel);
-        panel.MouseExited += () => OnCardUnhovered(panel);
-        panel.GuiInput += (@event) =>
-        {
-            if (@event is InputEventMouseButton mouseEvent &&
-                mouseEvent.Pressed && mouseEvent.ButtonIndex == MouseButton.Left)
-                OnCardClicked(panel, data.PlayerClass);
-        };
-
-        var margin = new MarginContainer();
-        panel.AddChild(margin);
-
-        var vbox = new VBoxContainer();
-        vbox.AddThemeConstantOverride("separation", 8);
-        vbox.MouseFilter = MouseFilterEnum.Ignore;
-        vbox.SizeFlagsVertical = SizeFlags.ExpandFill;
-        margin.AddChild(vbox);
-
-        // --- Class name ---
-        var nameLabel = new Label();
-        nameLabel.Text = data.Name;
-        UiTheme.StyleLabel(nameLabel, UiTheme.Colors.Accent, UiTheme.FontSizes.Heading);
-        nameLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        nameLabel.MouseFilter = MouseFilterEnum.Ignore;
-        vbox.AddChild(nameLabel);
-
-        // --- Character sprite ---
-        // LPC sheets are multi-row animation atlases. Crop to south-facing
-        // walk frame 0 (standing pose) via LoadPortraitFrame — loading the
-        // full sheet would tile the entire animation grid into the card.
-        int classIndex = (int)data.PlayerClass;
-        if (classIndex < Constants.Assets.PlayerClassPreviews.Length)
-        {
-            var portrait = DirectionalSprite.LoadPortraitFrame(Constants.Assets.PlayerClassPreviews[classIndex]);
-            if (portrait != null)
-            {
-                var sprite = new TextureRect();
-                sprite.Texture = portrait;
-                sprite.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-                sprite.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-                sprite.CustomMinimumSize = new Vector2(92, 92);
-                sprite.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-                sprite.MouseFilter = MouseFilterEnum.Ignore;
-                vbox.AddChild(sprite);
-            }
-        }
-
-        // --- Description ---
-        var descLabel = new Label();
-        descLabel.Text = data.Description;
-        UiTheme.StyleLabel(descLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-        descLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        descLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        descLabel.MouseFilter = MouseFilterEnum.Ignore;
-        vbox.AddChild(descLabel);
-
-        // --- Separator ---
-        vbox.AddChild(new HSeparator());
-
-        // --- Stats grid (4 columns: label, value) ---
-        var statsGrid = new GridContainer();
-        statsGrid.Columns = 4;
-        statsGrid.AddThemeConstantOverride("h_separation", 6);
-        statsGrid.AddThemeConstantOverride("v_separation", 4);
-        statsGrid.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        statsGrid.MouseFilter = MouseFilterEnum.Ignore;
-
-        AddStatRow(statsGrid, "STR", data.Str, data.Str >= 3);
-        AddStatRow(statsGrid, "DEX", data.Dex, data.Dex >= 3);
-        AddStatRow(statsGrid, "STA", data.Sta, data.Sta >= 3);
-        AddStatRow(statsGrid, "INT", data.Int, data.Int >= 3);
-        vbox.AddChild(statsGrid);
-
-        // --- Separator ---
-        vbox.AddChild(new HSeparator());
-
-        // --- Skill section ---
-        var skillRow = new HBoxContainer();
-        skillRow.AddThemeConstantOverride("separation", 8);
-        skillRow.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-        skillRow.MouseFilter = MouseFilterEnum.Ignore;
-
-        // Skill icon (PixelLab art or colored placeholder)
-        var iconPanel = new PanelContainer();
-        var iconStyle = new StyleBoxFlat();
-        iconStyle.BgColor = new Color(data.SkillColor, 0.2f);
-        iconStyle.BorderColor = data.SkillColor;
-        iconStyle.SetBorderWidthAll(1);
-        iconStyle.SetCornerRadiusAll(4);
-        iconStyle.SetContentMarginAll(4);
-        iconPanel.AddThemeStyleboxOverride("panel", iconStyle);
-        iconPanel.CustomMinimumSize = new Vector2(36, 36);
-        iconPanel.MouseFilter = MouseFilterEnum.Ignore;
-
-        if (ResourceLoader.Exists(data.SkillIconPath))
-        {
-            var skillIcon = new TextureRect();
-            skillIcon.Texture = GD.Load<Texture2D>(data.SkillIconPath);
-            skillIcon.TextureFilter = CanvasItem.TextureFilterEnum.Nearest;
-            skillIcon.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-            skillIcon.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
-            skillIcon.MouseFilter = MouseFilterEnum.Ignore;
-            iconPanel.AddChild(skillIcon);
-        }
-
-        skillRow.AddChild(iconPanel);
-
-        // Skill name + type
-        var skillVbox = new VBoxContainer();
-        skillVbox.AddThemeConstantOverride("separation", 0);
-        skillVbox.MouseFilter = MouseFilterEnum.Ignore;
-
-        var skillNameLabel = new Label();
-        skillNameLabel.Text = data.SkillName;
-        UiTheme.StyleLabel(skillNameLabel, data.SkillColor, UiTheme.FontSizes.Body);
-        skillNameLabel.MouseFilter = MouseFilterEnum.Ignore;
-        skillVbox.AddChild(skillNameLabel);
-
-        var skillTypeLabel = new Label();
-        skillTypeLabel.Text = data.SkillType;
-        UiTheme.StyleLabel(skillTypeLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        skillTypeLabel.MouseFilter = MouseFilterEnum.Ignore;
-        skillVbox.AddChild(skillTypeLabel);
-
-        skillRow.AddChild(skillVbox);
-        vbox.AddChild(skillRow);
-
-        // --- Spacer ---
-        var spacer = new Control();
-        spacer.SizeFlagsVertical = SizeFlags.ExpandFill;
-        spacer.MouseFilter = MouseFilterEnum.Ignore;
-        vbox.AddChild(spacer);
-
-        // --- Hint ---
-        var hintLabel = new Label();
-        hintLabel.Text = Strings.Ui.ClickToSelect;
-        UiTheme.StyleLabel(hintLabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-        hintLabel.HorizontalAlignment = HorizontalAlignment.Center;
-        hintLabel.MouseFilter = MouseFilterEnum.Ignore;
-        vbox.AddChild(hintLabel);
-
-        return panel;
-    }
-
-    private static void AddStatRow(GridContainer grid, string statName, int value, bool isPrimary)
-    {
-        var nameLabel = new Label();
-        nameLabel.Text = statName;
-        UiTheme.StyleLabel(nameLabel, isPrimary ? UiTheme.Colors.Accent : UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-        nameLabel.MouseFilter = MouseFilterEnum.Ignore;
-        grid.AddChild(nameLabel);
-
-        var valueLabel = new Label();
-        valueLabel.Text = $"+{value}";
-        Color valueColor = value == 0
-            ? new Color(UiTheme.Colors.Muted, 0.4f)
-            : isPrimary ? UiTheme.Colors.Accent : UiTheme.Colors.Ink;
-        UiTheme.StyleLabel(valueLabel, valueColor, UiTheme.FontSizes.Body);
-        valueLabel.MouseFilter = MouseFilterEnum.Ignore;
-        grid.AddChild(valueLabel);
-    }
-
-    private void OnCardHovered(PanelContainer card)
-    {
-        if (card != _selectedCard)
-            card.AddThemeStyleboxOverride("panel", HoverCardStyle);
-    }
-
-    private void OnCardUnhovered(PanelContainer card)
-    {
-        if (card != _selectedCard)
-            card.AddThemeStyleboxOverride("panel", DefaultCardStyle);
-    }
-
-    private void OnCardClicked(PanelContainer card, PlayerClass playerClass)
-    {
-        if (_selectedCard != null)
-            _selectedCard.AddThemeStyleboxOverride("panel", DefaultCardStyle);
-
-        _selectedCard = card;
-        _selectedClass = playerClass;
-        card.AddThemeStyleboxOverride("panel", SelectedCardStyle);
-
-        // Enable confirm button (no layout-affecting animation)
-        _confirmButton.Disabled = false;
-    }
-
-    public override void _UnhandledInput(InputEvent @event)
-    {
-        // Skip input handling when the screen is invisible OR no longer in
-        // the tree (QueueFree-d mid-transition). Without the tree guard,
-        // GetViewport()?.SetInputAsHandled() calls below would NRE when
-        // Input.ParseInputEvent fires after OnConfirmPressed triggers
-        // Visible = false + QueueFree.
-        if (!Visible || !IsInsideTree())
-            return;
-
-        // Left/Right — navigate within cards (zone 0)
         if (@event.IsActionPressed(Constants.InputActions.MoveLeft))
         {
             _focusZone = 0;
@@ -346,8 +102,6 @@ public partial class ClassSelect : Control
             GetViewport()?.SetInputAsHandled();
             return;
         }
-
-        // Down — move to next zone (cards → confirm → back)
         if (@event.IsActionPressed(Constants.InputActions.MoveDown))
         {
             _focusZone = System.Math.Min(_focusZone + 1, 2);
@@ -355,8 +109,6 @@ public partial class ClassSelect : Control
             GetViewport()?.SetInputAsHandled();
             return;
         }
-
-        // Up — move to previous zone (back → confirm → cards)
         if (@event.IsActionPressed(Constants.InputActions.MoveUp))
         {
             _focusZone = System.Math.Max(_focusZone - 1, 0);
@@ -365,81 +117,80 @@ public partial class ClassSelect : Control
             return;
         }
 
-        // Confirm
-        if (@event.IsActionPressed(Constants.InputActions.ActionCross) ||
-            (@event is InputEventKey key && key.Pressed &&
-             (key.Keycode == Key.Enter || key.Keycode == Key.Space)))
+        // S (action_cross) activates the focused zone's button. Godot's Button
+        // fires Pressed on ui_accept (Enter/Space) natively, but not on
+        // action_cross — without this shortcut, S-key confirm becomes a no-op.
+        if (@event.IsActionPressed(Constants.InputActions.ActionCross))
         {
             if (_focusZone == 2)
-            {
                 _backButton.EmitSignal(BaseButton.SignalName.Pressed);
-            }
             else if (_focusZone == 1 && _selectedCard != null)
-            {
                 OnConfirmPressed();
-            }
-            else if (_focusZone == 0 && _focusIndex >= 0)
-            {
-                OnCardClicked(_cards[_focusIndex], Classes[_focusIndex].PlayerClass);
-            }
             GetViewport()?.SetInputAsHandled();
             return;
         }
 
-        // Cancel — back to main menu
         if (KeyboardNav.IsCancelPressed(@event))
         {
-            _backButton?.EmitSignal(BaseButton.SignalName.Pressed);
+            OnBackPressed();
             GetViewport()?.SetInputAsHandled();
-        }
-    }
-
-    private void UpdateZoneFocus()
-    {
-        // Remove button focus highlights
-        _confirmButton.ReleaseFocus();
-        _backButton.ReleaseFocus();
-
-        switch (_focusZone)
-        {
-            case 0: // Cards
-                if (_focusIndex < 0 && _cards.Count > 0)
-                {
-                    _focusIndex = 0;
-                    _cards[0].AddThemeStyleboxOverride("panel", HoverCardStyle);
-                }
-                break;
-            case 1: // Confirm
-                _confirmButton.GrabFocus();
-                break;
-            case 2: // Back
-                _backButton.GrabFocus();
-                break;
         }
     }
 
     private void MoveFocus(int direction)
     {
-        if (_cards.Count == 0)
-            return;
+        if (_cards.Count == 0) return;
 
-        // Unhover previous
-        if (_focusIndex >= 0 && _cards[_focusIndex] != _selectedCard)
-            _cards[_focusIndex].AddThemeStyleboxOverride("panel", DefaultCardStyle);
-
-        // Move
         if (_focusIndex < 0)
             _focusIndex = direction > 0 ? 0 : _cards.Count - 1;
         else
             _focusIndex = (_focusIndex + direction + _cards.Count) % _cards.Count;
 
-        // Apply hover or select the focused card
-        var card = _cards[_focusIndex];
-        if (card != _selectedCard)
-            card.AddThemeStyleboxOverride("panel", HoverCardStyle);
+        _cards[_focusIndex].GrabFocus();
+        OnCardActivated(_focusIndex);
+    }
 
-        // Auto-select on focus for immediate feedback
-        OnCardClicked(card, Classes[_focusIndex].PlayerClass);
+    private void UpdateZoneFocus()
+    {
+        // CallDeferred because calling GrabFocus from inside _Input runs while
+        // Godot is still dispatching the triggering key event — the focus
+        // change gets discarded and reported as "nothing focused" on the next
+        // frame. Deferring to idle lets the change land cleanly.
+        switch (_focusZone)
+        {
+            case 0:
+                if (_focusIndex < 0 && _cards.Count > 0) _focusIndex = 0;
+                if (_focusIndex >= 0) _cards[_focusIndex].CallDeferred(Control.MethodName.GrabFocus);
+                break;
+            case 1:
+                _confirmButton.CallDeferred(Control.MethodName.GrabFocus);
+                break;
+            case 2:
+                _backButton.CallDeferred(Control.MethodName.GrabFocus);
+                break;
+        }
+    }
+
+    private void OnCardActivated(int index)
+    {
+        var card = _cards[index];
+        var preview = Previews[index];
+
+        if (_selectedCard != null && _selectedCard != card)
+            _selectedCard.SetPressed(false);
+
+        _selectedCard = card;
+        _selectedClass = preview.Class;
+        card.SetPressed(true);
+        _confirmButton.Disabled = false;
+    }
+
+    private void OnBackPressed()
+    {
+        Visible = false;
+        QueueFree();
+        GetTree().Paused = true;
+        GetTree().ReloadCurrentScene();
     }
 
     private void OnConfirmPressed()
@@ -450,9 +201,6 @@ public partial class ClassSelect : Control
         GameState.Instance.SelectedClass = _selectedClass;
         GameState.Instance.Reset();
 
-        // Let ScreenTransition cover ClassSelect with the fade-to-black.
-        // At midpoint (overlay fully opaque), hide ClassSelect and swap in the town.
-        // This prevents the town from flashing into view before the loading screen.
         ScreenTransition.Instance.Play(
             Strings.Town.Title,
             () =>

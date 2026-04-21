@@ -159,7 +159,7 @@ public static class UiTheme
         button.AddThemeFontSizeOverride("font_size", fontSize);
         button.AddThemeStyleboxOverride("normal", CreateColoredButtonStyle(Colors.Danger, false));
         button.AddThemeStyleboxOverride("hover", CreateColoredButtonStyle(Colors.Danger, true));
-        button.AddThemeStyleboxOverride("focus", CreateColoredButtonStyle(Colors.Danger, true));
+        button.AddThemeStyleboxOverride("focus", CreateButtonFocusStyle(new Color(Colors.Danger, 0.9f)));
         button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
         button.FocusMode = Control.FocusModeEnum.All;
     }
@@ -173,7 +173,7 @@ public static class UiTheme
         button.AddThemeFontSizeOverride("font_size", fontSize);
         button.AddThemeStyleboxOverride("normal", CreateColoredButtonStyle(Colors.Muted, false));
         button.AddThemeStyleboxOverride("hover", CreateColoredButtonStyle(Colors.Muted, true));
-        button.AddThemeStyleboxOverride("focus", CreateColoredButtonStyle(Colors.Muted, true));
+        button.AddThemeStyleboxOverride("focus", CreateButtonFocusStyle(new Color(Colors.Muted, 0.9f)));
         button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
         button.FocusMode = Control.FocusModeEnum.All;
     }
@@ -227,11 +227,16 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Creates a StyleBoxFlat for focused buttons — gold border on blue bg for high contrast.</summary>
-    public static StyleBoxFlat CreateButtonFocusStyle()
+    /// <summary>
+    /// Creates a StyleBoxFlat for focused buttons — gold border on the supplied
+    /// bg color. The canonical focus indicator is the gold border itself; the
+    /// base bg stays whatever color the button variant uses so Secondary (grey)
+    /// and Danger (red) buttons don't flip to blue on focus.
+    /// </summary>
+    public static StyleBoxFlat CreateButtonFocusStyle(Color? bgColor = null)
     {
         var style = new StyleBoxFlat();
-        style.BgColor = Colors.ActionHover;
+        style.BgColor = bgColor ?? Colors.ActionHover;
         style.BorderColor = Colors.Accent;
         style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(6);
@@ -335,6 +340,15 @@ public static class UiTheme
     private static Theme BuildGameTheme()
     {
         var theme = new Theme();
+
+        // SPEC-UI-FONT-01: every Theme in the codebase must register PS2P as
+        // DefaultFont. GameWindow.Overlay assigns this theme on its branch,
+        // which *overrides* the SceneTree-root GlobalTheme for everything
+        // under the overlay — so if we omit DefaultFont here, HUD + in-game
+        // popups fall back to Godot's built-in proportional font and break
+        // the visual contract.
+        theme.DefaultFont = FontFamily;
+        theme.DefaultFontSize = FontSizes.Body;
 
         // --- Button (primary/action — blue bg, dark text) ---
         theme.SetStylebox("normal", "Button", CreateButtonStyle(false));

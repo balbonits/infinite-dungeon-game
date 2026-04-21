@@ -41,10 +41,9 @@ public partial class LoadGameScreen : Control
     {
         public int Index;
         public bool IsPopulated;
-        public Control Root = null!;          // Teardown target (the parent this slot adds to the row).
-        public Control Focusable = null!;     // The control that receives GrabFocus() — must have FocusMode != None.
-        public CharacterCard? Card;           // Populated slot — the character card.
-        public Button? DeleteBtn;             // Red X, only on populated.
+        public Control Root = null!;
+        public Control Focusable = null!;
+        public Button? DeleteBtn;
     }
 
     public override void _Ready()
@@ -132,14 +131,16 @@ public partial class LoadGameScreen : Control
 
         if (save != null)
         {
-            var card = CharacterCard.Create(save, () => EmitSignal(SignalName.LoadSelected, index));
+            var card = CharacterCard.Create(
+                CharacterCard.FromSaveData(save),
+                () => EmitSignal(SignalName.LoadSelected, index));
             card.FocusEntered += () => { _focusedSlot = index; RefreshLoadEnabled(); };
-            card.SizeFlagsVertical = SizeFlags.ShrinkBegin;
-            entry.Card = card;
 
-            // Wrap card in a container that positions the delete X over its top-right.
+            // Wrap card so the delete X can overlay its top-right corner.
+            // Wrapper matches Card.DefaultSize so populated and empty slots
+            // take the same footprint in the HBox row.
             var wrapper = new Control();
-            wrapper.CustomMinimumSize = new Vector2(240, 280);
+            wrapper.CustomMinimumSize = Card.DefaultSize;
             wrapper.SizeFlagsVertical = SizeFlags.ShrinkBegin;
 
             card.SetAnchorsPreset(LayoutPreset.FullRect);
@@ -148,9 +149,7 @@ public partial class LoadGameScreen : Control
             var deleteBtn = new Button { Text = "X" };
             deleteBtn.CustomMinimumSize = new Vector2(32, 32);
             deleteBtn.FocusMode = FocusModeEnum.All;
-            deleteBtn.AddThemeColorOverride("font_color", Colors.White);
             UiTheme.StyleDangerButton(deleteBtn, UiTheme.FontSizes.Small);
-            // Position the X at the top-right corner (inside the card border).
             deleteBtn.OffsetLeft = -40;
             deleteBtn.OffsetTop = 4;
             deleteBtn.SetAnchor(Side.Left, 1.0f);
@@ -162,33 +161,13 @@ public partial class LoadGameScreen : Control
             wrapper.AddChild(deleteBtn);
 
             entry.Root = wrapper;
-            entry.Focusable = card; // CharacterCard has FocusMode=All; wrapper is a plain Control (unfocusable).
+            entry.Focusable = card;
             parent.AddChild(wrapper);
         }
         else
         {
-            var empty = new PanelContainer();
-            empty.CustomMinimumSize = new Vector2(240, 280);
-            empty.SizeFlagsVertical = SizeFlags.ShrinkBegin;
-            empty.FocusMode = FocusModeEnum.All;
-            empty.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.4f, false));
+            var empty = EmptyCard.Create(index, () => { });
             empty.FocusEntered += () => { _focusedSlot = index; RefreshLoadEnabled(); };
-
-            var vbox = new VBoxContainer();
-            vbox.Alignment = BoxContainer.AlignmentMode.Center;
-            vbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            vbox.SizeFlagsVertical = SizeFlags.ExpandFill;
-            empty.AddChild(vbox);
-
-            var label = new Label { Text = "Empty Slot" };
-            UiTheme.StyleLabel(label, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-            label.HorizontalAlignment = HorizontalAlignment.Center;
-            vbox.AddChild(label);
-
-            var sublabel = new Label { Text = $"Slot {index + 1}" };
-            UiTheme.StyleLabel(sublabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            sublabel.HorizontalAlignment = HorizontalAlignment.Center;
-            vbox.AddChild(sublabel);
 
             entry.Root = empty;
             entry.Focusable = empty;

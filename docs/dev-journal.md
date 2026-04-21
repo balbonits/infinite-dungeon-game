@@ -4,6 +4,47 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-21 — Card system impl (the paradigm from PR #56 becomes code)
+
+Direct follow-up to the previous day's paradigm-lock. The Dumb UI / Smart BE doc landed on main via PR #56. This session picked up the code side of the same work and shipped it on top of the still-open font PR (#53, per the PO's "add these to the current PR, I'm sick of fixing the same shape of bug twice" directive).
+
+**What shipped:**
+
+1. **`Card.cs`** — rewritten from the mid-session stub into a proper inheritance base. PanelContainer subclass with `[Signal] Selected`, `protected VBoxContainer Content` for subclasses to populate, state styleboxes (Normal / Highlighted / Pressed), keyboard + mouse activation, and a `SetPressed(bool)` method for screens that want a two-step "click to select → click confirm" flow.
+2. **`CharacterSummary`** — neutral DTO (record struct) at the component seam. `CharacterCard.FromSaveData(SaveData)` is the sole adapter today; future callers (Hall of Fame, post-death recap, Load Game preview in pause menu) build their own `CharacterSummary` without touching the card.
+3. **`CharacterCard : Card`** — refactor. Takes `CharacterSummary`, not `SaveData`. Factory pattern `Create(summary, onSelected)`. Populates content only; framing and activation come from the base.
+4. **`EmptyCard : Card`** — new. Placeholder for unfilled save slots. Same footprint as `CharacterCard` so LoadGameScreen's three-slot row stays visually uniform regardless of which are populated (the `#11` overlap bug the PO caught in visual review).
+5. **`ClassCard : Card` + `ClassPreview` DTO** — new. Card-form class preview for ClassSelect. The ~170 lines of inline-stylebox/hover/click plumbing the old ClassSelect had for its 3 cards collapses into this one subclass + a tiny `ClassPreview[]` array in the screen.
+6. **`LoadGameScreen` refactor** — drops the custom-sized wrapper hack that used to size empty slots differently from populated ones. Both branches now produce a `Card` of identical dimensions. Delete-X button overlay still uses a positioning wrapper that matches `Card.DefaultSize`.
+7. **`ClassSelect` refactor** — drops `CreateClassCard`, the three `CreateCardStyle` variants, `OnCardHovered` / `OnCardUnhovered` / `OnCardClicked` visual plumbing. Keeps the keyboard zone-state machine (0=cards, 1=confirm, 2=back) because that's screen-orchestration logic, not visual logic. Net: ~322 lines deleted from ClassSelect.
+8. **Theme cascade fix** — `Main.ShowClassSelection` now assigns `GlobalTheme.Create()` to the ClassSelect control, mirroring what `ShowLoadGameScreen` already did. Fixes the `#13` visual-review finding where ClassSelect fonts fell back to Godot's default instead of PS2P. Root cause: Godot's theme inheritance doesn't cross `CanvasLayer → Control` boundaries, and ClassSelect is added dynamically under UILayer.
+
+**Net diff:** ~300 lines removed, ~200 added. Negative LOC is the proof: consolidation was real, not cosmetic.
+
+**Bugs caught during UI-test validation (this is why we run windowed, not headless-only):**
+
+- **Card ctor called `GetGlobalMousePosition()` before the node had a viewport.** Showed up as `ERROR: Parameter "get_viewport()" is null` warnings in the log during ClassSelect init. Non-fatal but noisy + technically wrong. Fix: `IsInsideTree()` guard around the mouse-inside check in `ApplyStyle`.
+- **Card's `FocusMode=All` stole arrow-key events from the screen's `_UnhandledInput` handler.** When Godot's GUI focus system gets the event first (because the focused Control has FocusMode=All and nav-actions are registered), `_UnhandledInput` never fires. ClassSelect's entire zone-state machine stopped working. Fix: move the nav handler from `_UnhandledInput` to `_Input`, which runs before the GUI focus system. This is a pattern other screens in the codebase (notably LoadGameScreen) likely have the same latent issue with — noted for follow-up but not touched this session since existing tests don't catch it.
+- **`GrabFocus()` called synchronously from an `_Input` handler drops the focus change.** Godot is still mid-dispatch on the triggering key event; the focus update gets discarded. Fix: `CallDeferred(Control.MethodName.GrabFocus)`.
+- **S-key (action_cross) didn't activate focused buttons.** Godot Button handles ui_accept (Enter/Space) natively but not action_cross. Needs explicit `if IsActionPressed(ActionCross) → button.EmitSignal(Pressed)` at the screen level. (This is also how the original ClassSelect did it — I'd dropped it during the rewrite before adding it back.)
+
+**Test verification (windowed, per the non-negotiable):**
+
+- Unit + integration (xUnit): 637/637 pass.
+- `make test-ui-suite SUITE=ClassSelectTests`: 41/41 assertions pass (was 0/40 before the `_Input` + CallDeferred + ActionCross fixes).
+- Full UI suite (`make test-ui`): running at time of this entry; will update.
+
+**Deferred / open threads:**
+
+- LoadGameScreen likely has the same `_UnhandledInput` vs Card.FocusMode=All issue for arrow-key nav between slots. Existing UI tests don't catch it because they don't exercise that keyboard path. When a test lands that does, fix will mirror the ClassSelect pattern (`_UnhandledInput` → `_Input` for nav handlers).
+- Screenshot baselines for LoadGameScreen + ClassSelect will need re-seeding once a PO visual review signs off on the new Card-based visuals. The current baselines were captured before this refactor, so at runtime they'll either pass (if within tolerance) or flag MISMATCH for reviewer attention.
+
+**What this unblocks:**
+
+PR #53 can merge once the full UI suite passes and PO signs off on the new visual. After that, the Card paradigm is available for the next wave of UI work (Hall of Fame, pause-menu character preview, etc) without re-deriving the pattern.
+
+---
+
 ## 2026-04-20 — Paradigm lock: Dumb UI, Smart BE (the card-system redesign that changed how every future UI screen will be built)
 
 During the visual-verification pass on the Press Start 2P font PR (#53), the PO walked through the UI screen-by-screen. On Load Game vs New Game (Class Select), two things that should have looked identical looked different — different card framing, different font rendering, different focus visuals. My first instinct was to go patch each screen individually. The PO stopped me and redirected:
