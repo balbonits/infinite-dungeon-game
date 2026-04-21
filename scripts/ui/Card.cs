@@ -4,7 +4,7 @@ namespace DungeonGame.Ui;
 
 /// <summary>
 /// Base selectable-card component (docs/conventions/ui-component-model.md).
-/// Owns framing, state styleboxes (Normal/Highlighted/Selected), focus visuals,
+/// Owns framing, state styleboxes (Normal/Highlighted/Pressed), focus visuals,
 /// and keyboard+mouse activation. Subclasses populate <see cref="Content"/> with
 /// their own children via their constructor and leave everything else alone.
 /// </summary>
