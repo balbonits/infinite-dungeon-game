@@ -190,13 +190,13 @@ public partial class LoadGameScreen : Control
             if (_slots[i].IsPopulated)
             {
                 _focusedSlot = i;
-                _slots[i].Focusable.GrabFocus();
+                _slots[i].Focusable.CallDeferred(Control.MethodName.GrabFocus);
                 RefreshLoadEnabled();
                 return;
             }
         }
         _focusedSlot = -1;
-        _backBtn.GrabFocus();
+        _backBtn.CallDeferred(Control.MethodName.GrabFocus);
         RefreshLoadEnabled();
     }
 
@@ -204,21 +204,20 @@ public partial class LoadGameScreen : Control
     {
         if (_focusedSlot < 0)
         {
-            // Coming up from the buttons zone. Focus any slot; prefer the first populated.
             FocusFirstAvailable();
             return;
         }
         int next = (_focusedSlot + direction + _slots.Length) % _slots.Length;
         _focusedSlot = next;
-        _slots[next].Focusable.GrabFocus();
+        _slots[next].Focusable.CallDeferred(Control.MethodName.GrabFocus);
         RefreshLoadEnabled();
     }
 
     private void MoveToButtonZone()
     {
         _focusedSlot = -1;
-        if (_buttonZone == 0) _loadBtn.GrabFocus();
-        else _backBtn.GrabFocus();
+        if (_buttonZone == 0) _loadBtn.CallDeferred(Control.MethodName.GrabFocus);
+        else _backBtn.CallDeferred(Control.MethodName.GrabFocus);
         RefreshLoadEnabled();
     }
 
@@ -279,37 +278,45 @@ public partial class LoadGameScreen : Control
             }
         }
 
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
+            GetViewport().SetInputAsHandled();
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        // Arrow-key nav must run in _Input, not _UnhandledInput: Godot's GUI
+        // focus system intercepts ui_left/right/up/down for focus navigation
+        // when a FocusMode=All Control (our Cards) is focused, so it would
+        // eat these events before _UnhandledInput could see them. Same fix
+        // ClassSelect needed after the Card refactor.
+        if (!_ready || !Visible || !IsInsideTree()) return;
+
         if (@event.IsActionPressed("ui_left"))
         {
-            // From buttons zone: prefer first populated slot (don't land on empty slot 0).
             if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(-1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
         if (@event.IsActionPressed("ui_right"))
         {
             if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
         if (@event.IsActionPressed("ui_down"))
         {
             if (_focusedSlot >= 0) { _buttonZone = 0; MoveToButtonZone(); }
-            else if (_loadBtn.HasFocus()) { _buttonZone = 1; _backBtn.GrabFocus(); }
-            GetViewport().SetInputAsHandled();
+            else if (_loadBtn.HasFocus()) { _buttonZone = 1; _backBtn.CallDeferred(Control.MethodName.GrabFocus); }
+            GetViewport()?.SetInputAsHandled();
             return;
         }
         if (@event.IsActionPressed("ui_up"))
         {
-            if (_backBtn.HasFocus()) { _buttonZone = 0; _loadBtn.GrabFocus(); }
+            if (_backBtn.HasFocus()) { _buttonZone = 0; _loadBtn.CallDeferred(Control.MethodName.GrabFocus); }
             else if (_loadBtn.HasFocus()) { FocusFirstAvailable(); }
-            GetViewport().SetInputAsHandled();
-            return;
+            GetViewport()?.SetInputAsHandled();
         }
-
-        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
-            GetViewport().SetInputAsHandled();
     }
 }

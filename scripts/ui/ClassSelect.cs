@@ -120,14 +120,23 @@ public partial class ClassSelect : Control
         // S (action_cross) activates the focused zone's button. Godot's Button
         // fires Pressed on ui_accept (Enter/Space) natively, but not on
         // action_cross — without this shortcut, S-key confirm becomes a no-op.
+        // Only consume the event for button zones (1/2). Zone 0 (cards) lets
+        // the event fall through to the focused Card's _UnhandledInput so card
+        // activation via S still works through the Card's own handler.
         if (@event.IsActionPressed(Constants.InputActions.ActionCross))
         {
             if (_focusZone == 2)
+            {
                 _backButton.EmitSignal(BaseButton.SignalName.Pressed);
-            else if (_focusZone == 1 && _selectedCard != null)
+                GetViewport()?.SetInputAsHandled();
+                return;
+            }
+            if (_focusZone == 1 && _selectedCard != null)
+            {
                 OnConfirmPressed();
-            GetViewport()?.SetInputAsHandled();
-            return;
+                GetViewport()?.SetInputAsHandled();
+                return;
+            }
         }
 
         if (KeyboardNav.IsCancelPressed(@event))
@@ -146,7 +155,7 @@ public partial class ClassSelect : Control
         else
             _focusIndex = (_focusIndex + direction + _cards.Count) % _cards.Count;
 
-        _cards[_focusIndex].GrabFocus();
+        _cards[_focusIndex].CallDeferred(Control.MethodName.GrabFocus);
         OnCardActivated(_focusIndex);
     }
 
