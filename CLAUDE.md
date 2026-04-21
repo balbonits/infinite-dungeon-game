@@ -17,6 +17,7 @@ This file is a jump-index into AGENTS.md. Never answer from this file alone — 
 | After making a change (before commit) | [Post-Task Protocol](AGENTS.md#2a-post-task-protocol) |
 | Update docs correctly | [Documentation Maintenance](AGENTS.md#2b-documentation-maintenance) |
 | Find conventions (naming, C#, Godot) | [C# Conventions](AGENTS.md#4-c-conventions) · [Naming](AGENTS.md#6-naming-conventions) |
+| Build UI (components, screens, cards) | [UI Component Model (Dumb UI, Smart BE)](AGENTS.md#3a-ui-component-model-dumb-ui-smart-be) → [docs/conventions/ui-component-model.md](docs/conventions/ui-component-model.md) |
 | Check tech stack / NuGet deps | [Tech Stack](AGENTS.md#5-tech-stack) |
 | Find the project layout | [Project Structure](AGENTS.md#7-project-structure) |
 | Pick the right test framework | [Tech Stack → Testing layers](AGENTS.md#5-tech-stack) |
@@ -54,6 +55,7 @@ make run            # Launch Godot
 6. **Post-task protocol is non-negotiable.** Test → Docs → Journal → Changelog → Counts → Commit.
 7. **Never hardcode volatile numbers** (test counts, file counts) in AI-context files.
 8. **Every AI generation respects the safety policy.** Prohibited-content taxonomy + dev-time guardrails + reporting + triage loop per [docs/conventions/ai-safety-policy.md](docs/conventions/ai-safety-policy.md) (SPEC-AI-SAFETY-01).
+9. **Dumb UI, smart BE.** UI components render only; screens think. Props down, events up. Neutral DTOs at the component seam, never source-specific types. One mechanism per behavior — never per-screen one-offs. Pre-coding reflex: *"is there a system for this yet?"* Full model in [docs/conventions/ui-component-model.md](docs/conventions/ui-component-model.md).
 
 ---
 

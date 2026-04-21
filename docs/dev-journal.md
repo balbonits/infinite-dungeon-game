@@ -4,6 +4,74 @@ A running log of everything we build, test, learn, and decide — from zero to g
 
 ---
 
+## 2026-04-20 — Paradigm lock: Dumb UI, Smart BE (the card-system redesign that changed how every future UI screen will be built)
+
+During the visual-verification pass on the Press Start 2P font PR (#53), the PO walked through the UI screen-by-screen. On Load Game vs New Game (Class Select), two things that should have looked identical looked different — different card framing, different font rendering, different focus visuals. My first instinct was to go patch each screen individually. The PO stopped me and redirected:
+
+> "Look: both screens aren't using the same components & UI."
+
+The two screens had drifted because each had been built as a one-off UI tree. LoadGameScreen used a reusable `CharacterCard` class. ClassSelect used an inline `CreateClassCard()` method with its own stylebox factories, hover handlers, and focus wiring. Same shape, different implementation, different behavior. A bug in one couldn't be fixed by editing the other. A style change required two edits and the PO had already caught them diverging.
+
+The fix isn't to tune each screen. The fix is to **have one mechanism for "a selectable card"** and have both screens compose it. The PO articulated the full paradigm:
+
+> "When two things should look the same, shouldn't they be using the same type of component? We've talked about 'systemizing' and 'unifying' components and mechanics. Change your perspective of 'customize everything when a small thing doesn't go your way.' Think of 'how will this work for me in the long-term?'"
+
+They also called out my over-engineering reflex ("don't componentize EVERYTHING — the point is to think *why am I building it like this?*") and then walked me through the target design in their own words:
+
+> "Create a `CharacterCard` component that takes character data and displays it. Events/actions it can call when clicked/selected — but it's just calling a 'card selected' event. Same with empty card slot. Heck, let's create a base component they all inherit from, called `Card`. It's very barebones, just drawing an outline of a card. Easy, right? But the beauty is all cards that inherit from this will have the same size/dimensions and the base accepted keys and values."
+
+And then the analogy that locked the mental model:
+
+> "What's the difference between a supermodel and a beauty pageant contestant? Intelligence. Both of them look good, but they're vastly different when you talk to them, or answering questions."
+
+Cards = supermodels. Just render what you hand them. Screens = the pageant contestants — they have to answer questions, route decisions, fetch data, handle events. **Dumb UI, smart BE.**
+
+Applied to our Godot C# codebase, this is the direct translation of React's presentational-vs-container pattern and the Model-View separation:
+
+- **Props down, events up.** A dumb component accepts data via its factory/constructor args. Emits events through signals or injected callbacks. Never reaches for globals, autoloads, or parent state.
+- **Neutral DTOs at the seam.** `CharacterCard` takes `CharacterSummary`, not `SaveData`. A future Hall of Fame or post-death recap doesn't have a `SaveData` but can easily produce a `CharacterSummary` from its own data. Source-specific types at the seam welds the component to one use case.
+- **Single responsibility.** `Card` draws a frame. `CharacterCard` populates the frame with a character summary. `LoadGameScreen` fetches saves and wires events. Nothing knows about more than its one job.
+- **Composition > inheritance-as-architecture.** The Card hierarchy uses inheritance because Godot's C# idiom prefers it over React-style composition, but the layering is the same: small base + specialized subclasses + primitive children.
+- **Reusability is the proof.** If CharacterCard is built right, dropping it into any future context only requires writing a data adapter — not re-doing the UI.
+
+The meta-principle underneath all of it is **unifying + systems thinking**. The game isn't "screens built from scratch." It's existing systems (theme, save, input, window stack, card system) composed in different configurations. Before writing any new UI, the reflex question is *"is there a system for this yet?"* If yes: use it. If not: does there need to be one? Writing the same thing twice is an error, not a shortcut. Same behavior gets the same mechanism. A border-color change happens in one place and every user updates automatically — the opposite pattern is five screens' worth of divergent implementations that will never all get the same fix.
+
+**Where this lives now:**
+
+- **Canonical doc:** [docs/conventions/ui-component-model.md](conventions/ui-component-model.md) — full treatment: core rules, systems/unifying, pre-coding reflex, the Card hierarchy worked example, anti-patterns, data-flow diagram, testing implications, when-not-to-apply.
+- **AGENTS.md §3a "UI Component Model (Dumb UI, Smart BE)":** the AI-readable summary + pre-coding reflex checklist. New principle added to §3 Development Principles.
+- **CLAUDE.md hard rule #9** + jump-to index entry.
+- **This journal entry** — the narrative of how we got here, in case future me needs to remember why the card system exists.
+
+**What's about to happen in code (next session, post-compact):**
+
+The paradigm applies immediately to the open PR (#53, SPEC-UI-FONT-01). The card-system work rolls into that PR alongside the font-cascade fix. Scope of the code change:
+
+1. **`Card.cs`** (barebones base) — PanelContainer subclass. Owns outline, size, focus/hover/selected stylebox states, keyboard + mouse activation routing, `Selected` signal. Exposes a content `VBoxContainer` for subclasses to populate. Knows nothing about save systems or game state. *(A draft version already exists on the branch from mid-session; will be rewritten to the inheritance shape during impl.)*
+2. **`CharacterCard.cs`** (refactor existing) — inherits from `Card`. `Create(CharacterSummary, onSelected)` factory. Populates content with portrait + level + stats + HP/MP + floor/gold + XP% + timestamp. Drops the current `SaveData` coupling in favor of the neutral `CharacterSummary` DTO.
+3. **`EmptyCard.cs`** (new) — inherits from `Card`. `Create(slotLabel, onSelected)` factory. Populates content with "Empty Slot N" placeholder.
+4. **`ClassCard.cs`** (new) — inherits from `Card`. `Create(ClassData, onSelected)` factory. Populates content with class name + portrait + description + base stats + starting-skill row.
+5. **`CharacterSummary` DTO** — neutral record struct for character display data, produced by an adapter from `SaveData` (and from class defaults for New Game's fresh-character cards, if we go that route).
+6. **`LoadGameScreen` refactor** — delete inline card construction + stylebox factories. Use `CharacterCard` for populated slots, `EmptyCard` for empty. Screen stays smart, cards stay dumb. Also fixes the size-mismatch the PO caught (populated slots currently render narrower than empty slots — image #11 showed the overlap).
+7. **`ClassSelect` refactor** — delete inline card construction + `DefaultCardStyle` / `HoverCardStyle` / `SelectedCardStyle` / `OnCardHovered` / `OnCardUnhovered` / `OnCardClicked` visual-state plumbing. Use `ClassCard`. The screen still tracks which class is selected, but doesn't manage styleboxes.
+8. **Theme cascade fix for screens added via `UILayer.AddChild`** — Godot theme inheritance doesn't cross `CanvasLayer` boundaries, so every screen added to the UI layer post-boot needs its theme assigned explicitly (as LoadGameScreen already does at `Main.cs:150`). ClassSelect currently misses this; that's why its font rendered as Godot's default instead of PS2P. Either assign at each AddChild callsite, OR introduce a tiny `UiLayerMount(Control)` helper that assigns theme + adds, OR move to a project-level theme via `gui/theme/custom` in `project.godot`. Cleanest option is probably the helper — decision to be made during impl.
+9. **Focus-highlight uniformity** — `StyleSecondaryButton` and `StyleDangerButton` currently override the focus stylebox with solid muted/red colors (no gold border). Parameterize `CreateButtonFocusStyle(bgColor)` so the gold border is always present regardless of base color. *(Already landed earlier in the session — verify in impl that it still compiles after the Card-system refactor.)*
+
+**What this unlocks long-term:**
+
+- Any new UI surface that wants a selectable card — Hall of Fame, post-death recap, bank-slot inspection, party select (future multiplayer), save-slot preview in pause menu — imports `CharacterCard` (or a sibling subclass of `Card`), supplies a data adapter, and gets pixel-identical visuals + behavior for free.
+- Visual regression tests pin `Card`'s baseline once and cover every subclass. New card variants just need their content snapshot pinned.
+- Focus/keyboard-accessibility tests are written once against `Card` and apply automatically to every card type.
+- A change to the card border, the focus ring color, the hover animation, the corner radius — ONE edit in `Card.cs`, every screen that uses cards updates.
+
+**The harder lesson for me (the AI):**
+
+The PO's repeated corrections this session weren't about this specific bug. They were about **my mindset**. I defaulted to "fix each broken thing individually." They kept pulling me back to "why are these broken in the first place, and how do we stop them from being broken-and-fixable-one-at-a-time?" The answer is systems. The question to ask before writing any line of UI code is *"is there a system for this yet, and if not, does there need to be one?"* Every time I skip that question, I generate work I'll have to undo later.
+
+**Also documented in this session:** the windowed-UI-verification non-negotiable ([AGENTS.md §0b](../AGENTS.md#0b-ui-verification-windowed-not-headless-non-negotiable) + [CLAUDE.md hard rule #9… wait, #9 is now the UI paradigm rule — windowed is rule ordering TBD during impl](../CLAUDE.md)). UI work requires windowed verification, not just "tests pass." The PO caught me hallucinating verification claims on three PRs. Rule codified in shared docs.
+
+---
+
 ## 2026-04-20 — Overnight sprint: 9 PRs landed (bug backlog + audit fixes + test coverage)
 
 Nine PRs merged in a single overnight pass after PR #33 (the splash/slots-full test-infra rewrite) finally unlocked the merge queue. The backlog had grown to 8 open PRs in parallel — the wrong shape for "slow is smooth, smooth is fast," and it pushed me against the same Copilot review rounds again and again. The session ended with zero open PRs and a durable learning: **one PR at a time**, save the feedback, enforce it next time ([feedback_batch_pr_size.md](../../.claude/projects/-Users-johndilig-Projects-infinite-dungeon-game/memory/feedback_batch_pr_size.md)).
