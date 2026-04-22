@@ -2,37 +2,37 @@
 
 ## Summary
 
-Radiant (procedurally generated) quests offered by the Guild in town. The Guild displays an offer board of candidate quests; the player chooses which ones to accept, up to an active-quest cap. Completing a quest rewards gold and materials. Intro quests guide new players through core mechanics without interrupting them. No time limits, no abandonment penalty, no "world-ending" stakes — quests are checklists and fetch/hunt research tasks, not emergencies.
+Radiant (procedurally generated) quests offered by the Village Chief in town. The Village Chief maintains a **Quests Board** that displays an offer list of candidate quests; the player chooses which ones to accept, up to an active-quest cap. Completing a quest rewards gold and materials. Intro quests guide new players through core mechanics without interrupting them. No time limits, no abandonment penalty, no "world-ending" stakes — quests are checklists and fetch/hunt research tasks, not emergencies.
 
 ## Current State
 
-**Spec status: IN REVIEW.** Quest data model, generation formulas, tracking signals, completion flow, UI layout, save format, player-selection model, intro-quest track, and level/floor scaling (`quest_scale`) are defined. A handful of ambiguities opened by the PO's Quest Log expansion are still pending — see [Open Questions](#open-questions). Returns to LOCKED once those are resolved.
+**Spec status: Locked (v1.1).** Quest data model (base `Quest` type + sub-types), generation formulas, tracking signals, completion flow, UI layout, save format, player-selection model, intro-quest track, and level/floor scaling (`quest_scale`) are defined. All prior Open Questions from v1.0 have been resolved by the PO and folded into the body of this spec.
 
-Not yet implemented. Quests are delivered by the **Village Chief** NPC per [npc-interaction.md](../flows/npc-interaction.md) (the earlier "Adventure Guild / Guild Master" naming in this doc is historical — all references to "Guild" below mean the Village Chief's quest board). The Guild Maid owns Bank/Teleport, not quests. The tutorial that these quests reinforce lives in the Pause menu (see [Intro Quests](#intro-quests) below).
+Not yet implemented. Quests are delivered by the **Village Chief** NPC per [npc-interaction.md](../flows/npc-interaction.md). The UI window the Village Chief opens is titled **"Quests Board"**. There is no in-fiction "Adventure Guild" — the Village Chief personally curates the board on behalf of the frontier settlement. The Guild Maid owns Bank/Teleport, not quests. The written tutorial that these quests reinforce lives in the Pause menu (see [hud-layout.md](../ui/hud-layout.md) for hotkey and placement).
 
 ## Design
 
 ### Player Selection Model
 
-Quests are not auto-installed into slots. The Guild maintains two structures:
+Quests are not auto-installed into slots. The Village Chief's Quests Board maintains two structures:
 
-- **Offer board** — up to **6** candidate quests the player can browse and pick from. Refilled on Guild interaction (see [Quest Refresh Rules](#quest-refresh-rules)).
+- **Offer board** — up to **6** candidate radiant quests the player can browse and pick from. Persists between visits (see [Quest Refresh Rules](#quest-refresh-rules)).
 - **Active quests** — quests the player has accepted. Active-quest cap: **3** (same as the prior 3-slot model — preserves the locked UI layout and reward pacing).
 
 ```
 Player walks up to Village Chief
-  -> Opens Quest Board (Offer + Active tabs)
-  -> Offer tab: browse 6 candidates, [Accept] to move one into Active
-  -> Active tab: view progress, claim completed, or [Refuse] to remove
+  -> Opens Quests Board (Offers + Active tabs)
+  -> Offers tab: browse up to 6 candidates, [Accept] to move one into Active
+  -> Active tab: view progress, claim completed, or [Abandon] to remove
 ```
 
-**Refusal is free.** Declining an offered quest or removing an active one has no penalty and no cooldown — quests are research requests and bounty checklists, not emergencies. No time limits anywhere in the system.
+**Refusal / abandonment are free.** Declining an offered quest or abandoning an active one has no penalty and no cooldown — quests are research requests and bounty checklists, not emergencies. No time limits anywhere in the system.
 
 **Equivalent reward tiers.** All offered quests at a given scaling level are balanced to equivalent value (gold + material value roughly equal per [Reward Formulas](#reward-formulas)), so picking is about *what the player feels like doing tonight* (kill fast, push depth, hunt a boss) — not about chasing the best payout.
 
 ### Intro Quests
 
-A curated, non-radiant track that teaches core mechanics by putting the player *into* them. Intro quests sit in the offer board alongside radiant quests until completed. Each is one-shot per character; refusing them is allowed (they just stay on the offer board until accepted or the player moves on).
+A curated, non-radiant track that teaches core mechanics by putting the player *into* them. Intro quests sit in the offer board alongside radiant quests until completed, refused, or auto-resolved as organically satisfied. Each is one-shot per character.
 
 **Design stance — no forced tutorials.** The game assumes the player can read the written tutorial available anytime in the Pause menu, and can think. Intro quests are a *hand on the shoulder*, not a Ubisoft-style interruption loop. They do not pop tooltips, lock input, or gate progression.
 
@@ -47,6 +47,25 @@ A curated, non-radiant track that teaches core mechanics by putting the player *
 | 5 | "Reach floor 5" | Mid-early progression gate | 1x rare Tier 1 material |
 
 Intro quests scale *minimally* (they target specific early floors, so scaling isn't applied). Their gold+material rewards use the normal formula at the referenced floor.
+
+**Intro-quest lifecycle (extended state machine).** Intro quests carry two states that radiant quests do not:
+
+- **`OrganicallySatisfied`** — the save's telemetry proves the player already met the objective before the intro quest could be accepted (e.g., `deepest_floor >= 2` satisfies "Reach floor 2"; `character.has_ever_equipped_item == true` satisfies "Equip an item via the Blacksmith"). When this is detected at Quests Board open, the intro quest is auto-moved into `OrganicallySatisfied` with **no starter bonus** awarded. It does not occupy an offer slot and does not re-appear. This exclusively serves returning players who predate the intro-quest track; new characters encounter each intro quest before the telemetry could trigger.
+- **`Refused`** — the player explicitly hit `[ Refuse ]` on an intro quest. Refusal is **permanent** for that character: same effect as claiming without the starter bonus. The quest is gone, will not re-appear, and there is no "Show Tutorials Again" toggle. This is a deliberate opt-out for experienced players who do not want the shoulder-tap.
+
+Neither state applies to radiant quests. Radiant quests that the player dismisses from the offer board are simply removed (the slot empties and will re-roll on the next Village Chief visit); radiant quests the player abandons from Active use the standard `Abandoned` state.
+
+**Organic-satisfaction predicates (per intro quest).** The check runs when the Quests Board is opened, before the board is rendered:
+
+| Intro # | Objective | Organic-satisfied predicate |
+|---|---|---|
+| 1 | Kill 5 enemies on floor 1 | `total_enemies_killed_on_floor_1 >= 5` |
+| 2 | Reach floor 2 | `deepest_floor >= 2` |
+| 3 | Return to town and claim a reward | `quests.completed_count >= 1` (any quest ever claimed) |
+| 4 | Equip an item via the Blacksmith | `character.has_ever_equipped_item == true` |
+| 5 | Reach floor 5 | `deepest_floor >= 5` |
+
+If the save lacks the telemetry field (pre-migration saves), the predicate evaluates to `false` and the quest surfaces normally — worst case is a returning player sees an intro quest they already organically fulfilled and can `[ Refuse ]` or `[ Accept ]` it as they prefer.
 
 ### Quest Types
 
@@ -68,31 +87,98 @@ enum QuestType {
 
 ### Quest Data Model
 
+Quests share a common **base `Quest` type**. Sub-types extend the base with kind-specific fields and (for intro quests) a richer state machine. New quest families added later (story quests, event quests, seasonal bounties) are new sub-types of `Quest`, not new top-level shapes.
+
+#### Base `Quest`
+
+All quests, radiant or intro, carry these fields:
+
 ```
-QuestDef {
-  id:           string      // Deterministic hash: "{type}_{target_floor}_{target_count}_{seed}"
-  type:         QuestType   // Kill | Boss | ClearFloor | DepthPush
-  target_floor: int         // The floor this quest references
-  target_count: int         // Kill quest: enemy count. Others: 1 (implicit).
-  description:  string      // Player-facing text (generated from template)
-  gold_reward:  int         // Gold payout on completion
-  material_reward: MaterialReward  // Materials payout on completion
-  xp_reward:    int         // Bonus XP (ClearFloor only; 0 for others)
+abstract record Quest {
+  id:              string        // Deterministic hash: "{kind}_{type}_{target_floor}_{target_count}_{seed}"
+  kind:            QuestKind     // Radiant | Intro (extensible: Story, Event, ...)
+  type:            QuestType     // Kill | Boss | ClearFloor | DepthPush
+  title:           string        // Short label (e.g., "Cull the Lowlands")
+  description:     string        // Player-facing text (generated from template)
+  target_floor:    int           // The floor this quest references
+  target_count:    int           // Kill quest: enemy count. Others: 1 (implicit).
+  quest_scale:     int           // Scaling input frozen at generation time (see formulas below)
+  progress:        int           // Current progress toward target_count
+  state:           QuestState    // See state machines below
+  rewards:         QuestRewards  // Gold + materials + bonus XP
+  created_at:      timestamp     // For sort order and staleness heuristics
 }
 
-MaterialReward {
+record QuestRewards {
+  gold:     int              // Gold payout on completion
+  material: MaterialReward   // Materials payout on completion
+  xp:       int              // Bonus XP (ClearFloor only; 0 for others)
+}
+
+record MaterialReward {
   tier:  int   // Material tier (matches floor-based affix tiers from items.md)
   count: int   // Number of materials awarded
   rare:  bool  // true = rare materials (Boss/DepthPush), false = common (Kill/ClearFloor)
 }
 
-QuestState {
-  quest:      QuestDef   // The quest definition
-  progress:   int        // Current progress toward target_count
-  completed:  bool       // true once progress >= target_count
-  slot:       int        // 0, 1, or 2 (which of the 3 quest slots)
+enum QuestType  { Kill, Boss, ClearFloor, DepthPush }
+enum QuestKind  { Radiant, Intro }
+```
+
+#### Sub-type: `RadiantQuest`
+
+Procedurally generated by the Village Chief's offer board. Standard 4-state lifecycle; nothing intro-specific.
+
+```
+record RadiantQuest : Quest {
+  kind  = QuestKind.Radiant     // fixed
+  state : RadiantQuestState     // restricted state machine (see below)
+  slot  : int?                  // 0, 1, or 2 when Accepted; null while on the offer board
+}
+
+enum RadiantQuestState {
+  Offered,     // On the offer board; not yet accepted
+  Accepted,    // In an Active slot; progress > 0 allowed
+  Completed,   // progress >= target_count; awaiting Claim at Village Chief
+  Abandoned    // Player hit [ Abandon ] or [ Refuse ]; removed from board/slot, terminal
 }
 ```
+
+#### Sub-type: `IntroQuest`
+
+Curated one-shot tutorial track. Extends the base state machine with two intro-only states.
+
+```
+record IntroQuest : Quest {
+  kind            = QuestKind.Intro   // fixed
+  state           : IntroQuestState   // extended state machine (see below)
+  starter_bonus   : StarterBonus      // Additive bonus applied on Completed (not OrganicallySatisfied/Refused)
+  organic_check   : OrganicPredicate  // Evaluated on Quests Board open; may auto-promote to OrganicallySatisfied
+  slot            : int?              // 0, 1, or 2 when Accepted; null otherwise
+}
+
+record StarterBonus {
+  gold:  int                  // e.g., +50
+  items: list<ItemGrant>      // e.g., [{ id: "health_potion", qty: 1 }]
+}
+
+enum IntroQuestState {
+  Offered,                // Pinned on the offer board
+  Accepted,               // In an Active slot
+  Completed,              // Claimed at Village Chief; starter bonus awarded; terminal
+  Abandoned,              // Abandoned from Active after being accepted (edge case; terminal, no bonus)
+  OrganicallySatisfied,   // Auto-resolved by telemetry; no starter bonus awarded; terminal, never re-appears
+  Refused                 // Player hit [ Refuse ] on the offer board; permanent for this character; terminal
+}
+```
+
+`OrganicallySatisfied` and `Refused` are **intro-exclusive**. They do not apply to radiant quests. `Abandoned` is the shared terminal state for "player rejected this quest"; the terms do not collapse — `Refused` specifically means "intro quest rejected from the offer board before acceptance," while `Abandoned` means "quest rejected after being moved into an active slot" (and for radiant quests, also covers offer-board dismissal since radiant offers are simply re-rolled).
+
+#### Why a base type at all
+
+- One definition for `id`, `description`, `target_floor`, `rewards`, `progress`, `created_at` — quest-generic systems (HUD indicator, save format, reward-claim pipeline) traffic in `Quest` and don't need to know sub-types.
+- Sub-types own only the differences: their state enum, any sub-type-specific fields (`starter_bonus`, `organic_check`).
+- New quest families (story arcs, seasonal events) slot in as new `Quest` sub-types without reshaping existing systems.
 
 ### Quest Generation
 
@@ -160,6 +246,8 @@ This scales gently. At floor 10, killing 25 enemies takes roughly 2-3 minutes of
 
 #### Gold Reward
 
+Gold scales with the **target floor** (depth difficulty of the work), but is **capped by `quest_scale`** so a high-level player farming a shallow floor cannot turn trivial quests into a gold faucet:
+
 ```
 base_gold(type):
   Kill       = 50
@@ -167,10 +255,19 @@ base_gold(type):
   Boss       = 150
   DepthPush  = 120
 
-gold_reward(type, floor) = floor(base_gold(type) * (1 + (floor - 1) * 0.15))
+floor_multiplier(floor) = 1 + (floor - 1) * 0.15
+
+gold_reward(type, target_floor, quest_scale) =
+  floor(
+    base_gold(type)
+    * floor_multiplier(target_floor)
+    * min(1, quest_scale / target_floor)
+  )
 ```
 
-| Floor | Kill Gold | ClearFloor Gold | Boss Gold | DepthPush Gold |
+The `min(1, quest_scale / target_floor)` term is 1 whenever the player's `quest_scale` meets or exceeds the target floor (the normal case — you do quests near your current depth), so the payout matches the floor-driven table below. It only bites when `quest_scale < target_floor`, which never occurs in practice because Boss/DepthPush are the only quest types that can target floors beyond `deepest_floor`, and their floor-over-scale ratio is bounded. The cap's real job is on the opposite side: it prevents runaway payouts when a level-40 character farms a floor-3 Kill quest, because `quest_scale` also sits around the mid-20s+ while `target_floor` is 3 — the ratio clamps at 1, gold stays at the floor-3 value, and the floor-3 quest never out-pays floor-3 combat.
+
+| Target Floor | Kill Gold | ClearFloor Gold | Boss Gold | DepthPush Gold |
 |-------|-----------|-----------------|-----------|----------------|
 | 1 | 50 | 75 | 150 | 120 |
 | 5 | 80 | 120 | 240 | 192 |
@@ -178,6 +275,8 @@ gold_reward(type, floor) = floor(base_gold(type) * (1 + (floor - 1) * 0.15))
 | 20 | 192 | 288 | 577 | 462 |
 | 50 | 417 | 626 | 1,252 | 1,002 |
 | 100 | 792 | 1,188 | 2,377 | 1,902 |
+
+(Values shown assume `quest_scale >= target_floor`, i.e., the cap is not active — the most common case.)
 
 #### Material Reward
 
@@ -205,9 +304,9 @@ material_rare(type):
   DepthPush  = true
 ```
 
-Rare materials are the same type that boss first-kills drop. Common materials are the same type enemies drop on the floor. This keeps the quest reward pipeline consistent with the existing loot system.
+**Material identity is owned by SPEC-06b (loot-drops), not this spec.** Quest reward descriptions in the Quests Board UI stay generic ("2x Tier 2 materials", "3x rare Tier 2 materials") until loot-drops is locked. Once SPEC-06b names the common and rare material families per floor/zone, the quest system references them by name-for-name lookup — there is no parallel "Guild Salvage" or quest-exclusive material. This avoids parallel truth and keeps dungeon loot and quest rewards on the same economy.
 
-**Fictional framing.** The materials the Guild hands out are not summoned from thin air — they come from the Guild's own processing of the monsters the player has already killed. How exactly they harvest, preserve, and extract the useful bits from a corpse the player never dragged home is the Guild's trade secret. The player doesn't ask. The Guild doesn't tell. It reads as *our bounty cut, cleaned and packaged* — a believable economic loop without forcing the player to manage carcasses in the backpack.
+**Fictional framing.** The materials the Village Chief hands out are not summoned from thin air — they come from the settlement's own processing of the monsters the player has already killed. How exactly the frontier outpost harvests, preserves, and extracts the useful bits from a corpse the player never dragged home is the settlement's trade secret. The player doesn't ask. The Village Chief doesn't tell. It reads as *our bounty cut, cleaned and packaged* — a believable economic loop without forcing the player to manage carcasses in the backpack.
 
 #### XP Reward (ClearFloor Only)
 
@@ -258,55 +357,59 @@ Progress is tracked via EventBus signals. The quest system listens for events an
 
 ```
 Quest progress reaches target
-  -> QuestState.completed = true
+  -> Quest.state = Completed
   -> HUD notification: "Quest Complete: {description}" (brief toast, 3 seconds)
   -> Rewards held in escrow (not yet given)
-  -> Player must visit Adventure Guild to claim rewards
-  -> On Guild interaction:
-     -> Completed quests show "Claim" button
+  -> Player must visit the Village Chief to claim rewards
+  -> On Village Chief interaction (Quests Board opens):
+     -> Completed quests show "Claim" button on the Active tab
      -> Clicking Claim:
         -> Gold added to character.gold
         -> Materials added to backpack (overflow: materials are lost if backpack is full)
         -> XP awarded (ClearFloor only)
+        -> IntroQuest only: starter_bonus applied (gold + items)
         -> Quest slot cleared
-        -> New quest generated for the empty slot immediately
+        -> For radiant: a replacement offer is re-rolled onto the offer board if there is free offer-board space (NOT auto-accepted)
 ```
 
-**Why claim at Guild, not auto-reward:** Returning to town is a core loop anchor. Forcing the player to visit the Guild to collect rewards keeps them cycling through town, interacting with NPCs, and making decisions about what to do next. It also prevents inventory surprises mid-combat.
+**Why claim at the Village Chief, not auto-reward:** Returning to town is a core loop anchor. Forcing the player to visit the Village Chief to collect rewards keeps them cycling through town, interacting with NPCs, and making decisions about what to do next. It also prevents inventory surprises mid-combat.
 
-**Backpack overflow:** If the player's backpack is full when claiming materials, the materials are lost. The claim UI shows a warning: "Backpack full! Materials will be lost." The player can cancel, visit the Banker to free up space, then return. Gold and XP are never lost (gold has no inventory slot; XP is applied directly).
+**Backpack overflow:** If the player's backpack is full when claiming materials, the materials are lost. The claim UI shows a warning: "Backpack full! Materials will be lost." The player can cancel, visit the Guild Maid's Bank tab to free up space, then return. Gold and XP are never lost (gold has no inventory slot; XP is applied directly). IntroQuest starter-bonus *items* follow the same overflow rule; starter-bonus *gold* is never lost.
 
 ### Quest Refresh Rules
 
+**Offered quests persist forever until the player acts on them.** Empty offer slots refill only when the player opens the Quests Board (i.e., interacts with the Village Chief). The board never silently re-rolls between visits, never auto-ages out stale offers, and never pressures the player to accept anything. If a floor-5 Kill quest has been sitting on the board since session 1, it's still there in session 20 — the rewards just feel small by then.
+
 | Event | What Happens |
 |-------|-------------|
-| Game start (new character) | Fill offer board with 6 radiant quests seeded from `quest_scale = 1`, plus all 5 intro quests pinned to the top |
-| Player visits Guild | If offer board has < 6 slots, generate new radiant quests to refill. Intro quests persist until completed. |
-| Player accepts a quest | Quest moves from Offer to Active (up to active-cap of 3). Offer slot empties. |
-| Player refuses an offered quest | Offered quest is removed from the board. Slot empties. No penalty. Will be re-rolled on next Guild visit. |
-| Quest claimed at Guild | Quest is removed from Active. Active slot opens up for the next Accept. |
-| Player abandons an active quest | Active slot opens up. Progress lost. No penalty. |
-| Player reaches new deepest floor | Existing active quests are NOT refreshed (avoid invalidating progress). New offers generated at the new `quest_scale` on next Guild visit. |
+| Game start (new character) | Fill offer board with 6 radiant quests seeded from `quest_scale = 1`, plus the 5 intro quests pinned to the top. |
+| Player opens Quests Board (Village Chief interaction) | Evaluate each `IntroQuest.organic_check`; any that pass flip to `OrganicallySatisfied` (terminal, no bonus) and are removed from the board. If the offer board has < 6 radiant slots, generate new radiant quests at the current `quest_scale` to refill. Existing offers are never re-rolled. |
+| Player accepts a quest | Quest moves from Offers to Active (up to active-cap of 3). Offer slot empties; refills on next Quests Board open. |
+| Player refuses a radiant offer | Offered quest is removed from the board (`state = Abandoned`, terminal for that specific generated instance). Slot empties and refills on next Quests Board open with a freshly generated quest. |
+| Player refuses an intro offer | Intro quest is permanently removed for this character (`state = Refused`, terminal). Does not re-appear, does not occupy an offer slot, and there is no "Show Tutorials Again" toggle. |
+| Quest claimed at Village Chief | Quest `state = Completed`. Active slot opens up; replacement offer re-rolled onto the board if offer-board has free slots. |
+| Player abandons an active quest | Active slot opens up. Progress lost. No penalty. `state = Abandoned`, terminal. |
+| Player reaches new deepest floor | Existing active quests are NOT refreshed (avoid invalidating progress). New offers generated at the new `quest_scale` on next Quests Board open. |
 
 **Abandonment / refusal.** Both are free, instant, and never punished. Quests are checklists, not contracts. The only "cost" of churning quests is the player's own time.
 
 **No forced refresh.** Quests are never automatically replaced or invalidated. A Kill quest targeting floor 5 remains valid even if the player is now on floor 50. The rewards will feel small by then, but the player can still complete it or abandon it at their discretion.
 
-### UI: Quest Board Panel
+### UI: Quests Board Window
 
-The Quest Board panel appears when the player walks up to the Village Chief NPC (proximity interaction, same as all town NPCs — see [npc-interaction.md](../flows/npc-interaction.md)). Tabbed window (Q/E cycles tabs per [hud-layout.md](../ui/hud-layout.md)).
+The **Quests Board** window opens when the player walks up to the Village Chief NPC (proximity interaction, same as all town NPCs — see [npc-interaction.md](../flows/npc-interaction.md)). Tabbed window (Q/E cycles tabs per [hud-layout.md](../ui/hud-layout.md)). The window's title bar reads "Quests Board".
 
-**Tab 1: Offer Board** — up to 6 candidate quests, plus any uncompleted intro quests pinned at top.
+**Tab 1: Offers** — up to 6 candidate radiant quests, plus any still-active intro quests pinned at top.
 
 ```
 +--------------------------------------------------+
-|  QUEST BOARD         [ Offers ] [ Active 2/3 ]   |
+|  QUESTS BOARD        [ Offers ] [ Active 2/3 ]   |
 +--------------------------------------------------+
 |  INTRO                                            |
 |  Kill 5 enemies on floor 1                        |
 |      Reward: 50 gold, 1x Tier 1 material          |
 |      Starter bonus: +50 gold, 1x Health Potion    |
-|      [ Accept ]                                   |
+|      [ Accept ]  [ Refuse ]                       |
 |                                                    |
 |  RADIANT                                          |
 |  Slay 25 enemies on floor 10                      |
@@ -321,11 +424,11 @@ The Quest Board panel appears when the player walks up to the Village Chief NPC 
 +--------------------------------------------------+
 ```
 
-**Tab 2: Active Quests** — up to 3 accepted quests. Mirrors the previously-locked 3-slot layout.
+**Tab 2: Active** — up to 3 accepted quests. Mirrors the previously-locked 3-slot layout.
 
 ```
 +--------------------------------------------------+
-|  QUEST BOARD         [ Offers ] [ Active 2/3 ]   |
+|  QUESTS BOARD        [ Offers ] [ Active 2/3 ]   |
 +--------------------------------------------------+
 |  [1] Slay 25 enemies on floor 10       12/25     |
 |      Reward: 117 gold, 2x Tier 2 materials       |
@@ -340,9 +443,10 @@ The Quest Board panel appears when the player walks up to the Village Chief NPC 
 ```
 
 **Layout rules:**
-- Offer tab shows up to 6 radiant offers + all uncompleted intro quests (intro pinned, labeled "INTRO", not counted against the 6).
+- Offers tab shows up to 6 radiant offers + all not-yet-terminal intro quests (intro pinned, labeled "INTRO", not counted against the 6).
 - Active tab shows 3 slots; empty slots display `(empty — accept from Offers tab)`.
 - `[ Accept ]` is disabled when Active is full (3/3). Tooltip: "Active quests full — abandon or claim one first."
+- `[ Refuse ]` on a radiant offer re-rolls its slot on next Quests Board open. `[ Refuse ]` on an intro quest is **permanent for the character** — confirm with a short inline warning on the button: "Refuse? This tutorial won't re-appear."
 - Each offer/active entry shows: description, reward summary, progress (active only, Kill quests only), and action buttons.
 - Completed active quests show `[ Claim ]` with reward highlight.
 - Kill quests show `progress / target_count`; ClearFloor / Boss / DepthPush are binary.
@@ -353,182 +457,202 @@ A minimal HUD element surfaces active quest state without cluttering combat. See
 
 - Shows count of active quests (e.g., `Quests: 2/3`) in a corner of the HUD.
 - If any active quest has `completed = true` but unclaimed, the indicator pulses or gets a dot marker — hint to return to town.
-- No per-quest tracker on screen (avoids overlay clutter in the isometric view). The player opens the Quest Board to see details.
+- No per-quest tracker on screen (avoids overlay clutter in the isometric view). The player opens the Quests Board to see details.
 
 ### Save/Load Format
 
-Quest state is stored inside the existing save structure (see [save.md](save.md)):
+Quest state is stored inside the existing save structure (see [save.md](save.md)). Each serialized quest carries a `kind` discriminator so the loader can reconstruct the right sub-type; intro-specific fields only appear on `kind: "intro"` entries.
 
 ```json
 {
   "quests": {
     "active": [
       {
-        "id": "kill_10_25_a3f9",
+        "kind": "radiant",
+        "id": "radiant_kill_10_25_a3f9",
         "type": "kill",
+        "title": "Cull the Lowlands",
+        "description": "Slay 25 enemies on floor 10",
         "target_floor": 10,
         "target_count": 25,
-        "description": "Slay 25 enemies on floor 10",
-        "gold_reward": 117,
-        "material_reward": { "tier": 2, "count": 2, "rare": false },
-        "xp_reward": 0,
+        "quest_scale": 12,
         "progress": 12,
-        "completed": false,
+        "state": "accepted",
+        "rewards": {
+          "gold": 117,
+          "material": { "tier": 2, "count": 2, "rare": false },
+          "xp": 0
+        },
+        "created_at": 1714320000,
         "slot": 0
       },
       {
-        "id": "boss_20_1_b7c2",
+        "kind": "radiant",
+        "id": "radiant_boss_20_1_b7c2",
         "type": "boss",
+        "title": "Break the Zone 2 Tyrant",
+        "description": "Defeat the Zone 2 boss on floor 20",
         "target_floor": 20,
         "target_count": 1,
-        "description": "Defeat the Zone 2 boss on floor 20",
-        "gold_reward": 577,
-        "material_reward": { "tier": 2, "count": 3, "rare": true },
-        "xp_reward": 0,
+        "quest_scale": 16,
         "progress": 0,
-        "completed": false,
+        "state": "accepted",
+        "rewards": {
+          "gold": 577,
+          "material": { "tier": 2, "count": 3, "rare": true },
+          "xp": 0
+        },
+        "created_at": 1714320000,
         "slot": 1
       },
       {
-        "id": "depthpush_11_1_c4e1",
+        "kind": "radiant",
+        "id": "radiant_depthpush_11_1_c4e1",
         "type": "depth_push",
+        "title": "Into the Unknown",
+        "description": "Reach floor 11 for the first time",
         "target_floor": 11,
         "target_count": 1,
-        "description": "Reach floor 11 for the first time",
-        "gold_reward": 282,
-        "material_reward": { "tier": 2, "count": 2, "rare": true },
-        "xp_reward": 0,
+        "quest_scale": 12,
         "progress": 1,
-        "completed": true,
+        "state": "completed",
+        "rewards": {
+          "gold": 282,
+          "material": { "tier": 2, "count": 2, "rare": true },
+          "xp": 0
+        },
+        "created_at": 1714320000,
         "slot": 2
       }
     ],
-    "completed_count": 7,
     "offers": [
       {
-        "id": "kill_8_23_d4e7",
+        "kind": "radiant",
+        "id": "radiant_kill_8_23_d4e7",
         "type": "kill",
+        "title": "Thin the Pack",
+        "description": "Slay 23 enemies on floor 8",
         "target_floor": 8,
         "target_count": 23,
-        "description": "Slay 23 enemies on floor 8",
-        "gold_reward": 95,
-        "material_reward": { "tier": 1, "count": 2, "rare": false },
-        "xp_reward": 0
+        "quest_scale": 10,
+        "progress": 0,
+        "state": "offered",
+        "rewards": {
+          "gold": 95,
+          "material": { "tier": 1, "count": 2, "rare": false },
+          "xp": 0
+        },
+        "created_at": 1714320000
+      },
+      {
+        "kind": "intro",
+        "id": "intro_kill_5_f1",
+        "type": "kill",
+        "title": "First Blood",
+        "description": "Kill 5 enemies on floor 1",
+        "target_floor": 1,
+        "target_count": 5,
+        "quest_scale": 1,
+        "progress": 0,
+        "state": "offered",
+        "rewards": {
+          "gold": 50,
+          "material": { "tier": 1, "count": 1, "rare": false },
+          "xp": 0
+        },
+        "starter_bonus": {
+          "gold": 50,
+          "items": [{ "id": "health_potion", "qty": 1 }]
+        },
+        "created_at": 1714320000
       }
     ],
-    "intro_completed": ["intro_kill_5_f1", "intro_reach_f2"]
+    "intro_history": {
+      "intro_reach_f2": "completed",
+      "intro_return_to_town": "organically_satisfied",
+      "intro_equip_item": "refused"
+    },
+    "completed_count": 7
   }
 }
 ```
 
-**Field descriptions:**
+**Field descriptions (shared):**
 
 | Field | Type | Purpose |
 |-------|------|---------|
-| `quests.active` | array (max 3) | Currently active quest states |
-| `quests.active[].id` | string | Unique quest identifier for deduplication |
-| `quests.active[].type` | string | "kill", "boss", "clear_floor", "depth_push" |
-| `quests.active[].target_floor` | int | The floor this quest references |
-| `quests.active[].target_count` | int | Target to reach (kill count or 1 for one-shot) |
-| `quests.active[].description` | string | Player-facing text |
-| `quests.active[].gold_reward` | int | Gold payout |
-| `quests.active[].material_reward` | object | `{ tier, count, rare }` |
-| `quests.active[].xp_reward` | int | Bonus XP (0 except ClearFloor) |
-| `quests.active[].progress` | int | Current progress |
-| `quests.active[].completed` | bool | Whether target has been met |
-| `quests.active[].slot` | int | Slot index (0-2) |
-| `quests.completed_count` | int | Lifetime quests completed (for future achievements) |
-| `quests.offers` | array (max 6) | Candidate quests shown on the Offer tab; does not include intro quests (those are derived from `intro_completed`) |
-| `quests.intro_completed` | array of string | IDs of intro quests the player has claimed. Used to suppress them from the offer board on subsequent visits. |
+| `quests.active` | array (max 3) | Currently accepted quests (state ∈ {accepted, completed}) |
+| `quests.offers` | array (max 6 radiant + up to 5 intro) | Quests shown on the Offers tab; intro quests live here until they reach a terminal state |
+| `quests.active[] / .offers[].kind` | string | `"radiant"` or `"intro"` — discriminator for sub-type reconstruction |
+| `quests.active[] / .offers[].id` | string | Unique quest identifier |
+| `quests.active[] / .offers[].type` | string | `"kill"`, `"boss"`, `"clear_floor"`, `"depth_push"` |
+| `quests.active[] / .offers[].title` | string | Short label for the Quests Board entry |
+| `quests.active[] / .offers[].description` | string | Player-facing objective text |
+| `quests.active[] / .offers[].target_floor` | int | The floor this quest references |
+| `quests.active[] / .offers[].target_count` | int | Target to reach |
+| `quests.active[] / .offers[].quest_scale` | int | Scaling input frozen at generation time |
+| `quests.active[] / .offers[].progress` | int | Current progress toward `target_count` |
+| `quests.active[] / .offers[].state` | string | One of `offered` / `accepted` / `completed` / `abandoned` (radiant) plus `organically_satisfied` / `refused` (intro only) |
+| `quests.active[] / .offers[].rewards` | object | `{ gold, material: { tier, count, rare }, xp }` |
+| `quests.active[] / .offers[].created_at` | int (unix) | Creation timestamp for sort / heuristic staleness |
+| `quests.active[].slot` | int | Slot index (0-2); present only on quests in the active array |
+| `quests.completed_count` | int | Lifetime quests claimed (for future achievements) |
 
-Save version must be incremented when quest data is added. Migration for existing saves: initialize `quests` with `{ "active": [], "completed_count": 0, "offers": [], "intro_completed": [] }`. On next Guild interaction, the offer board fills with 6 radiant quests at the current `quest_scale`, and all 5 intro quests appear pinned at the top.
+**Intro-only fields (present only when `kind: "intro"`):**
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `offers[].starter_bonus` | object | `{ gold, items: [{ id, qty }] }` awarded on Completed only |
+| `quests.intro_history` | map<string, string> | Terminal status of each intro quest this character has resolved. Keys are intro-quest IDs; values are one of `completed` / `organically_satisfied` / `refused` / `abandoned`. Used to suppress terminal intro quests from ever re-appearing. |
+
+**Migration for saves predating v1.1:** initialize `quests` with `{ "active": [], "offers": [], "intro_history": {}, "completed_count": 0 }`. On the next Quests Board open, all 5 intro quests are materialized into `offers`, then each `organic_check` is evaluated against save telemetry — any intro quest that passes flips to `organically_satisfied`, is recorded in `intro_history`, and is removed from `offers` immediately (no starter bonus). Remaining intro quests stay pinned on the board for the player. The radiant offer list then fills to 6 at the current `quest_scale`.
+
+Pre-v1.1 saves that recorded intro-quest completions in the old `intro_completed` array are migrated into `intro_history` with value `"completed"`.
 
 ## Acceptance Criteria
 
-- [ ] On new character creation, the offer board contains 5 intro quests pinned at top and 6 radiant quests at `quest_scale = 1`
+- [ ] Data model implements a base `Quest` record with `RadiantQuest` and `IntroQuest` sub-types; quest-generic systems (save, HUD, reward claim) traffic in `Quest`, not sub-types
+- [ ] Radiant quests use only the `Offered / Accepted / Completed / Abandoned` state machine
+- [ ] Intro quests extend radiant states with `OrganicallySatisfied` and `Refused`; neither state is reachable for radiant quests
+- [ ] On new character creation, the offer board contains the 5 intro quests pinned at top and 6 radiant quests at `quest_scale = 1`
+- [ ] Opening the Quests Board evaluates each `IntroQuest.organic_check`; passing quests flip to `OrganicallySatisfied` with no starter bonus awarded and do not appear on the board
+- [ ] Refusing an intro quest sets `state = Refused`, is permanent for that character, and the quest never re-appears — no "Show Tutorials Again" toggle exists
+- [ ] Refusing a radiant offer empties its slot; a fresh radiant quest re-rolls into that slot on the next Quests Board open (not sooner)
+- [ ] Offered quests are never auto-refreshed between Quests Board opens; a stale offer from session 1 is still offered in session 20 until the player acts on it
 - [ ] Accepting a quest moves it from Offers to Active; active cap is 3
 - [ ] `[ Accept ]` is disabled (with tooltip) when 3 quests are already active
-- [ ] Refusing an offered quest removes it from the board; no penalty, no cooldown
-- [ ] Abandoning an active quest opens the slot; no penalty, no cooldown
-- [ ] Radiant quest rewards and material tiers scale with `quest_scale = floor((player_level + deepest_floor) / 2)`, not raw `deepest_floor`
-- [ ] Intro quests are one-shot per character; once claimed, never re-appear on the offer board
-- [ ] Completing an intro quest grants its starter bonus in addition to the normal gold+materials reward
+- [ ] Abandoning an active quest opens the slot; no penalty, no cooldown; `state = Abandoned`
+- [ ] Radiant quest material tiers scale with `quest_scale = floor((player_level + deepest_floor) / 2)`, not raw `deepest_floor`
+- [ ] Gold reward uses the hybrid formula `base * floor_multiplier(target_floor) * min(1, quest_scale / target_floor)`; farming a shallow floor with a high `quest_scale` does not inflate gold above the floor's baseline
+- [ ] Quest reward material identity defers to SPEC-06b (loot-drops); reward descriptions stay generic ("2x Tier 2 materials") until loot is locked
+- [ ] Window title of the quest UI reads "Quests Board"; the NPC it opens from is the Village Chief
+- [ ] Completing an intro quest grants its `starter_bonus` (gold + items) in addition to the normal `rewards`; `OrganicallySatisfied` and `Refused` paths do not grant the starter bonus
 - [ ] HUD quest indicator shows active count and pulses when any active quest is completed-unclaimed
 - [ ] Kill quest progress increments when enemies are killed on the target floor
 - [ ] Kill quest progress does NOT increment on a different floor
 - [ ] Boss quest completes when the specified boss is defeated
 - [ ] ClearFloor quest completes when active enemy count on the target floor hits 0
 - [ ] DepthPush quest completes when the player reaches the target floor for the first time
-- [ ] Completed quests show "Claim" button at the Guild
+- [ ] Completed quests show "Claim" button on the Active tab of the Quests Board
 - [ ] Claiming a quest awards gold, materials, and XP (ClearFloor) to the player
-- [ ] Claiming a quest generates a new quest in the empty slot
-- [ ] Abandoning a quest clears progress and leaves the slot empty until next Guild visit
+- [ ] Claiming an active radiant quest empties its slot; the offer board re-rolls a replacement offer only if it has free offer-slots
 - [ ] Backpack-full warning appears when claiming with insufficient space; materials lost if confirmed
-- [ ] Gold and XP rewards are never lost regardless of backpack state
-- [ ] Quest state persists across save/load correctly
+- [ ] Gold, XP, and intro starter-bonus gold are never lost regardless of backpack state
+- [ ] Quest state persists across save/load correctly, including sub-type discriminator and state enum
 - [ ] Boss quests do not generate for already-killed bosses
-- [ ] Only one DepthPush quest can exist at a time across all 3 slots
-- [ ] Quest rewards scale with floor depth per the formulas above
+- [ ] Only one DepthPush quest can exist at a time across all 3 active slots
 - [ ] HUD toast notification appears when a quest completes in the dungeon
+- [ ] Saves predating v1.1 migrate: `intro_completed[]` becomes `intro_history{id: "completed"}`; the offer board re-materializes on next Quests Board open
 
 ## Implementation Notes
 
 - The quest manager should be an Autoload singleton (`QuestManager`) that listens to EventBus signals and updates quest state.
-- Quest generation is deterministic given `deepest_floor` and a seed, but the seed should be randomized per generation event (not per save) so repeat visits to the Guild produce varied quests.
+- Quest generation is deterministic given `deepest_floor` and a seed, but the seed should be randomized per generation event (not per save) so repeat visits to the Village Chief produce varied quests.
 - The `EnemyDefeated` signal on EventBus needs a `floor` parameter added. This is a breaking change to the existing signal signature -- all current listeners must be updated.
 - `FloorCleared` is a new signal. The spawn system should emit it when `GetTree().GetNodesInGroup("enemies").Count == 0` on the current floor, but only once per floor visit (to avoid re-triggering when all enemies are dead briefly during respawn windows). Use a flag that resets on floor entry.
 - ClearFloor detection must account for the respawn system. The check should run after an enemy dies and before the respawn timer fires. Since enemy death uses `QueueFree()` (deferred to end of frame) and respawn uses a 1.4s timer, there is a natural window where the count genuinely hits 0 before respawns begin.
-- Quest UI is part of the Adventure Guild NPC interaction panel, not a standalone screen. It follows the same proximity-based panel system as all town NPCs.
+- Quest UI is part of the Village Chief's NPC interaction panel (the "Quests Board" window), not a standalone screen. It follows the same proximity-based panel system as all town NPCs (see [npc-interaction.md](../flows/npc-interaction.md)).
+- The `Quest` base record and `RadiantQuest` / `IntroQuest` sub-types live in a shared quest-data module consumed by `QuestManager`, the save layer, and the Quests Board UI. Runtime polymorphism is preferred over discriminated-union gymnastics — the `kind` discriminator in the save JSON is for serialization only; in-memory code can switch on actual C# types.
+- Intro-quest `organic_check` predicates read from existing save telemetry (`deepest_floor`, `character.gold` history, equip history). The one predicate that needs new telemetry is `total_enemies_killed_on_floor_1`. Rather than build a per-floor kill counter, implementers may choose the cheaper equivalent: "on intro-quest-1 `Offered` creation, if `deepest_floor >= 1` AND `character.created_at < now - 1 minute`, treat as organically satisfied." Choose whichever is simpler — the behavior is the same from the player's perspective.
 - The `completed_count` field enables future achievement tracking ("Complete 100 quests") without needing to retroactively scan history.
 
-## Open Questions
-
-The spec was previously locked under a pure-radiant, auto-fill, 3-slot model. The PO's Quest Log additions (player selection, intro quests, scaling, material fiction) have re-opened a handful of genuine ambiguities. Please pick an option (or edit) for each:
-
-### Q1. Offer-board refresh cadence
-
-When (if ever) should offered radiant quests that weren't accepted get rerolled?
-
-- A. Refresh only when empty slots exist on next Guild visit (current spec — offers persist forever until accepted/refused). `[rec]` Simplest; honors "no pressure" stance; matches fetch/research framing.
-- B. Soft refresh: on each Guild visit, up to 2 stale offers (not seen in prior session) get rerolled so the board feels alive.
-- C. Full refresh: any unaccepted offer is replaced on every Guild visit (most variety, but players lose bookmark-like "I'll grab that next time" behavior).
-
-### Q2. Intro-quest visibility for returning players
-
-We ship this system mid-life-cycle. For a character that predates intro quests and has already done (e.g.) "kill 5 on F1" naturally, do intro quests still show up?
-
-- A. Always show all 5 intro quests until the player explicitly completes or refuses each one — starter bonuses are too valuable to skip. `[rec]` Simplest; the player opts in; the bonuses are tiny by mid-game anyway.
-- B. Auto-mark intro quests as completed (no bonus) if the save's telemetry proves the objective was already met organically (e.g., `deepest_floor >= 2` satisfies intro #2). Zero starter bonuses awarded retroactively.
-- C. Offer them but badge with "already done organically, accept for bonus" — honest but confusing.
-
-### Q3. Intro-quest refusal semantics
-
-What happens if the player hits `[ Refuse ]` on an intro quest?
-
-- A. Refusing an intro quest is a soft-hide until the player clicks "Show Tutorials Again" in settings. `[rec]` Respects player autonomy; recoverable.
-- B. Refusing an intro quest is permanent — same as claiming without the bonus. Clean but unforgiving.
-- C. Intro quests cannot be refused, only accepted or ignored. Breaks the "no penalties / no pressure" stance.
-
-### Q4. Gold-reward scaling input
-
-Material tier now uses `quest_scale` (the averaged input). Should gold use `quest_scale` too, or stay keyed to `target_floor`?
-
-- A. Keep gold keyed to `target_floor` (current spec). A high-level player farming shallow floors gets shallow gold — matches the floor they're actually fighting on. `[rec]` Gold is already abundant late-game; tying it to target_floor prevents a gold faucet from farming easy quests.
-- B. Switch gold to `quest_scale` so rewards feel uniformly worth the player's time. Risk: creates an incentive to grind trivial floor-3 quests at level 40 for level-40 gold.
-- C. Hybrid: `gold = base * floor_multiplier * min(1, quest_scale / target_floor)` — caps at quest_scale, floors at target_floor. Correct but complex.
-
-### Q5. Material identity for quest rewards
-
-The spec says "common materials are the type enemies drop on the floor, rare materials are boss-drop type." Loot tables (SPEC-06b) aren't locked yet.
-
-- A. Defer to loot-drops spec — quest materials reuse whatever that spec defines, name-for-name. `[rec]` Avoids parallel truth; quest reward descriptions stay generic ("2x Tier 2 materials") until loot is locked.
-- B. Define a distinct "Guild Salvage" material type that only drops from quests — separates quest-earned crafting currency from dungeon-earned, giving quests a unique reward identity.
-- C. Quest materials are always the *rarest* material on the target floor (always-premium rewards). Risk: makes dungeon farming feel worse than quest farming.
-
-### Q6. Doc rename: "Adventure Guild" → "Village Chief's Quest Board"
-
-The locked spec repeatedly says "Adventure Guild" / "Guild Master." The town only has Village Chief, Guild Maid, and Blacksmith — there is no separate Guild NPC. Fix this doc?
-
-- A. Rename all references to "Village Chief" / "Quest Board" across quests.md now (follow-up commit). `[rec]` Source-of-truth hygiene; matches npc-interaction.md.
-- B. Leave "Guild" as the in-fiction name of the quest institution (even though the Village Chief is its only representative in town) — lets the lore breathe and makes future expansion (more Guild NPCs) easy.
-- C. Clarify once at the top and keep both names — minimal churn. Risk: future readers get confused.
