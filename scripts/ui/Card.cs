@@ -122,14 +122,16 @@ public partial class Card : PanelContainer
             State.Highlighted => UiTheme.Colors.Accent,
             _ => UiTheme.Colors.PanelBorder,
         };
-        // Compensate content margin so the inner rect stays fixed across
-        // states — Godot StyleBox content rect = outer minus border minus
-        // content margin, so a 1-px border-width bump would otherwise shift
-        // every child 1 px on focus/hover/press. 22 = 2 + 20 (Normal pair).
-        int borderWidth = state == State.Normal ? 2 : 3;
-        style.SetBorderWidthAll(borderWidth);
+        // Border width is CONSTANT across states (no content-margin compensation
+        // needed). An earlier version bumped the border 2→3 px on highlight/press
+        // with a compensating content_margin, but Godot recomputes both the
+        // corner-radius clipping and child layout on stylebox swap, which rounds
+        // to whole pixels and can nudge the card by 1 px as the user cycles
+        // highlight — visible as a jitter during card-to-card keyboard nav.
+        // Fix: only the border COLOR changes; width stays put.
+        style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(8);
-        style.SetContentMarginAll(22 - borderWidth);
+        style.SetContentMarginAll(19);
         return style;
     }
 }
