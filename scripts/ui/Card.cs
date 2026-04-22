@@ -28,7 +28,12 @@ public partial class Card : PanelContainer
     {
         CustomMinimumSize = minSize;
         SizeFlagsHorizontal = SizeFlags.ShrinkBegin;
-        SizeFlagsVertical = SizeFlags.ShrinkBegin;
+        // Fill (not ShrinkBegin) so siblings in an HBoxContainer stretch to the
+        // tallest card's height — CustomMinimumSize is a floor, not a ceiling,
+        // and per-card content varies in length (long vs short descriptions).
+        // Without Fill, each card sizes to its own content and the row becomes
+        // a staircase.
+        SizeFlagsVertical = SizeFlags.Fill;
         MouseFilter = MouseFilterEnum.Stop;
         FocusMode = FocusModeEnum.All;
         ApplyStyle();

@@ -60,8 +60,17 @@ public partial class Main : Node
         }
 #endif
 
-        // Start with splash screen
-        CallDeferred(MethodName.ShowSplashScreen);
+        // Boot flow: LegalSplash → SplashScreen → …
+        // Tests bypass the legal splash (skipping its auto-advance timer) to
+        // keep suite runtime + existing SplashScreen waits unchanged.
+#if DEBUG
+        if (testEnv.ShouldRunTests)
+            CallDeferred(MethodName.ShowSplashScreen);
+        else
+            CallDeferred(MethodName.ShowLegalSplash);
+#else
+        CallDeferred(MethodName.ShowLegalSplash);
+#endif
 
 #if DEBUG
         // Only spin up RunTests once per process. ResetToFreshSplash (used by
@@ -72,6 +81,20 @@ public partial class Main : Node
         if (testEnv.ShouldRunTests && GetTree().Root.GetNodeOrNull("TestRoot") == null)
             CallDeferred(MethodName.RunTests);
 #endif
+    }
+
+    private void ShowLegalSplash()
+    {
+        var legal = new Ui.LegalSplash();
+        legal.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        legal.Theme = Ui.GlobalTheme.Create();
+        legal.Connect(Ui.LegalSplash.SignalName.ContinuePressed, Callable.From(() =>
+        {
+            legal.QueueFree();
+            ShowSplashScreen();
+        }));
+        GetNode<CanvasLayer>("UILayer").AddChild(legal);
+        GetTree().Paused = true;
     }
 
     private void ShowSplashScreen()

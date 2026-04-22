@@ -12,6 +12,7 @@ public partial class ScreenTransition : Control
 {
     public static ScreenTransition Instance { get; private set; } = null!;
 
+    private const float StartDelay = 0.2f;
     private const float FadeOutDuration = 0.3f;
     private const float HoldDuration = 0.6f;
     private const float FadeInDuration = 0.4f;
@@ -82,6 +83,11 @@ public partial class ScreenTransition : Control
         _overlay.MouseFilter = MouseFilterEnum.Stop; // Block input during transition
 
         var tween = CreateTween();
+
+        // Phase 0: 200ms debounce beat before the fade begins. Gives the
+        // triggering UI (button press, card select) a moment to settle so
+        // transitions don't feel like an instant yank to black.
+        tween.TweenInterval(StartDelay);
 
         // Phase 1: Fade to black
         tween.TweenProperty(_overlay, "color:a", 1.0f, FadeOutDuration);

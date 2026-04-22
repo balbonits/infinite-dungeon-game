@@ -47,18 +47,27 @@ run-headless: build ## Build and run headless (auto-quits, for CI/testing)
 import: ## Run Godot import (required after adding new assets/scenes)
 	@$(GODOT) --headless --import --quit 2>&1
 
-test: ## Run ALL tests (unit + integration)
-	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity minimal 2>&1
-	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity minimal 2>&1
+# Every test target tees its live output to a per-target log in ./logs/
+# so a debugging dev (or CI) can tail the run in another window while the
+# suite is in flight. Directories created on demand; .gitignored.
+LOGS_DIR := ./logs
 
-test-unit: ## Run unit tests only
-	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity normal 2>&1
+test: ## Run ALL tests (unit + integration) — streams to logs/test.log
+	@mkdir -p $(LOGS_DIR)
+	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity minimal 2>&1 | tee $(LOGS_DIR)/test.log
+	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity minimal 2>&1 | tee -a $(LOGS_DIR)/test.log
 
-test-integration: ## Run integration tests only
-	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity normal 2>&1
+test-unit: ## Run unit tests only — streams to logs/test-unit.log
+	@mkdir -p $(LOGS_DIR)
+	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj --verbosity normal 2>&1 | tee $(LOGS_DIR)/test-unit.log
 
-test-e2e: ## Run E2E tests (requires GODOT_BIN set)
-	@dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj --verbosity normal 2>&1
+test-integration: ## Run integration tests only — streams to logs/test-integration.log
+	@mkdir -p $(LOGS_DIR)
+	@dotnet test tests/integration/DungeonGame.Tests.Integration.csproj --verbosity normal 2>&1 | tee $(LOGS_DIR)/test-integration.log
+
+test-e2e: ## Run E2E tests (requires GODOT_BIN set) — streams to logs/test-e2e.log
+	@mkdir -p $(LOGS_DIR)
+	@dotnet test tests/e2e/DungeonGame.Tests.E2E.csproj --verbosity normal 2>&1 | tee $(LOGS_DIR)/test-e2e.log
 
 test-coverage: ## Run tests + generate HTML coverage report (./coverage/report/index.html)
 	@dotnet test tests/unit/DungeonGame.Tests.Unit.csproj \

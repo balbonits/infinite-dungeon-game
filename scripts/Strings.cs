@@ -29,6 +29,14 @@ public static class Strings
         public static string SlotLabel(int oneBasedIndex) => $"Slot {oneBasedIndex}";
     }
 
+    // --- Legal / pre-game splash ---
+    public static class Legal
+    {
+        public const string Copyright = "© 2026 Infinite Dungeon";
+        public const string AiDisclosure = "Contains AI-generated assets. See Credits for details.";
+        public const string PressAnyKey = "Press any key to continue";
+    }
+
     // --- Floor Wipe ---
     public static class FloorWipe
     {

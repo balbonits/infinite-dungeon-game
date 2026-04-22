@@ -138,10 +138,13 @@ public partial class LoadGameScreen : Control
 
             // Wrap card so the delete X can overlay its top-right corner.
             // Wrapper matches Card.DefaultSize so populated and empty slots
-            // take the same footprint in the HBox row.
+            // take the same footprint in the HBox row. SizeFlagsVertical =
+            // Fill (not ShrinkBegin) so the wrapper stretches to match the
+            // tallest sibling's height — EmptyCard stretches via the same
+            // flag, so populated + empty rows stay bottom-aligned.
             var wrapper = new Control();
             wrapper.CustomMinimumSize = Card.DefaultSize;
-            wrapper.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+            wrapper.SizeFlagsVertical = SizeFlags.Fill;
 
             card.SetAnchorsPreset(LayoutPreset.FullRect);
             wrapper.AddChild(card);

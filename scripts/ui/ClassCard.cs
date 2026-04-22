@@ -63,6 +63,16 @@ public partial class ClassCard : Card
         descLabel.MouseFilter = MouseFilterEnum.Ignore;
         Content.AddChild(descLabel);
 
+        // Expanding spacer — pushes stats + skill to the bottom so every card
+        // has its stats/skill row on the same baseline regardless of how long
+        // the description wraps. Without this, short-description cards (Mage)
+        // cluster their content at the top while long-description cards
+        // (Warrior/Ranger) fill naturally, and the cards look uneven inside.
+        var spacer = new Control();
+        spacer.SizeFlagsVertical = SizeFlags.ExpandFill;
+        spacer.MouseFilter = MouseFilterEnum.Ignore;
+        Content.AddChild(spacer);
+
         Content.AddChild(NonInteractiveSeparator());
 
         var statsGrid = new GridContainer();
