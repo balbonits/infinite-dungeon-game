@@ -21,7 +21,7 @@ PROJECT    := DungeonGame
 # aborts with "framework not found" instead of running the adapter.
 export DOTNET_ROLL_FORWARD := LatestMajor
 
-.PHONY: help build build-fast refresh run run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit test-ui test-ui-headless test-ui-suite sandbox sandbox-headless sandbox-headless-all pr-copilot-request pr-copilot-wait pr-copilot-status kill clean clean-all status verify doctor branch squash done export-all export-mac export-win export-linux
+.PHONY: help build build-fast refresh run run-full run-headless import test test-unit test-integration test-e2e test-coverage test-gdunit test-ui test-ui-headless test-ui-suite sandbox sandbox-headless sandbox-headless-all pr-copilot-request pr-copilot-wait pr-copilot-status kill clean clean-all status verify doctor branch squash done export-all export-mac export-win export-linux
 
 # ─── Core ────────────────────────────────────────────────────────────────────
 
@@ -38,7 +38,10 @@ build-fast: ## Build C# only — skip the Godot import pass (for pure C# iterati
 refresh: ## Force re-import Godot assets (run after art / tile / sheet changes)
 	@$(GODOT) --headless --import --quit 2>&1 | tail -3
 
-run: build ## Build and launch the game (windowed)
+run: build-fast ## Build C# + launch windowed. Skips the ~40s asset import; run `make import` separately after art changes.
+	@$(GODOT) --path . &
+
+run-full: build ## Build + re-import all assets + launch. Use after adding new sprites/tiles.
 	@$(GODOT) --path . &
 
 run-headless: build ## Build and run headless (auto-quits, for CI/testing)

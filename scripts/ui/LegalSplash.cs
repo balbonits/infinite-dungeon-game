@@ -14,8 +14,14 @@ public partial class LegalSplash : Control
 
     private const float FadeInDuration = 0.4f;
     private const float HoldDuration = 3.5f;
+    // Swallow input for the first frames after _Ready — macOS window focus
+    // can deliver a queued keyboard/mouse event from whatever the user did
+    // to launch the game (Enter in terminal, click on the Godot icon), which
+    // would otherwise dismiss the splash before it's visible.
+    private const float InputIgnoreWindow = 0.5f;
 
     private bool _dismissed;
+    private bool _acceptsInput;
     private Control _content = null!;
 
     public override void _Ready()
@@ -65,14 +71,18 @@ public partial class LegalSplash : Control
         var tween = CreateTween();
         tween.TweenProperty(_content, "modulate:a", 1.0f, FadeInDuration);
 
+        var inputTimer = GetTree().CreateTimer(InputIgnoreWindow);
+        inputTimer.Connect(SceneTreeTimer.SignalName.Timeout,
+            Callable.From(() => _acceptsInput = true));
+
         var timer = GetTree().CreateTimer(HoldDuration);
         timer.Connect(SceneTreeTimer.SignalName.Timeout, Callable.From(Dismiss));
     }
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (_dismissed) return;
-        if (@event is InputEventKey key && key.Pressed)
+        if (_dismissed || !_acceptsInput) return;
+        if (@event is InputEventKey key && key.Pressed && !key.Echo)
         {
             Dismiss();
             GetViewport().SetInputAsHandled();
