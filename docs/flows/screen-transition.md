@@ -10,6 +10,7 @@ All transitions use the same animation sequence:
 
 | Phase | Duration | What happens |
 |-------|----------|-------------|
+| 0. Start delay | 0.2s | Debounce beat — lets the triggering UI (button press, card select) settle before the fade begins so transitions don't feel like an instant yank to black |
 | 1. Fade out | 0.3s | Overlay alpha 0 → 1.0 (black) |
 | 2. Show text | 0.15s | Message label fades in |
 | 3. Show subtext | 0.1s | Submessage label fades in (overlapped with text) |
@@ -19,7 +20,7 @@ All transitions use the same animation sequence:
 | 7. Fade in | 0.4s | Overlay alpha → 0 (reveal scene) |
 | 8. Cleanup | instant | `_isTransitioning = false` |
 
-**Total duration:** ~2.1 seconds
+**Total duration:** ~2.3 seconds
 
 ## API
 

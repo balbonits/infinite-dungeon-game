@@ -81,7 +81,19 @@ public partial class LegalSplash : Control
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (_dismissed || !_acceptsInput) return;
+        if (_dismissed) return;
+
+        // During the input-ignore window, still CONSUME key/mouse-press events
+        // so they can't leak past this splash to the screens underneath
+        // (e.g., the queued Enter from the terminal launch would otherwise
+        // propagate to the future SplashScreen and press its focused button).
+        if (!_acceptsInput)
+        {
+            if (@event is InputEventKey || @event is InputEventMouseButton)
+                GetViewport().SetInputAsHandled();
+            return;
+        }
+
         if (@event is InputEventKey key && key.Pressed && !key.Echo)
         {
             Dismiss();

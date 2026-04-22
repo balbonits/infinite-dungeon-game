@@ -84,8 +84,19 @@ public partial class LogConsole : Control
     {
         _isOpen = !_isOpen;
         Visible = _isOpen;
-        if (_isOpen)
+        if (_isOpen && _readPos == 0)
+        {
+            // First open this session — skip existing log history instead of
+            // rendering it all (can be megabytes after a long dev session;
+            // RichTextLabel.AppendText blocks on large strings).
+            using var f = FileAccess.Open(LogPath, FileAccess.ModeFlags.Read);
+            if (f != null) _readPos = f.GetLength();
+            _statusLabel.Text = "tailing live output";
+        }
+        else if (_isOpen)
+        {
             PollNow();
+        }
     }
 
     public override void _Process(double delta)
@@ -123,6 +134,13 @@ public partial class LogConsole : Control
         {
             Toggle();
             GetViewport().SetInputAsHandled();
+            return;
         }
+
+        // Swallow all other key events while the console is open so the
+        // player can scroll / select text in the log without accidentally
+        // moving the character or triggering hotkeys under the panel.
+        if (_isOpen && @event is InputEventKey)
+            GetViewport().SetInputAsHandled();
     }
 }

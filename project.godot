@@ -31,8 +31,13 @@ window/stretch/aspect="expand"
 
 [debug]
 
-file_logging/enable_file_logging=true
-file_logging/enable_file_logging.pc=true
+; File logging is DEBUG/dev-loop only — an exported release build
+; shouldn't be silently writing logs to the user's profile dir. The
+; .debug override scopes it to debug/editor builds; release exports
+; leave the engine's default (disabled) in place.
+file_logging/enable_file_logging=false
+file_logging/enable_file_logging.debug=true
+file_logging/enable_file_logging.editor=true
 file_logging/log_path="user://logs/godot.log"
 file_logging/max_log_files=10
 
