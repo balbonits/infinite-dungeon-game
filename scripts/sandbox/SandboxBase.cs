@@ -37,6 +37,11 @@ public abstract partial class SandboxBase : Control
 
     public override void _Ready()
     {
+        // Sandbox scenes can launch standalone (bypassing Main's UILayer theme
+        // assignment), so apply the global theme here so PS2P + palette cascade
+        // everywhere under the sandbox root per SPEC-UI-FONT-01.
+        Theme = Ui.GlobalTheme.Create();
+
         BuildUi();
         _SandboxReady();
 
@@ -118,7 +123,7 @@ public abstract partial class SandboxBase : Control
             Text = SandboxTitle,
             SizeFlagsHorizontal = SizeFlags.Expand,
         };
-        _titleLabel.AddThemeFontSizeOverride("font_size", 18);
+        _titleLabel.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Heading);
         headerHBox.AddChild(_titleLabel);
 
         // Reset button
@@ -150,7 +155,7 @@ public abstract partial class SandboxBase : Control
             FitContent = true,
             SelectionEnabled = true,
         };
-        _logPanel.AddThemeFontSizeOverride("normal_font_size", 12);
+        _logPanel.AddThemeFontSizeOverride("normal_font_size", Ui.UiTheme.FontSizes.Body);
         logScroll.AddChild(_logPanel);
         body.AddChild(logScroll);
     }
@@ -164,7 +169,7 @@ public abstract partial class SandboxBase : Control
     {
         var label = new Label { Text = text };
         label.AddThemeColorOverride("font_color", new Color(0.6f, 0.8f, 1f));
-        label.AddThemeFontSizeOverride("font_size", 13);
+        label.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         _controlsContainer.AddChild(label);
         return label;
     }

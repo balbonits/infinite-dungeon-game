@@ -24,6 +24,17 @@ public static class Strings
         public const string ConfirmSelection = "Confirm";
         public const string ClickToSelect = "Click to select";
         public const string Cancel = "Cancel";
+        public const string BackToMainMenu = "Back to Main Menu";
+        public const string EmptySlot = "Empty Slot";
+        public static string SlotLabel(int oneBasedIndex) => $"Slot {oneBasedIndex}";
+    }
+
+    // --- Legal / pre-game splash ---
+    public static class Legal
+    {
+        public const string Copyright = "© 2026 Infinite Dungeon";
+        public const string AiDisclosure = "Contains AI-generated assets. See Credits for details.";
+        public const string PressAnyKey = "Press any key to continue";
     }
 
     // --- Floor Wipe ---

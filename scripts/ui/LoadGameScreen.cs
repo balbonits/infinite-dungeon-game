@@ -41,10 +41,9 @@ public partial class LoadGameScreen : Control
     {
         public int Index;
         public bool IsPopulated;
-        public Control Root = null!;          // Teardown target (the parent this slot adds to the row).
-        public Control Focusable = null!;     // The control that receives GrabFocus() — must have FocusMode != None.
-        public CharacterCard? Card;           // Populated slot — the character card.
-        public Button? DeleteBtn;             // Red X, only on populated.
+        public Control Root = null!;
+        public Control Focusable = null!;
+        public Button? DeleteBtn;
     }
 
     public override void _Ready()
@@ -132,15 +131,20 @@ public partial class LoadGameScreen : Control
 
         if (save != null)
         {
-            var card = CharacterCard.Create(save, () => EmitSignal(SignalName.LoadSelected, index));
+            var card = CharacterCard.Create(
+                CharacterCard.FromSaveData(save),
+                () => EmitSignal(SignalName.LoadSelected, index));
             card.FocusEntered += () => { _focusedSlot = index; RefreshLoadEnabled(); };
-            card.SizeFlagsVertical = SizeFlags.ShrinkBegin;
-            entry.Card = card;
 
-            // Wrap card in a container that positions the delete X over its top-right.
+            // Wrap card so the delete X can overlay its top-right corner.
+            // Wrapper matches Card.DefaultSize so populated and empty slots
+            // take the same footprint in the HBox row. SizeFlagsVertical =
+            // Fill (not ShrinkBegin) so the wrapper stretches to match the
+            // tallest sibling's height — EmptyCard stretches via the same
+            // flag, so populated + empty rows stay bottom-aligned.
             var wrapper = new Control();
-            wrapper.CustomMinimumSize = new Vector2(240, 280);
-            wrapper.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+            wrapper.CustomMinimumSize = Card.DefaultSize;
+            wrapper.SizeFlagsVertical = SizeFlags.Fill;
 
             card.SetAnchorsPreset(LayoutPreset.FullRect);
             wrapper.AddChild(card);
@@ -148,9 +152,7 @@ public partial class LoadGameScreen : Control
             var deleteBtn = new Button { Text = "X" };
             deleteBtn.CustomMinimumSize = new Vector2(32, 32);
             deleteBtn.FocusMode = FocusModeEnum.All;
-            deleteBtn.AddThemeColorOverride("font_color", Colors.White);
             UiTheme.StyleDangerButton(deleteBtn, UiTheme.FontSizes.Small);
-            // Position the X at the top-right corner (inside the card border).
             deleteBtn.OffsetLeft = -40;
             deleteBtn.OffsetTop = 4;
             deleteBtn.SetAnchor(Side.Left, 1.0f);
@@ -162,33 +164,13 @@ public partial class LoadGameScreen : Control
             wrapper.AddChild(deleteBtn);
 
             entry.Root = wrapper;
-            entry.Focusable = card; // CharacterCard has FocusMode=All; wrapper is a plain Control (unfocusable).
+            entry.Focusable = card;
             parent.AddChild(wrapper);
         }
         else
         {
-            var empty = new PanelContainer();
-            empty.CustomMinimumSize = new Vector2(240, 280);
-            empty.SizeFlagsVertical = SizeFlags.ShrinkBegin;
-            empty.FocusMode = FocusModeEnum.All;
-            empty.AddThemeStyleboxOverride("panel", UiTheme.CreatePanelStyle(0.4f, false));
+            var empty = EmptyCard.Create(index, () => { });
             empty.FocusEntered += () => { _focusedSlot = index; RefreshLoadEnabled(); };
-
-            var vbox = new VBoxContainer();
-            vbox.Alignment = BoxContainer.AlignmentMode.Center;
-            vbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-            vbox.SizeFlagsVertical = SizeFlags.ExpandFill;
-            empty.AddChild(vbox);
-
-            var label = new Label { Text = "Empty Slot" };
-            UiTheme.StyleLabel(label, UiTheme.Colors.Muted, UiTheme.FontSizes.Body);
-            label.HorizontalAlignment = HorizontalAlignment.Center;
-            vbox.AddChild(label);
-
-            var sublabel = new Label { Text = $"Slot {index + 1}" };
-            UiTheme.StyleLabel(sublabel, UiTheme.Colors.Muted, UiTheme.FontSizes.Small);
-            sublabel.HorizontalAlignment = HorizontalAlignment.Center;
-            vbox.AddChild(sublabel);
 
             entry.Root = empty;
             entry.Focusable = empty;
@@ -211,13 +193,13 @@ public partial class LoadGameScreen : Control
             if (_slots[i].IsPopulated)
             {
                 _focusedSlot = i;
-                _slots[i].Focusable.GrabFocus();
+                _slots[i].Focusable.CallDeferred(Control.MethodName.GrabFocus);
                 RefreshLoadEnabled();
                 return;
             }
         }
         _focusedSlot = -1;
-        _backBtn.GrabFocus();
+        _backBtn.CallDeferred(Control.MethodName.GrabFocus);
         RefreshLoadEnabled();
     }
 
@@ -225,21 +207,20 @@ public partial class LoadGameScreen : Control
     {
         if (_focusedSlot < 0)
         {
-            // Coming up from the buttons zone. Focus any slot; prefer the first populated.
             FocusFirstAvailable();
             return;
         }
         int next = (_focusedSlot + direction + _slots.Length) % _slots.Length;
         _focusedSlot = next;
-        _slots[next].Focusable.GrabFocus();
+        _slots[next].Focusable.CallDeferred(Control.MethodName.GrabFocus);
         RefreshLoadEnabled();
     }
 
     private void MoveToButtonZone()
     {
         _focusedSlot = -1;
-        if (_buttonZone == 0) _loadBtn.GrabFocus();
-        else _backBtn.GrabFocus();
+        if (_buttonZone == 0) _loadBtn.CallDeferred(Control.MethodName.GrabFocus);
+        else _backBtn.CallDeferred(Control.MethodName.GrabFocus);
         RefreshLoadEnabled();
     }
 
@@ -300,37 +281,45 @@ public partial class LoadGameScreen : Control
             }
         }
 
-        if (@event.IsActionPressed("ui_left"))
+        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
+            GetViewport().SetInputAsHandled();
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        // Arrow-key nav must run in _Input, not _UnhandledInput: Godot's GUI
+        // focus system intercepts ui_left/right/up/down for focus navigation
+        // when a FocusMode=All Control (our Cards) is focused, so it would
+        // eat these events before _UnhandledInput could see them. Same fix
+        // ClassSelect needed after the Card refactor.
+        if (!_ready || !Visible || !IsInsideTree()) return;
+
+        if (@event.IsActionPressed(Constants.InputActions.MoveLeft))
         {
-            // From buttons zone: prefer first populated slot (don't land on empty slot 0).
             if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(-1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
-        if (@event.IsActionPressed("ui_right"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveRight))
         {
             if (_focusedSlot < 0) FocusFirstAvailable();
             else CycleSlotFocus(1);
-            GetViewport().SetInputAsHandled();
+            GetViewport()?.SetInputAsHandled();
             return;
         }
-        if (@event.IsActionPressed("ui_down"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveDown))
         {
             if (_focusedSlot >= 0) { _buttonZone = 0; MoveToButtonZone(); }
-            else if (_loadBtn.HasFocus()) { _buttonZone = 1; _backBtn.GrabFocus(); }
-            GetViewport().SetInputAsHandled();
+            else if (_loadBtn.HasFocus()) { _buttonZone = 1; _backBtn.CallDeferred(Control.MethodName.GrabFocus); }
+            GetViewport()?.SetInputAsHandled();
             return;
         }
-        if (@event.IsActionPressed("ui_up"))
+        if (@event.IsActionPressed(Constants.InputActions.MoveUp))
         {
-            if (_backBtn.HasFocus()) { _buttonZone = 0; _loadBtn.GrabFocus(); }
+            if (_backBtn.HasFocus()) { _buttonZone = 0; _loadBtn.CallDeferred(Control.MethodName.GrabFocus); }
             else if (_loadBtn.HasFocus()) { FocusFirstAvailable(); }
-            GetViewport().SetInputAsHandled();
-            return;
+            GetViewport()?.SetInputAsHandled();
         }
-
-        if (KeyboardNav.HandleConfirm(@event, GetViewport()))
-            GetViewport().SetInputAsHandled();
     }
 }

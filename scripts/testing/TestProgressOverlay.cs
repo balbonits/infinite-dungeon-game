@@ -73,7 +73,7 @@ public partial class TestProgressOverlay : CanvasLayer
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
         _label.AddThemeColorOverride("font_color", new Color(1, 0.9f, 0.3f));
-        _label.AddThemeFontSizeOverride("font_size", 18);
+        _label.AddThemeFontSizeOverride("font_size", Ui.UiTheme.FontSizes.Body);
         panel.AddChild(_label);
     }
 

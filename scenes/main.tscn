@@ -25,6 +25,7 @@
 [ext_resource type="Script" path="res://scripts/ui/ActionMenu.cs" id="23_actionmenu"]
 [ext_resource type="Script" path="res://scripts/ui/BackpackWindow.cs" id="24_backpack"]
 [ext_resource type="Script" path="res://scripts/ui/DebugConsole.cs" id="25_debug_console"]
+[ext_resource type="Script" path="res://scripts/ui/LogConsole.cs" id="26_log_console"]
 [ext_resource type="Script" path="res://scripts/ui/XpBar.cs" id="26_xpbar"]
 [ext_resource type="Script" path="res://scripts/ui/GuildWindow.cs" id="27_guild"]
 
@@ -286,6 +287,18 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("25_debug_console")
+
+[node name="LogConsole" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -260.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("26_log_console")
 
 [node name="XpBar" type="Control" parent="UILayer"]
 layout_mode = 3

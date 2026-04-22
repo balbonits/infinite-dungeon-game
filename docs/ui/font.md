@@ -54,7 +54,7 @@ Notes:
 
 - **Asset location:** `assets/fonts/PressStart2P-Regular.ttf`. The OFL license file ships alongside at `assets/fonts/PressStart2P-OFL.txt`.
 - **Godot import:** import as `DynamicFont` with hinting `None` (bitmap font — hinting would blur), filter `Off` (crisp pixel edges, no bilinear smoothing).
-- **UiTheme integration:** add a `FontFamily` field to `UiTheme` and load PS2P on static init. Every `AddThemeFontOverride("font", ...)` call in the UI code gets the preloaded PS2P `FontFile`. No per-scene font declarations.
+- **UiTheme integration:** expose `FontFamily` on `UiTheme` as a **lazy-loaded** `Font` property (backed by a private cached `Font?`). First read triggers `GD.Load<FontFile>(...)`; subsequent reads return the cached instance. `GlobalTheme.Create()` assigns that shared PS2P instance to the Theme's `DefaultFont`, so every Control under the UILayer inherits it via theme cascading — no per-control `AddThemeFontOverride("font", ...)` calls needed in the common case. The exception is Labels parented under `Node2D` (e.g., stairs labels in `Town.cs` / `Dungeon.cs`): Godot's theme cascade doesn't cross the Control→Node2D boundary, so those require an explicit `AddThemeFontOverride("font", UiTheme.FontFamily)`. The lazy form (vs. `public static readonly`) is intentional: static initialization fires when `UiTheme` is first touched by any code, including the test assembly, which compiles against GodotSharp but never runs Godot's runtime — static `GD.Load` at class-init time throws there. Lazy-load keeps the test assembly green while still giving UI code a single cached instance.
 - **Fallback font:** Godot's default sans-serif stays as fallback for unsupported glyphs (primarily non-Latin scripts — PS2P covers Basic Latin + Latin-1 Supplement only). If localized builds need Japanese/Chinese/etc., fallback activates automatically and needs a separate localization spec.
 
 ### Application scope
@@ -76,7 +76,7 @@ Notes:
 ## Acceptance Criteria
 
 - [ ] `assets/fonts/PressStart2P-Regular.ttf` + `PressStart2P-OFL.txt` land in the repo.
-- [ ] `UiTheme` exposes `FontFamily` (preloaded `FontFile`) and every Label/Button/etc. gets it via a central styling helper.
+- [ ] `UiTheme` exposes `FontFamily` (lazy-loaded `Font`, cached after first read — see Integration note above) and every Label/Button/etc. gets it via a central styling helper.
 - [ ] `UiTheme.FontSizes` updates to the new ladder (8 / 16 / 24 / 32 / 48) with Body=Label=Button=16.
 - [ ] Every existing UI screen renders in PS2P with no font-override escaping back to the engine default.
 - [ ] Long-dialogue screens (Village Chief dialogue, Chief quest offers) apply line-spacing ×1.5, ~50-char line cap, paragraph breaks per the mitigation rules.
@@ -85,7 +85,7 @@ Notes:
 
 ## Implementation Notes
 
-- **Font preload:** load PS2P once at `UiTheme` static init; expose as `public static readonly FontFile FontFamily = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");`. All UI code reads from this static — no duplicate loads.
+- **Font preload:** expose as a lazy-loaded `Font` property with a cached `Font? _fontFamily` backing field. First read triggers `GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf")`, applies the pixel-font discipline (`Antialiasing=None`, `Hinting=None`, `SubpixelPositioning=Disabled`, `ForceAutohinter=false`), and caches. Return type is the base `Font` (not `FontFile`) so the error path can fall back to `ThemeDB.FallbackFont` — which is a `Font`, not necessarily a `FontFile` — without tofu-rendering from an empty `FontFile`. All UI code reads from this one property — no duplicate loads.
 - **Integer-multiple rule:** PS2P's native cell is 8 px. Any font size must be a multiple of 8 to stay crisp. The size ladder above enforces this; if a future UI spec introduces an odd size (e.g., 14), it either rounds to 16 or gets justified as a deliberate one-off.
 - **Filter setting:** set `filter=Off` on the imported `FontFile` resource so pixel edges stay crisp. Bilinear filtering blurs bitmap fonts.
 - **SettingsPanel update:** the current `SettingsPanel` tab-button styling (`SettingsPanel.cs:126-139`) uses `UiTheme.FontSizes.Body` — which becomes 16 under the new ladder (up from 12). Visual pass needed to verify the tab-button widths still fit at 16 px.

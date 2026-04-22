@@ -12,6 +12,7 @@ public partial class ScreenTransition : Control
 {
     public static ScreenTransition Instance { get; private set; } = null!;
 
+    private const float StartDelay = 0.2f;
     private const float FadeOutDuration = 0.3f;
     private const float HoldDuration = 0.6f;
     private const float FadeInDuration = 0.4f;
@@ -49,14 +50,17 @@ public partial class ScreenTransition : Control
 
         _messageLabel = new Label();
         _messageLabel.AddThemeColorOverride("font_color", UiTheme.Colors.Accent);
-        _messageLabel.AddThemeFontSizeOverride("font_size", 28);
+        // SPEC-UI-FONT-01: 32 (= FontSizes.Title) replaces hardcoded 28 so PS2P's
+        // 8px native cell renders without sub-pixel drift.
+        _messageLabel.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Title);
         _messageLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _messageLabel.Modulate = new Color(1, 1, 1, 0);
         vbox.AddChild(_messageLabel);
 
         _subLabel = new Label();
         _subLabel.AddThemeColorOverride("font_color", UiTheme.Colors.Muted);
-        _subLabel.AddThemeFontSizeOverride("font_size", 14);
+        // 16 (= FontSizes.Body) replaces hardcoded 14 — closest integer-multiple-of-8.
+        _subLabel.AddThemeFontSizeOverride("font_size", UiTheme.FontSizes.Body);
         _subLabel.HorizontalAlignment = HorizontalAlignment.Center;
         _subLabel.Modulate = new Color(1, 1, 1, 0);
         vbox.AddChild(_subLabel);
@@ -79,6 +83,11 @@ public partial class ScreenTransition : Control
         _overlay.MouseFilter = MouseFilterEnum.Stop; // Block input during transition
 
         var tween = CreateTween();
+
+        // Phase 0: 200ms debounce beat before the fade begins. Gives the
+        // triggering UI (button press, card select) a moment to settle so
+        // transitions don't feel like an instant yank to black.
+        tween.TweenInterval(StartDelay);
 
         // Phase 1: Fade to black
         tween.TweenProperty(_overlay, "color:a", 1.0f, FadeOutDuration);

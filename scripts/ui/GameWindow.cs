@@ -33,6 +33,10 @@ public partial class GameWindow : Control
     protected float WindowWidth { get => _windowWidth; set => _windowWidth = value; }
     protected bool ReturnToPauseMenu { get => _returnToPauseMenu; set => _returnToPauseMenu = value; }
 
+    /// <summary>Whether to render an X close button at the top-right of the panel.
+    /// Subclasses (e.g., confirmation dialogs) can set false before base._Ready.</summary>
+    protected bool ShowCloseButton { get; set; } = true;
+
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Always;
@@ -49,6 +53,28 @@ public partial class GameWindow : Control
         Overlay.Theme = UiTheme.CreateGameTheme();
         Overlay.Visible = false;
         AddChild(Overlay);
+
+        // Close button floating at the panel's top-right. Added as the first
+        // row of ContentBox (HBox with spacer + X) so it sits above any
+        // subclass content and doesn't require absolute positioning. Subclasses
+        // that want it hidden (e.g., confirmation dialogs) can set
+        // ShowCloseButton = false before calling base._Ready. Click / Enter /
+        // S all route through the same Close() path as Esc/D.
+        if (ShowCloseButton)
+        {
+            var closeRow = new HBoxContainer();
+            closeRow.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            var spacer = new Control();
+            spacer.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            closeRow.AddChild(spacer);
+            var closeBtn = new Button { Text = "×" };
+            closeBtn.CustomMinimumSize = new Vector2(32, 32);
+            closeBtn.FocusMode = FocusModeEnum.All;
+            UiTheme.StyleSecondaryButton(closeBtn, UiTheme.FontSizes.Heading);
+            closeBtn.Pressed += Close;
+            closeRow.AddChild(closeBtn);
+            ContentBox.AddChild(closeRow);
+        }
 
         // Scrollable content area — subclasses add to ScrollContent
         Scroll = new ScrollContainer { FollowFocus = true };

@@ -35,14 +35,79 @@ public static class UiTheme
         public static readonly Color BtnHover = new(0.420f, 0.655f, 1.0f, 1.0f);         // same as ActionHover
     }
 
+    /// <summary>
+    /// Press Start 2P (OFL 1.1, commercial OK) per SPEC-UI-FONT-01. Uppercase-
+    /// only bitmap font with an 8px native cell; every size on <see cref="FontSizes"/>
+    /// below is an integer multiple of 8 so glyphs snap to the pixel grid without
+    /// anti-aliasing blur.
+    ///
+    /// Lazy-loaded from disk on first read. Property accesses happen only at
+    /// runtime inside Godot scenes (GlobalTheme.Create, StyleButton/StyleLabel
+    /// factories). The unit-test project compiles against GodotSharp but the
+    /// UI namespace is excluded from the test assembly's compile set, so these
+    /// readers never fire under xUnit — the load path is purely a Godot-
+    /// runtime concern.
+    /// </summary>
+    // Return type is Font (the base class) — the happy path returns a
+    // FontFile with pixel-font settings applied; the error path returns
+    // ThemeDB.FallbackFont, which is the engine's built-in Font (not
+    // necessarily FontFile). Callers only need Font (Theme.DefaultFont and
+    // AddThemeFontSizeOverride bind against Font).
+    private static Font? _fontFamily;
+    public static Font FontFamily
+    {
+        get
+        {
+            if (_fontFamily != null) return _fontFamily;
+            var loaded = GD.Load<FontFile>("res://assets/fonts/PressStart2P-Regular.ttf");
+            if (loaded == null)
+            {
+                // Operator alert: the font is a required shipping asset per
+                // SPEC-UI-FONT-01. Fall back to Godot's built-in engine font
+                // (ThemeDB.FallbackFont) so UI stays readable while the
+                // error surfaces. Previously cast the fallback to FontFile,
+                // which silently null'd out + produced tofu from an empty
+                // FontFile — worse than the engine default. Return Font so
+                // any engine font class is accepted.
+                GD.PrintErr("[UiTheme] PressStart2P-Regular.ttf failed to load. Re-import the font resource; UI renders with Godot's built-in fallback font until fixed.");
+                _fontFamily = ThemeDB.FallbackFont ?? new FontFile();
+                return _fontFamily;
+            }
+            // Pixel-font rendering discipline per SPEC-UI-FONT-01:
+            // - Antialiasing=None keeps the 8-px native cell crisp.
+            // - Hinting=None disables hinting adjustments (PS2P is already
+            //   bitmap-pre-aligned; hinting would distort the grid).
+            // - SubpixelPositioning=Disabled locks glyphs to whole-pixel
+            //   positions — any sub-pixel offset smears the pixel font.
+            // - ForceAutohinter=false for completeness (belt-and-suspenders
+            //   when shipping on platforms whose freetype defaults changed).
+            // These properties live on the FontFile resource and don't rely
+            // on the .import sidecar (which isn't version-controlled here).
+            // Godot's TextureFilter for the Theme is set to Nearest at the
+            // project level (SPEC-UI-HIGH-DPI-01 — sibling spec).
+            loaded.Antialiasing = TextServer.FontAntialiasing.None;
+            loaded.Hinting = TextServer.Hinting.None;
+            loaded.SubpixelPositioning = TextServer.SubpixelPositioning.Disabled;
+            loaded.ForceAutohinter = false;
+            _fontFamily = loaded;
+            return _fontFamily;
+        }
+    }
+
+    /// <summary>
+    /// Font-size ladder per SPEC-UI-FONT-01. All sizes are integer multiples
+    /// of 8 so Press Start 2P's 8px native cell renders without sub-pixel
+    /// drift. Previous sizes (11/12/13/20) were legacy values that only made
+    /// sense for the proportional default font and are replaced here.
+    /// </summary>
     public static class FontSizes
     {
-        public const int Small = 11;
-        public const int Body = 12;
-        public const int Label = 13;
+        public const int Small = 8;
+        public const int Body = 16;
+        public const int Label = 16;
         public const int Button = 16;
-        public const int Heading = 20;
-        public const int Title = 24;
+        public const int Heading = 24;
+        public const int Title = 32;
         public const int HeroTitle = 48;
     }
 
@@ -94,7 +159,7 @@ public static class UiTheme
         button.AddThemeFontSizeOverride("font_size", fontSize);
         button.AddThemeStyleboxOverride("normal", CreateColoredButtonStyle(Colors.Danger, false));
         button.AddThemeStyleboxOverride("hover", CreateColoredButtonStyle(Colors.Danger, true));
-        button.AddThemeStyleboxOverride("focus", CreateColoredButtonStyle(Colors.Danger, true));
+        button.AddThemeStyleboxOverride("focus", CreateButtonFocusStyle(new Color(Colors.Danger, 0.9f)));
         button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
         button.FocusMode = Control.FocusModeEnum.All;
     }
@@ -108,7 +173,7 @@ public static class UiTheme
         button.AddThemeFontSizeOverride("font_size", fontSize);
         button.AddThemeStyleboxOverride("normal", CreateColoredButtonStyle(Colors.Muted, false));
         button.AddThemeStyleboxOverride("hover", CreateColoredButtonStyle(Colors.Muted, true));
-        button.AddThemeStyleboxOverride("focus", CreateColoredButtonStyle(Colors.Muted, true));
+        button.AddThemeStyleboxOverride("focus", CreateButtonFocusStyle(new Color(Colors.Muted, 0.9f)));
         button.CustomMinimumSize = new Vector2(button.CustomMinimumSize.X, 40);
         button.FocusMode = Control.FocusModeEnum.All;
     }
@@ -162,11 +227,16 @@ public static class UiTheme
         return style;
     }
 
-    /// <summary>Creates a StyleBoxFlat for focused buttons — gold border on blue bg for high contrast.</summary>
-    public static StyleBoxFlat CreateButtonFocusStyle()
+    /// <summary>
+    /// Creates a StyleBoxFlat for focused buttons — gold border on the supplied
+    /// bg color. The canonical focus indicator is the gold border itself; the
+    /// base bg stays whatever color the button variant uses so Secondary (grey)
+    /// and Danger (red) buttons don't flip to blue on focus.
+    /// </summary>
+    public static StyleBoxFlat CreateButtonFocusStyle(Color? bgColor = null)
     {
         var style = new StyleBoxFlat();
-        style.BgColor = Colors.ActionHover;
+        style.BgColor = bgColor ?? Colors.ActionHover;
         style.BorderColor = Colors.Accent;
         style.SetBorderWidthAll(3);
         style.SetCornerRadiusAll(6);
@@ -270,6 +340,15 @@ public static class UiTheme
     private static Theme BuildGameTheme()
     {
         var theme = new Theme();
+
+        // SPEC-UI-FONT-01: every Theme in the codebase must register PS2P as
+        // DefaultFont. GameWindow.Overlay assigns this theme on its branch,
+        // which *overrides* the SceneTree-root GlobalTheme for everything
+        // under the overlay — so if we omit DefaultFont here, HUD + in-game
+        // popups fall back to Godot's built-in proportional font and break
+        // the visual contract.
+        theme.DefaultFont = FontFamily;
+        theme.DefaultFontSize = FontSizes.Body;
 
         // --- Button (primary/action — blue bg, dark text) ---
         theme.SetStylebox("normal", "Button", CreateButtonStyle(false));
