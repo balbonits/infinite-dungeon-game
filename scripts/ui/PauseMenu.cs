@@ -869,7 +869,7 @@ public partial class PauseMenu : GameWindow
             stats.FreePoints--;
             increment(stats);
             var gs = GameState.Instance;
-            gs.MaxHp = Constants.PlayerStats.GetEffectiveMaxHp(gs.Level, gs.Stats.BonusMaxHp);
+            gs.RecomputeDerivedStats(); // COMBAT-01 §5: unified MaxHp + MaxMana w/ equipment overlays.
             gs.EmitSignal(GameState.SignalName.StatsChanged);
             _tabs.SelectTab(_tabs.CurrentTab);
         }));

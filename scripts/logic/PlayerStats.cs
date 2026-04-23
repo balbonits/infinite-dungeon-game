@@ -20,6 +20,22 @@ public class StatBlock
     /// <summary>Diminishing returns curve: raw * (K / (raw + K))</summary>
     public static float GetEffective(int raw) => raw * (DiminishingK / (raw + DiminishingK));
 
+    // ─── Static derivations (COMBAT-01 §1 overlay path) ─────────────────
+    //
+    // Callers that need to fold equipment stat overlays into the DR curve
+    // use these helpers with `raw = allocated + equipment` instead of the
+    // instance properties below. The overlay must stack BEFORE the DR
+    // curve per spec §1 (single effective value); these methods are the
+    // single source of truth for the derivation formulas so the instance
+    // properties (allocated-only) and the combat path (allocated+overlay)
+    // can't diverge.
+
+    public static float ComputeMeleeFlatBonus(int effectiveStr) => GetEffective(effectiveStr) * 1.5f;
+    public static float ComputeMeleePercentBoost(int effectiveStr) => GetEffective(effectiveStr) * 0.8f;
+    public static float ComputeAttackSpeedMultiplier(int effectiveDex) => 1.0f + GetEffective(effectiveDex) * 0.01f;
+    public static float ComputeDodgeChance(int effectiveDex) => GetEffective(effectiveDex) * 0.005f;
+    public static float ComputeSpellDamageMultiplier(int effectiveInt) => 1.0f + GetEffective(effectiveInt) * 0.012f;
+
     // --- Derived stats from STR (spec: stats.md) ---
     // flat_melee_bonus = effective_str * 1.5
     public float MeleeFlatBonus => GetEffective(Str) * 1.5f;
